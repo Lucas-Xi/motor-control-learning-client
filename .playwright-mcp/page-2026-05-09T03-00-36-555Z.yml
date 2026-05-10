@@ -1,0 +1,260 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式工程仿真教学。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]:
+            - img [ref=e22]
+            - generic [ref=e26]:
+              - generic [ref=e27]: 三相磁场
+              - generic [ref=e28]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]:
+            - img [ref=e32]
+            - generic [ref=e36]:
+              - generic [ref=e37]: Clarke
+              - generic [ref=e38]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]:
+            - img [ref=e42]
+            - generic [ref=e46]:
+              - generic [ref=e47]: Park
+              - generic [ref=e48]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e49] [cursor=pointer]:
+          - generic [ref=e50]:
+            - img [ref=e52]
+            - generic [ref=e55]:
+              - generic [ref=e56]: PID
+              - generic [ref=e57]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e58] [cursor=pointer]:
+          - generic [ref=e59]:
+            - img [ref=e61]
+            - generic [ref=e64]:
+              - generic [ref=e65]: FOC 流程
+              - generic [ref=e66]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]:
+            - img [ref=e70]
+            - generic [ref=e73]:
+              - generic [ref=e74]: SVPWM
+              - generic [ref=e75]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e76] [cursor=pointer]:
+          - generic [ref=e77]:
+            - img [ref=e79]
+            - generic [ref=e82]:
+              - generic [ref=e83]: 逆变器
+              - generic [ref=e84]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e85] [cursor=pointer]:
+          - generic [ref=e86]:
+            - img [ref=e88]
+            - generic [ref=e91]:
+              - generic [ref=e92]: 三闭环
+              - generic [ref=e93]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]:
+            - img [ref=e97]
+            - generic [ref=e100]:
+              - generic [ref=e101]: 无感
+              - generic [ref=e102]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]:
+            - img [ref=e106]
+            - generic [ref=e108]:
+              - generic [ref=e109]: 弱磁
+              - generic [ref=e110]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e111] [cursor=pointer]:
+          - generic [ref=e112]:
+            - img [ref=e114]
+            - generic [ref=e116]:
+              - generic [ref=e117]: 调试
+              - generic [ref=e118]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e119]:
+      - banner [ref=e120]:
+        - generic [ref=e121]:
+          - paragraph [ref=e122]: Module 02
+          - heading "三相正弦波与旋转磁场" [level=2] [ref=e123]
+        - generic [ref=e124]:
+          - generic [ref=e125]:
+            - button "教学模式" [ref=e126] [cursor=pointer]
+            - button "实验模式" [ref=e127] [cursor=pointer]
+          - button "暂停" [ref=e128] [cursor=pointer]:
+            - img [ref=e129]
+            - text: 暂停
+          - button "单步" [ref=e132] [cursor=pointer]:
+            - img [ref=e133]
+            - text: 单步
+          - button "归零" [ref=e135] [cursor=pointer]:
+            - img [ref=e136]
+            - text: 归零
+          - button "全屏仿真" [ref=e139] [cursor=pointer]:
+            - img [ref=e140]
+            - text: 全屏仿真
+      - main [ref=e145]:
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - paragraph [ref=e149]: Interactive Simulation
+              - heading "三相正弦波与旋转磁场" [level=1] [ref=e150]
+              - paragraph [ref=e151]: 观察三相电流如何合成旋转磁场。拖动右侧参数后，图表、矢量和 3D 场景会立即更新；算法逻辑全部封装在 simulation 层，便于后续移植到 C / STM32 / MATLAB。
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - img [ref=e162]
+                - generic [ref=e170]:
+                  - generic [ref=e171]:
+                    - generic [ref=e172]:
+                      - img [ref=e173]
+                      - text: CODE-NATIVE FALLBACK
+                    - img [ref=e176]
+                  - generic [ref=e179]:
+                    - paragraph [ref=e180]: visual system
+                    - heading "从电机结构理解旋转磁场" [level=3] [ref=e181]
+                    - paragraph [ref=e182]: 已预留 gpt-image-2 提示词与文件名，正式素材生成后会自动替换当前 fallback 视觉。
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - generic [ref=e191]: 合成旋转磁场矢量
+                  - generic [ref=e192]: α 0.00 / β -6.00
+                - img [ref=e193]:
+                  - generic [ref=e200]: α
+                  - generic [ref=e201]: β
+              - generic [ref=e207]:
+                - generic [ref=e208]:
+                  - paragraph [ref=e209]: Ia
+                  - paragraph [ref=e210]: 0.00 A
+                - generic [ref=e211]:
+                  - paragraph [ref=e212]: Ib
+                  - paragraph [ref=e213]: "-5.20 A"
+                - generic [ref=e214]:
+                  - paragraph [ref=e215]: Ic
+                  - paragraph [ref=e216]: 5.20 A
+                - generic [ref=e217]:
+                  - paragraph [ref=e218]: "|Iαβ|"
+                  - paragraph [ref=e219]: 6.00 A
+              - generic [ref=e220]:
+                - generic [ref=e222]:
+                  - paragraph [ref=e223]: Lesson Notes
+                  - heading "教学讲义与公式" [level=2] [ref=e224]
+                - generic [ref=e225]:
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - heading "本节学习目标" [level=3] [ref=e228]
+                      - list [ref=e229]:
+                        - listitem [ref=e230]: 理解三相相差 120° 的正弦电流
+                        - listitem [ref=e231]: 观察合成磁场矢量为何匀速旋转
+                        - listitem [ref=e232]: 理解幅值、频率、相位、不平衡、谐波和噪声对磁场的影响
+                    - generic [ref=e233]:
+                      - heading "工程意义" [level=3] [ref=e234]
+                      - list [ref=e235]:
+                        - listitem [ref=e236]: FOC 的所有坐标变换都建立在三相正弦量之上。先把波形和旋转磁场看懂，后面的 alpha-beta、dq 才不会抽象。
+                        - listitem [ref=e237]: 真实驱动器中三相不平衡常来自电流采样偏置、相电阻差异、死区、相序接错或 PWM 更新时序错误。
+                  - generic [ref=e238]:
+                    - button "数学公式与变量解释" [ref=e239] [cursor=pointer]:
+                      - generic [ref=e240]: 数学公式与变量解释
+                      - img [ref=e241]
+                    - generic [ref=e243]:
+                      - generic [ref=e244]:
+                        - paragraph [ref=e245]: 三相正弦电流
+                        - paragraph [ref=e246]: Ia = I * sin(wt), Ib = I * sin(wt - 2pi/3), Ic = I * sin(wt + 2pi/3)
+                        - paragraph [ref=e247]: I 是峰值电流，w = 2pi*f，三相相位差 120°。
+                      - generic [ref=e248]:
+                        - paragraph [ref=e249]: 合成磁场
+                        - paragraph [ref=e250]: F = Fa + Fb + Fc
+                        - paragraph [ref=e251]: 三相绕组空间方向也相差 120°，时间相位与空间相位配合后形成旋转磁场。
+                  - generic [ref=e252]:
+                    - generic [ref=e253]:
+                      - heading "常见错误" [level=3] [ref=e254]
+                      - list [ref=e255]:
+                        - listitem [ref=e256]: 只看单相电流，忽略三相相位关系。
+                        - listitem [ref=e257]: 采样点靠近 PWM 边沿导致噪声很大。
+                        - listitem [ref=e258]: 把 RMS 值和峰值混用。
+                    - generic [ref=e259]:
+                      - heading "调试方法" [level=3] [ref=e260]
+                      - list [ref=e261]:
+                        - listitem [ref=e262]: 用示波器或电流探头比较三相峰值和相位。
+                        - listitem [ref=e263]: 记录 Ia+Ib+Ic，平衡系统中它应接近 0。
+                  - button "STM32 / C 实现思路" [ref=e265] [cursor=pointer]:
+                    - generic [ref=e266]: STM32 / C 实现思路
+                    - img [ref=e267]
+                  - paragraph [ref=e269]: 三相正弦电流的本质是用三个固定绕组制造一个像转子一样转动的磁场。
+          - generic [ref=e270]:
+            - generic [ref=e272]:
+              - paragraph [ref=e273]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e274]
+            - application [ref=e279]:
+              - generic [ref=e301]:
+                - generic [ref=e302]:
+                  - generic [ref=e304]: 0ms
+                  - generic [ref=e306]: 4.46927374301676ms
+                  - generic [ref=e308]: 10.726256983240223ms
+                  - generic [ref=e310]: 16.98324022346369ms
+                  - generic [ref=e312]: 23.24022346368715ms
+                  - generic [ref=e314]: 29.497206703910614ms
+                  - generic [ref=e316]: 35.75418994413408ms
+                  - generic [ref=e318]: 40ms
+                - generic [ref=e319]:
+                  - generic [ref=e321]: "-6"
+                  - generic [ref=e323]: "-3"
+                  - generic [ref=e325]: "0"
+                  - generic [ref=e327]: "3"
+                  - generic [ref=e329]: "6"
+        - complementary [ref=e330]:
+          - generic [ref=e331]:
+            - generic [ref=e332]:
+              - paragraph [ref=e333]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e334]
+            - button "重置" [ref=e335] [cursor=pointer]:
+              - img [ref=e336]
+              - text: 重置
+          - generic [ref=e339]:
+            - generic [ref=e341]:
+              - paragraph [ref=e342]: 3-phase current
+              - heading "三相电流参数" [level=2] [ref=e343]
+            - generic [ref=e345]:
+              - generic [ref=e346]:
+                - generic [ref=e347]:
+                  - generic [ref=e348]: 电流幅值
+                  - generic [ref=e349]: 6.00 A
+                - slider "电流幅值 6.00 A" [ref=e350]: "6"
+              - generic [ref=e351]:
+                - generic [ref=e352]:
+                  - generic [ref=e353]: 频率
+                  - generic [ref=e354]: 50.0 Hz
+                - slider "频率 50.0 Hz" [ref=e355]: "50"
+              - generic [ref=e356]:
+                - generic [ref=e357]:
+                  - generic [ref=e358]: 初始相位
+                  - generic [ref=e359]: 0.0°
+                - slider "初始相位 0.0°" [ref=e360]: "0"
+              - generic [ref=e361]:
+                - generic [ref=e362]:
+                  - generic [ref=e363]: 三相不平衡
+                  - generic [ref=e364]: "0.00"
+                - slider "三相不平衡 0.00 0 表示三相完全平衡，偏离后合成磁场会变成椭圆。" [ref=e365]: "0"
+                - paragraph [ref=e366]: 0 表示三相完全平衡，偏离后合成磁场会变成椭圆。
+              - generic [ref=e367]:
+                - generic [ref=e368]:
+                  - generic [ref=e369]: 5 次谐波
+                  - generic [ref=e370]: "0.00"
+                - slider "5 次谐波 0.00" [ref=e371]: "0"
+              - generic [ref=e372]:
+                - generic [ref=e373]:
+                  - generic [ref=e374]: 采样噪声
+                  - generic [ref=e375]: 0.00 A
+                - slider "采样噪声 0.00 A" [ref=e376]: "0"
+          - generic [ref=e377]:
+            - generic [ref=e379]:
+              - paragraph [ref=e380]: preset experiments
+              - heading "内置实验案例" [level=2] [ref=e381]
+            - button "三相正弦电流形成旋转磁场 调节幅值和频率，观察合成磁场矢量的角速度与幅值。" [ref=e384] [cursor=pointer]:
+              - paragraph [ref=e385]: 三相正弦电流形成旋转磁场
+              - paragraph [ref=e386]: 调节幅值和频率，观察合成磁场矢量的角速度与幅值。
+  - generic [ref=e387]: "-6"

@@ -1,0 +1,244 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式仿真。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e124]: RUN
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - button "教学" [ref=e127] [cursor=pointer]
+            - button "实验" [ref=e128] [cursor=pointer]
+          - button "暂停" [ref=e129] [cursor=pointer]:
+            - img [ref=e130]
+            - text: 暂停
+          - button "单步 5ms" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+            - text: 单步 5ms
+          - button "归零" [ref=e136] [cursor=pointer]:
+            - img [ref=e137]
+            - text: 归零
+          - button "全屏" [ref=e140] [cursor=pointer]:
+            - img [ref=e141]
+            - text: 全屏
+      - main [ref=e146]:
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: "04"
+              - heading "Park 变换" [level=1] [ref=e301]
+              - paragraph [ref=e152]: alpha-beta 到 dq 同步旋转坐标
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: Guided Lab
+                  - generic [ref=e157]: 交流量变直流量
+                - button "收起" [ref=e158] [cursor=pointer]
+              - generic [ref=e159]:
+                - generic [ref=e160]:
+                  - paragraph [ref=e161]: Park 变换能否成功，关键在于电角度 θ 是否与转子磁链同步。
+                  - generic [ref=e162]:
+                    - button "1 对准磁链" [ref=e302] [cursor=pointer]:
+                      - generic [ref=e303]: "1"
+                      - generic [ref=e304]: 对准磁链
+                    - button "2 制造角度误差" [ref=e305] [cursor=pointer]:
+                      - generic [ref=e306]: "2"
+                      - generic [ref=e307]: 制造角度误差
+                    - button "3 提高 Iq" [ref=e308] [cursor=pointer]:
+                      - generic [ref=e309]: "3"
+                      - generic [ref=e310]: 提高 Iq
+                - generic [ref=e172]:
+                  - generic [ref=e173]:
+                    - img [ref=e174]
+                    - paragraph [ref=e177]: 操作：设置中等转速和合理 θ，让 dq 轴跟随转子。
+                  - generic [ref=e178]:
+                    - img [ref=e179]
+                    - paragraph [ref=e182]: 观察：Id/Iq 投影稳定，q 轴代表转矩方向。
+                  - generic [ref=e183]:
+                    - img [ref=e184]
+                    - paragraph [ref=e188]: 预期：同步旋转坐标中，控制器看到的是近似直流量。
+                  - button "加载本步参数" [ref=e189] [cursor=pointer]:
+                    - img [ref=e190]
+                    - text: 加载本步参数
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - generic [ref=e315]:
+                  - generic [ref=e317]:
+                    - paragraph [ref=e318]: rotor flux frame
+                    - heading "dq 同步旋转坐标投影" [level=2] [ref=e319]
+                  - generic [ref=e320]:
+                    - img [ref=e322]:
+                      - generic [ref=e324]: α
+                      - generic [ref=e325]: β
+                      - generic [ref=e329]: "N"
+                      - generic [ref=e331]: S
+                      - generic [ref=e333]: d
+                      - generic [ref=e335]: q
+                      - generic [ref=e337]: θ 35°
+                      - generic [ref=e340]: Id=5.36
+                      - generic [ref=e343]: Iq=1.38
+                      - generic [ref=e348]: Iαβ
+                      - generic [ref=e350]: 青 Iαβ · 绿 d 轴/Id · 红 q 轴/Iq · θ = α 到 d 的角度
+                    - paragraph [ref=e351]: 转子带 N/S 极，d 轴沿 N 极方向（绿）、q 轴领先 90°（红）；蓝色箭头是 αβ 静止坐标里的电流矢量。 Park 把它分别投影到 d 轴 → Id（绿色实线段）和 q 轴 → Iq（红色实线段）。 当 θ 跟住转子时，两个分量都是直流量。
+                - generic [ref=e352]:
+                  - generic [ref=e353]:
+                    - generic [ref=e355]:
+                      - paragraph [ref=e356]: park projection
+                      - heading "αβ → dq 数学投影" [level=2] [ref=e357]
+                    - generic [ref=e358]:
+                      - generic [ref=e359]:
+                        - generic [ref=e360]:
+                          - generic [ref=e361]: 拖白点改 αβ
+                          - generic [ref=e362]: α 3.60 / β 4.20
+                        - img [ref=e363]:
+                          - generic [ref=e369]: α
+                          - generic [ref=e370]: β
+                          - generic [ref=e373]: d
+                          - generic [ref=e374]: q
+                          - generic [ref=e377]: Id 5.36 · Iq 1.38
+                        - paragraph [ref=e378]: 拖白点可直接改变矢量端点
+                      - paragraph [ref=e379]: 这边和左边是同一组数据的另一种画法：保留 αβ 网格不动，叠加旋转的 d/q 轴。
+                  - generic [ref=e380]:
+                    - generic [ref=e381]:
+                      - paragraph [ref=e382]: Iα
+                      - paragraph [ref=e383]: 3.60 A
+                    - generic [ref=e384]:
+                      - paragraph [ref=e385]: Iβ
+                      - paragraph [ref=e386]: 4.20 A
+                    - generic [ref=e387]:
+                      - paragraph [ref=e388]: Id 磁链
+                      - paragraph [ref=e389]: 5.36 A
+                    - generic [ref=e390]:
+                      - paragraph [ref=e391]: Iq 转矩
+                      - paragraph [ref=e392]: 1.38 A
+              - button "Lesson Notes 教学讲义" [ref=e395] [cursor=pointer]:
+                - generic [ref=e396]:
+                  - paragraph [ref=e397]: Lesson Notes
+                  - heading "教学讲义" [level=2] [ref=e398]
+                - img [ref=e399]
+          - generic [ref=e195]:
+            - generic [ref=e197]:
+              - paragraph [ref=e198]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e199]
+            - application [ref=e404]:
+              - generic [ref=e417]:
+                - generic [ref=e418]:
+                  - generic [ref=e420]: 2.767295597484277ms
+                  - generic [ref=e422]: 13.081761006289309ms
+                  - generic [ref=e424]: 23.39622641509434ms
+                  - generic [ref=e426]: 33.45911949685535ms
+                  - generic [ref=e428]: 40ms
+                - generic [ref=e429]:
+                  - generic [ref=e431]: "-9"
+                  - generic [ref=e433]: "-6"
+                  - generic [ref=e435]: "-3"
+                  - generic [ref=e437]: "0"
+                  - generic [ref=e439]: "3"
+        - complementary [ref=e249]:
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - paragraph [ref=e252]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e253]
+            - button "重置" [ref=e254] [cursor=pointer]:
+              - img [ref=e255]
+              - text: 重置
+          - generic [ref=e258]:
+            - button "参数" [ref=e259] [cursor=pointer]
+            - button "案例" [ref=e260] [cursor=pointer]
+          - generic [ref=e261]:
+            - generic [ref=e263]:
+              - paragraph [ref=e264]: αβ to dq
+              - heading "Park 坐标参数" [level=2] [ref=e440]
+            - generic [ref=e267]:
+              - generic [ref=e441]:
+                - generic [ref=e442]:
+                  - generic [ref=e443]: 电角度 θ
+                  - generic [ref=e444]: 35.0°
+                - slider [ref=e445]: "35"
+              - generic [ref=e446]:
+                - generic [ref=e447]:
+                  - generic [ref=e448]: Iα
+                  - generic [ref=e449]: 3.60 A
+                - slider [ref=e450]: "3.6"
+              - generic [ref=e451]:
+                - generic [ref=e452]:
+                  - generic [ref=e453]: Iβ
+                  - generic [ref=e454]: 4.20 A
+                - slider [ref=e455]: "4.2"
+  - generic [ref=e299]: "-9"

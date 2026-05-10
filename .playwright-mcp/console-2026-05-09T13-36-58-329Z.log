@@ -1,0 +1,5 @@
+[     489ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:19834
+[   36626ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-THLHOBM6.js?v=992ad91b:713
+[   36641ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-THLHOBM6.js?v=992ad91b:713
+[  189794ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-THLHOBM6.js?v=992ad91b:713
+[  189794ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/chunk-THLHOBM6.js?v=992ad91b:713

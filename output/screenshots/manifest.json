@@ -1,0 +1,201 @@
+{
+  "generatedAt": "2026-05-10T02:53:03.385Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "screenshots": [
+    {
+      "viewport": "desktop",
+      "module": "motor-basics",
+      "title": "电机基础",
+      "path": "output/screenshots/desktop-01-motor-basics.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "three-phase",
+      "title": "三相正弦波与旋转磁场",
+      "path": "output/screenshots/desktop-02-three-phase.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "clarke-transform",
+      "title": "Clarke 变换",
+      "path": "output/screenshots/desktop-03-clarke-transform.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "park-transform",
+      "title": "Park 变换",
+      "path": "output/screenshots/desktop-04-park-transform.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "pid-control",
+      "title": "PID 控制",
+      "path": "output/screenshots/desktop-05-pid-control.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "foc-flow",
+      "title": "FOC 总体流程",
+      "path": "output/screenshots/desktop-06-foc-flow.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "svpwm",
+      "title": "SVPWM",
+      "path": "output/screenshots/desktop-07-svpwm.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "inverter",
+      "title": "三相逆变器",
+      "path": "output/screenshots/desktop-08-inverter.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "control-loops",
+      "title": "电流环 / 速度环 / 位置环",
+      "path": "output/screenshots/desktop-09-control-loops.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "sensorless-foc",
+      "title": "无感 FOC / 观测器",
+      "path": "output/screenshots/desktop-10-sensorless-foc.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "field-weakening",
+      "title": "弱磁控制",
+      "path": "output/screenshots/desktop-11-field-weakening.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "faults-debugging",
+      "title": "故障与调试",
+      "path": "output/screenshots/desktop-12-faults-debugging.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "hfi-sensorless",
+      "title": "HFI 高频注入低速无感",
+      "path": "output/screenshots/desktop-13-hfi-sensorless.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "startup-statemachine",
+      "title": "压缩机启动状态机",
+      "path": "output/screenshots/desktop-14-startup-statemachine.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "apf-frontend",
+      "title": "APF 前级 PFC",
+      "path": "output/screenshots/desktop-15-apf-frontend.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "refrigeration-bench",
+      "title": "制冷系统台架",
+      "path": "output/screenshots/desktop-16-refrigeration-bench.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "motor-basics",
+      "title": "电机基础",
+      "path": "output/screenshots/mobile-01-motor-basics.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "three-phase",
+      "title": "三相正弦波与旋转磁场",
+      "path": "output/screenshots/mobile-02-three-phase.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "clarke-transform",
+      "title": "Clarke 变换",
+      "path": "output/screenshots/mobile-03-clarke-transform.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "park-transform",
+      "title": "Park 变换",
+      "path": "output/screenshots/mobile-04-park-transform.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "pid-control",
+      "title": "PID 控制",
+      "path": "output/screenshots/mobile-05-pid-control.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "foc-flow",
+      "title": "FOC 总体流程",
+      "path": "output/screenshots/mobile-06-foc-flow.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "svpwm",
+      "title": "SVPWM",
+      "path": "output/screenshots/mobile-07-svpwm.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "inverter",
+      "title": "三相逆变器",
+      "path": "output/screenshots/mobile-08-inverter.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "control-loops",
+      "title": "电流环 / 速度环 / 位置环",
+      "path": "output/screenshots/mobile-09-control-loops.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "sensorless-foc",
+      "title": "无感 FOC / 观测器",
+      "path": "output/screenshots/mobile-10-sensorless-foc.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "field-weakening",
+      "title": "弱磁控制",
+      "path": "output/screenshots/mobile-11-field-weakening.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "faults-debugging",
+      "title": "故障与调试",
+      "path": "output/screenshots/mobile-12-faults-debugging.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "hfi-sensorless",
+      "title": "HFI 高频注入低速无感",
+      "path": "output/screenshots/mobile-13-hfi-sensorless.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "startup-statemachine",
+      "title": "压缩机启动状态机",
+      "path": "output/screenshots/mobile-14-startup-statemachine.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "apf-frontend",
+      "title": "APF 前级 PFC",
+      "path": "output/screenshots/mobile-15-apf-frontend.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "refrigeration-bench",
+      "title": "制冷系统台架",
+      "path": "output/screenshots/mobile-16-refrigeration-bench.png"
+    }
+  ],
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "ignoredConsoleWarnings": []
+}

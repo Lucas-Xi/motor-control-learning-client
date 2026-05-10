@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d \"F:\\\\电机控制\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173)",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_close",
+      "Bash(pkill -f \"vite\")",
+      "Bash(kill 474)",
+      "Bash(curl -s -o /dev/null -w \"http %{http_code}\\\\n\" http://localhost:5173)",
+      "mcp__playwright__browser_wait_for",
+      "Bash(node scripts/verify-fault-waves.mjs)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts, null, 2\\)\\)\")",
+      "Bash(npx playwright *)",
+      "Bash(cat playwright.config.ts)",
+      "Bash(cat playwright.config.js)",
+      "Bash(cat playwright.config.mjs)",
+      "Bash(powershell -NoProfile -Command \"\\(Get-Content src/content/lessons.ts\\).Length\")",
+      "Bash(powershell -NoProfile -Command \"Get-ChildItem dist/assets/*Refrigeration* | Select-Object Name, LastWriteTime\")",
+      "Bash(powershell -NoProfile -Command \"\\(Select-String -Path 'dist/assets/RefrigerationBenchModule-*.js' -Pattern 'preserveAspectRatio'\\).Count\")",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('F:\\\\电机控制\\\\output\\\\screenshots\\\\desktop-16-refrigeration-bench.png'\\); \"$\\($img.Width\\) x $\\($img.Height\\)\")",
+      "Bash(powershell -NoProfile -Command \"Start-Sleep 2; Test-NetConnection -ComputerName 127.0.0.1 -Port 4173 -InformationLevel Quiet\")",
+      "Bash(powershell -NoProfile -Command 'Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '\\\\''*4173*'\\\\'' -or $_.MainWindowTitle -like '\\\\''*preview*'\\\\'' } | Stop-Process -Force')",
+      "Bash(powershell -NoProfile -Command 'Get-Process | Where-Object { $_.Path -like '\\\\''*node*'\\\\'' -or $_.ProcessName -eq '\\\\''node'\\\\'' } | ForEach-Object { try { $_.Kill\\(\\) } catch {} }')",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ]
+  }
+}

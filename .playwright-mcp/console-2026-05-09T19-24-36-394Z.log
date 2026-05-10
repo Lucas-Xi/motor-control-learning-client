@@ -1,0 +1,17 @@
+[      59ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:19834
+[  414381ms] ReferenceError: TWO_PI_THIRDS is not defined
+    at http://localhost:5173/src/simulation/math/faultWaveforms.ts?t=1778355090418:11:37
+    at Array.from (<anonymous>)
+    at createFaultWaveform (http://localhost:5173/src/simulation/math/faultWaveforms.ts?t=1778355090418:7:16)
+    at http://localhost:5173/src/modules/faults-debugging/FaultsDebuggingModule.tsx?t=1778355090418:55:30
+    at updateMemo (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:6277:21)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:18701:20)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-LI7Z25U2.js?v=992ad91b:947:36)
+    at Primary (http://localhost:5173/src/modules/faults-debugging/FaultsDebuggingModule.tsx?t=1778355090418:55:16)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:18241:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:5386:24)
+[  414381ms] [WARNING] %s
+
+%s
+ An error occurred in the <Primary> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:6697

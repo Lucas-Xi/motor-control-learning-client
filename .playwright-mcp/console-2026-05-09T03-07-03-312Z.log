@@ -1,0 +1,9 @@
+[     167ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:5173/node_modules/.vite/deps/chunk-RYK242CM.js?v=06eb2833:19834
+[     357ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(0) or use aspect(undefined) to control the
+       height and width. @ http://127.0.0.1:5173/node_modules/.vite/deps/recharts.js?v=04a92669:8936
+[     357ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(0) or use aspect(undefined) to control the
+       height and width. @ http://127.0.0.1:5173/node_modules/.vite/deps/recharts.js?v=04a92669:8936

@@ -1,0 +1,320 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式工程仿真教学。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [active] [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e122]:
+          - paragraph [ref=e125]: Module 07
+          - heading "SVPWM" [level=2] [ref=e469]
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - button "教学模式" [ref=e129] [cursor=pointer]
+            - button "实验模式" [ref=e130] [cursor=pointer]
+          - button "暂停" [ref=e131] [cursor=pointer]:
+            - img [ref=e132]
+            - text: 暂停
+          - button "单步" [ref=e135] [cursor=pointer]:
+            - img [ref=e136]
+            - text: 单步
+          - button "归零" [ref=e138] [cursor=pointer]:
+            - img [ref=e139]
+            - text: 归零
+          - button "全屏仿真" [ref=e142] [cursor=pointer]:
+            - img [ref=e143]
+            - text: 全屏仿真
+      - main [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - generic [ref=e152]:
+              - generic [ref=e470]:
+                - paragraph [ref=e471]: Interactive Simulation · Module 07
+                - heading "SVPWM" [level=1] [ref=e472]
+                - paragraph [ref=e473]: 空间电压矢量、扇区、T1/T2/T0。主画布支持拖拽白点直接改变量，右侧参数与底部示波器实时联动。
+              - generic [ref=e157]:
+                - generic [ref=e158]: Drag
+                - generic [ref=e159]: Live Math
+                - generic [ref=e160]: Scope
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Signal Path
+                - paragraph [ref=e164]: 数据流运行中
+              - generic [ref=e165]:
+                - generic [ref=e474]: Uαβ
+                - generic [ref=e475]: 扇区
+                - generic [ref=e476]: T1/T2/T0
+                - generic [ref=e478]: Duty
+                - generic [ref=e479]: PWM
+            - generic [ref=e481]:
+              - generic [ref=e482]:
+                - img "SVPWM 六扇区空间矢量图" [ref=e483]
+                - generic [ref=e487]:
+                  - generic [ref=e488]:
+                    - generic [ref=e489]:
+                      - img [ref=e490]
+                      - text: GPT-IMAGE-2 ASSET
+                    - img [ref=e494]
+                  - generic [ref=e497]:
+                    - paragraph [ref=e498]: visual system
+                    - heading "空间电压矢量与六扇区调制" [level=3] [ref=e499]
+                    - paragraph [ref=e500]: 已加载正式 gpt-image-2 教学素材；如果素材缺失或加载失败，会自动回退到代码生成的工程仪表盘视觉。
+              - generic [ref=e501]:
+                - generic [ref=e502]:
+                  - generic [ref=e503]:
+                    - generic [ref=e504]:
+                      - paragraph [ref=e505]: space vector plane
+                      - heading "SVPWM 六边形空间矢量" [level=3] [ref=e506]
+                    - generic [ref=e507]: Sector 1 / m=0.711
+                  - img [ref=e508]:
+                    - generic [ref=e514]: V1
+                    - generic [ref=e518]: V2
+                    - generic [ref=e522]: V3
+                    - generic [ref=e525]: V4
+                    - generic [ref=e529]: V5
+                    - generic [ref=e533]: V6
+                    - generic [ref=e535]: Uα
+                    - generic [ref=e536]: Uβ
+                  - generic [ref=e539]:
+                    - generic [ref=e540]: Uα / Uβ：18.00 V / 8.00 V
+                    - generic [ref=e541]: 线性区上限：27.71 V
+                    - generic [ref=e542]: 母线利用率：71.1%
+                - generic [ref=e543]:
+                  - generic [ref=e544]:
+                    - generic [ref=e546]:
+                      - paragraph [ref=e547]: switching period allocation
+                      - heading "T1 / T2 / T0 时间分配" [level=2] [ref=e548]
+                    - generic [ref=e549]:
+                      - generic [ref=e550]:
+                        - generic [ref=e552]:
+                          - generic [ref=e553]: T1：当前扇区第一个有效矢量
+                          - generic [ref=e554]: 30.18 μs
+                        - generic [ref=e558]:
+                          - generic [ref=e559]: T2：当前扇区第二个有效矢量
+                          - generic [ref=e560]: 20.83 μs
+                        - generic [ref=e564]:
+                          - generic [ref=e565]: T0：零矢量时间
+                          - generic [ref=e566]: 11.49 μs
+                      - generic [ref=e569]:
+                        - generic [ref=e570]: 角度：24.0°
+                        - generic [ref=e571]: 幅值：19.70 V
+                        - generic [ref=e572]: SVPWM 利用率：71.1%
+                        - generic [ref=e573]: SPWM 利用率：82.1%
+                  - generic [ref=e574]:
+                    - generic [ref=e576]:
+                      - paragraph [ref=e577]: duty compare
+                      - heading "三相 PWM 占空比" [level=2] [ref=e578]
+                    - application [ref=e583]:
+                      - generic [ref=e608]:
+                        - generic [ref=e609]:
+                          - generic [ref=e611]: A
+                          - generic [ref=e613]: B
+                          - generic [ref=e615]: C
+                        - generic [ref=e616]:
+                          - generic [ref=e618]: 0%
+                          - generic [ref=e620]: 25%
+                          - generic [ref=e622]: 50%
+                          - generic [ref=e624]: 75%
+                          - generic [ref=e626]: 100%
+              - generic [ref=e627]:
+                - generic [ref=e629]:
+                  - paragraph [ref=e630]: Lesson Notes
+                  - heading "教学讲义与公式" [level=2] [ref=e631]
+                - generic [ref=e632]:
+                  - generic [ref=e633]:
+                    - generic [ref=e634]:
+                      - heading "本节学习目标" [level=3] [ref=e635]
+                      - list [ref=e636]:
+                        - listitem [ref=e637]: 理解六个有效矢量、两个零矢量和六个扇区
+                        - listitem [ref=e638]: 掌握 T1/T2/T0 与占空比计算
+                        - listitem [ref=e639]: 比较 SVPWM 与 SPWM 的母线利用率
+                    - generic [ref=e640]:
+                      - heading "工程意义" [level=3] [ref=e641]
+                      - list [ref=e642]:
+                        - listitem [ref=e643]: SVPWM 能比 SPWM 更充分利用母线电压，是 PMSM 高速运行和弱磁前的重要基础。
+                  - generic [ref=e644]:
+                    - button "数学公式与变量解释" [ref=e645] [cursor=pointer]:
+                      - generic [ref=e646]: 数学公式与变量解释
+                      - img [ref=e647]
+                    - generic [ref=e650]:
+                      - paragraph [ref=e651]: 调制比
+                      - paragraph [ref=e652]: m = sqrt(3) * |Uref| / Udc
+                      - paragraph [ref=e653]: m 接近或超过 1 时，线性区电压不够，会进入饱和或过调制。
+                  - generic [ref=e654]:
+                    - generic [ref=e655]:
+                      - heading "常见错误" [level=3] [ref=e656]
+                      - list [ref=e657]:
+                        - listitem [ref=e658]: 扇区边界角度归一化错误。
+                        - listitem [ref=e659]: T0 为负仍继续输出，导致占空比异常。
+                        - listitem [ref=e660]: 三相 duty 没有限幅。
+                    - generic [ref=e661]:
+                      - heading "调试方法" [level=3] [ref=e662]
+                      - list [ref=e663]:
+                        - listitem [ref=e664]: 旋转 Ualpha/Ubeta，检查扇区是否 1 到 6 顺序切换。
+                        - listitem [ref=e665]: 低调制比下三相占空比应平滑连续。
+                  - button "STM32 / C 实现思路" [ref=e667] [cursor=pointer]:
+                    - generic [ref=e668]: STM32 / C 实现思路
+                    - img [ref=e669]
+                  - paragraph [ref=e671]: SVPWM 是把“电压矢量命令”翻译成“逆变器桥臂占空比”的核心算法。
+          - generic [ref=e279]:
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e283]
+            - application [ref=e675]:
+              - generic [ref=e700]:
+                - generic [ref=e701]:
+                  - generic [ref=e703]: A
+                  - generic [ref=e705]: B
+                  - generic [ref=e707]: C
+                - generic [ref=e708]:
+                  - generic [ref=e710]: 0%
+                  - generic [ref=e712]: 25%
+                  - generic [ref=e714]: 50%
+                  - generic [ref=e716]: 75%
+                  - generic [ref=e718]: 100%
+        - complementary [ref=e337]:
+          - generic [ref=e338]:
+            - generic [ref=e339]:
+              - paragraph [ref=e340]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e341]
+            - button "重置" [ref=e342] [cursor=pointer]:
+              - img [ref=e343]
+              - text: 重置
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - generic [ref=e348]:
+                - paragraph [ref=e349]: Live Coupling
+                - heading "交互联动监视器" [level=3] [ref=e350]
+              - img [ref=e352]
+            - generic [ref=e719]:
+              - generic [ref=e720]:
+                - generic [ref=e721]:
+                  - img [ref=e722]
+                  - generic [ref=e725]: 调制比
+                - paragraph [ref=e726]: "0.65"
+              - generic [ref=e729]:
+                - generic [ref=e730]:
+                  - img [ref=e731]
+                  - generic [ref=e734]: 母线
+                - paragraph [ref=e735]: 48 V
+              - generic [ref=e738]:
+                - generic [ref=e739]:
+                  - img [ref=e740]
+                  - generic [ref=e743]: 角度
+                - paragraph [ref=e744]: 24°
+          - generic [ref=e387]:
+            - button "参数" [ref=e388] [cursor=pointer]
+            - button "引导" [ref=e389] [cursor=pointer]
+            - button "案例" [ref=e390] [cursor=pointer]
+          - generic [ref=e747]:
+            - generic [ref=e749]:
+              - paragraph [ref=e750]: voltage vector
+              - heading "SVPWM / 母线参数" [level=2] [ref=e751]
+            - generic [ref=e753]:
+              - generic [ref=e754]:
+                - generic [ref=e755]:
+                  - generic [ref=e756]: Uα
+                  - generic [ref=e757]: 18.00 V
+                - generic [ref=e762]: 73%
+                - slider "Uα 18.00 V 73%" [ref=e763]: "18"
+              - generic [ref=e764]:
+                - generic [ref=e765]:
+                  - generic [ref=e766]: Uβ
+                  - generic [ref=e767]: 8.00 V
+                - generic [ref=e772]: 60%
+                - slider "Uβ 8.00 V 60%" [ref=e773]: "8"
+              - generic [ref=e774]:
+                - generic [ref=e775]:
+                  - generic [ref=e776]: 母线 Udc
+                  - generic [ref=e777]: 48.0 V
+                - generic [ref=e782]: 43%
+                - slider "母线 Udc 48.0 V 43%" [ref=e783]: "48"
+              - generic [ref=e784]:
+                - generic [ref=e785]:
+                  - generic [ref=e786]: 电角度
+                  - generic [ref=e787]: 24.0°
+                - generic [ref=e792]: 7%
+                - slider "电角度 24.0° 7%" [ref=e793]: "24"
+              - generic [ref=e794]:
+                - generic [ref=e795]:
+                  - generic [ref=e796]: 调制比
+                  - generic [ref=e797]: "0.65"
+                - generic [ref=e802]: 57%
+                - slider "调制比 0.65 57% m=1 附近到达 SVPWM 线性区边界；继续增大表示过调制风险。" [ref=e803]: "0.65"
+                - paragraph [ref=e804]: m=1 附近到达 SVPWM 线性区边界；继续增大表示过调制风险。
+  - generic [ref=e458]: 0%

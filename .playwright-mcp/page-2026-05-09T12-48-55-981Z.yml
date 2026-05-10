@@ -1,0 +1,384 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式工程仿真教学。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [active] [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e122]:
+          - paragraph [ref=e125]: Module 06
+          - heading "FOC 总体流程" [level=2] [ref=e846]
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - button "教学模式" [ref=e129] [cursor=pointer]
+            - button "实验模式" [ref=e130] [cursor=pointer]
+          - button "暂停" [ref=e839] [cursor=pointer]:
+            - img [ref=e840]
+            - text: 暂停
+          - button "单步" [ref=e135] [cursor=pointer]:
+            - img [ref=e136]
+            - text: 单步
+          - button "归零" [ref=e138] [cursor=pointer]:
+            - img [ref=e139]
+            - text: 归零
+          - button "全屏仿真" [ref=e142] [cursor=pointer]:
+            - img [ref=e143]
+            - text: 全屏仿真
+      - main [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - generic [ref=e152]:
+              - generic [ref=e847]:
+                - paragraph [ref=e848]: Interactive Simulation · Module 06
+                - heading "FOC 总体流程" [level=1] [ref=e849]
+                - paragraph [ref=e850]: 采样、变换、电流环、SVPWM 闭环链路。主画布支持拖拽白点直接改变量，右侧参数与底部示波器实时联动。
+              - generic [ref=e157]:
+                - generic [ref=e158]: Drag
+                - generic [ref=e159]: Live Math
+                - generic [ref=e160]: Scope
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Signal Path
+                - paragraph [ref=e164]: 数据流运行中
+              - generic [ref=e165]:
+                - generic [ref=e851]: 采样
+                - generic [ref=e852]: Clarke
+                - generic [ref=e853]: Park
+                - generic [ref=e854]: PI
+                - generic [ref=e856]: SVPWM
+                - generic [ref=e857]: 逆变器
+                - generic [ref=e858]: 电机
+            - generic [ref=e860]:
+              - generic [ref=e861]:
+                - img "FOC 控制流水线总览" [ref=e862]
+                - generic [ref=e866]:
+                  - generic [ref=e867]:
+                    - generic [ref=e868]:
+                      - img [ref=e869]
+                      - text: GPT-IMAGE-2 ASSET
+                    - img [ref=e873]
+                  - generic [ref=e876]:
+                    - paragraph [ref=e877]: visual system
+                    - heading "FOC 快环数据流水线" [level=3] [ref=e878]
+                    - paragraph [ref=e879]: 已加载正式 gpt-image-2 教学素材；如果素材缺失或加载失败，会自动回退到代码生成的工程仪表盘视觉。
+              - generic [ref=e880]:
+                - generic [ref=e881]:
+                  - generic [ref=e883]:
+                    - paragraph [ref=e884]: PWM interrupt pipeline
+                    - heading "单周期 FOC 数据流" [level=2] [ref=e885]
+                  - generic [ref=e886]:
+                    - generic [ref=e888]: 点击任意算法块可锁定右侧探针；运行态会按 PWM 周期自动流动。
+                    - generic [ref=e889]:
+                      - generic [ref=e890]:
+                        - button "1. 采样三相电流 Ia, Ib, Ic = ADC - offset 真实 STM32 中建议在 PWM 中点采样，先减偏置，再进入坐标变换。" [ref=e891] [cursor=pointer]:
+                          - generic [ref=e892]:
+                            - heading "1. 采样三相电流" [level=3] [ref=e893]
+                            - img [ref=e894]
+                          - paragraph [ref=e897]: Ia, Ib, Ic = ADC - offset
+                          - paragraph [ref=e898]: 真实 STM32 中建议在 PWM 中点采样，先减偏置，再进入坐标变换。
+                        - img [ref=e899]
+                      - generic [ref=e901]:
+                        - button "2. Clarke 变换 Iα = Ia, Iβ = (Ia + 2Ib) / √3 把三相电流投影到静止 αβ 平面，零序用于发现偏置或不平衡。" [ref=e902] [cursor=pointer]:
+                          - generic [ref=e904]:
+                            - heading "2. Clarke 变换" [level=3] [ref=e905]
+                            - img [ref=e906]
+                          - paragraph [ref=e909]: Iα = Ia, Iβ = (Ia + 2Ib) / √3
+                          - paragraph [ref=e910]: 把三相电流投影到静止 αβ 平面，零序用于发现偏置或不平衡。
+                        - img [ref=e912]
+                      - generic [ref=e914]:
+                        - button "3. Park 变换 Id = Iα cosθ + Iβ sinθ; Iq = -Iα sinθ + Iβ cosθ 坐标系跟着转子磁链旋转，正弦交流量在 dq 坐标里变成近似直流量。" [ref=e915] [cursor=pointer]:
+                          - generic [ref=e916]:
+                            - heading "3. Park 变换" [level=3] [ref=e917]
+                            - img [ref=e918]
+                          - paragraph [ref=e921]: Id = Iα cosθ + Iβ sinθ; Iq = -Iα sinθ + Iβ cosθ
+                          - paragraph [ref=e922]: 坐标系跟着转子磁链旋转，正弦交流量在 dq 坐标里变成近似直流量。
+                        - img [ref=e923]
+                      - generic [ref=e925]:
+                        - button "4. Id / Iq 电流环 PI Vd/Vq = Kp * e + Ki * ∫e dt 电流环是 FOC 最内层快环，输出的是期望电压，而不是直接输出 PWM。" [ref=e926] [cursor=pointer]:
+                          - generic [ref=e927]:
+                            - heading "4. Id / Iq 电流环 PI" [level=3] [ref=e928]
+                            - img [ref=e929]
+                          - paragraph [ref=e932]: Vd/Vq = Kp * e + Ki * ∫e dt
+                          - paragraph [ref=e933]: 电流环是 FOC 最内层快环，输出的是期望电压，而不是直接输出 PWM。
+                        - img [ref=e934]
+                      - generic [ref=e936]:
+                        - button "5. 反 Park 变换 Uα = Vd cosθ - Vq sinθ; Uβ = Vd sinθ + Vq cosθ 控制器在 dq 坐标里工作，但逆变器需要静止坐标里的电压矢量。" [ref=e937] [cursor=pointer]:
+                          - generic [ref=e938]:
+                            - heading "5. 反 Park 变换" [level=3] [ref=e939]
+                            - img [ref=e940]
+                          - paragraph [ref=e943]: Uα = Vd cosθ - Vq sinθ; Uβ = Vd sinθ + Vq cosθ
+                          - paragraph [ref=e944]: 控制器在 dq 坐标里工作，但逆变器需要静止坐标里的电压矢量。
+                        - img [ref=e945]
+                      - generic [ref=e947]:
+                        - button "6. SVPWM sector, T1, T2, T0 -> dutyA/B/C 把电压矢量转换成三相桥的中心对齐 PWM 占空比。" [ref=e948] [cursor=pointer]:
+                          - heading "6. SVPWM" [level=3] [ref=e950]
+                          - paragraph [ref=e953]: sector, T1, T2, T0 -> dutyA/B/C
+                          - paragraph [ref=e954]: 把电压矢量转换成三相桥的中心对齐 PWM 占空比。
+                        - img [ref=e955]
+                      - generic [ref=e957]:
+                        - button "7. 逆变器输出 Va = (Da - 0.5) * Udc 功率级把 duty 转成相电压和线电压，最终推动电机电流变化。" [ref=e958] [cursor=pointer]:
+                          - generic [ref=e959]:
+                            - heading "7. 逆变器输出" [level=3] [ref=e960]
+                            - img [ref=e961]
+                          - paragraph [ref=e964]: Va = (Da - 0.5) * Udc
+                          - paragraph [ref=e965]: 功率级把 duty 转成相电压和线电压，最终推动电机电流变化。
+                        - img [ref=e966]
+                      - button "8. 电机响应与角度反馈 θe = p * θm 或 observer(V,I) 编码器或观测器给出下一周期的电角度；角度错会直接导致 Id/Iq 串扰。" [ref=e969] [cursor=pointer]:
+                        - generic [ref=e970]:
+                          - heading "8. 电机响应与角度反馈" [level=3] [ref=e971]
+                          - img [ref=e972]
+                        - paragraph [ref=e975]: θe = p * θm 或 observer(V,I)
+                        - paragraph [ref=e976]: 编码器或观测器给出下一周期的电角度；角度错会直接导致 Id/Iq 串扰。
+                - generic [ref=e977]:
+                  - generic [ref=e979]:
+                    - paragraph [ref=e980]: input / output probe
+                    - heading "当前步骤探针" [level=2] [ref=e981]
+                  - generic [ref=e982]:
+                    - generic [ref=e984]:
+                      - img [ref=e985]
+                      - generic [ref=e988]:
+                        - paragraph [ref=e989]: 2. Clarke 变换
+                        - paragraph [ref=e990]: 把三相电流投影到静止 αβ 平面，零序用于发现偏置或不平衡。
+                    - generic [ref=e991]:
+                      - generic [ref=e992]:
+                        - paragraph [ref=e993]: 输入
+                        - generic [ref=e994]:
+                          - generic [ref=e995]:
+                            - generic [ref=e996]: Ia
+                            - generic [ref=e997]: "-5.164"
+                          - generic [ref=e998]:
+                            - generic [ref=e999]: Ib
+                            - generic [ref=e1000]: "5.227"
+                          - generic [ref=e1001]:
+                            - generic [ref=e1002]: Ic
+                            - generic [ref=e1003]: "-0.063"
+                      - generic [ref=e1004]:
+                        - paragraph [ref=e1005]: 输出
+                        - generic [ref=e1006]:
+                          - generic [ref=e1007]:
+                            - generic [ref=e1008]: Ialpha
+                            - generic [ref=e1009]: "-5.164"
+                          - generic [ref=e1010]:
+                            - generic [ref=e1011]: Ibeta
+                            - generic [ref=e1012]: "3.054"
+                          - generic [ref=e1013]:
+                            - generic [ref=e1014]: I0
+                            - generic [ref=e1015]: "0"
+              - generic [ref=e1016]:
+                - generic [ref=e1017]:
+                  - generic [ref=e1019]:
+                    - paragraph [ref=e1020]: vector state
+                    - heading "αβ / dq 观测" [level=2] [ref=e1021]
+                  - generic [ref=e1023]:
+                    - generic [ref=e1024]:
+                      - generic [ref=e1025]: 电流矢量与 dq 投影
+                      - generic [ref=e1026]: α -5.16 / β 3.05
+                    - img [ref=e1027]:
+                      - generic [ref=e1034]: α
+                      - generic [ref=e1035]: β
+                      - generic [ref=e1038]: d
+                      - generic [ref=e1039]: q
+                      - generic [ref=e1042]: Id -3.41 / Iq -4.94
+                - generic [ref=e1043]:
+                  - generic [ref=e1045]:
+                    - paragraph [ref=e1046]: duty generation
+                    - heading "SVPWM 输出" [level=2] [ref=e1047]
+                  - generic [ref=e1048]:
+                    - application [ref=e1052]:
+                      - generic [ref=e1077]:
+                        - generic [ref=e1078]:
+                          - generic [ref=e1080]: A
+                          - generic [ref=e1082]: B
+                          - generic [ref=e1084]: C
+                        - generic [ref=e1085]:
+                          - generic [ref=e1087]: 0%
+                          - generic [ref=e1089]: 25%
+                          - generic [ref=e1091]: 50%
+                          - generic [ref=e1093]: 75%
+                          - generic [ref=e1095]: 100%
+                    - generic [ref=e1096]:
+                      - generic [ref=e1097]: 扇区 6
+                      - generic [ref=e1098]: m 0.848
+                      - generic [ref=e1099]: 饱和 否
+                - generic [ref=e1100]:
+                  - generic [ref=e1102]:
+                    - paragraph [ref=e1103]: power stage
+                    - heading "逆变器桥臂" [level=2] [ref=e1104]
+                  - generic [ref=e1106]:
+                    - generic [ref=e1107]:
+                      - generic [ref=e1108]: A 相桥臂
+                      - generic [ref=e1111]: D=97%
+                    - generic [ref=e1112]:
+                      - generic [ref=e1113]: B 相桥臂
+                      - generic [ref=e1116]: D=3%
+                    - generic [ref=e1117]:
+                      - generic [ref=e1118]: C 相桥臂
+                      - generic [ref=e1121]: D=28%
+              - generic [ref=e1122]:
+                - generic [ref=e1124]:
+                  - paragraph [ref=e1125]: Lesson Notes
+                  - heading "教学讲义与公式" [level=2] [ref=e1126]
+                - generic [ref=e1127]:
+                  - generic [ref=e1128]:
+                    - generic [ref=e1129]:
+                      - heading "本节学习目标" [level=3] [ref=e1130]
+                      - list [ref=e1131]:
+                        - listitem [ref=e1132]: 串起采样、Clarke、Park、电流环、反 Park、SVPWM 和反馈角度
+                        - listitem [ref=e1133]: 理解每个周期的数据输入输出
+                        - listitem [ref=e1134]: 建立单步调试 FOC 的思路
+                    - generic [ref=e1135]:
+                      - heading "工程意义" [level=3] [ref=e1136]
+                      - list [ref=e1137]:
+                        - listitem [ref=e1138]: 把流程拆开后，调试时可以定位到底是采样错、角度错、PI 错、SVPWM 错还是硬件输出错。
+                  - generic [ref=e1139]:
+                    - button "数学公式与变量解释" [ref=e1140] [cursor=pointer]:
+                      - generic [ref=e1141]: 数学公式与变量解释
+                      - img [ref=e1142]
+                    - generic [ref=e1145]:
+                      - paragraph [ref=e1146]: FOC 周期
+                      - paragraph [ref=e1147]: abc -> Clarke -> Park -> PI(Id/Iq) -> inverse Park -> SVPWM -> inverter -> motor
+                      - paragraph [ref=e1148]: 每一步都只做一件事，便于移植到 C、STM32 或 MATLAB。
+                  - generic [ref=e1149]:
+                    - generic [ref=e1150]:
+                      - heading "常见错误" [level=3] [ref=e1151]
+                      - list [ref=e1152]:
+                        - listitem [ref=e1153]: 在 UI 或业务层写算法，导致无法移植和测试。
+                        - listitem [ref=e1154]: 没有记录中间变量，出问题只能猜。
+                    - generic [ref=e1155]:
+                      - heading "调试方法" [level=3] [ref=e1156]
+                      - list [ref=e1157]:
+                        - listitem [ref=e1158]: 按步骤冻结：先看 ADC，再看 Clarke，再看 Park，再看 Vdq，再看 duty。
+                  - button "STM32 / C 实现思路" [ref=e1160] [cursor=pointer]:
+                    - generic [ref=e1161]: STM32 / C 实现思路
+                    - img [ref=e1162]
+                  - paragraph [ref=e1164]: FOC 是一条严格的数据流水线，稳定的软件结构比“把公式写出来”更重要。
+          - generic [ref=e279]:
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e283]
+            - application [ref=e1168]:
+              - generic [ref=e1190]:
+                - generic [ref=e1191]:
+                  - generic [ref=e1193]: 0ms
+                  - generic [ref=e1195]: 7.374301675977653ms
+                  - generic [ref=e1197]: 14.301675977653632ms
+                  - generic [ref=e1199]: 21.22905027932961ms
+                  - generic [ref=e1201]: 28.379888268156428ms
+                  - generic [ref=e1203]: 35.3072625698324ms
+                  - generic [ref=e1205]: 40ms
+                - generic [ref=e1206]:
+                  - generic [ref=e1208]: "-6"
+                  - generic [ref=e1210]: "-3"
+                  - generic [ref=e1212]: "0"
+                  - generic [ref=e1214]: "3"
+                  - generic [ref=e1216]: "6"
+        - complementary [ref=e337]:
+          - generic [ref=e338]:
+            - generic [ref=e339]:
+              - paragraph [ref=e340]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e341]
+            - button "重置" [ref=e342] [cursor=pointer]:
+              - img [ref=e343]
+              - text: 重置
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - generic [ref=e348]:
+                - paragraph [ref=e349]: Live Coupling
+                - heading "交互联动监视器" [level=3] [ref=e350]
+              - img [ref=e352]
+            - generic [ref=e1217]:
+              - generic [ref=e1218]:
+                - generic [ref=e1219]:
+                  - img [ref=e1220]
+                  - generic [ref=e1223]: 模块阶段
+                - paragraph [ref=e1224]: "06"
+              - generic [ref=e1227]:
+                - generic [ref=e1228]:
+                  - img [ref=e1229]
+                  - generic [ref=e1232]: 模式
+                - paragraph [ref=e1233]: FOC 流程
+              - generic [ref=e1236]:
+                - generic [ref=e1237]:
+                  - img [ref=e1238]
+                  - generic [ref=e1240]: 运行态
+                - paragraph [ref=e1241]: RUN
+          - generic [ref=e387]:
+            - button "参数" [ref=e388] [cursor=pointer]
+            - button "引导" [ref=e389] [cursor=pointer]
+            - button "案例" [ref=e390] [cursor=pointer]
+  - generic [ref=e458]: 0%

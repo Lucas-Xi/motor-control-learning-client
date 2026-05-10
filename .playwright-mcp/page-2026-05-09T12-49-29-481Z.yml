@@ -1,0 +1,326 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式工程仿真教学。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [active] [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e122]:
+          - paragraph [ref=e125]: Module 11
+          - heading "弱磁控制" [level=2] [ref=e1341]
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - button "教学模式" [ref=e129] [cursor=pointer]
+            - button "实验模式" [ref=e130] [cursor=pointer]
+          - button "暂停" [ref=e839] [cursor=pointer]:
+            - img [ref=e840]
+            - text: 暂停
+          - button "单步" [ref=e135] [cursor=pointer]:
+            - img [ref=e136]
+            - text: 单步
+          - button "归零" [ref=e138] [cursor=pointer]:
+            - img [ref=e139]
+            - text: 归零
+          - button "全屏仿真" [ref=e142] [cursor=pointer]:
+            - img [ref=e143]
+            - text: 全屏仿真
+      - main [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - generic [ref=e152]:
+              - generic [ref=e1342]:
+                - paragraph [ref=e1343]: Interactive Simulation · Module 11
+                - heading "弱磁控制" [level=1] [ref=e1344]
+                - paragraph [ref=e1345]: 电压极限、负 Id、恒功率区。主画布支持拖拽白点直接改变量，右侧参数与底部示波器实时联动。
+              - generic [ref=e157]:
+                - generic [ref=e158]: Drag
+                - generic [ref=e159]: Live Math
+                - generic [ref=e160]: Scope
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Signal Path
+                - paragraph [ref=e164]: 数据流运行中
+              - generic [ref=e165]:
+                - generic [ref=e1346]: 转速
+                - generic [ref=e1347]: 电压圆
+                - generic [ref=e1348]: 电流圆
+                - generic [ref=e1350]: 负 Id
+                - generic [ref=e1351]: 恒功率
+            - generic [ref=e1353]:
+              - generic [ref=e1354]:
+                - img "弱磁电压/电流极限圆" [ref=e1355]
+                - generic [ref=e1359]:
+                  - generic [ref=e1360]:
+                    - generic [ref=e1361]:
+                      - img [ref=e1362]
+                      - text: GPT-IMAGE-2 ASSET
+                    - img [ref=e1366]
+                  - generic [ref=e1369]:
+                    - paragraph [ref=e1370]: visual system
+                    - heading "弱磁控制与电压预算" [level=3] [ref=e1371]
+                    - paragraph [ref=e1372]: 已加载正式 gpt-image-2 教学素材；如果素材缺失或加载失败，会自动回退到代码生成的工程仪表盘视觉。
+              - generic [ref=e1373]:
+                - generic [ref=e1374]:
+                  - generic [ref=e1376]:
+                    - paragraph [ref=e1377]: current and voltage limit
+                    - heading "Id/Iq 限制地图" [level=2] [ref=e1378]
+                  - generic [ref=e1379]:
+                    - img [ref=e1380]:
+                      - generic [ref=e1388]: Id
+                      - generic [ref=e1389]: Iq
+                      - generic [ref=e1390]: 电流极限圆
+                      - generic [ref=e1391]: 电压极限
+                      - generic [ref=e1392]: 拖拽工作点：Id -2.2 / Iq 5.2
+                    - generic [ref=e1393]:
+                      - generic [ref=e1394]: 电流幅值 5.65 A
+                      - generic [ref=e1395]: 电压需求 78.81 V
+                      - generic [ref=e1396]: 极限 26.60 V
+                - generic [ref=e1397]:
+                  - generic [ref=e1399]:
+                    - paragraph [ref=e1400]: constant torque / constant power
+                    - heading "高速区转矩/功率趋势" [level=2] [ref=e1401]
+                  - generic [ref=e1402]:
+                    - application [ref=e1406]:
+                      - generic [ref=e1427]:
+                        - generic [ref=e1428]:
+                          - generic [ref=e1430]: 1560rpm
+                          - generic [ref=e1432]: 3380rpm
+                          - generic [ref=e1434]: 5200rpm
+                          - generic [ref=e1436]: 7020rpm
+                          - generic [ref=e1438]: 8840rpm
+                          - generic [ref=e1440]: 11360rpm
+                        - generic [ref=e1441]:
+                          - generic [ref=e1443]: "0"
+                          - generic [ref=e1445]: "0.4"
+                          - generic [ref=e1447]: "0.8"
+                          - generic [ref=e1449]: "1.2"
+                          - generic [ref=e1451]: "1.6"
+                    - generic [ref=e1452]:
+                      - generic [ref=e1453]:
+                        - img [ref=e1454]
+                        - text: 转矩 1.42 Nm
+                      - generic [ref=e1456]:
+                        - img [ref=e1457]
+                        - text: 余量 -52.21 V
+                      - generic [ref=e1461]: 建议 Id -4.18 A
+              - generic [ref=e1462]:
+                - img [ref=e1463]
+                - paragraph [ref=e1465]: 当前进入电压饱和：Vdq 需求超过 SVPWM 线性区。真实控制中应降低 Iq、提高母线、或注入更合适的负 Id；负 Id 也必须受电流限制和退磁风险约束。
+              - generic [ref=e1466]:
+                - generic [ref=e1468]:
+                  - paragraph [ref=e1469]: Lesson Notes
+                  - heading "教学讲义与公式" [level=2] [ref=e1470]
+                - generic [ref=e1471]:
+                  - generic [ref=e1472]:
+                    - generic [ref=e1473]:
+                      - heading "本节学习目标" [level=3] [ref=e1474]
+                      - list [ref=e1475]:
+                        - listitem [ref=e1476]: 理解为什么高速需要弱磁
+                        - listitem [ref=e1477]: 掌握电压极限圆、电流极限圆和负 Id 注入
+                        - listitem [ref=e1478]: 区分恒转矩区、恒功率区和 MTPA/MTPV
+                    - generic [ref=e1479]:
+                      - heading "工程意义" [level=3] [ref=e1480]
+                      - list [ref=e1481]:
+                        - listitem [ref=e1482]: 压缩机、高速主轴、电动车高速区都需要弱磁，否则转速上不去或电流环失控。
+                  - generic [ref=e1483]:
+                    - button "数学公式与变量解释" [ref=e1484] [cursor=pointer]:
+                      - generic [ref=e1485]: 数学公式与变量解释
+                      - img [ref=e1486]
+                    - generic [ref=e1489]:
+                      - paragraph [ref=e1490]: 电压限制
+                      - paragraph [ref=e1491]: sqrt(Vd^2 + Vq^2) <= Udc / sqrt(3)
+                      - paragraph [ref=e1492]: SVPWM 线性区最大电压近似为 Udc/sqrt(3)。
+                  - generic [ref=e1493]:
+                    - generic [ref=e1494]:
+                      - heading "常见错误" [level=3] [ref=e1495]
+                      - list [ref=e1496]:
+                        - listitem [ref=e1497]: 只加速度给定，不检查电压余量。
+                        - listitem [ref=e1498]: 负 Id 过大导致电流发热或退磁风险。
+                    - generic [ref=e1499]:
+                      - heading "调试方法" [level=3] [ref=e1500]
+                      - list [ref=e1501]:
+                        - listitem [ref=e1502]: 画 Id/Iq 工作点、电压圆和电流圆。
+                        - listitem [ref=e1503]: 观察进入弱磁前后的转矩、电流和母线电压。
+                  - button "STM32 / C 实现思路" [ref=e1505] [cursor=pointer]:
+                    - generic [ref=e1506]: STM32 / C 实现思路
+                    - img [ref=e1507]
+                  - paragraph [ref=e1509]: 弱磁是高速控制的电压预算管理：用一部分电流去换电压余量。
+          - generic [ref=e279]:
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e283]
+            - application [ref=e1513]:
+              - generic [ref=e1538]:
+                - generic [ref=e1539]:
+                  - generic [ref=e1541]: A
+                  - generic [ref=e1543]: B
+                  - generic [ref=e1545]: C
+                - generic [ref=e1546]:
+                  - generic [ref=e1548]: 0%
+                  - generic [ref=e1550]: 25%
+                  - generic [ref=e1552]: 50%
+                  - generic [ref=e1554]: 75%
+                  - generic [ref=e1556]: 100%
+        - complementary [ref=e337]:
+          - generic [ref=e338]:
+            - generic [ref=e339]:
+              - paragraph [ref=e340]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e341]
+            - button "重置" [ref=e342] [cursor=pointer]:
+              - img [ref=e343]
+              - text: 重置
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - generic [ref=e348]:
+                - paragraph [ref=e349]: Live Coupling
+                - heading "交互联动监视器" [level=3] [ref=e350]
+              - img [ref=e352]
+            - generic [ref=e1557]:
+              - generic [ref=e1558]:
+                - generic [ref=e1559]:
+                  - img [ref=e1560]
+                  - generic [ref=e1563]: Id 注入
+                - paragraph [ref=e1564]: "-2.2 A"
+              - generic [ref=e1567]:
+                - generic [ref=e1568]:
+                  - img [ref=e1569]
+                  - generic [ref=e1572]: Iq 转矩
+                - paragraph [ref=e1573]: 5.2 A
+              - generic [ref=e1576]:
+                - generic [ref=e1577]:
+                  - img [ref=e1578]
+                  - generic [ref=e1581]: 目标转速
+                - paragraph [ref=e1582]: 4200 rpm
+          - generic [ref=e387]:
+            - button "参数" [ref=e388] [cursor=pointer]
+            - button "引导" [ref=e389] [cursor=pointer]
+            - button "案例" [ref=e390] [cursor=pointer]
+          - generic [ref=e1585]:
+            - generic [ref=e1587]:
+              - paragraph [ref=e1588]: id / iq limit map
+              - heading "弱磁控制参数" [level=2] [ref=e1589]
+            - generic [ref=e1591]:
+              - generic [ref=e1592]:
+                - generic [ref=e1593]:
+                  - generic [ref=e1594]: 母线 Udc
+                  - generic [ref=e1595]: 48.0 V
+                - generic [ref=e1600]: 43%
+                - slider "母线 Udc 48.0 V 43%" [ref=e1601]: "48"
+              - generic [ref=e1602]:
+                - generic [ref=e1603]:
+                  - generic [ref=e1604]: 目标转速
+                  - generic [ref=e1605]: 4200.0 rpm
+                - generic [ref=e1610]: 32%
+                - slider "目标转速 4200.0 rpm 32%" [ref=e1611]: "4200"
+              - generic [ref=e1612]:
+                - generic [ref=e1613]:
+                  - generic [ref=e1614]: Id
+                  - generic [ref=e1615]: "-2.20 A"
+                - generic [ref=e1620]: 56%
+                - slider "Id -2.20 A 56%" [ref=e1621]: "-2.2"
+              - generic [ref=e1622]:
+                - generic [ref=e1623]:
+                  - generic [ref=e1624]: Iq
+                  - generic [ref=e1625]: 5.20 A
+                - generic [ref=e1630]: 52%
+                - slider "Iq 5.20 A 52%" [ref=e1631]: "5.2"
+              - generic [ref=e1632]:
+                - generic [ref=e1633]:
+                  - generic [ref=e1634]: Ld
+                  - generic [ref=e1635]: 1.20 mH
+                - generic [ref=e1640]: 26%
+                - slider "Ld 1.20 mH 26%" [ref=e1641]: "1.2"
+              - generic [ref=e1642]:
+                - generic [ref=e1643]:
+                  - generic [ref=e1644]: Lq
+                  - generic [ref=e1645]: 1.50 mH
+                - generic [ref=e1650]: 27%
+                - slider "Lq 1.50 mH 27%" [ref=e1651]: "1.5"
+              - generic [ref=e1652]:
+                - generic [ref=e1653]:
+                  - generic [ref=e1654]: 磁链 ψf
+                  - generic [ref=e1655]: 0.04 Wb
+                - generic [ref=e1660]: 32%
+                - slider "磁链 ψf 0.04 Wb 32%" [ref=e1661]: "0.045"
+              - generic [ref=e1662]:
+                - generic [ref=e1663]:
+                  - generic [ref=e1664]: 电流限制
+                  - generic [ref=e1665]: 8.00 A
+                - generic [ref=e1670]: 46%
+                - slider "电流限制 8.00 A 46%" [ref=e1671]: "8"
+  - generic [ref=e458]: "0.4"

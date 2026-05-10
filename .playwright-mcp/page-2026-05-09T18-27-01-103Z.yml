@@ -1,0 +1,206 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Compressor Drive Lab
+        - heading "压缩机变频器控制" [level=1] [ref=e8]
+        - paragraph [ref=e9]: 面向空调 / 冰箱 / 工业制冷压缩机的 FOC + V/f 启动 + HFI 无感 + 弱磁交互式学习。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e124]: RUN
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - button "教学" [ref=e127] [cursor=pointer]
+            - button "实验" [ref=e128] [cursor=pointer]
+          - button "暂停" [ref=e129] [cursor=pointer]:
+            - img [ref=e130]
+            - text: 暂停
+          - button "单步 5ms" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+            - text: 单步 5ms
+          - button "归零" [ref=e136] [cursor=pointer]:
+            - img [ref=e137]
+            - text: 归零
+          - button "全屏" [ref=e140] [cursor=pointer]:
+            - img [ref=e141]
+            - text: 全屏
+      - main [ref=e146]:
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: "02"
+              - heading "三相正弦波与旋转磁场" [level=1] [ref=e151]
+              - paragraph [ref=e152]: 观察三相电流如何合成旋转磁场
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: Guided Lab
+                  - generic [ref=e157]: 旋转磁场三步观察
+                - button "收起" [ref=e158] [cursor=pointer]
+              - generic [ref=e159]:
+                - generic [ref=e160]:
+                  - paragraph [ref=e161]: 幅值决定磁场半径，频率决定旋转速度，不平衡/谐波会让轨迹变脏。
+                  - generic [ref=e162]:
+                    - button "1 纯净三相" [ref=e163] [cursor=pointer]:
+                      - generic [ref=e164]: "1"
+                      - generic [ref=e165]: 纯净三相
+                    - button "2 提升频率" [ref=e166] [cursor=pointer]:
+                      - generic [ref=e167]: "2"
+                      - generic [ref=e168]: 提升频率
+                    - button "3 注入畸变" [ref=e169] [cursor=pointer]:
+                      - generic [ref=e170]: "3"
+                      - generic [ref=e171]: 注入畸变
+                - generic [ref=e172]:
+                  - generic [ref=e173]:
+                    - img [ref=e174]
+                    - paragraph [ref=e177]: 操作：加载 6A / 50Hz / 平衡三相，先观察圆形旋转磁场。
+                  - generic [ref=e178]:
+                    - img [ref=e179]
+                    - paragraph [ref=e182]: 观察：看 3D 定子磁场、αβ 矢量和三相波形是否同步转动。
+                  - generic [ref=e183]:
+                    - img [ref=e184]
+                    - paragraph [ref=e188]: 预期：合成磁场幅值稳定，Ia+Ib+Ic 接近 0。
+                  - button "加载本步参数" [ref=e189] [cursor=pointer]:
+                    - img [ref=e190]
+                    - text: 加载本步参数
+            - generic [ref=e194]: 模块加载中…
+          - generic [ref=e195]:
+            - generic [ref=e197]:
+              - paragraph [ref=e198]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e199]
+            - application [ref=e204]:
+              - generic [ref=e226]:
+                - generic [ref=e227]:
+                  - generic [ref=e229]: "-80 ms"
+                  - generic [ref=e231]: "-60 ms"
+                  - generic [ref=e233]: "-40 ms"
+                  - generic [ref=e235]: "-20 ms"
+                  - generic [ref=e237]: 0 ms
+                - generic [ref=e238]:
+                  - generic [ref=e240]: "-6"
+                  - generic [ref=e242]: "-3"
+                  - generic [ref=e244]: "0"
+                  - generic [ref=e246]: "3"
+                  - generic [ref=e248]: "6"
+                - generic [ref=e249]: now
+        - complementary [ref=e250]:
+          - generic [ref=e251]:
+            - generic [ref=e252]:
+              - paragraph [ref=e253]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e254]
+            - button "重置" [ref=e255] [cursor=pointer]:
+              - img [ref=e256]
+              - text: 重置
+          - generic [ref=e259]:
+            - button "参数" [ref=e260] [cursor=pointer]
+            - button "案例" [ref=e261] [cursor=pointer]
+          - generic [ref=e262]:
+            - generic [ref=e264]:
+              - paragraph [ref=e265]: 3-phase current
+              - heading "三相电流参数" [level=2] [ref=e266]
+            - generic [ref=e268]:
+              - generic [ref=e269]:
+                - generic [ref=e270]:
+                  - generic [ref=e271]: 电流幅值
+                  - generic [ref=e272]: 6.00 A
+                - slider [ref=e273]: "6"
+              - generic [ref=e274]:
+                - generic [ref=e275]:
+                  - generic [ref=e276]: 频率
+                  - generic [ref=e277]: 50.0 Hz
+                - slider [ref=e278]: "50"
+              - generic [ref=e279]:
+                - generic [ref=e280]:
+                  - generic [ref=e281]: 初始相位
+                  - generic [ref=e282]: 0.0°
+                - slider [ref=e283]: "0"
+              - generic [ref=e284]:
+                - generic [ref=e285]:
+                  - generic [ref=e286]: 三相不平衡
+                  - generic [ref=e287]: "0.00"
+                - slider [ref=e288]: "0"
+                - paragraph [ref=e289]: 0 表示三相完全平衡，偏离后合成磁场会变成椭圆。
+              - generic [ref=e290]:
+                - generic [ref=e291]:
+                  - generic [ref=e292]: 5 次谐波
+                  - generic [ref=e293]: "0.00"
+                - slider [ref=e294]: "0"
+              - generic [ref=e295]:
+                - generic [ref=e296]:
+                  - generic [ref=e297]: 采样噪声
+                  - generic [ref=e298]: 0.00 A
+                - slider [ref=e299]: "0"
+  - generic [ref=e300]: "-6"

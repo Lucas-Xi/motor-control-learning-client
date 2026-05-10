@@ -1,0 +1,89 @@
+{
+  "name": "motor-control-learning-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "verify": "node scripts/verify-project.mjs",
+    "e2e:optional": "node scripts/e2e-smoke.mjs",
+    "e2e": "playwright test",
+    "qa:screenshots": "node scripts/capture-screenshots.mjs",
+    "release:audit": "node scripts/release-audit.mjs",
+    "desktop:pack": "npm run build && node scripts/package-electron-dir.mjs",
+    "desktop:dist": "npm run desktop:pack",
+    "desktop:portable:builder": "npm run build && electron-builder --win portable --publish never"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.4.0",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.552.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.3.0",
+    "three": "^0.181.2",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/three": "^0.181.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "autoprefixer": "^10.4.21",
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
+  },
+  "main": "electron/main.cjs",
+  "description": "交互式电机控制学习客户端，覆盖 BLDC/PMSM/FOC/SVPWM/PID/弱磁/无感观测器。",
+  "author": "Motor Control Learning Client",
+  "build": {
+    "appId": "com.ciii.motor-control-learning-client",
+    "productName": "电机控制学习客户端",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "asar": true,
+    "compression": "maximum",
+    "win": {
+      "icon": "public/favicon.ico",
+      "artifactName": "电机控制学习客户端-${version}-${arch}.${ext}",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "电机控制学习客户端-${version}-portable-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "电机控制学习客户端"
+    }
+  }
+}

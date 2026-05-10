@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-base: #07111f;
+  --bg-surface: #0d1929;
+  --bg-raised: #11203b;
+  --line-subtle: #1e2a3d;
+  --line-strong: #2c3d57;
+  --ink-primary: #e7f3ff;
+  --ink-secondary: #9eb5cb;
+  --ink-muted: #5d7793;
+  --accent-primary: #34d6ff;
+  --accent-measure: #43f7b5;
+  --accent-warn: #ffb84d;
+  --accent-fault: #ff5c7a;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--ink-primary);
+  font-family: 'Microsoft YaHei UI', Aptos, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* 极轻 1px 网格底纹 — 不再叠多层径向光斑 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(231, 243, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(231, 243, 255, 0.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+  z-index: 0;
+}
+
+button, input, select, textarea { font: inherit; }
+
+::selection {
+  color: #05111f;
+  background: var(--accent-measure);
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+/* 公式 / 数值 — 等宽 */
+.formula {
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+/* 仪表盘式滑块：单色 thumb，无外发光 */
+.simulation-slider {
+  height: 16px;
+  cursor: ew-resize;
+  appearance: none;
+  background: transparent;
+}
+
+.simulation-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-subtle);
+}
+
+.simulation-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border: 2px solid var(--bg-base);
+  border-radius: 999px;
+  background: var(--accent-primary);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.simulation-slider:hover::-webkit-slider-thumb,
+.simulation-slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.18);
+  background: var(--accent-measure);
+}
+
+.simulation-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-subtle);
+}
+.simulation-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--bg-base);
+  border-radius: 999px;
+  background: var(--accent-primary);
+}

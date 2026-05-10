@@ -1,0 +1,12 @@
+[     195ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:19834
+[  117966ms] DataCloneError: Failed to execute 'measure' on 'Performance': Data cannot be cloned, out of memory.
+    at logComponentRender (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:2914:623)
+    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10758:131)
+    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10742:13)
+    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10765:13)
+    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10742:13)
+    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10933:13)
+    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10742:13)
+    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10765:13)
+    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10742:13)
+    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-7HOWZNB4.js?v=992ad91b:10933:13)

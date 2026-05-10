@@ -1,0 +1,271 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: FOC Lab
+        - heading "电机控制学习客户端" [level=1] [ref=e8]
+        - paragraph [ref=e9]: BLDC / PMSM / FOC / SVPWM 交互式仿真。
+      - navigation [ref=e10]:
+        - button "基础 01 · 结构、极对数、电角度与机械角度" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e14]
+            - generic [ref=e16]:
+              - generic [ref=e17]: 基础
+              - generic [ref=e18]: 01 · 结构、极对数、电角度与机械角度
+        - button "三相磁场 02 · 观察三相电流如何合成旋转磁场" [ref=e19] [cursor=pointer]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e27]:
+              - generic [ref=e28]: 三相磁场
+              - generic [ref=e29]: 02 · 观察三相电流如何合成旋转磁场
+        - button "Clarke 03 · abc 到 alpha-beta 的投影" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]:
+            - img [ref=e33]
+            - generic [ref=e37]:
+              - generic [ref=e38]: Clarke
+              - generic [ref=e39]: 03 · abc 到 alpha-beta 的投影
+        - button "Park 04 · alpha-beta 到 dq 同步旋转坐标" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Park
+              - generic [ref=e49]: 04 · alpha-beta 到 dq 同步旋转坐标
+        - button "PID 05 · P/I/D、限幅和抗积分饱和" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - generic [ref=e57]: PID
+              - generic [ref=e58]: 05 · P/I/D、限幅和抗积分饱和
+        - button "FOC 流程 06 · 采样、变换、电流环、SVPWM 闭环链路" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]:
+              - generic [ref=e66]: FOC 流程
+              - generic [ref=e67]: 06 · 采样、变换、电流环、SVPWM 闭环链路
+        - button "SVPWM 07 · 空间电压矢量、扇区、T1/T2/T0" [ref=e68] [cursor=pointer]:
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: SVPWM
+              - generic [ref=e76]: 07 · 空间电压矢量、扇区、T1/T2/T0
+        - button "逆变器 08 · 桥臂、PWM、死区和线电压" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e80]
+            - generic [ref=e83]:
+              - generic [ref=e84]: 逆变器
+              - generic [ref=e85]: 08 · 桥臂、PWM、死区和线电压
+        - button "三闭环 09 · 内环快、外环慢和参数整定" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - generic [ref=e92]:
+              - generic [ref=e93]: 三闭环
+              - generic [ref=e94]: 09 · 内环快、外环慢和参数整定
+        - button "无感 10 · 反电动势、SMO、PLL 与开闭环切换" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]:
+            - img [ref=e98]
+            - generic [ref=e101]:
+              - generic [ref=e102]: 无感
+              - generic [ref=e103]: 10 · 反电动势、SMO、PLL 与开闭环切换
+        - button "弱磁 11 · 电压极限、负 Id、恒功率区" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e109]:
+              - generic [ref=e110]: 弱磁
+              - generic [ref=e111]: 11 · 电压极限、负 Id、恒功率区
+        - button "调试 12 · 波形现象、原因定位与 STM32 排查路径" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e115]
+            - generic [ref=e117]:
+              - generic [ref=e118]: 调试
+              - generic [ref=e119]: 12 · 波形现象、原因定位与 STM32 排查路径
+    - generic [ref=e120]:
+      - banner [ref=e121]:
+        - generic [ref=e124]: RUN
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - button "教学" [ref=e127] [cursor=pointer]
+            - button "实验" [ref=e128] [cursor=pointer]
+          - button "暂停" [ref=e129] [cursor=pointer]:
+            - img [ref=e130]
+            - text: 暂停
+          - button "单步 5ms" [ref=e133] [cursor=pointer]:
+            - img [ref=e134]
+            - text: 单步 5ms
+          - button "归零" [ref=e136] [cursor=pointer]:
+            - img [ref=e137]
+            - text: 归零
+          - button "全屏" [ref=e140] [cursor=pointer]:
+            - img [ref=e141]
+            - text: 全屏
+      - main [ref=e146]:
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: "01"
+              - heading "电机基础" [level=1] [ref=e301]
+              - paragraph [ref=e152]: 结构、极对数、电角度与机械角度
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: Guided Lab
+                  - generic [ref=e157]: 电角度与机械角实验
+                - button "收起" [ref=e506] [cursor=pointer]
+              - generic [ref=e507]:
+                - generic [ref=e508]:
+                  - paragraph [ref=e509]: 极对数越多，同样一圈机械旋转对应的电角度循环次数越多。
+                  - generic [ref=e510]:
+                    - button "1 角度映射" [ref=e511] [cursor=pointer]:
+                      - generic [ref=e512]: "1"
+                      - generic [ref=e513]: 角度映射
+                    - button "2 改变极对数" [ref=e514] [cursor=pointer]:
+                      - generic [ref=e515]: "2"
+                      - generic [ref=e516]: 改变极对数
+                    - button "3 额定边界" [ref=e517] [cursor=pointer]:
+                      - generic [ref=e518]: "3"
+                      - generic [ref=e519]: 额定边界
+                - generic [ref=e520]:
+                  - generic [ref=e521]:
+                    - img [ref=e522]
+                    - paragraph [ref=e525]: 操作：设定 4 极对，把机械角从 0° 拖到 360°。
+                  - generic [ref=e526]:
+                    - img [ref=e527]
+                    - paragraph [ref=e530]: 观察：电角度会循环 4 圈，而机械角只走 1 圈。
+                  - generic [ref=e531]:
+                    - img [ref=e532]
+                    - paragraph [ref=e536]: 预期：FOC 使用电角度，不是机械角度。
+                  - button "加载本步参数" [ref=e537] [cursor=pointer]:
+                    - img [ref=e538]
+                    - text: 加载本步参数
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - generic [ref=e315]:
+                  - generic [ref=e317]:
+                    - paragraph [ref=e318]: stator / rotor / magnets
+                    - heading "3D 电机结构模型" [level=2] [ref=e319]
+                  - generic [ref=e321]:
+                    - generic: orbit enabled
+                    - generic [ref=e322]:
+                      - generic [ref=e326]: rotor 900 rpm / 4 极对
+                      - generic [ref=e328]: phase glow = current
+                - generic [ref=e329]:
+                  - generic [ref=e330]:
+                    - generic [ref=e332]:
+                      - paragraph [ref=e333]: angle relation
+                      - heading "机械角度 vs 电角度" [level=2] [ref=e334]
+                    - generic [ref=e335]:
+                      - generic [ref=e336]:
+                        - generic [ref=e337]:
+                          - paragraph [ref=e338]: θm 机械
+                          - application [ref=e342]
+                          - paragraph [ref=e369]: 45.0°
+                        - generic [ref=e370]:
+                          - paragraph [ref=e371]: θe 电角度
+                          - application [ref=e375]
+                          - paragraph [ref=e402]: 180.0°
+                      - paragraph [ref=e403]: θe = 4 × θm
+                      - paragraph [ref=e404]: 4 极对：转子机械转 1 圈，电角度转 4 圈，电频率 60.0 Hz。
+                  - generic [ref=e405]:
+                    - generic [ref=e407]:
+                      - paragraph [ref=e408]: motor parameters
+                      - heading "关键参数" [level=2] [ref=e409]
+                    - generic [ref=e411]:
+                      - generic [ref=e412]:
+                        - img [ref=e413]
+                        - generic [ref=e417]: 定子绕组产生旋转磁场，转子永磁体提供磁链。
+                      - generic [ref=e418]:
+                        - img [ref=e419]
+                        - generic [ref=e422]: 极对数越多，同样转速电频率越高，FOC 中断压力也越高。
+                      - generic [ref=e423]:
+                        - img [ref=e424]
+                        - generic [ref=e427]: 额定转矩 ≈ Kt × I = 0.76 Nm。
+              - generic [ref=e429]:
+                - button "Lesson Notes 教学讲义" [active] [ref=e430] [cursor=pointer]:
+                  - generic [ref=e431]:
+                    - paragraph [ref=e432]: Lesson Notes
+                    - heading "教学讲义" [level=2] [ref=e433]
+                  - img [ref=e434]
+                - generic [ref=e541]:
+                  - generic [ref=e542]:
+                    - button "初识" [ref=e543] [cursor=pointer]:
+                      - img [ref=e544]
+                      - text: 初识
+                    - button "深入" [ref=e546] [cursor=pointer]:
+                      - img [ref=e547]
+                      - text: 深入
+                    - button "上机" [ref=e549] [cursor=pointer]:
+                      - img [ref=e550]
+                      - text: 上机
+                    - button "题目" [ref=e553] [cursor=pointer]:
+                      - img [ref=e554]
+                      - text: 题目
+                  - generic [ref=e558]:
+                    - generic [ref=e559]:
+                      - paragraph [ref=e560]: 类比理解
+                      - paragraph [ref=e561]: 电机就像一群推秋千的人——定子绕组通电后产生磁极（"手"），转子带着永磁体（"秋千"）被周期性地往同一个方向推。FOC 要解决的核心问题就是"什么时候推、推多大力"，让秋千越荡越快、越荡越稳。
+                    - generic [ref=e562]:
+                      - paragraph [ref=e563]: 核心一句话
+                      - paragraph [ref=e564]: FOC 控制的所有数学，都建立在"机械角度 → 乘极对数 → 电角度 → 控制磁场方向"这条最基础的链条上。
+                    - generic [ref=e565]:
+                      - paragraph [ref=e566]: 为什么需要学
+                      - list [ref=e567]:
+                        - listitem [ref=e568]: · 极对数搞错，电角度就会差几倍，电机会抖动甚至反转——是 FOC 上电就转不动的最常见原因。
+                        - listitem [ref=e569]: · 机械角度（你眼睛看到转子转的角度）和电角度（控制器算法用的角度）是两个量，不能混用。
+                        - listitem [ref=e570]: · 后面所有模块（Clarke / Park / SVPWM / 弱磁）都以"我此刻知道电角度是多少"为前提。
+                    - generic [ref=e571]:
+                      - paragraph [ref=e572]: 现在做这一步
+                      - paragraph [ref=e573]: 右侧把"极对数"从 4 改到 8，看右边两个圆环：机械角度 θm 不变（45°），电角度 θe 跳到 360°——8 极对电机，机械转一圈，电角度要循环 8 圈。
+          - generic [ref=e195]:
+            - generic [ref=e197]:
+              - paragraph [ref=e198]: Scope Dock
+              - heading "底部波形观察区" [level=2] [ref=e199]
+            - application [ref=e439]:
+              - generic [ref=e461]:
+                - generic [ref=e462]:
+                  - generic [ref=e464]: 2.3463687150837993ms
+                  - generic [ref=e466]: 11.34078212290503ms
+                  - generic [ref=e468]: 20.33519553072626ms
+                  - generic [ref=e470]: 29.32960893854749ms
+                  - generic [ref=e472]: 35ms
+                - generic [ref=e473]:
+                  - generic [ref=e475]: "-8"
+                  - generic [ref=e477]: "-4"
+                  - generic [ref=e479]: "0"
+                  - generic [ref=e481]: "4"
+                  - generic [ref=e483]: "8"
+        - complementary [ref=e249]:
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - paragraph [ref=e252]: Control Rack
+              - heading "参数控制台" [level=2] [ref=e253]
+            - button "重置" [ref=e254] [cursor=pointer]:
+              - img [ref=e255]
+              - text: 重置
+          - generic [ref=e258]:
+            - button "参数" [ref=e259] [cursor=pointer]
+            - button "案例" [ref=e260] [cursor=pointer]
+          - generic [ref=e261]:
+            - generic [ref=e263]:
+              - paragraph [ref=e264]: motor basics
+              - heading "电机结构参数" [level=2] [ref=e484]
+            - generic [ref=e267]:
+              - generic [ref=e485]:
+                - generic [ref=e486]:
+                  - generic [ref=e487]: 极对数
+                  - generic [ref=e488]: "4.0"
+                - slider [ref=e489]: "4"
+              - generic [ref=e490]:
+                - generic [ref=e491]:
+                  - generic [ref=e492]: 机械角度
+                  - generic [ref=e493]: 45.0°
+                - slider [ref=e494]: "45"
+              - generic [ref=e495]:
+                - generic [ref=e496]:
+                  - generic [ref=e497]: 机械转速
+                  - generic [ref=e498]: 900.0 rpm
+                - slider [ref=e499]: "900"
+              - generic [ref=e500]:
+                - generic [ref=e501]:
+                  - generic [ref=e502]: 额定电流
+                  - generic [ref=e503]: 8.00 A
+                - slider [ref=e504]: "8"
+  - generic [ref=e299]: "-8"
