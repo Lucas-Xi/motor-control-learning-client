@@ -10,6 +10,7 @@ import { inverterAverageModel } from '../../simulation/math/inverterModel';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber, formatPercent } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { DeadTimeCompensationCard } from './DeadTimeCompensationCard';
 
 function createVoltageSamples(uDc: number, dutyA: number, dutyB: number, dutyC: number, deadLoss: number) {
   return Array.from({ length: 160 }, (_, i) => {
@@ -87,6 +88,7 @@ function Probe() {
           <li>· 中心对齐 PWM 的 ADC 采样点放在中点，避开开关边沿。</li>
         </ul>
       </Card>
+      <DeadTimeCompensationCard />
     </>
   );
 }

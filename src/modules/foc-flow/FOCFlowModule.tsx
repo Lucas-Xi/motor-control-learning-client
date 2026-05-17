@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Cpu, RotateCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -14,6 +14,74 @@ import { createFocFlowSnapshot, type FOCStep } from '../../simulation/engine/foc
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { motionEase } from '../../utils/motion';
+
+// 3D αβ-dq 矢量空间：lazy 加载，避免把 three 拖进首屏关键路径
+const RotorFluxScene = lazy(() => import('../../components/three/RotorFluxScene').then((m) => ({ default: m.RotorFluxScene })));
+
+function VectorSpace3DCard({
+  alpha,
+  beta,
+  d,
+  q,
+  theta,
+  enabled,
+  onToggle,
+}: {
+  alpha: number;
+  beta: number;
+  d: number;
+  q: number;
+  theta: number;
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Card
+      title="3D 矢量空间"
+      eyebrow="αβ stationary · dq rotating"
+      density="compact"
+      action={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={enabled}
+            aria-label={enabled ? '关闭 3D 矢量空间视图' : '开启 3D 矢量空间视图'}
+            onClick={onToggle}
+            className={`rounded-full border px-3 py-1 text-caption transition-colors ${
+              enabled
+                ? 'border-accent-primary/60 bg-accent-primary/10 text-accent-primary'
+                : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong hover:text-ink-primary'
+            }`}
+          >
+            {enabled ? '已开启 3D' : '开启 3D'}
+          </button>
+          <FidelityBadge level="exact" hint="同一组 (Iα, Iβ, Id, Iq, θ_e) 三种几何呈现：αβ 平面合成磁通 + 旋转 dq 坐标轴" />
+        </div>
+      }
+    >
+      <p className="mb-2 text-caption leading-relaxed text-ink-secondary">
+        把"三相 → 合成磁通矢量"立起来看：mint 箭头是 αβ 静止平面上的合成电流矢量，下方旋转的 mint / 粉色十字是 dq 坐标轴。
+        矢量长度反映 |I|，方向 = atan2(Iβ, Iα)。把 dq 轴对准合成矢量时 Iq 最大、Id≈0，正是 id=0 控制要做的事。
+      </p>
+      {enabled ? (
+        <Suspense
+          fallback={
+            <div className="flex h-[320px] items-center justify-center rounded-2xl border border-line-subtle bg-bg-base text-caption text-ink-muted">
+              正在加载 3D 矢量空间…
+            </div>
+          }
+        >
+          <RotorFluxScene theta={theta} id={d} iq={q} iAlpha={alpha} iBeta={beta} />
+        </Suspense>
+      ) : (
+        <div className="flex h-[200px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-subtle bg-bg-base text-center text-caption text-ink-muted">
+          <p>3D 立体视图默认关闭（按需加载 three.js）</p>
+          <p>点击右上"开启 3D"加载</p>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function StepNode({ step, active, done, pulsing, onClick }: { step: FOCStep; active: boolean; done: boolean; pulsing: boolean; onClick: () => void }) {
   return (
@@ -139,6 +207,9 @@ function Probe({ manualStepIndex, view }: { manualStepIndex: number | null; view
   const locked = manualStepIndex !== null;
   const displayIndex = manualStepIndex ?? snapshot.activeIndex;
   const activeStep = snapshot.steps[displayIndex];
+  // 3D 矢量空间默认关闭：避免首屏 mount three.js 触发 Chromium GL_CLOSE_PATH_NV 警告，
+  // 同时让 first-meaningful-paint 更快；用户点开关后才 lazy 加载 three chunk。
+  const [show3D, setShow3D] = useState(false);
   if (view === 'pipeline') {
     return (
       <>
@@ -182,6 +253,15 @@ function Probe({ manualStepIndex, view }: { manualStepIndex: number | null; view
             <Inverter3D dutyA={snapshot.svpwm.dutyA} dutyB={snapshot.svpwm.dutyB} dutyC={snapshot.svpwm.dutyC} />
           </Card>
         </div>
+        <VectorSpace3DCard
+          alpha={snapshot.alphaBeta.alpha}
+          beta={snapshot.alphaBeta.beta}
+          d={snapshot.dq.d}
+          q={snapshot.dq.q}
+          theta={(park.thetaDeg * Math.PI) / 180}
+          enabled={show3D}
+          onToggle={() => setShow3D((v) => !v)}
+        />
       </>
     );
   }
@@ -210,6 +290,15 @@ function Probe({ manualStepIndex, view }: { manualStepIndex: number | null; view
           max={10}
         />
       </Card>
+      <VectorSpace3DCard
+        alpha={snapshot.alphaBeta.alpha}
+        beta={snapshot.alphaBeta.beta}
+        d={snapshot.dq.d}
+        q={snapshot.dq.q}
+        theta={(park.thetaDeg * Math.PI) / 180}
+        enabled={show3D}
+        onToggle={() => setShow3D((v) => !v)}
+      />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { useAssemblyProgressStore } from '../assemblyProgressStore';
+import { useAssemblyProgressStore, DEFAULT_NODE_POSITIONS } from '../assemblyProgressStore';
 
 const sampleSlotIds = {
   compressorBundleId: 'highly-15hp-r32-sanken',
@@ -147,6 +147,43 @@ describe('assemblyProgressStore', () => {
       expect(s.records).toEqual({});
       expect(s.snapshots).toEqual([]);
       expect(s.history).toEqual([]);
+    });
+  });
+
+  describe('node positions (Phase B 拖拽画布)', () => {
+    it('initializes with DEFAULT_NODE_POSITIONS', () => {
+      const s = useAssemblyProgressStore.getState();
+      expect(s.nodePositions).toEqual(DEFAULT_NODE_POSITIONS);
+    });
+
+    it('setNodePosition updates only the target node', () => {
+      const { setNodePosition } = useAssemblyProgressStore.getState();
+      setNodePosition('compressor', { x: 42, y: 55 });
+      const s = useAssemblyProgressStore.getState();
+      expect(s.nodePositions.compressor).toEqual({ x: 42, y: 55 });
+      expect(s.nodePositions.inverter).toEqual(DEFAULT_NODE_POSITIONS.inverter);
+    });
+
+    it('setNodePosition clamps to 0..100', () => {
+      const { setNodePosition } = useAssemblyProgressStore.getState();
+      setNodePosition('load', { x: -10, y: 150 });
+      expect(useAssemblyProgressStore.getState().nodePositions.load).toEqual({ x: 0, y: 100 });
+      setNodePosition('load', { x: 200, y: -20 });
+      expect(useAssemblyProgressStore.getState().nodePositions.load).toEqual({ x: 100, y: 0 });
+    });
+
+    it('resetNodePositions restores defaults', () => {
+      const { setNodePosition, resetNodePositions } = useAssemblyProgressStore.getState();
+      setNodePosition('strategy', { x: 11, y: 22 });
+      resetNodePositions();
+      expect(useAssemblyProgressStore.getState().nodePositions).toEqual(DEFAULT_NODE_POSITIONS);
+    });
+
+    it('reset also restores default node positions', () => {
+      const { setNodePosition, reset } = useAssemblyProgressStore.getState();
+      setNodePosition('pfc', { x: 50, y: 50 });
+      reset();
+      expect(useAssemblyProgressStore.getState().nodePositions).toEqual(DEFAULT_NODE_POSITIONS);
     });
   });
 });

@@ -7,6 +7,7 @@ import { calculateSvpwm, compareSpwmUtilization } from '../../simulation/math/sv
 import { useSimulationStore } from '../../store/simulationStore';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { formatNumber, formatPercent } from '../../utils/format';
+import { SvpwmMinMaxCard } from './SvpwmMinMaxCard';
 
 function TimingBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
   const pct = total <= 0 ? 0 : (value / total) * 100;
@@ -80,6 +81,7 @@ function Probe() {
           </p>
         </Card>
       )}
+      <SvpwmMinMaxCard />
     </>
   );
 }

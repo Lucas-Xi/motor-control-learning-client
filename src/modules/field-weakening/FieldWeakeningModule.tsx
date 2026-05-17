@@ -10,6 +10,8 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { MtpaTrajectoryCard } from './MtpaTrajectoryCard';
+import { LimitProjectionCard } from './LimitProjectionCard';
 
 function LimitMap({
   id, iq, currentLimit, voltageRatio, saturated, onPointChange,
@@ -212,6 +214,8 @@ function Probe() {
           </div>
         </Card>
       )}
+      <MtpaTrajectoryCard />
+      <LimitProjectionCard />
     </>
   );
 }

@@ -135,8 +135,11 @@ export function simulateCycle(input: CycleInput): CycleResult {
   const C = input.clearanceRatio;
   const volumetricEff = Math.max(0.05, 1 - C * (Math.pow(pressureRatio, 1 / n) - 1));
 
-  // 入口气相密度
-  const rho1 = rhoVapSat(input.Te, r) * (T1_K / (input.Te + 273.15)); // 过热修正（理想气体近似）
+  // 入口气相密度（过热气，等压理想气体近似 PV = mRT → ρ ∝ 1/T）。
+  // 过热度 ↑ → T1 > Te → 密度下降 → 质量流量下降。
+  // 历史上这里写成 ρ_sat×(T1/Te) 把比值颠倒，过热度越大反而流量越大，与热力学相反。
+  // 参考：ASHRAE Handbook · Fundamentals 第 30 章 Thermophysical Properties of Refrigerants。
+  const rho1 = rhoVapSat(input.Te, r) * ((input.Te + 273.15) / T1_K);
 
   // 排量 (m³/s) = displacement × rpm / 60
   const Vdisp = (input.displacementCc * 1e-6) * (input.rpm / 60);

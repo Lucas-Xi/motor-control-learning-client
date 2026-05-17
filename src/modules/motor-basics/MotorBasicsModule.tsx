@@ -1,6 +1,6 @@
 import { RadialBar, RadialBarChart, PolarAngleAxis } from 'recharts';
 import { Magnet, RotateCw, Settings } from 'lucide-react';
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { MotorAnatomy2D } from '../../components/charts/MotorAnatomy2D';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
@@ -10,6 +10,9 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { electricalAngle } from '../../simulation/math/transforms';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+
+// 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
+const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
 
 function AngleGauge({ label, valueDeg, color }: { label: string; valueDeg: number; color: string }) {
   const value = ((valueDeg % 360) + 360) % 360;
@@ -29,23 +32,79 @@ function AngleGauge({ label, valueDeg, color }: { label: string; valueDeg: numbe
   );
 }
 
+function ViewChip({
+  active,
+  onClick,
+  children,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-caption transition-colors ${
+        active
+          ? 'border-accent-primary/60 bg-accent-primary/10 text-accent-primary'
+          : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong hover:text-ink-primary'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Primary() {
   const params = useSimulationStore((s) => s.motorBasics);
+  const time = useSimulationStore((s) => s.time);
+  const [view, setView] = useState<'2d' | '3d'>('2d');
   return (
     <Card
       title="径向剖面电机解剖图"
       eyebrow="stator / rotor / magnets"
       density="compact"
-      action={<FidelityBadge level="exact" hint="标准 12 槽 PMSM 结构示意；磁极数随极对数同步变化" />}
+      action={
+        <div className="flex items-center gap-2">
+          <div role="group" aria-label="解剖图视图切换" className="flex items-center gap-1 rounded-full border border-line-subtle bg-bg-base p-0.5">
+            <ViewChip active={view === '2d'} onClick={() => setView('2d')} label="切换到 2D 径向剖面视图">2D 剖面</ViewChip>
+            <ViewChip active={view === '3d'} onClick={() => setView('3d')} label="切换到 3D 立体视图">3D 立体</ViewChip>
+          </div>
+          <FidelityBadge level="exact" hint="标准 12 槽 PMSM 结构示意；磁极数随极对数同步变化" />
+        </div>
+      }
     >
-      <MotorAnatomy2D
-        polePairs={params.polePairs}
-        mechanicalDeg={params.mechanicalDeg}
-        rpm={params.rpm}
-      />
+      {view === '2d' ? (
+        <MotorAnatomy2D
+          polePairs={params.polePairs}
+          mechanicalDeg={params.mechanicalDeg}
+          rpm={params.rpm}
+        />
+      ) : (
+        <Suspense
+          fallback={
+            <div className="flex h-[360px] items-center justify-center rounded-2xl border border-line-subtle bg-bg-base text-caption text-ink-muted">
+              正在加载 3D 视图…
+            </div>
+          }
+        >
+          {/* 把机械角 + 转速 → 电角度传给 3D 视图；θ_e = (θm_live × p) */}
+          <Motor3D
+            thetaE={((((params.mechanicalDeg + (params.rpm / 60) * 360 * time) * Math.PI) / 180) * params.polePairs)}
+            polePairs={params.polePairs}
+            amplitude={params.ratedCurrent}
+          />
+        </Suspense>
+      )}
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        这是 PMSM 顶视剖面：外圈定子铁芯 + 12 个槽里嵌着 A / B / C 三相绕组（每相各 4 个截面，⊙ ⊗ 表示电流进出方向），中间转子表面贴 {params.polePairs * 2} 块交替的 N / S 永磁体。
-        滑动"机械角度"，转子整体旋转；改"极对数"，磁极数对应翻倍但定子槽不变 —— 这就是为什么"极对数错就电角度错"。
+        {view === '2d'
+          ? `这是 PMSM 顶视剖面：外圈定子铁芯 + 12 个槽里嵌着 A / B / C 三相绕组（每相各 4 个截面，⊙ ⊗ 表示电流进出方向），中间转子表面贴 ${params.polePairs * 2} 块交替的 N / S 永磁体。滑动"机械角度"，转子整体旋转；改"极对数"，磁极数对应翻倍但定子槽不变 —— 这就是为什么"极对数错就电角度错"。`
+          : `立体视图：从任意角度观察定子绕组（A 青 / B 绿 / C 黄）与转子永磁极（N 红 / S 蓝）的相对位置，中央 mint 箭头是三相合成的旋转磁通矢量。鼠标拖动可旋转视角，缩放被锁定避免误操作。`}
       </p>
     </Card>
   );

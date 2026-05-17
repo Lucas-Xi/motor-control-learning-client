@@ -8,6 +8,7 @@ import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { calculateStepMetrics, simulatePidStepResponse } from '../../simulation/math/pid';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
+import { AntiWindupCompareCard } from './AntiWindupCompareCard';
 
 type Tone = 'primary' | 'measure' | 'warn' | 'fault';
 const toneColor: Record<Tone, string> = {
@@ -81,6 +82,7 @@ function Probe() {
           {risk && <div className="flex gap-2 rounded-lg border border-accent-fault/30 bg-accent-fault/10 p-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-fault" /><span className="text-accent-fault">超调或稳态误差偏大：先降低目标值与限流，再逐步提高增益。</span></div>}
         </div>
       </Card>
+      <AntiWindupCompareCard />
     </>
   );
 }

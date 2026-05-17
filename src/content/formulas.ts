@@ -4,4 +4,12 @@ export const formulaIndex = [
   { key: 'torque', name: 'PMSM 转矩', expression: 'Te = 1.5 p [ψf Iq + (Ld - Lq) Id Iq]' },
   { key: 'svpwm', name: 'SVPWM 调制比', expression: 'm = √3 |Uref| / Udc' },
   { key: 'voltage-limit', name: '电压极限', expression: '√(Vd² + Vq²) ≤ Udc / √3' },
+  { key: 'electrical-freq', name: '电频率', expression: 'fe = (rpm / 60) × polePairs' },
+  { key: 'bemf', name: '反电动势', expression: 'BEMF = Ke × ω_e × polePairs = ψf × ω_e' },
+  { key: 'pi-bandwidth', name: '电流环带宽整定', expression: 'Kp = ω_bw × L,  Ki = ω_bw × R  (零极点对消)' },
+  { key: 'antiwindup-bc', name: '抗积分饱和 (Back-Calc)', expression: 'I_term += Kt × (u_sat - u_unsat) × Ts,  Kt ≈ Ki / Kp' },
+  { key: 'deadtime-loss', name: '死区电压损失', expression: 'ΔV_dt = (t_dead / Ts) × Udc × sign(I_phase)' },
+  { key: 'ocp-i2t', name: 'I²t 过流积分', expression: 'I²t = ∫ I² dt  (累积到阈值即报 FAULT_OC_I2T)' },
+  { key: 'vf-ratio', name: 'V/f 启动比例', expression: 'V_cmd = V_min + (V_rated - V_min) × (fe / fe_rated)' },
+  { key: 'ramp-rate', name: '反液击斜坡', expression: 'dω/dt ≤ rampRpmS;  压缩机典型 300~800 rpm/s' },
 ];

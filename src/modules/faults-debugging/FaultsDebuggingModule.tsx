@@ -9,6 +9,7 @@ import { faultCases } from '../../content/faultCases';
 import { useSimulationStore } from '../../store/simulationStore';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
+import { BiquadFilterCard } from './BiquadFilterCard';
 
 function ListBlock({ title, items, icon }: { title: string; items: string[]; icon: 'warn' | 'ok' }) {
   return (
@@ -93,6 +94,7 @@ function Probe() {
       <ListBlock title="可能原因" items={selected.causes} icon="warn" />
       <ListBlock title="排查步骤" items={selected.steps} icon="ok" />
       <ListBlock title="解决建议" items={selected.fix} icon="ok" />
+      <BiquadFilterCard />
     </>
   );
 }

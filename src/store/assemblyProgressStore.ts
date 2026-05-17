@@ -39,6 +39,27 @@ const MAX_SNAPSHOTS = 5;
 const MAX_HISTORY = 20;
 
 /**
+ * Phase B 拖拽画布的 6 节点 ID（slot 维度，跟 SlotKey 对应）。
+ * 单独导出，避免和别处 SlotKey 字面量耦合（那是 SystemSchematic 里的 union）。
+ */
+export type WorkshopNodeId = 'load' | 'separator' | 'compressor' | 'pfc' | 'inverter' | 'strategy';
+
+export interface NodePosition { x: number; y: number; }
+
+/**
+ * 画布默认坐标（百分比；x,y ∈ [0,100]）—— 上排机械链路、下排电气链路。
+ * 与 SystemSchematic 的 2 行布局保持一致，第一次打开 Phase B 画布即视觉对齐。
+ */
+export const DEFAULT_NODE_POSITIONS: Record<WorkshopNodeId, NodePosition> = {
+  load:       { x: 8,  y: 18 },
+  separator:  { x: 38, y: 18 },
+  compressor: { x: 68, y: 18 },
+  pfc:        { x: 8,  y: 70 },
+  inverter:   { x: 38, y: 70 },
+  strategy:   { x: 68, y: 70 },
+};
+
+/**
  * 历史会话归档：每次"运行整机仿真"自动 push 一条，最多保留 20 条。
  * 与 snapshots 区别：snapshot 是用户主动命名的"基线"；history 是被动记录的"日志"。
  */
@@ -60,6 +81,8 @@ interface AssemblyProgressState {
   records: Record<string, ChallengeRecord>;
   snapshots: AssemblySnapshot[];
   history: AssemblyHistoryEntry[];
+  /** Phase B：画布上 6 节点的当前坐标（百分比 0..100） */
+  nodePositions: Record<WorkshopNodeId, NodePosition>;
   /** 通关后调；只在 attempts 更小时刷新记录 */
   recordPass: (challengeId: string, attempts: number) => void;
   /** 清空所有挑战记录 */
@@ -74,6 +97,10 @@ interface AssemblyProgressState {
   pushHistory: (entry: Omit<AssemblyHistoryEntry, 'id' | 'timestamp'>) => void;
   /** 清空历史 */
   clearHistory: () => void;
+  /** Phase B：拖拽更新单个节点坐标（百分比，自动 clamp 0..100） */
+  setNodePosition: (id: WorkshopNodeId, pos: NodePosition) => void;
+  /** Phase B：恢复 6 节点到 DEFAULT_NODE_POSITIONS */
+  resetNodePositions: () => void;
 }
 
 export const useAssemblyProgressStore = create<AssemblyProgressState>()(
@@ -82,6 +109,7 @@ export const useAssemblyProgressStore = create<AssemblyProgressState>()(
       records: {},
       snapshots: [],
       history: [],
+      nodePositions: { ...DEFAULT_NODE_POSITIONS },
       recordPass: (challengeId, attempts) => set((state) => {
         const prev = state.records[challengeId];
         if (prev && prev.bestAttempts <= attempts) return state;
@@ -95,7 +123,7 @@ export const useAssemblyProgressStore = create<AssemblyProgressState>()(
           },
         };
       }),
-      reset: () => set({ records: {}, snapshots: [], history: [] }),
+      reset: () => set({ records: {}, snapshots: [], history: [], nodePositions: { ...DEFAULT_NODE_POSITIONS } }),
       saveSnapshot: (name, slotIds) => set((state) => {
         // 同名覆盖
         const existing = state.snapshots.findIndex((s) => s.name === name);
@@ -136,18 +164,36 @@ export const useAssemblyProgressStore = create<AssemblyProgressState>()(
         return { history };
       }),
       clearHistory: () => set({ history: [] }),
+      setNodePosition: (id, pos) => set((state) => ({
+        nodePositions: {
+          ...state.nodePositions,
+          [id]: {
+            x: Math.max(0, Math.min(100, pos.x)),
+            y: Math.max(0, Math.min(100, pos.y)),
+          },
+        },
+      })),
+      resetNodePositions: () => set({ nodePositions: { ...DEFAULT_NODE_POSITIONS } }),
     }),
     {
       name: 'compressor-bench-assembly-progress',
-      version: 3,
+      version: 4,
       // 只持久化数据字段
-      partialize: (state) => ({ records: state.records, snapshots: state.snapshots, history: state.history }) as unknown as AssemblyProgressState,
+      partialize: (state) => ({
+        records: state.records,
+        snapshots: state.snapshots,
+        history: state.history,
+        nodePositions: state.nodePositions,
+      }) as unknown as AssemblyProgressState,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2 && persisted && typeof persisted === 'object') {
           return { ...(persisted as Record<string, unknown>), snapshots: [], history: [] } as unknown as AssemblyProgressState;
         }
         if (version < 3 && persisted && typeof persisted === 'object') {
           return { ...(persisted as Record<string, unknown>), history: [] } as unknown as AssemblyProgressState;
+        }
+        if (version < 4 && persisted && typeof persisted === 'object') {
+          return { ...(persisted as Record<string, unknown>), nodePositions: { ...DEFAULT_NODE_POSITIONS } } as unknown as AssemblyProgressState;
         }
         return persisted as AssemblyProgressState;
       },

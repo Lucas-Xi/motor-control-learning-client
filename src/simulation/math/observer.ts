@@ -17,12 +17,18 @@ export interface BemfEstimate { eAlpha: number; eBeta: number; angle: number; sp
 /**
  * 简化反电动势观测：e = v - R*i - L*di/dt。
  * 低速时反电动势幅值很小，噪声会淹没角度，这也是无感 FOC 启动困难的根源。
+ *
+ * 角度反推：PMSM 反电动势 e_α = -ψω·sinθ、e_β = +ψω·cosθ，
+ * 所以 atan2(e_β, e_α) = atan2(ψω·cosθ, -ψω·sinθ) = θ + π/2，
+ * 因此 θ = atan2(e_β, e_α) − π/2。
+ * 历史上这里写成 `+π/2` 会把估算角偏 +π（即转子相位反向），导致 θ=0 实测得到 π。
+ * 参考：Bose《Modern Power Electronics and AC Drives》第 8 章 PMSM Drive。
  */
 export function estimateBackEmf(input: BemfObserverInput): BemfEstimate {
   const dt = Math.max(input.dt, 1e-6);
   const eAlpha = input.vAlpha - input.rs * input.iAlpha - input.ls * (input.iAlpha - input.prevIAlpha) / dt;
   const eBeta = input.vBeta - input.rs * input.iBeta - input.ls * (input.iBeta - input.prevIBeta) / dt;
-  return { eAlpha, eBeta, angle: wrapAngleRad(Math.atan2(eBeta, eAlpha) + Math.PI / 2), speedElectrical: Math.hypot(eAlpha, eBeta) };
+  return { eAlpha, eBeta, angle: wrapAngleRad(Math.atan2(eBeta, eAlpha) - Math.PI / 2), speedElectrical: Math.hypot(eAlpha, eBeta) };
 }
 
 export interface PLLState { angle: number; omega: number; integral: number; }

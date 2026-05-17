@@ -45,8 +45,14 @@ export function calculateSvpwm(input: SVPWMInput): SVPWMResult {
   const modulationIndexRaw = (Math.sqrt(3) * vectorMagnitude) / uDc;
   const modulationIndex = clamp(modulationIndexRaw, 0, 0.999);
   const angleInSector = angle - (sector - 1) * (Math.PI / 3);
-  const t1 = ts * modulationIndex * Math.sin(Math.PI / 3 - angleInSector) / Math.sin(Math.PI / 3);
-  const t2 = ts * modulationIndex * Math.sin(angleInSector) / Math.sin(Math.PI / 3);
+  // 用 m = √3·|U|/Udc（亦即 |U|/(Udc/√3)）作归一时，标准 SVPWM 时间公式：
+  //   T1 = ts·m·sin(π/3 − θs)
+  //   T2 = ts·m·sin(θs)
+  // 不需要再除 sin(π/3) ——否则 m=1、θs=π/6 处会得到 T1+T2 = 1.155·ts，
+  // 违反线性区上限 T1+T2 ≤ ts 的基本不变量。
+  // 参考：Holmes & Lipo《Pulse Width Modulation for Power Converters》§6.4。
+  const t1 = ts * modulationIndex * Math.sin(Math.PI / 3 - angleInSector);
+  const t2 = ts * modulationIndex * Math.sin(angleInSector);
   const t0 = Math.max(0, ts - t1 - t2);
   const halfZero = t0 / 2;
 
