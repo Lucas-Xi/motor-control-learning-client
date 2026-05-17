@@ -18,6 +18,7 @@ const moduleMap: Record<ModuleId, React.LazyExoticComponent<React.ComponentType>
   'startup-statemachine': lazy(() => import('./startup-statemachine/StartupStateMachineModule').then((m) => ({ default: m.StartupStateMachineModule }))),
   'apf-frontend': lazy(() => import('./apf-frontend/APFFrontendModule').then((m) => ({ default: m.APFFrontendModule }))),
   'refrigeration-bench': lazy(() => import('./refrigeration-bench/RefrigerationBenchModule').then((m) => ({ default: m.RefrigerationBenchModule }))),
+  'assembly-workshop': lazy(() => import('./assembly-workshop/AssemblyWorkshopModule').then((m) => ({ default: m.AssemblyWorkshopModule }))),
 };
 
 function Skeleton() {

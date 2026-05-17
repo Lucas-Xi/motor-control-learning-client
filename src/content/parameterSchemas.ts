@@ -55,7 +55,7 @@ export interface ParameterSchema {
 // 这样可以保留每个模块的特殊交互（PID 预设双 button、Clarke 平衡/手动、Inverter 调制方式、Faults 8 故障，
 // SVPWM 通过极坐标联动 Uα/Uβ）。
 
-export const parameterSchemas: Record<ModuleId, ParameterSchema> = {
+export const parameterSchemas: Partial<Record<ModuleId, ParameterSchema>> = {
   'motor-basics': {
     moduleId: 'motor-basics',
     sliceKey: 'motorBasics',

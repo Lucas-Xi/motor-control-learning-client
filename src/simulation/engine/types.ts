@@ -14,7 +14,8 @@ export type ModuleId =
   | 'hfi-sensorless'
   | 'startup-statemachine'
   | 'apf-frontend'
-  | 'refrigeration-bench';
+  | 'refrigeration-bench'
+  | 'assembly-workshop';
 
 export interface ModuleMeta {
   id: ModuleId;

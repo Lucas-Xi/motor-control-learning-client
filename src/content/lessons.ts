@@ -31,7 +31,7 @@ export interface LessonContent {
 
 const baseCode = `// STM32 / C 迁移思路：算法层只保留输入、状态、输出\n// 1. ADC 中断中读取 Ia/Ib/Ic\n// 2. 调用 clarke/park/pi/svpwm 纯函数\n// 3. 输出 TIM1/TIM8 的 CCR 占空比\n// 4. 记录关键变量到串口或 RTT 方便示波器对照`;
 
-export const lessons: Record<ModuleId, LessonContent> = {
+export const lessons: Partial<Record<ModuleId, LessonContent>> = {
   'motor-basics': {
     id: 'motor-basics',
     introBeginner: {
@@ -1969,6 +1969,21 @@ void main_loop(void) {
   },
 };
 
+const fallbackLesson: LessonContent = {
+  id: 'motor-basics',
+  learningGoals: [],
+  concepts: [],
+  formulas: [],
+  engineeringMeaning: [],
+  stm32Guide: [],
+  commonMistakes: [],
+  debugMethods: [],
+  experiments: [],
+  summary: '本模块自带专属 UI / 教学引导，未提供通用讲义。',
+  nextSteps: [],
+  codeExample: '',
+};
+
 export function getLesson(id: ModuleId): LessonContent {
-  return lessons[id];
+  return lessons[id] ?? fallbackLesson;
 }
