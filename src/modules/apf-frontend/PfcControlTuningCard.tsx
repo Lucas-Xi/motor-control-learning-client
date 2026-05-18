@@ -1,0 +1,218 @@
+import { useMemo, useState } from 'react';
+import { Line, LineChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
+import { Card } from '../../components/ui/Card';
+import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { simulatePfcCycle } from '../../simulation/math/boostPfc';
+import { useSimulationStore } from '../../store/simulationStore';
+import { formatNumber } from '../../utils/format';
+
+/**
+ * 双环整定卡：
+ *   - 滑块直接改 Kpv/Kiv/Kpi/Kii（写回 store.apf，主图同步刷新）
+ *   - 触发一次"负载从 50% 阶跃到 100%"，画 Udc(t)，标注跌落与恢复时间
+ *
+ * 提示：
+ *   - 电流环带宽 ≈ Kpi · ω_unit ≈ 1/(2π) · Kpi/L（粗估，需结合 PWM 频率上限）
+ *   - 电压环带宽 << 100 Hz（二次纹波频率），否则环路把纹波当扰动放大
+ */
+
+interface SliderRowProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  unit?: string;
+  hint?: string;
+  onChange: (v: number) => void;
+}
+
+function SliderRow({ label, value, min, max, step, unit = '', hint, onChange }: SliderRowProps) {
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-3">
+        <span className="text-body text-ink-secondary">{label}</span>
+        <span className="formula text-ink-primary">
+          {formatNumber(value, step < 1 ? 3 : 1)}
+          {unit}
+        </span>
+      </div>
+      <input
+        type="range"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="simulation-slider w-full"
+        aria-label={label}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={`${formatNumber(value, step < 1 ? 3 : 1)}${unit}`}
+      />
+      {hint && <p className="mt-1 text-caption leading-relaxed text-ink-muted">{hint}</p>}
+    </div>
+  );
+}
+
+export function PfcControlTuningCard() {
+  const apf = useSimulationStore((s) => s.apf);
+  const updateApf = useSimulationStore((s) => s.updateApf);
+  const [showStep, setShowStep] = useState(true);
+
+  // 跑一次"带阶跃"的仿真专门给本卡看
+  const stepResp = useMemo(
+    () =>
+      simulatePfcCycle({
+        Vac_rms: apf.vAcRms,
+        Vdc_ref: apf.udcRef,
+        L_mH: apf.boostInductanceMh,
+        C_uF: apf.boostCapacitanceUf,
+        load_W: Math.max(50, apf.udcRef * apf.loadCurrent),
+        Kpv: apf.voltageKp,
+        Kiv: apf.voltageKi,
+        Kpi: apf.currentKp,
+        Kii: apf.currentKi,
+        load_step: true,
+        total_sec: 0.12,
+      }),
+    [apf],
+  );
+
+  const data = useMemo(
+    () => stepResp.t_ms.map((t, i) => ({ t, Udc: stepResp.Udc[i] })),
+    [stepResp],
+  );
+
+  // 估算跌落：阶跃后最低值距 Udc_ref 的偏差
+  const drop = useMemo(() => {
+    const half = Math.floor(stepResp.t_ms.length / 2);
+    let minU = stepResp.Udc[half] ?? apf.udcRef;
+    for (let i = half; i < stepResp.Udc.length; i += 1) if (stepResp.Udc[i] < minU) minU = stepResp.Udc[i];
+    return apf.udcRef - minU;
+  }, [stepResp, apf.udcRef]);
+
+  // 工程经验值的状态指示
+  const settlingTone = stepResp.settling_ms === 0
+    ? 'warn'
+    : stepResp.settling_ms < 40
+    ? 'measure'
+    : stepResp.settling_ms < 80
+    ? 'warn'
+    : 'fault';
+  const dropTone = drop < apf.udcRef * 0.05 ? 'measure' : drop < apf.udcRef * 0.1 ? 'warn' : 'fault';
+  const toneClass = (t: 'measure' | 'warn' | 'fault') =>
+    t === 'measure'
+      ? 'border-accent-measure/40 bg-accent-measure/10 text-accent-measure'
+      : t === 'warn'
+      ? 'border-accent-warn/40 bg-accent-warn/10 text-accent-warn'
+      : 'border-accent-fault/40 bg-accent-fault/10 text-accent-fault';
+
+  return (
+    <Card
+      title="双环整定与阶跃响应"
+      eyebrow="loop tuning"
+      density="compact"
+      action={
+        <div className="flex items-center gap-2 text-caption">
+          <span className={`rounded-md border px-2 py-0.5 font-medium ${toneClass(dropTone)}`}>
+            <span className="sr-only">母线跌落</span>ΔUdc {formatNumber(drop, 1)} V
+          </span>
+          <span className={`rounded-md border px-2 py-0.5 font-medium ${toneClass(settlingTone)}`}>
+            恢复 {stepResp.settling_ms > 0 ? `${formatNumber(stepResp.settling_ms, 0)} ms` : '未稳定'}
+          </span>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="space-y-3">
+          <p className="text-caption uppercase tracking-[0.18em] text-accent-primary">内环 · 电流 PI（~1 kHz）</p>
+          <SliderRow
+            label="Kpi 电流环 P"
+            value={apf.currentKp}
+            min={0}
+            max={0.4}
+            step={0.005}
+            hint="增大可加快跟随；过大会激发开关纹波"
+            onChange={(v) => updateApf({ currentKp: v })}
+          />
+          <SliderRow
+            label="Kii 电流环 I"
+            value={apf.currentKi}
+            min={0}
+            max={600}
+            step={5}
+            hint="消除稳态电流跟踪误差；过大易振荡"
+            onChange={(v) => updateApf({ currentKi: v })}
+          />
+        </div>
+        <div className="space-y-3">
+          <p className="text-caption uppercase tracking-[0.18em] text-accent-measure">外环 · 电压 PI（~20 Hz）</p>
+          <SliderRow
+            label="Kpv 电压环 P"
+            value={apf.voltageKp}
+            min={0}
+            max={3}
+            step={0.05}
+            hint="增大阶跃响应快，但易把 100 Hz 纹波放大"
+            onChange={(v) => updateApf({ voltageKp: v })}
+          />
+          <SliderRow
+            label="Kiv 电压环 I"
+            value={apf.voltageKi}
+            min={0}
+            max={40}
+            step={0.5}
+            hint="消除母线稳态误差；不要让带宽逼近 100 Hz"
+            onChange={(v) => updateApf({ voltageKi: v })}
+          />
+        </div>
+      </div>
+
+      {showStep && (
+        <div className="mt-3">
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <span className="text-caption text-ink-muted">负载 50% → 100% 阶跃（60 ms 触发）</span>
+            <button
+              type="button"
+              onClick={() => setShowStep(false)}
+              className="text-caption text-ink-muted hover:text-ink-primary"
+            >
+              收起 ▴
+            </button>
+          </div>
+          <div className="h-40">
+            <SafeResponsiveContainer>
+              <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -10 }}>
+                <CartesianGrid stroke="rgba(231,243,255,0.06)" strokeDasharray="3 6" />
+                <XAxis dataKey="t" tick={{ fill: '#9eb5cb', fontSize: 11 }} unit="ms" />
+                <YAxis
+                  tick={{ fill: '#9eb5cb', fontSize: 11 }}
+                  domain={[apf.udcRef - 60, apf.udcRef + 20]}
+                />
+                <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
+                <ReferenceLine y={apf.udcRef} stroke="#9eb5cb" strokeDasharray="4 4" label={{ value: 'Udc_ref', fill: '#9eb5cb', fontSize: 10 }} />
+                <ReferenceLine x={60} stroke="#ffb84d" strokeDasharray="2 4" label={{ value: '阶跃', fill: '#ffb84d', fontSize: 10 }} />
+                <Line type="monotone" dataKey="Udc" dot={false} stroke="#43f7b5" strokeWidth={1.8} isAnimationActive={false} name="Udc V" />
+              </LineChart>
+            </SafeResponsiveContainer>
+          </div>
+        </div>
+      )}
+      {!showStep && (
+        <button
+          type="button"
+          onClick={() => setShowStep(true)}
+          className="mt-3 w-full rounded border border-line-subtle bg-bg-base py-1.5 text-caption text-ink-secondary hover:text-ink-primary"
+        >
+          展开阶跃响应图 ▾
+        </button>
+      )}
+
+      <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
+        经验起点：<span className="text-accent-primary">Kpi ≈ 2π·L·f_BW</span>（f_BW=1 kHz、L=1.5 mH → Kpi≈9.4？实测从 0.05 起调），<span className="text-accent-measure">Kpv 让电压环带宽 &lt; 20 Hz</span>（远低于 100 Hz 纹波频率）。两环 10× 频率分离是行业红线，否则外环会"把母线纹波当负载扰动"调电流，反过来恶化 THD。
+      </p>
+    </Card>
+  );
+}

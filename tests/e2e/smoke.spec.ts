@@ -23,6 +23,8 @@ const APP_TITLE = '压缩机变频器控制';
 
 async function openModule(page: Page, stage: string) {
   await page.locator('nav button').filter({ hasText: `${stage} ·` }).click();
+  // 让 Vite dev 完成按需 transform + lazy chunk 下载
+  await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
 }
 
 test('all learning modules render and controls remain usable', async ({ page }) => {

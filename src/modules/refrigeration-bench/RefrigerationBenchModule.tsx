@@ -11,6 +11,10 @@ import { SystemSchematic } from '../../components/charts/SystemSchematic';
 import { simulateCycle, torqueToIq } from '../../simulation/math/vaporCycle';
 import { hLiqSat, hVapSat, tSat } from '../../simulation/math/refrigerantProps';
 import { formatNumber } from '../../utils/format';
+import { SeasonalCopCard } from './SeasonalCopCard';
+import { DefrostCycleCard } from './DefrostCycleCard';
+import { PartLoadEfficiencyCard } from './PartLoadEfficiencyCard';
+import { FourQuadrantCard } from './FourQuadrantCard';
 
 // 制冷剂气相比热（与 refrigerantProps 中的 cpVapor 保持一致）
 const CP_V: Record<string, number> = { R32: 1.05, R410A: 0.97, R134a: 1.02 };
@@ -238,7 +242,14 @@ export function RefrigerationBenchModule() {
   return (
     <ModuleLayout
       primary={<><PhPanel /><SchematicPanel /></>}
-      probe={<><MetricsProbe /><ScenarioPresets /></>}
+      probe={<>
+        <MetricsProbe />
+        <ScenarioPresets />
+        <SeasonalCopCard />
+        <DefrostCycleCard />
+        <PartLoadEfficiencyCard />
+        <FourQuadrantCard />
+      </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}
     />
   );

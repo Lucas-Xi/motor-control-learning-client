@@ -1,4 +1,5 @@
 import { AssemblyWorkshop } from '../../components/workshop/AssemblyWorkshop';
+import { ProjectExporter } from '../../components/lab/ProjectExporter';
 
 /**
  * 17 号模块：整机搭建工作台。
@@ -6,11 +7,16 @@ import { AssemblyWorkshop } from '../../components/workshop/AssemblyWorkshop';
  * 复用 AssemblyWorkshop 组件，传 `embedded` 跳过 modal 壳，直接嵌入模块页面布局。
  * 工作台自带 6 槽位 + 3 模式 tab（自由搭建 / 挑战 / 历史），所以本模块页面
  * 不需要 ParameterPanel / ConceptNotes 等标准模块脚手架。
+ *
+ * 在工作台之下追加 ProjectExporter：把当前 store + 6 槽位选型一键生成
+ * 可读的 STM32 C 工程骨架（main.c / foc_isr.c / motor_param.h / fault_codes.h
+ * / state_machine.c / CMakeLists.txt / README.md）。
  */
 export function AssemblyWorkshopModule() {
   return (
     <div className="space-y-3">
       <AssemblyWorkshop embedded />
+      <ProjectExporter />
     </div>
   );
 }

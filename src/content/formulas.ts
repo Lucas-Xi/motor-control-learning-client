@@ -12,4 +12,13 @@ export const formulaIndex = [
   { key: 'ocp-i2t', name: 'I²t 过流积分', expression: 'I²t = ∫ I² dt  (累积到阈值即报 FAULT_OC_I2T)' },
   { key: 'vf-ratio', name: 'V/f 启动比例', expression: 'V_cmd = V_min + (V_rated - V_min) × (fe / fe_rated)' },
   { key: 'ramp-rate', name: '反液击斜坡', expression: 'dω/dt ≤ rampRpmS;  压缩机典型 300~800 rpm/s' },
+  { key: 'clarke-q15', name: 'Clarke q15 整数实现', expression: 'Iβ = (Ia + 2·Ib) × 18919 >> 15  (18919 ≈ 32768/√3)' },
+  { key: 'kcl-residual', name: 'KCL 残差自检', expression: '|I0| = |Ia + Ib + Ic|/3;  健康 < 1% Imax，> 5% 触发偏置/缺相告警' },
+  { key: 'dq-decoupling', name: 'dq 解耦前馈', expression: 'vd_ff = −ω·Lq·iq;  vq_ff = ω·(Ld·id + ψf)  (高速段必加)' },
+  { key: 'svpwm-minmax', name: 'SVPWM min-max 零序注入', expression: 'voff = −(vmax + vmin)/2;  duty = 0.5 + (v + voff)/Udc' },
+  { key: 'hfi-gain', name: 'HFI 凸极信号增益', expression: 'gain = (r − 1)/(r + 1),  r = Lq/Ld;  r=1.5 → 0.20, r=2.5 → 0.43' },
+  { key: 'hfi-demod', name: 'HFI 解调误差', expression: 'i_response × cos(ωh·t) → LPF → ≈ 0.5·sin(2·Δθ)' },
+  { key: 'pfc-boost', name: 'Boost PFC 升压关系', expression: 'Udc = Vrect / (1 − D);  D=0.4 + 220V AC → Udc ≈ 520V (工程限 D≤0.5)' },
+  { key: 'pfc-cap-ripple', name: 'PFC 母线电容纹波', expression: 'ΔUdc ≈ I_load / (2·ω_line·C);  按目标纹波 % 反推 C' },
+  { key: 'foc-total-delay', name: 'FOC 总采样-生效延迟', expression: 't_delay ≈ 1.5·Ts (ADC 中点 + CCR 预装载);  电流环带宽上限 ≈ 1/(2π·1.5·Ts)' },
 ];
