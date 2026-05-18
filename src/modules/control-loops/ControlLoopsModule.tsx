@@ -10,6 +10,7 @@ import { clamp } from '../../utils/clamp';
 import { formatNumber } from '../../utils/format';
 import type { ControlLoopParams } from '../../simulation/engine/types';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -62,13 +63,14 @@ function LoopBlock({ title, desc, icon }: { title: string; desc: string; icon: '
 
 function Primary() {
   const params = useSimulationStore((s) => s.controlLoop);
+  const { t } = useI18n();
   const data = useMemo(() => simulateTripleLoop(params), [params]);
   return (
     <Card
-      title="三闭环级联响应"
-      eyebrow="position → speed → current"
+      title={t('controlLoops.primaryTitle')}
+      eyebrow={t('controlLoops.primaryEyebrow')}
       density="compact"
-      action={<FidelityBadge level="simplified" hint="位置/速度/电流三层级联是真实结构；电机用一阶 dq + 转矩常数 0.095 的简化模型，惯量/阻尼来自电机参数" />}
+      action={<FidelityBadge level="simplified" hint={t('controlLoops.fidelityHint')} />}
     >
       <div className="h-72">
         <SafeResponsiveContainer>
@@ -77,11 +79,11 @@ function Primary() {
             <XAxis dataKey="t" tick={{ fill: '#9eb5cb', fontSize: 11 }} unit="s" />
             <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} />
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
-            <Line type="monotone" dataKey="position" dot={false} stroke="#ffb84d" strokeWidth={1.8} name="位置" isAnimationActive={false} />
-            <Line type="monotone" dataKey="targetPosition" dot={false} stroke="#9eb5cb" strokeDasharray="5 5" name="目标位置" isAnimationActive={false} />
-            <Line type="monotone" dataKey="speedRpm" dot={false} stroke="#34d6ff" strokeWidth={1.8} name="速度" isAnimationActive={false} />
-            <Line type="monotone" dataKey="iq" dot={false} stroke="#43f7b5" strokeWidth={1.6} name="Iq" isAnimationActive={false} />
-            <Line type="monotone" dataKey="iqRef" dot={false} stroke="#ff5c7a" strokeWidth={1.2} name="Iq参考" isAnimationActive={false} />
+            <Line type="monotone" dataKey="position" dot={false} stroke="#ffb84d" strokeWidth={1.8} name={t('controlLoops.positionLabel')} isAnimationActive={false} />
+            <Line type="monotone" dataKey="targetPosition" dot={false} stroke="#9eb5cb" strokeDasharray="5 5" name={t('controlLoops.targetPositionLabel')} isAnimationActive={false} />
+            <Line type="monotone" dataKey="speedRpm" dot={false} stroke="#34d6ff" strokeWidth={1.8} name={t('controlLoops.speedLabel')} isAnimationActive={false} />
+            <Line type="monotone" dataKey="iq" dot={false} stroke="#43f7b5" strokeWidth={1.6} name={t('controlLoops.iqLabel')} isAnimationActive={false} />
+            <Line type="monotone" dataKey="iqRef" dot={false} stroke="#ff5c7a" strokeWidth={1.2} name={t('controlLoops.iqRefLabel')} isAnimationActive={false} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
@@ -91,31 +93,30 @@ function Primary() {
 
 function Probe() {
   const params = useSimulationStore((s) => s.controlLoop);
+  const { t } = useI18n();
   const data = useMemo(() => simulateTripleLoop(params), [params]);
   const last = data[data.length - 1];
   const oscillationRisk = params.speedKp > 0.22 || params.positionKp > 8;
   return (
     <>
-      <Card title="三层级联" eyebrow="loop hierarchy" density="compact">
+      <Card title={t('controlLoops.hierarchyTitle')} eyebrow={t('controlLoops.hierarchyEyebrow')} density="compact">
         <div className="space-y-2">
-          <LoopBlock title="位置环 PID" icon="position" desc="最外层，输出速度参考。不能急。" />
-          <LoopBlock title="速度环 PI" icon="speed" desc="中间层，输出 Iq 参考。比电流环慢。" />
-          <LoopBlock title="电流环 PI" icon="current" desc="最内层，与 PWM 同频，是稳定地基。" />
+          <LoopBlock title={t('controlLoops.positionLoopTitle')} icon="position" desc={t('controlLoops.positionLoopDesc')} />
+          <LoopBlock title={t('controlLoops.speedLoopTitle')} icon="speed" desc={t('controlLoops.speedLoopDesc')} />
+          <LoopBlock title={t('controlLoops.currentLoopTitle')} icon="current" desc={t('controlLoops.currentLoopDesc')} />
         </div>
       </Card>
-      <Card title="末态指标" eyebrow="final state" density="compact">
+      <Card title={t('controlLoops.finalStateTitle')} eyebrow={t('controlLoops.finalStateEyebrow')} density="compact">
         <div className="grid grid-cols-2 gap-2 text-caption">
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">位置 </span><span className="text-ink-primary">{formatNumber(last.position, 1)}°</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">速度 </span><span className="text-ink-primary">{formatNumber(last.speedRpm, 1)} rpm</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">Iq </span><span className="text-ink-primary">{formatNumber(last.iq, 2)} A</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">转矩 </span><span className="text-ink-primary">{formatNumber(last.torque, 3)} Nm</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('controlLoops.positionLabel')} </span><span className="text-ink-primary">{formatNumber(last.position, 1)}°</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('controlLoops.speedLabel')} </span><span className="text-ink-primary">{formatNumber(last.speedRpm, 1)} rpm</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('controlLoops.iqLabel')} </span><span className="text-ink-primary">{formatNumber(last.iq, 2)} A</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('controlLoops.torqueLabel')} </span><span className="text-ink-primary">{formatNumber(last.torque, 3)} Nm</span></div>
         </div>
       </Card>
       {oscillationRisk && (
         <Card tone="fault" density="compact">
-          <p className="text-body leading-relaxed text-accent-fault">
-            外环增益偏大，可能振荡。整定顺序：电流 → 速度 → 位置；每层都要比内层慢。
-          </p>
+          <p className="text-body leading-relaxed text-accent-fault">{t('controlLoops.oscWarn')}</p>
         </Card>
       )}
     </>

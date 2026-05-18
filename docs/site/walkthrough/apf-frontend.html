@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APF 前级 PFC Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html" class="active">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">15 Walkthrough</span>APF 前级 PFC</h1><p class="subtitle">Boost PFC 双环：外环稳 380V 母线，内环让输入电流跟电压同形——PF→1、THD→低、过认证 + 给后级 FOC 留弱磁余量。</p><p><a href="../module/apf-frontend.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能讲清 Boost PFC 的四大件（升压电感、MOSFET、二极管、母线电容）各自的工程作用 + 选型公式</li><li>能解释&quot;为什么是双环、为什么外环慢内环快&quot;，并说出典型带宽（电压环 50-200 Hz / 电流环 1-5 kHz）</li><li>知道 PF / THD / 母线纹波三个指标的工程目标值（家电 PF&gt;0.95 / 商用 PF&gt;0.99 / THD&lt;10%）</li><li>能识别&quot;电流环带宽不够 / 电感饱和 / 母线电容不足 / 双环带宽颠倒&quot;四类典型现场坑</li><li>理解为什么压缩机变频器必须先升压到 380V 才好做弱磁（弱磁电压余量 = 母线 − BEMF）</li><li>能算电容选型：ΔU = I_load / (2·ω_line·C)，配合纹波 % 目标反推 C</li><li>会写 STM32 TIM1 + ADC + DMA 双缓冲的 PFC 同步采样骨架（电网过零 + |sin| 模板 + 电感电流采样）</li></ul><h2>主线步骤（9 步）</h2><section class="step"><div class="step-no">Step 1 / 9 · pfc-why</div><h3>为啥要 PFC</h3><div class="field"><div class="field-label">目标</div><div>建立&quot;没 PFC 就是认证不过 + 后级弱磁没余量&quot;的双重工程直觉</div></div><div class="field"><div class="field-label">操作</div><div>默认 380V 母线下先观察主图：电网电压（青色正弦）与输入电流（mint 正弦）几乎重合，右上角 PF≈0.99、THD&lt;10%。</div></div><div class="field"><div class="field-label">观察</div><div>电流波形是干净的正弦、跟电压基本同相位；母线电压稳在 380V 附近。</div></div><div class="field"><div class="field-label">为什么</div><div>这就是 PFC 要交付的&quot;成品&quot;。对比一下：没 PFC 的整流桥 + 大电容方案，输入电流只在电压峰值附近导通一小段（约 60° 导通角），THD&gt;100%、PF≈0.6，过不了 GB/T 17625.1——工厂出货前 3C 认证一票否决，整条产线返工。**第二层意义**：没 PFC 时母线就是电网整流后的 |sin| 半波 + 大电容滤波 ≈ 300 V 平均、纹波 ±15 V；有 PFC 升到 380V 稳定，给后级 FOC 弱磁多出 80V 余量 → 压缩机最大转速能从 5500 rpm 推到 7200 rpm（一级能效门槛）。</div></div></section><section class="step"><div class="step-no">Step 2 / 9 · boost-topology</div><h3>认 Boost 拓扑</h3><div class="field"><div class="field-label">目标</div><div>把&quot;升压电感 + MOSFET + 二极管 + 母线电容&quot;四大件的作用串起来</div></div><div class="field"><div class="field-label">操作</div><div>看右侧&quot;为什么压缩机要 PFC&quot;卡片 + 下方电感电流跟踪图，把整流桥后的 |sin| 半波 → 升压电感 → MOSFET 斩波 → 二极管单向导通 → 母线电容滤波这条链路在脑里走一遍。</div></div><div class="field"><div class="field-label">观察</div><div>电感电流 iL（橙）紧紧跟着参考 |sin|（灰虚线）走；母线电压（mint）在 380V 附近做小幅 100 Hz 纹波。</div></div><div class="field"><div class="field-label">为什么</div><div>Boost 关系 Udc = Vrect / (1 − D)：D=0 时 Udc=电网峰值≈311 V（不升压），D=0.5 时翻倍到 ~620 V。家电典型工作点 D≈0.3-0.5，把 220V AC 推到 380-400V DC——这个 380V 不是随便选的，它正好给后级 PMSM 在 6000-8000 rpm 弱磁运行留出电压余量。各件选型口诀：① 电感 L = Vrect·D·Ts/(2·ΔiL_pp)，典型 1-2 mH / 30A 饱和；② MOSFET 选 600 V / 30 A SJ-MOS 或 SiC（高频低损）；③ 二极管选 SiC SBD 600V/20A（反向恢复电荷 0）；④ 电容 C 见下面&quot;capacitor-ripple&quot;步骤。</div></div><div class="quiz"><div class="q">随堂题：220V AC 电网（峰值 ~311V），Boost 占空比 D=0.4，理想稳态 Udc ≈ ?</div><ol><li>311 V</li><li>380 V</li><li class="correct">520 V (正确)</li><li>780 V</li></ol><div class="hint">提示：Udc = Vpeak / (1−D) = 311 / 0.6 ≈ 520 V。实际工程会限 D≤0.5 留余量（D 太大电感电流斜率不够，电流环跟不上），并把母线目标设在 380-400 V。如果要 520V 高母线（伺服 / 工业），需要更大电感和更高电流环带宽。</div></div></section><section class="step"><div class="step-no">Step 3 / 9 · inner-current</div><h3>内环：电流跟 sin</h3><div class="field"><div class="field-label">目标</div><div>理解&quot;PF=1 等价于电流跟着电压走同形同相&quot;</div></div><div class="field"><div class="field-label">操作</div><div>右侧把&quot;母线目标 Udc&quot;从 380V 拉低到 250V（接近不升压区）。盯住主图电网电压 vs 输入电流。</div></div><div class="field"><div class="field-label">观察</div><div>电流波形开始失真——峰值附近被削、过零点附近滞后；PF 从 0.99 跌到 0.8-0.9，THD 上窜到 20%+。</div></div><div class="field"><div class="field-label">为什么</div><div>当目标母线低于电网峰值时，Boost 没有&quot;升压裕量&quot;，电流环在电压峰附近饱和、控不住，电流自然就不再是正弦。这告诉你 PFC 工作的前提是 Udc &gt; Vpeak·1.2 左右——这是为什么 220V 系统选 380V、110V 系统选 200V 的工程依据。把 Udc 拉回 380V，再看 PF 恢复到 0.99。**实现细节**：内环参考是 i_ref = i_amp · |sin(ω_line·t)|，其中 i_amp 由外环电压 PI 给出，|sin| 模板从电网电压采样实时计算（PLL 锁电网相位）—— 这就是&quot;前馈跟踪&quot;的核心思想，不是 PI 在追 sin，是直接告诉它&quot;长什么样&quot;。</div></div></section><section class="step"><div class="step-no">Step 4 / 9 · outer-voltage</div><h3>外环：稳母线 + 100 Hz notch</h3><div class="field"><div class="field-label">目标</div><div>搞清外环&quot;为什么必须慢 + 为什么必须 notch 滤 100 Hz&quot;</div></div><div class="field"><div class="field-label">操作</div><div>保持 Udc=380V，把&quot;负载电流&quot;从 4A 阶跃到 12A（模拟压缩机突然加载），观察&quot;母线电压稳定&quot;图。</div></div><div class="field"><div class="field-label">观察</div><div>母线电压瞬间下沉 5-15V，然后用 50-200 ms 缓慢爬回 380V；电流幅值参考 i_amp_ref 慢慢加大。</div></div><div class="field"><div class="field-label">为什么</div><div>外环带宽 50-200 Hz 远小于内环 1-5 kHz，原因有三：① 整流后母线本身有 100 Hz 主纹波（电网 50 Hz 全波整流），外环带宽必须 &lt; 100 Hz/2 才不会把纹波放大成调制误差；② 双环系统外快内慢必振荡（典型反面教材：把电压环 Kp 调到比电流环还高，母线立刻嗡嗡叫）；③ 母线下沉幅度由电容 C 决定：ΔUdc ≈ I_load / (2·ω_line·C)，外环响应快也救不了——救它的是大电容。**进阶**：高端 PFC 在电压反馈通道加 100 Hz notch 滤波器，把纹波打掉再进 PI，这样可以把外环带宽提到 300-500 Hz 而不被纹波激励振荡——但要小心 notch 引入的相位滞后，Q 值要选 0.3-0.5（不要太尖）。</div></div><div class="quiz"><div class="q">随堂题：双环 PFC 把电压环带宽调到 2 kHz、电流环 500 Hz（颠倒了）会怎样？</div><ol><li>响应更快，母线下沉更小</li><li class="correct">系统振荡，输入电流和母线电压都嗡嗡跳 (正确)</li><li>PF 变成 1</li><li>没影响，只是 CPU 占用变高</li></ol><div class="hint">提示：外环必须远慢于内环——外环给内环下命令，命令变化速度比内环响应还快，内环根本来不及跟，必振荡。这是双环系统设计的铁律。整定顺序永远&quot;先内后外&quot;：先把电流环阶跃响应调到 10% 超调以内，再调外环 Kp 从内环带宽 / 10 起步。</div></div></section><section class="step"><div class="step-no">Step 5 / 9 · inductor-ripple</div><h3>电感与纹波</h3><div class="field"><div class="field-label">目标</div><div>理解电感选型对电流纹波和 THD 的直接影响 + 饱和电流的隐藏陷阱</div></div><div class="field"><div class="field-label">操作</div><div>把&quot;Boost 电感 L&quot;从默认 1.5 mH 拉低到 0.5 mH，看电感电流跟踪图。</div></div><div class="field"><div class="field-label">观察</div><div>橙色 iL 在 |sin| 参考线两侧的&quot;抖动包络&quot;明显变宽，THD 从 8% 升到 15-25%。</div></div><div class="field"><div class="field-label">为什么</div><div>PWM 一个周期内电感电流的纹波 ΔiL = Vrect·D·Ts / L——L 越小纹波越大；当纹波幅度接近平均电流时，电流环就难以稳定跟踪 |sin| 模板，THD 直接超标。但 L 也不能太大，太大 → 体积成本上去 + 动态响应变慢 + 重载时进入磁饱和（关键陷阱：选电感时只看额定电流不看饱和电流，磁芯一旦超过饱和电流，L 急剧下降到标称 30%，同样占空比下纹波翻 3 倍，电流环失控）。生产中典型选型：1-2 mH 电感量 + 饱和电流 ≥ 1.5 倍峰值工作电流 + 工作温升 40-80 ℃ 留余量。磁芯选 SendDust（铁硅铝）或纳米晶，居里点 &gt; 200 ℃；避免铁氧体（居里点 200 ℃ 但环境高温下磁导率掉很快）。</div></div></section><section class="step"><div class="step-no">Step 6 / 9 · capacitor-ripple</div><h3>母线电容</h3><div class="field"><div class="field-label">目标</div><div>量化&quot;母线纹波&quot;的工程含义 + 启动浪涌防护</div></div><div class="field"><div class="field-label">操作</div><div>把&quot;母线电容 C&quot;从 470 μF 拉到 100 μF，看&quot;母线电压稳定&quot;图和右上角&quot;母线纹波 %&quot;指标。</div></div><div class="field"><div class="field-label">观察</div><div>母线在 380V 附近的 100 Hz 摆动从 ±2V 放大到 ±10V 以上；纹波 % 从 1% 跳到 5%+。</div></div><div class="field"><div class="field-label">为什么</div><div>ΔUdc ≈ I_load / (2·ω_line·C)：电网 50 Hz 整流后是 100 Hz 主纹波，电容直接决定纹波幅值。后级 FOC 看到的母线如果纹波 &gt;5%，dq 电压前馈解耦会失准、电流环也会被周期性扰动——表现为电机带恒定 100 Hz 嗡嗡声、转矩有 100 Hz 脉动、压缩机阀片疲劳寿命下降。家电压缩机典型选 470-1000 μF 高压电解（450 V 耐压 + 105 ℃ 长寿命系列）；选小了省成本但纹波超标，选大了启动浪涌电流过大要加 NTC 软启动电阻（典型 5-10 Ω 负温度系数热敏，启动后旁路继电器短接）。**注意**：电解电容 ESR 在 -20 ℃ 增大 5-10 倍，北方冬季空调外机启动时纹波会显著恶化，设计要按最坏温度算。</div></div><div class="quiz"><div class="q">随堂题：负载 1.5 kW、电网 50 Hz、母线 380V，希望纹波 &lt; 3% (≈11 V)，母线电容至少需要多大？</div><ol><li>47 μF</li><li>220 μF</li><li class="correct">600 μF (正确)</li><li>4700 μF</li></ol><div class="hint">提示：I_load ≈ 1500/380 ≈ 4A；C ≥ I/(2·ω·ΔU) = 4 / (2·2π·50·11) ≈ 580 μF。所以选 680 μF 标准件（再上一级是 1000 μF）。这就是家电压缩机变频器母线电容的设计逻辑。考虑 ESR 温飘 + 20% 容值老化余量，BOM 实际选 820-1000 μF 是稳妥做法。</div></div></section><section class="step"><div class="step-no">Step 7 / 9 · stm32-impl</div><h3>STM32 实现骨架</h3><div class="field"><div class="field-label">目标</div><div>把双环 PFC 接到 TIM1 + ADC + DMA 双缓冲的具体寄存器配置</div></div><div class="field"><div class="field-label">操作</div><div>想象目标 MCU 是 STM32 G4 / F334（带高分辨率 PWM）。要采样：① 电感电流 iL（每 PWM 周期）② 电网电压 v_grid（每 PWM 周期，用于 |sin| 模板）③ 母线电压 Udc（低频，1 kHz 够）。</div></div><div class="field"><div class="field-label">观察</div><div>TIM1 中心对齐 50 kHz PWM（PFC 比 FOC 高一档，电流环带宽要 5 kHz）+ ADC1 注入序列 3 通道 + DMA 循环缓冲 → JEOS ISR 跑电流环 + TIM6 1 kHz 中断跑电压环。ISR 总耗时 &lt; 5 μs，CPU 占用 25%。</div></div><div class="field"><div class="field-label">为什么</div><div>STM32 G4 PFC 实现骨架（生产可抄）： /* TIM1 中心对齐 50kHz PWM (PFC 用高频，电流环要 5kHz 带宽) */ LL_TIM_SetCounterMode(TIM1, LL_TIM_COUNTERMODE_CENTER_UP_DOWN); LL_TIM_SetAutoReload(TIM1, 1700);  /* 170MHz/(2*50k)=1700 */ LL_TIM_SetTriggerOutput(TIM1, LL_TIM_TRGO_UPDATE); /* ADC1 注入序列：CH1=iL, CH2=vgrid, CH3=Udc */ LL_ADC_INJ_SetTriggerSource(ADC1, LL_ADC_INJ_TRIG_EXT_TIM1_TRGO); LL_ADC_INJ_SetSequencerLength(ADC1, LL_ADC_INJ_SEQ_SCAN_ENABLE_3RANKS); /* JEOS ISR (50 kHz)：电流环 + |sin| 模板生成 */ void ADC1_2_IRQHandler(void) {   float iL = (ADC1-&gt;JDR1 - g_il_off) * IL_SCALE;   float vgrid = (ADC1-&gt;JDR2 - g_vg_off) * VG_SCALE;   /* 电网过零检测 + PLL 锁相得到 theta_grid */   float sin_template = fabsf(sinf(theta_grid));  /* |sin| 模板 */   float iL_ref = g_i_amp * sin_template;  /* 内环参考 */   /* 电流 PI：带宽 5kHz，Kp = ω_bw·L = 2π·5000·1.5e-3 ≈ 47 */   float duty = pi_update(&amp;pi_curr, iL_ref, iL);   duty = fmaxf(0.02f, fminf(0.95f, duty));  /* Boost D 上限 0.5-0.95 */   TIM1-&gt;CCR1 = (uint32_t)(duty * TIM1-&gt;ARR); } /* TIM6 1kHz 中断：外环电压 PI + i_amp 输出 */ void TIM6_DAC_IRQHandler(void) {   float Udc = (ADC1-&gt;JDR3 - g_udc_off) * UDC_SCALE;   /* 100 Hz notch 先滤掉纹波再喂电压 PI */   float Udc_clean = biquad_notch_100hz(Udc);   g_i_amp = pi_update(&amp;pi_volt, UDC_REF, Udc_clean);   g_i_amp = fmaxf(0.f, fminf(15.f, g_i_amp)); } 三个工程数字：① PFC PWM 选 50-100 kHz（比 FOC 16 kHz 高 3-6 倍，让电流环能上 5 kHz 带宽）；② ADC 采样率 ≥ 100 kSPS；③ 电压环 1 kHz 任务周期足够（外环带宽 50-200 Hz）。</div></div></section><section class="step"><div class="step-no">Step 8 / 9 · pf-thd-metrics</div><h3>PF / THD 指标 → 售价段</h3><div class="field"><div class="field-label">目标</div><div>把仿真数据接回认证 / 营销话术</div></div><div class="field"><div class="field-label">操作</div><div>把 Udc 拉回 380V、L=1.5 mH、C=470 μF、负载 8A，读取右上角 PF 和 THD。</div></div><div class="field"><div class="field-label">观察</div><div>PF ≈ 0.99，THD &lt; 10%；两个 badge 都是 mint 绿色（measure 色阶）。</div></div><div class="field"><div class="field-label">为什么</div><div>工程目标三档对应不同售价段和 BOM 成本：① **家电入门 PF&gt;0.95 / THD&lt;20%** — 过 GB/T 17625.1 Class A 即可，BOM 电感 1 mH / 电容 470 μF / 电流环 1 kHz；② **商用空调 PF&gt;0.99 / THD&lt;10%** — 进政府采购名录、能效一级、出口欧盟 EN 61000-3-2，BOM 电感 1.5-2 mH / 电容 680 μF / 电流环 5 kHz / notch 100 Hz；③ **高端伺服 PF&gt;0.995 / THD&lt;5%** — 出口欧盟工业现场，BOM 用 SiC MOSFET + 100 kHz PWM + 数字 notch + 自适应 PI。每升一档售价多 30-50%，BOM 多 10-20 元——这是高端家电品牌的核心利润空间。</div></div></section><section class="step"><div class="step-no">Step 9 / 9 · recap-handoff</div><h3>交棒后级</h3><div class="field"><div class="field-label">目标</div><div>把 PFC 接进整个压缩机变频器链路</div></div><div class="field"><div class="field-label">操作</div><div>回顾全链路：电网 220V AC → 整流桥 |sin| 半波 → Boost PFC（本模块）→ 380V 母线 → 三相逆变器（08）→ FOC SVPWM 驱动 PMSM（06/07）→ 弱磁高速运行（11）→ 制冷循环做功（16）。</div></div><div class="field"><div class="field-label">观察</div><div>PFC 是整条链路的&quot;电源接口管理员&quot;——对电网负责（PF、THD），对后级负责（稳定 380V）。</div></div><div class="field"><div class="field-label">为什么</div><div>从产品视角：你卖的不是一台 FOC 控制器，而是一台&quot;能过认证、能上货架&quot;的家电核心板。少了 PFC，前面所有 FOC 优化都没意义——产品根本上不了市。下一模块 16 制冷台架，把 PFC + FOC + 压缩机 + 蒸气压缩循环串成一个完整的&quot;系统工程&quot;工况看——你会看到压缩机突加大冷量负载时，扰动如何从冷凝器水温 → 排气压力 → 转矩需求 → Iq → 母线电流 → PFC 内环幅值参考 → 电网电流逐级传导，整条链路任何一环响应不够快都会让母线掉电触发欠压保护。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：电流环带宽不够，PF 拉不上来</div><p><strong>现象：</strong>输入电流相对于电压明显滞后 + 形状变胖（不是窄正弦而是接近梯形），PF 卡在 0.85 上不去、THD 15%+</p><p><strong>为什么：</strong>电流环带宽必须 ≥ 电网频率 × 20（50Hz 系统至少 1 kHz；高端产品 5 kHz）才能让电流精确跟踪 |sin| 模板。带宽不够时高次谐波分量跟不进，电流形状失真。现场常见原因：① Kp 没调够（解析值 Kp = ω_bw·L = 2π·1000·1.5e-3 ≈ 9.4，实测 × 0.65 ≈ 6 留相位裕度）；② 电流采样滤波过重（RC 截止频率 &lt; 5 kHz 把信号高频成分滤掉了）；③ DSP 周期太长（PFC 控制周期应 ≤ 20 μs，PWM 选 50 kHz 以上）；④ 电感太大让电流斜率不够。</p></div><div class="pitfall"><div class="label">试错：升压电感饱和（重载时）</div><p><strong>现象：</strong>负载从 4A 加到 12A 后，电感电流出现&quot;陡峭尖峰&quot;、THD 突然从 8% 跳到 30%+；电感发烫、铁芯有啸叫；过流保护频繁触发</p><p><strong>为什么：</strong>磁芯一旦超过饱和电流，电感量 L 急剧下降（可能掉到标称的 30%），同样占空比下电流纹波翻 3 倍，电流环根本控不住。生产坑：选电感时只看额定电流不看饱和电流，或环境温度高时磁芯居里点提前。正确做法：饱和电流要 ≥ 1.5 倍峰值工作电流，并留 40-80 ℃ 工作温升余量。磁芯选 SendDust（铁硅铝，居里点 500 ℃）或纳米晶（居里点 570 ℃），避免铁氧体（居里点 200 ℃ 但 100 ℃ 以上磁导率掉很快）。空调外机夏季机箱内 70 ℃ + 电感工作温升 60 ℃ = 130 ℃ 是常态，铁氧体在这个温度已经接近极限。</p></div><div class="pitfall"><div class="label">试错：母线电容选小，纹波超标</div><p><strong>现象：</strong>母线 100 Hz 纹波从 ±2V 放大到 ±15V；后级 FOC 电机带明显 100 Hz 嗡嗡声、转矩脉动可闻；产品 EMC 测试 + 噪声测试翻车</p><p><strong>为什么：</strong>ΔUdc ≈ I_load / (2·ω_line·C)：电容容量降一半，纹波翻一倍。BOM 工程师为了省 2 元钱把 680μF 换成 220μF，整机 EMC 测试 + 噪声测试全部翻车。隐藏代价：纹波大 → FOC dq 前馈失准 → Iq 100 Hz 抖动 → 压缩机吸气阀片疲劳 → 三年内故障率上升。修复：按 C ≥ I/(2·ω·ΔU_target) 选，留 20-30% 老化余量，105 ℃ 长寿命系列（典型 5000 小时 @ 105 ℃ → 实际 60 ℃ 工作能用 10+ 年）。</p></div><div class="pitfall"><div class="label">试错：外环带宽 &gt; 内环（双环颠倒）</div><p><strong>现象：</strong>上电后母线电压 ±20V 振荡、输入电流嗡嗡跳、整机听见低频&quot;咕咕&quot;声；电压环 Kp 调小后好转但响应变拖</p><p><strong>为什么：</strong>双环系统铁律：外环带宽必须 &lt; 内环带宽 / 5。外环（电压 PI）给内环（电流 PI）下电流幅值命令，如果外环响应比内环还快，内环来不及跟，外环又改命令——正反馈震荡。新手调参从内环开始，先把电流环阶跃响应调到 10% 超调以内，再调外环到内环带宽的 1/10 起步。同时电压环反馈链上加 100 Hz notch 滤掉母线纹波，可以让外环带宽提到 200-300 Hz 而不振荡。</p></div><h2>下一模块引子</h2><div class="card primary">现在你把电网到母线这一段串通了：380V 稳压 + PF≈1 + THD&lt;10%。最后一模块 16 制冷台架把 PFC + FOC + 压缩机 + 蒸气压缩循环连成一个完整系统，看工况扰动如何沿这条链路传导（冷凝器水温升高 → 排气压力 → 转矩需求 → Iq → 母线电流 → PFC 内环幅值参考 → 电网电流）。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

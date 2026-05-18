@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PID 控制 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html" class="active">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">05</span>PID 控制</h1><p class="subtitle">P/I/D、限幅和抗积分饱和</p><div class="card primary"><div class="label">本模块主旨</div>P / I / D + 限幅 + 抗积分饱和 + 采样周期 —— 把这六件事拧成一个能上 STM32 ISR 的闭环。</div><h2>学完应能回答</h2><ul><li>能用一句话说清 P / I / D 各自解决什么（响应速度 / 稳态误差 / 变化率抑制）</li><li>能识别 4 类典型病症：响应慢、超调、稳态误差、积分饱和大超调</li><li>理解输出限幅 + 抗积分饱和必须成对出现，并能写出 Back-Calc 的 C 代码（Kt = Ki/Kp）</li><li>知道 Ts 是 PID 参数的&quot;刻度尺&quot;——改 PWM 频率必须重算 Ki/Kd 或换增量式</li><li>能说出&quot;内环带宽 ≥ 外环带宽 × 5~10&quot;和实测如何整定（先内后外、Ziegler-Nichols 临界）</li><li>会用 ARM CMSIS-DSP arm_pid_f32 / STM32 CORDIC 加速 ISR 内 PID 计算</li></ul><p><a class="btn" href="../walkthrough/pid-control.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>PID 不是玄学旋钮，是带采样周期 / 限幅 / 抗饱和的一套工程闭环。会调一个就会调全部。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>PID 就像调淋浴水温：**P** 像直接拧——水太冷就猛拧热水（拧多大与冷热差成正比）；**I** 是慢慢补——还差一点就持续多加一点直到水温就位；**D** 是预判——感觉水温正在快速变化时先反向收一下避免过头。这三项加在一起，让&quot;输出&quot;自动跟踪&quot;目标值&quot;。</div><div class="card measure"><div class="label">核心概念</div>PID = 当前误差(P) + 历史累积(I) + 变化趋势(D)。电机控制 99% 的场景只用 PI（P+I），D 在位置环或抖动很大时才加。</div><h3>为什么要学</h3><ul><li>电流环、速度环、位置环全是 PID/PI——会调一个就会调全套。</li><li>Kp 太低响应慢，太高振荡过流；Ki 不够稳态有余差，太大积分饱和大超调。</li><li>&quot;采样周期改变后必须重算 Ki/Kd&quot;是无数初学者翻车的坑——PID 参数和 Ts 是绑定的。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧拖 Kp 从 2.2 慢慢推到 8，看响应曲线从光滑爬升变成超调振荡。再点&quot;振荡预设&quot;看极端情况，然后开&quot;抗积分饱和&quot;对比关闭时大超调的差异。</div><h2>学习目标</h2><ul><li>理解 P、I、D 三项的物理作用</li><li>区分电流环 PI、速度环 PI、位置环 PID 各自的角色</li><li>识别超调 / 稳态误差 / 振荡 / 积分饱和四类典型病症</li></ul><h2>核心概念</h2><ul><li>P 像弹簧，误差越大推得越猛；I 像记账本，长期误差被慢慢补掉；D 像阻尼器，抑制变化太快。</li><li>电机控制中电流环用 PI（带宽 1-5 kHz），速度环用 PI（带宽 50-500 Hz），位置环常用 PID 或前馈。</li><li>抗积分饱和：输出撞限幅时停止/减小积分累加，避免释放限幅后大超调。</li></ul><h2>公式</h2><div class="card"><div class="label">离散位置式 PID</div><div class="formula">u[k] = Kp·e[k] + Ki·Ts·Σe + Kd·(e[k]−e[k−1])/Ts</div><p>Ts 是采样周期；输出 u 必须限幅，否则积分会越攒越大。</p></div><div class="card"><div class="label">增量式 PID</div><div class="formula">Δu[k] = Kp·(e[k]−e[k−1]) + Ki·Ts·e[k] + Kd·(e[k]−2·e[k−1]+e[k−2])/Ts</div><p>每次只算&quot;增量&quot;，无需保存积分；自带防积分饱和（误差为零时输出不变）。</p></div><div class="card"><div class="label">抗积分饱和（Back-Calculation）</div><div class="formula">I[k+1] = I[k] + Ki·Ts·e[k] + Kt·(u_sat − u_unsat)</div><p>Kt 是回写增益，让积分按饱和差值反向调整。Kt = Ki/Kp 是经验起点。</p></div><h2>工程意义</h2><ul><li>参数过小响应慢，参数过大振荡甚至过流。抗积分饱和必须开。</li><li>内环带宽 ≥ 外环带宽 × 5～10，否则外环追内环会振荡。</li><li>采样周期 Ts 是 PID 参数的&quot;刻度尺&quot;——Ts 减半，要么 Ki/2 + Kd×2 重算，要么改用增量式更稳。</li></ul><h2>STM32 移植指南</h2><ul><li>PID 状态结构体含 integral / last_error / out_min / out_max / Kt。</li><li>电流环固定在 PWM 中断（16-20kHz），速度环以 1-5kHz 分频执行。</li><li>所有浮点 PID 函数加 static inline，编译器展开到中断后无函数调用开销。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>积分没限幅 → 撞限幅后大超调甚至过流保护。</li><li>电流环和速度环同频同样高带宽 → 互相打架振荡。</li><li>改 Ts 后没重算 Ki/Kd → 行为完全变样。</li><li>没区分位置式/增量式，混着写。</li></ul></div><h2>调试方法</h2><ul><li>整定顺序：先电流环（看 Iq 阶跃响应），再速度环（看转速阶跃），最后位置环。</li><li>只调 P 找到刚开始振荡的 Kp_critical，取 0.4-0.6 倍作为工作点。</li><li>加 I 直到稳态误差 &lt; 1%，再观察是否有积分振荡。</li><li>D 通常先设 0；位置环抖动严重时再加，且要带低通避免噪声放大。</li></ul><h2>建议实验</h2><ul><li>加载&quot;慢响应&quot;预设 → 看上升时间长。</li><li>加载&quot;振荡&quot;预设 → 看明显超调和持续振荡。</li><li>关掉&quot;抗积分饱和&quot;+ 设 Ki 较大 + 大目标值 → 看撞限释放后的&quot;积分饱和大超调&quot;。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * pi.h — 带抗积分饱和的 PI 控制器（增量式 + Back-Calculation）
+ * 适合电机电流环、速度环
+ * ============================================ */
+
+typedef struct {
+    float kp;
+    float ki;             // 真实增益，注意 Ts 已含在使用方式里
+    float ts;             // 采样周期 (s)
+    float integral;
+    float out_min;
+    float out_max;
+    float kt;             // 抗饱和回写增益，建议 = ki / kp
+} pi_t;
+
+static inline void pi_init(pi_t *c, float kp, float ki, float ts,
+                           float lim_min, float lim_max) {
+    c-&gt;kp = kp;  c-&gt;ki = ki;  c-&gt;ts = ts;
+    c-&gt;integral = 0.0f;
+    c-&gt;out_min = lim_min;  c-&gt;out_max = lim_max;
+    c-&gt;kt = (kp &gt; 1e-6f) ? (ki / kp) : 0.0f;
+}
+
+/* 单步 PI（位置式 + 抗积分饱和回写） */
+static inline float pi_step(pi_t *c, float ref, float meas) {
+    float err = ref - meas;
+
+    /* 1. 先算未饱和输出 */
+    float u_unsat = c-&gt;kp * err + c-&gt;integral;
+
+    /* 2. 限幅 */
+    float u = u_unsat;
+    if (u &gt; c-&gt;out_max) u = c-&gt;out_max;
+    else if (u &lt; c-&gt;out_min) u = c-&gt;out_min;
+
+    /* 3. 积分更新 + 抗饱和回写
+     *    撞限时 (u_unsat - u) 反符号写回积分，让它退一点 */
+    c-&gt;integral += c-&gt;ki * c-&gt;ts * err + c-&gt;kt * (u - u_unsat);
+
+    return u;
+}
+
+void pi_reset(pi_t *c) { c-&gt;integral = 0.0f; }
+
+/* === 整定建议 ===
+ * 电流环：Kp = ω_bw × L,  Ki = ω_bw × R
+ *   想要 1 kHz 带宽（ω_bw = 6283 rad/s）+ L = 1.2 mH + R = 0.55 Ω：
+ *     Kp ≈ 7.5,  Ki ≈ 3450
+ *   PWM = 16 kHz → Ts = 62.5 μs，实际整定先取 Kp = 1-2 安全起步
+ * 速度环：内环带宽 / 5-10 倍，Kp 试 0.05-0.3，Ki 试 0.5-3
+ */</pre><h2>下一步</h2><ul><li>把 PI 放进 FOC 电流环，观察 Id/Iq 跟踪与限幅互动。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">PID 的 I（积分）项主要解决什么问题？</div><ol><li>加快响应</li><li class="correct">消除稳态误差 (正确)</li><li>抑制噪声</li><li>降低过流风险</li></ol><div class="hint">提示：P 项只在有误差时输出；当误差小但非零，需要 I 慢慢累加把它推到位。这就是&quot;消除稳态余差&quot;。</div></div><div class="quiz"><div class="q">关掉抗积分饱和、Ki 较大时给一个超出限幅的大目标值，撞限后会怎样？</div><ol><li>没影响</li><li>正常</li><li class="correct">积分一直累加，限幅释放后产生大超调和长时间振荡 (正确)</li><li>PWM 关断</li></ol><div class="hint">提示：撞限期间积分仍在累加，攒了一大笔&quot;虚假积分&quot;。一旦目标改回正常，积分要花很长时间反方向消化，期间输出大超调。</div></div><div class="quiz"><div class="q">电流环带宽 1 kHz、速度环带宽多少最合理？</div><ol><li>同样 1 kHz</li><li>500 Hz</li><li class="correct">100-200 Hz (正确)</li><li>5 kHz</li></ol><div class="hint">提示：外环带宽要远小于内环（5-10×），否则外环命令变化太快内环跟不上 → 互相打架振荡。</div></div><div class="quiz"><div class="q">采样周期 Ts 从 1ms 改成 0.5ms（采样率翻倍），位置式 PID 的 Ki 该怎么调？</div><ol><li>不变</li><li>Ki 加倍</li><li class="correct">Ki 减半 (正确)</li><li>改 Kp</li></ol><div class="hint">提示：位置式 I 项 = Ki·Ts·Σe，Ts 减半要保持等效积分增益就要 Ki 加倍——但更可靠的做法是不动 Ki，改用增量式 PID。</div></div><div class="quiz"><div class="q">D（微分）项在电机控制里通常不加，主要原因是？</div><ol><li>硬件不支持</li><li>数学复杂</li><li class="correct">采样噪声经过 (e[k]-e[k-1])/Ts 微分会被放大，反而引入抖动 (正确)</li><li>没必要</li></ol><div class="hint">提示：D 项放大高频噪声。位置环必要时加 D 也要先低通滤波。电流环和速度环用 PI 已足够。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

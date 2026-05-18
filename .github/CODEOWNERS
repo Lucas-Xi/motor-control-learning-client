@@ -1,0 +1,24 @@
+# CODEOWNERS for motor-control-learning-client
+#
+# 该文件由 GitHub 自动用于 PR Review 分配。
+# 用户名 @vincent-xi 是当前 git config user.name "Vincent Xi" 推断出的占位符；
+# 若 GitHub 用户名不同，请整体替换为真实 GitHub handle。
+#
+# Syntax: <pattern>  <owner1> <owner2> ...
+# 越靠后的规则优先级越高（覆盖前面的同范围规则）。
+
+# 默认归属 / Default owner for everything
+*                                   @vincent-xi
+
+# 算法纯函数（迁移到 STM32 / MATLAB 的核心层）/ Core math functions
+/src/simulation/math/**             @vincent-xi
+
+# 深度教学引导内容 / Walkthrough content (goal / pitfalls / quiz)
+/src/content/walkthroughs/**        @vincent-xi
+
+# Electron 主进程 / 预加载桥 / IPC
+/electron/**                        @vincent-xi
+
+# CI / 构建脚本 / 发布审计
+/.github/**                         @vincent-xi
+/scripts/**                         @vincent-xi

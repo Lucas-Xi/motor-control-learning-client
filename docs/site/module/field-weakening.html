@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>弱磁控制 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html" class="active">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">11</span>弱磁控制</h1><p class="subtitle">电压极限、负 Id、恒功率区</p><div class="card primary"><div class="label">本模块主旨</div>弱磁 = 用负 Id 削等效磁链，把 BEMF 压回母线电压能买单的范围。</div><h2>学完应能回答</h2><ul><li>能在 Id-Iq 平面上手画&quot;电流圆 + 电压椭圆&quot;，并指出可行域 = 二者交集</li><li>能从 BEMF = ψf·ωe 撞 V_max = Udc/√3 推导出&quot;基速 ω_base = V_max/ψf&quot;</li><li>能区分恒转矩区（MTPA）、恒功率区（FW 弱磁）、深度弱磁区（MTPV）三段最优轨迹</li><li>理解为什么 IPM（Lq&gt;Ld）比 SPM 弱磁能力强 —— 磁阻转矩 + 椭圆中心偏移</li><li>会用&quot;电压闭环 PI + 前馈解析 + 离线查表&quot;三种主流弱磁工程方案，并说出取舍</li><li>了解弱磁过深会触发退磁阈值（HEV 高温场景）和铁损突增（高频开关 + 高 −Id）</li></ul><p><a class="btn" href="../walkthrough/field-weakening.html">查看完整 Walkthrough（9 步 + 5 误区）</a></p><div class="card measure"><div class="label">总览</div>弱磁 = 用一部分电流&quot;买&quot;电压余量，是高速运行不可绕开的电压预算管理。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>弱磁就像汽车上**自动换挡**——低速齿轮（1 档）扭矩大但速度上限低；高速时换 4 档，扭矩变小但能跑更快。电机里&quot;档位&quot;不是机械的，是电气的：通过注入负 Id 削弱永磁磁链，让反电动势降下来，给逆变器输出腾出电压余量。</div><div class="card measure"><div class="label">核心概念</div>高速时 BEMF = Ke·ω 接近母线电压上限，电流环没电压可用，输出饱和。注入 −Id 削弱等效磁链 → BEMF 减小 → 电压余量恢复 → 还能再上速度（代价：转矩下降）。</div><h3>为什么要学</h3><ul><li>电动车电机、伺服主轴、压缩机想跑高速必弱磁，否则 BEMF 撞母线就转不上去。</li><li>&quot;为什么我电压拉满了电流也加了，速度就是上不去&quot;——99% 是没做弱磁。</li><li>弱磁 ↔ 退磁是一线之隔，负 Id 过大伤永磁体，工程要严格设上限。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;目标转速&quot;从 4200 rpm 推到 8000 rpm，看左下角红色警告&quot;电压饱和&quot;亮起。然后把 Id 拖到 -3A，看红色椭圆（电压极限）变大；继续 -5A，警告消失，进入安全工作区。</div><h2>学习目标</h2><ul><li>理解为什么高速需要弱磁</li><li>掌握电流极限圆 + 电压极限椭圆 + Id/Iq 工作点的几何关系</li><li>区分恒转矩区 / 恒功率区 / MTPA / MTPV</li></ul><h2>核心概念</h2><ul><li>电流极限圆：|I| = √(Id² + Iq²) ≤ I_max。电流硬限。</li><li>电压极限椭圆：√(Vd² + Vq²) ≤ Udc/√3。频率越高椭圆越扁（中心向 −Id 方向移）。</li><li>工作点必须在两条曲线**同时围成的区域**内。低速时电流圆小先撞，高速时电压椭圆收缩先撞。</li><li>弱磁就是把工作点沿 −Id 方向滑动，让它进入&quot;较小的电压椭圆&quot;内。</li></ul><h2>公式</h2><div class="card"><div class="label">PMSM 稳态电压方程（dq）</div><div class="formula">Vd = R·Id − ω·Lq·Iq\nVq = R·Iq + ω·(Ld·Id + ψf)</div><p>高速时 R·I 项 ≪ ω·L·I 项，电压基本由&quot;反电动势 + 交叉耦合&quot;决定。</p></div><div class="card"><div class="label">电压幅值</div><div class="formula">|V| = √(Vd² + Vq²) ≤ V_max = Udc/√3</div><p>V_max 是 SVPWM 线性区上限。超出 → 过调制 → 电流环失控。</p></div><div class="card"><div class="label">BEMF 抵消（弱磁条件）</div><div class="formula">−ω·Ld·Id ≈ ω·ψf</div><p>负 Id 让&quot;等效磁链 ψf + Ld·Id&quot;变小，反电动势降低，腾出电压。</p></div><div class="card"><div class="label">MTPA / MTPV</div><div class="formula">MTPA: Iq² + (Lq−Ld)·Id·Iq − ψf·Id = 0\nMTPV: 沿电压椭圆边界优化 Iq</div><p>MTPA = 同电流下最大转矩；MTPV = 同电压下最大转矩。前者用于低速，后者用于深度弱磁。</p></div><h2>工程意义</h2><ul><li>弱磁是电压预算管理。低速恒转矩、中速进入弱磁、高速恒功率。</li><li>负 Id 上限由两个约束确定：电流圆（|I| ≤ I_max）+ 退磁阈值（厂家给）。永磁体退磁不可逆。</li><li>弱磁切换要平滑——开环 PI 控制电压幅值（让它紧贴 V_max），自动调节 Id 大小。</li></ul><h2>STM32 移植指南</h2><ul><li>弱磁 PI 控制器：误差 = V_max − |V|，输出 Id 命令（取负）。</li><li>工作点检测：每个慢任务周期算一次 |V| 和 |I|，超限报警。</li><li>V_max 留 5-10% 余量（用 0.95·Udc/√3）防止抖动撞限。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>只加目标速度不检查电压余量，电流环输出长期撞限。</li><li>负 Id 加得过大 → 电流圆撞限 + 退磁风险。</li><li>弱磁 PI 增益过大 → Id 命令震荡 → 转矩抖动。</li><li>没设最低速度阈值 → 低速也启用弱磁，无谓损耗。</li></ul></div><h2>调试方法</h2><ul><li>画 Id/Iq 工作点 + 电流圆 + 电压椭圆，看实际位置。</li><li>观察 |V_dq| 与 V_max 的比值——&gt; 0.95 触发弱磁。</li><li>记录进入/退出弱磁前后的转矩、电流、母线电压，计算效率。</li></ul><h2>建议实验</h2><ul><li>不动 Id，把目标转速从 4200 推到 8000 → 看电压饱和警告。</li><li>加大 Iq → 转矩上升但电压更先饱和；加 −Id 反而能推到更高速。</li><li>Udc 从 48V 降到 24V，看电压椭圆缩小一半，弱磁需求大幅提前。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * field_weakening.c — 自动弱磁控制（电压幅值闭环）
+ * 输出 Id 命令给电流环
+ * ============================================ */
+#include &quot;pi.h&quot;
+
+typedef struct {
+    pi_t pi_fw;            // 弱磁 PI（输入：电压余量误差，输出：Id 命令）
+    float v_max;           // SVPWM 线性区上限 = 0.95 × Udc/√3
+    float id_min;          // 最负 Id 上限（退磁安全 + 电流圆）
+    float i_max;           // 电流圆 |I| ≤ I_max
+    float deadband;        // |V|/V_max &lt; 该值不弱磁
+} fw_ctrl_t;
+
+void fw_init(fw_ctrl_t *f, float udc, float i_max, float id_min) {
+    f-&gt;v_max = 0.95f * udc * 0.57735027f;     // 1/√3
+    f-&gt;id_min = id_min;
+    f-&gt;i_max = i_max;
+    f-&gt;deadband = 0.93f;     // 在 95% 之前不动作
+
+    /* 弱磁 PI：误差大时快速注入 Id（负方向） */
+    pi_init(&amp;f-&gt;pi_fw, 0.5f, 100.0f, 1.0f/2000.0f,
+            id_min,    /* out_min: 最大负 Id */
+            0.0f);     /* out_max: 不主动注入正 Id */
+}
+
+/* 输入：当前 Vd / Vq，当前 Iq；输出：Id 参考 */
+float fw_compute_id_ref(fw_ctrl_t *f, float vd, float vq, float iq_ref) {
+    float v_mag = sqrtf(vd*vd + vq*vq);
+    float v_ratio = v_mag / f-&gt;v_max;
+
+    /* 死区内不动作 */
+    if (v_ratio &lt; f-&gt;deadband) {
+        pi_reset(&amp;f-&gt;pi_fw);
+        return 0.0f;
+    }
+
+    /* 误差 = 1.0 - 当前比值（负值表示已超限，需要更负 Id） */
+    float err = 1.0f - v_ratio;
+    float id_ref = pi_step(&amp;f-&gt;pi_fw, 0.0f, -err);    /* 注：符号约定 */
+
+    /* 电流圆约束：|Id|² + Iq² ≤ I_max² */
+    float iq_sq = iq_ref * iq_ref;
+    float id_max_circle = -sqrtf(f-&gt;i_max * f-&gt;i_max - iq_sq);
+    if (id_ref &lt; id_max_circle) id_ref = id_max_circle;
+
+    return id_ref;
+}
+
+/* 用法（在速度环之后、电流环之前）：
+ *   id_ref = fw_compute_id_ref(&amp;fw, vd_last, vq_last, iq_ref);
+ *   // 现在 id_ref + iq_ref 进入电流环
+ *
+ * === 调试要点 ===
+ * 1. v_max 必须留余量（90-95%），否则在边界震荡
+ * 2. id_min 由两条线决定：电流圆 + 退磁阈值（取严的那条）
+ * 3. PI 增益太大 → Id 命令震荡 → 转矩抖动；太小 → 弱磁响应慢
+ */</pre><h2>下一步</h2><ul><li>进入故障调试模块，把所有学过的诊断技能串起来。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">高速时电流环输出 |V| 撞限，电机不再加速。最直接的解决方案？</div><ol><li>加大 Iq</li><li class="correct">注入负 Id 削弱磁链 (正确)</li><li>提高 PWM 频率</li><li>降低控制带宽</li></ol><div class="hint">提示：负 Id 让等效磁链 ψf + Ld·Id 变小 → BEMF 降低 → 电压余量恢复 → 速度还能再上。</div></div><div class="quiz"><div class="q">电流极限圆和电压极限椭圆，哪个对低速不构成约束？</div><ol><li>电流圆</li><li class="correct">电压椭圆 (正确)</li><li>都构成</li><li>都不构成</li></ol><div class="hint">提示：低速 ω 小，电压椭圆很大，包住整个电流圆。电流圆才是低速时的硬限。高速 ω 大，椭圆收缩到电流圆内部，先撞。</div></div><div class="quiz"><div class="q">负 Id 加到极大可能造成的不可逆危害？</div><ol><li>过流</li><li>过压</li><li class="correct">永磁体退磁（磁性永久损失） (正确)</li><li>过热</li></ol><div class="hint">提示：深度负 Id 产生的反向磁场如果超过永磁体矫顽力，磁性永久减弱（退磁）。每个永磁电机都有退磁阈值（厂家给），工程上 Id 限制必须严格守这条线。</div></div><div class="quiz"><div class="q">MTPA（最大转矩电流比）控制策略适用什么阶段？</div><ol><li class="correct">低速恒转矩区 (正确)</li><li>高速弱磁区</li><li>深度弱磁区</li><li>所有区域</li></ol><div class="hint">提示：MTPA = 同样电流幅值下产生最大转矩。在没撞电压限的恒转矩区效率最优。撞了电压限就要切换到弱磁（恒功率）区策略。</div></div><div class="quiz"><div class="q">母线电压 Udc 从 48V 降到 24V，弱磁开始介入的转速大约怎么变？</div><ol><li>不变</li><li>提高一倍</li><li class="correct">降低一半 (正确)</li><li>提高一倍开方</li></ol><div class="hint">提示：V_max 与 Udc 成正比，电压椭圆半径缩一半。BEMF = Ke·ω 撞 V_max 时 ω 也减半，所以弱磁介入速度对半。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

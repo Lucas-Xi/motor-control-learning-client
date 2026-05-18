@@ -9,6 +9,7 @@ import {
   getChallengesFor,
 } from '../../content/challenges';
 import { useChallengeStore, type ComparatorSemantic } from '../../store/challengeStore';
+import { useInsightsStore } from '../../store/insightsStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import type { ModuleId } from '../../simulation/engine/types';
 import { Card } from '../ui/Card';
@@ -73,6 +74,7 @@ export function ChallengePanel({ moduleId }: Props) {
   const incAttempts = useChallengeStore((s) => s.incrementAttempts);
   const recordResult = useChallengeStore((s) => s.recordResult);
   const resetOne = useChallengeStore((s) => s.resetOne);
+  const recordChallengeAttempt = useInsightsStore((s) => s.recordChallengeAttempt);
 
   // 用切片选择器 —— 严格按 CLAUDE.md 要求，避免抓整个 store
   const sliceKey = SLICE_KEY_OF[moduleId];
@@ -114,7 +116,20 @@ export function ChallengePanel({ moduleId }: Props) {
   const rec = records[active.id];
   const tone = difficultyTone(active.difficulty);
 
-  const onStartAttempt = useCallback(() => incAttempts(active.id), [active.id, incAttempts]);
+  const onStartAttempt = useCallback(() => {
+    incAttempts(active.id);
+    // 学习洞察：同时记录一条带参数快照的尝试记录。
+    // 仅浅拷贝当前 sliceData 字段 + 当前评估值 + passed 标志，避免循环引用。
+    const params = sliceData && typeof sliceData === 'object'
+      ? { ...(sliceData as Record<string, unknown>) }
+      : {};
+    recordChallengeAttempt(active.id, {
+      ts: Date.now(),
+      params,
+      passed,
+      currentValue: Number.isFinite(currentValue) ? currentValue : undefined,
+    });
+  }, [active.id, incAttempts, recordChallengeAttempt, sliceData, passed, currentValue]);
 
   return (
     <Card

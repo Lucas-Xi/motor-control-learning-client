@@ -1,5 +1,17 @@
 # 压缩机变频器控制学习客户端
 
+![PR CI](https://github.com/<OWNER>/<REPO>/actions/workflows/pr.yml/badge.svg)
+![Release Audit](https://github.com/<OWNER>/<REPO>/actions/workflows/release-audit.yml/badge.svg)
+![Nightly Desktop](https://github.com/<OWNER>/<REPO>/actions/workflows/nightly-desktop.yml/badge.svg)
+
+> 上面三个 badge 的 `<OWNER>/<REPO>` 占位请在 GitHub 上 fork / 创建仓库后替换为真实 `owner/repo`（例如 `vincent-xi/motor-control-learning-client`）。CI 由 GitHub Actions 驱动：
+>
+> - **PR CI**（`.github/workflows/pr.yml`）：每个指向 `main` 的 PR 触发，跑 `verify + fault-waves + tsc + vitest + build`，目标 5 分钟内反馈。
+> - **Release Audit**（`.github/workflows/release-audit.yml`）：`push` 到 `main` + 手动触发，PR CI 全部 + Playwright e2e，上传 `test-results` 工件。
+> - **Nightly Desktop Pack**（`.github/workflows/nightly-desktop.yml`）：每日 UTC 18:00（北京 02:00）+ 手动触发，在 `windows-latest` 上 `npm run desktop:pack` 并把 `release/win-unpacked` 压成 zip 上传 7 天。
+>
+> 本机想完整预跑 PR CI 的等价步骤：`npm run ci:local`（等价于 `npm ci → verify → fault-waves → tsc → vitest → build`，默认跳过 `npm ci`，加 `-- --with-install` 才会装依赖）。
+
 面向初中级嵌入式工程师的**压缩机变频器**专项学习客户端，覆盖空调 / 冰箱 / 工业制冷三类典型压缩机驱动。基础部分讲清 BLDC / PMSM / FOC / SVPWM / Park-Clarke 等通用电机控制；进阶部分围绕压缩机特有场景：V/f 软启动 + HFI 高频注入低速无感 + MTPA + 弱磁过渡 + 共振点避让 + 转矩脉动抑制 + 反液击 + APF 前级 + 压缩机典型故障。
 
 当前项目同时支持 Vite Web 运行与 Electron Windows 客户端打包，产出免安装目录 `release/win-unpacked/电机控制学习客户端.exe`（产物文件名暂保持兼容，下一波会同步换名）。
@@ -98,6 +110,15 @@ npm run qa:screenshots
 ```
 
 该命令会逐个打开 12 个模块，在桌面端和移动端各截一组图，输出到 `output/screenshots/`，用于交付前快速检查 UI 是否破版。
+
+离线文档站点：
+
+```bash
+npm run docsite       # 生成 docs/site/ 静态 HTML 站点（17 模块 + walkthrough + 术语 / 公式 / 故障速查）
+node scripts/verify-docsite.mjs   # 校验产物完整性
+```
+
+`docs/site/index.html` 可直接双击打开或托管到 GitHub Pages；每个详情页右上角有"打印"按钮可输出纸质教材。
 
 发布前完整审计：
 

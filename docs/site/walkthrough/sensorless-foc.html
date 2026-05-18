@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>无感 FOC / 观测器 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html" class="active">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">10 Walkthrough</span>无感 FOC / 观测器</h1><p class="subtitle">反电动势是无感的&quot;回声&quot;——速度大听得清、速度小被噪声淹没；要懂 SMO 离散化、Rs 温飘、PLL 带宽、切换滞回四件事才能上量产。</p><p><a href="../module/sensorless-foc.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能默写 e = v − Rs·i − Ls·di/dt，并解释每一项的物理含义和离散化误差源</li><li>能解释为什么低速 BEMF 幅值小 → 估角度失败（SNR 塌陷），并定量算&quot;信噪比 = 1&quot;的临界转速</li><li>理解 PLL 用 sin(θ_meas − θ̂) 而不是 Δθ 直接做误差的原因（在 ±π/2 内单调）</li><li>掌握 STM32 上 SMO 离散化骨架（一阶 Euler + sat 函数）和稳定步长选择</li><li>能识别 SMO 抖振、Rs 温飘漂角、PLL 增益过大、滤波延迟相位损失四类典型故障现象</li><li>知道 BEMF/HFI 切换的转速边界（5-10% 同步速）和滞回原则，以及健康检查闭环</li></ul><h2>主线步骤（8 步）</h2><section class="step"><div class="step-no">Step 1 / 8 · bemf-equation</div><h3>BEMF 方程</h3><div class="field"><div class="field-label">目标</div><div>把&quot;反电动势怎么算&quot;咬死，理解每一项的物理含义</div></div><div class="field"><div class="field-label">操作</div><div>看主图下方文字，回忆 e_α = v_α − Rs·i_α − Ls·di_α/dt；右侧把&quot;转速&quot;调到 1500 rpm。</div></div><div class="field"><div class="field-label">观察</div><div>&quot;反电动势幅值 ≈ Ke·ω·polePairs&quot; 显示约 32V，SMO 锁相中，峰值误差 &lt; 3°。</div></div><div class="field"><div class="field-label">为什么</div><div>PMSM 定子磁链 ψ_α = ψ_f·cos(θe) → BEMF e_α = dψ/dt = −ψ_f·ωe·sin(θe)。BEMF 矢量幅值 ∝ ωe，方向领先转子磁链 90°。这就是 atan2(eβ, eα) − π/2 能反推角度的全部秘密。三个估算项的工程含义：v 用 PI 输出值（电压指令）而不是测电压（家用驱动器没有电压采样），所以 v 的精度由&quot;PWM 实际输出 vs 指令&quot;的死区误差决定；Rs·i 在低速重载时是主导项（甚至超过 BEMF），所以 Rs 估值的温飘是低速无感的头号噪声源；Ls·di/dt 离散化为 Ls·(i[k]−i[k-1])/Ts，对采样噪声极敏感——这是为什么 SMO 之后必须再加一阶低通。</div></div></section><section class="step"><div class="step-no">Step 2 / 8 · high-speed-locked</div><h3>高速锁相</h3><div class="field"><div class="field-label">目标</div><div>在 BEMF 信号充足时看角度怎么被准确估算</div></div><div class="field"><div class="field-label">操作</div><div>保持转速 1500 rpm，观察主图中绿色&quot;真实 θe&quot;和蓝色&quot;SMO+PLL 估算&quot;两条线。</div></div><div class="field"><div class="field-label">观察</div><div>两条线几乎重合，红色误差线压在 ±5° 失锁阈值内；下面&quot;开关面 |i_est − i_meas|&quot; 快速收敛到边界层附近（接近 0）。</div></div><div class="field"><div class="field-label">为什么</div><div>SMO 本质是用电流误差 i_est − i_meas 驱动一个开关函数（sat 替代 sign 抑制抖振），开关函数的等效控制项经低通滤波 ≈ BEMF。BEMF 大时 SNR 高，atan2 + PLL 锁得稳。这是 5% 同步速以上无感 FOC 的&quot;舒适区&quot;。压缩机额定转速 4000-6000 rpm（电频率 200-400 Hz @5 极对），BEMF 峰值 30-50V，是 SMO 的甜区。</div></div><div class="quiz"><div class="q">随堂题：反电动势 e = v − Rs·i − Ls·di/dt 中，最容易因为温升导致角度漂移的参数是？</div><ol><li>v（PI 输出指令，理论值精确）</li><li class="correct">Rs（定子铜阻每 10°C 升 4%；Rs·i 是低速主导项） (正确)</li><li>Ls（定子电感受饱和影响但温敏较弱）</li><li>都不影响（PLL 会自动修正）</li></ol><div class="hint">提示：Rs 是铜电阻，温升每 10°C 上升约 4%。压缩机启动到稳态绕组温升 60-80°C，Rs 涨 25-30% → Rs·i 项偏差 25%。在低速重载（Rs·i 主导）时这会让 BEMF 估值有恒定偏差 → 角度有恒定偏移 → 表现为&quot;Iq 命令大但转矩小、效率掉 5-8%&quot;。生产驱动器必须做 Rs 在线辨识——一种实现：稳态时 v_d ≈ Rs·i_d（id≈0 时几乎纯 Rs 项），反推 Rs 实时刷新；另一种用 NTC 测绕组温度按温度系数推算。</div></div></section><section class="step"><div class="step-no">Step 3 / 8 · smo-discrete</div><h3>SMO 离散化实现</h3><div class="field"><div class="field-label">目标</div><div>把&quot;滑模观测器&quot;在 STM32 上落地的最小骨架理清楚</div></div><div class="field"><div class="field-label">操作</div><div>看下方&quot;SMO 内部信号&quot;图：i_est 跟 i_meas 几乎重合，z_α 经一阶 LPF 是 BEMF 估值。再读 C 片段。</div></div><div class="field"><div class="field-label">观察</div><div>SMO 不依赖速度也不依赖角度——只用电压、电流、电机参数 (Rs, Ls)。这是它比 EKF 更受欢迎的核心原因（EKF 需要速度作为状态变量，且 9 个 matrix 元素维护麻烦）。</div></div><div class="field"><div class="field-label">为什么</div><div>SMO 离散化骨架（一阶 Euler、电流 dq → αβ 后实现）： /* 电机模型：Ls·di/dt = v − Rs·i − e；估算 i_est 时把未知 e 替换成 sat(i_est-i_meas) 的开关项 */  float di_est_alpha = (v_alpha - Rs * i_est_alpha - K_smo * sat(i_est_alpha - i_meas_alpha, BOUND)) / Ls; float di_est_beta  = (v_beta  - Rs * i_est_beta  - K_smo * sat(i_est_beta  - i_meas_beta , BOUND)) / Ls; i_est_alpha += di_est_alpha * Ts; i_est_beta  += di_est_beta  * Ts; /* 开关函数的等效控制项 ≈ BEMF；用一阶 LPF 提取 */  float z_alpha = K_smo * sat(i_est_alpha - i_meas_alpha, BOUND); float z_beta  = K_smo * sat(i_est_beta  - i_meas_beta , BOUND); e_alpha = e_alpha * (1 - alpha_lpf) + z_alpha * alpha_lpf; e_beta  = e_beta  * (1 - alpha_lpf) + z_beta  * alpha_lpf; theta_atan = atan2(-e_alpha, e_beta);  /* BEMF 领先转子 90° 故 -e_alpha */  三个工业级注意：① sat(x, B) = clamp(x/B, -1, 1) 替代 sign() 消除抖振，B 是边界层厚度，典型 0.1·I_rated；② K_smo 选 ≈ ωe·Ls·5（让滑模面收敛比 BEMF 变化快 5 倍）；③ alpha_lpf = Ts·2π·f_c/(1+Ts·2π·f_c)，截止 f_c 选 BEMF 频率的 5-10 倍（典型 200-500 Hz @ 50 Hz BEMF），太低延迟大、太高滤不掉抖振。</div></div><div class="quiz"><div class="q">随堂题：SMO 离散化用一阶 Euler，PWM 16 kHz（Ts = 62.5 μs），电机 Ls = 1 mH、Rs = 0.4 Ω。最大稳定 K_smo 大约多大？</div><ol><li>K_smo = 50（远小于稳定边界）</li><li class="correct">K_smo = 320（≈ 2Ls/Ts = 0.002/62.5e-6 ≈ 32，但抖振大） (正确)</li><li>K_smo = 5000（超稳定边界，必发散）</li><li>与 Ls/Ts 无关（K_smo 越大越好）</li></ol><div class="hint">提示：一阶 Euler 离散化稳定条件：K_smo·Ts/Ls &lt; 2（推导自 z 域稳定）→ K_smo &lt; 2·Ls/Ts = 2·0.001/62.5e-6 = 32。但实际取 K_smo ≈ ωe·Ls·5 才有性能，典型 200-500 量级——这就需要把 Euler 升级为 RK2 或缩 Ts。选项 B 数值正确但概念上&quot;32 已经是稳定边界&quot;，工程取 0.3-0.5 倍 = 10-15。提 PWM 频率到 32 kHz 能让稳定边界翻倍是另一条路。</div></div></section><section class="step"><div class="step-no">Step 4 / 8 · low-speed-fail</div><h3>低速失锁</h3><div class="field"><div class="field-label">目标</div><div>看 BEMF 在低速怎么塌陷，定量算&quot;信噪比 = 1&quot;临界转速</div></div><div class="field"><div class="field-label">操作</div><div>加载预设&quot;低速无感估算失败&quot;，转速从 1500 跌到 ~300 rpm。</div></div><div class="field"><div class="field-label">观察</div><div>主图右上变红：&quot;失锁风险（建议切 HFI）&quot;；蓝色估算角剧烈抖动追不上真实角；峰值误差冲到 15° 以上；右侧诊断卡警告&quot;低速 SMO 失效区&quot;。</div></div><div class="field"><div class="field-label">为什么</div><div>BEMF 幅值 = ψ_f·ωe = ψ_f·2π·rpm·polePairs/60。300 rpm @5 极对时只有 1500 rpm 的 1/5，约 6V 量级；Rs·i 项在重载 8A、Rs=0.4Ω 时约 3.2V；加上死区电压畸变（~2V @310V 母线 + 2μs 死区）和 ADC 量化噪声 → SNR ≈ 1，估算彻底失效。压缩机零启动用不了 SMO 的根本原因，必须切下一模块的 HFI。临界转速估算公式：SNR=1 → ψ_f·ωe = Rs·I_max + V_deadtime → ω_critical = (Rs·I_max + V_deadtime) / ψ_f，典型空调压缩机 50-100 rad/s 电角度，相当于 100-200 rpm @5 极对。</div></div><div class="field"><div class="field-label">工况</div><div><code>low-speed-sensorless</code></div></div></section><section class="step"><div class="step-no">Step 5 / 8 · pll-tracking</div><h3>PLL 锁相 + 带宽折中</h3><div class="field"><div class="field-label">目标</div><div>理解 PLL 怎么把 atan2 瞬时角变成平滑跟踪角，以及为什么 PLL 用 sin(Δθ) 不用 Δθ</div></div><div class="field"><div class="field-label">操作</div><div>回到默认 1500 rpm，右侧把 PLL Kp 从 80 加到 240（3 倍），观察主图。</div></div><div class="field"><div class="field-label">观察</div><div>锁相收敛更快（启动瞬态更短），但稳态角度抖动明显放大，红色误差线变粗。</div></div><div class="field"><div class="field-label">为什么</div><div>PLL 误差用 Δθ = sin(θ_meas − θ̂) 而不是直接相减——因为 atan2 在 ±π 边界会跳变（179° → −179° 差 358°），直接相减会触发&quot;角度环绕&quot;灾难；sin(Δθ) 在 |Δθ| &lt; π/2 内单调，且在 0 附近 ≈ Δθ，PI 在小误差区间线性表现良好，在大误差区间也不会崩。完整 PLL 离散实现（PWM 16 kHz、Ts = 62.5 μs）： float err = sinf(theta_atan - theta_hat);  /* 用三角恒等式：sin(a-b) = sin(a)cos(b) - cos(a)sin(b)，省一次 atan2 */  omega_integral += Ki_pll * err * Ts; omega_hat = Kp_pll * err + omega_integral; theta_hat += omega_hat * Ts; if (theta_hat &gt; PI) theta_hat -= 2*PI; else if (theta_hat &lt; -PI) theta_hat += 2*PI;   Kp 越大跟踪越快，但同时把 BEMF 估算的噪声直接放大到角度输出。带宽折中是无感调试的核心手艺——典型工程做法：PLL 带宽 = 电流环带宽的 1/3~1/5。电流环 1 kHz → PLL 带宽 200-300 Hz → Kp_pll ≈ 2·ζ·ω_pll、Ki_pll ≈ ω_pll²（ζ = 0.707）→ Kp_pll ≈ 2·0.707·1885 ≈ 2660、Ki_pll ≈ 3.55e6。</div></div><div class="quiz"><div class="q">随堂题：PLL 输出 ω̂ 与命令转速偏差越来越大持续 50 ms，控制器应该？</div><ol><li>什么也不做，继续按估算角度送电流（&quot;也许会自己锁回来&quot;）</li><li class="correct">触发&quot;健康检查 failed&quot;立刻切回开环 V/f 拖动或封 PWM 报故障 (正确)</li><li>把 Kp 拉大强行追（&quot;激进 PLL 更快锁&quot;）</li><li>重启 MCU（&quot;软件出错了&quot;）</li></ol><div class="hint">提示：估算失效时继续闭环 = 把 Iq 命令投到错误方向，轻则失步、重则烧管。生产代码必有 PLL 健康检查：① BEMF 幅值持续 &lt; 阈值；② |ω_cmd − ω_hat| 持续 &gt; 阈值；③ atan2 角度跳变速率异常。任一条件 50-100 ms 内不恢复就切开环 V/f 或封 PWM，并把当前转速、电流、BEMF 写入黑匣子。选项 C 是更糟选择——失锁时拉大 Kp 让噪声更快进入控制环，反而加速发散。</div></div></section><section class="step"><div class="step-no">Step 6 / 8 · noise-and-compensation</div><h3>噪声敏感性 + Rs 在线补偿</h3><div class="field"><div class="field-label">目标</div><div>量化 Rs/ADC/死区误差对角度的影响，并理解工程上的补偿手段</div></div><div class="field"><div class="field-label">操作</div><div>把&quot;噪声&quot;参数从 0.08 拉到 0.5（约 6 倍）。</div></div><div class="field"><div class="field-label">观察</div><div>&quot;SMO 内部信号&quot;图里开关面波形变毛糙；z_α 低通输出多了高频纹波；峰值误差从 ~3° 涨到 8-10°，逼近失锁阈值。</div></div><div class="field"><div class="field-label">为什么</div><div>生产噪声不只是 ADC 量化，还包括：① 死区导致的开关电压畸变（约 1-2V @ PWM 周期）；② Rs 温飘（启动到稳态升 25-30%）；③ 电流采样运放失调；④ 母线电压跌落导致 v_cmd 与实际差异。这些都先污染 e_α / e_β 估算，再经 atan2 + PLL 一路放大到角度。三种主流补偿： (1) 死区在线补偿：v_alpha_real = v_alpha_cmd + V_deadtime · sign(i_alpha)；过零附近禁用（前一模块讲过）； (2) Rs 在线辨识：稳态 i_q=I0、i_d=0、转速恒定时 v_d ≈ -ωe·Lq·iq + Rs·id ≈ 0；切换 id 注入小直流 0.5A → v_d ≈ Rs·0.5 → 反推 Rs，每 5-10 秒刷新一次； (3) 加 BEMF 一阶 LPF（截止 200 Hz @ 50 Hz BEMF）：滤掉开关谐波，代价是低通引入相位滞后（200 Hz LPF 在 50 Hz 处滞后 ~14°），所以 LPF 截止频率必须远高于 BEMF 频率本身——这是 5-10 倍经验法则的来源。</div></div></section><section class="step"><div class="step-no">Step 7 / 8 · handoff</div><h3>切换边界 + 滞回</h3><div class="field"><div class="field-label">目标</div><div>形成&quot;什么速度用什么观测器&quot;的工程心智图，并理解滞回为什么必要</div></div><div class="field"><div class="field-label">操作</div><div>回到默认参数，慢慢把转速从 50 推到 3000 rpm，观察主图右上角状态条变化。</div></div><div class="field"><div class="field-label">观察</div><div>50-300 rpm：失锁风险（建议切 HFI）；300-500 rpm：SMO 误差临界（warn）；&gt; 500 rpm：SMO 锁相中（measure）。</div></div><div class="field"><div class="field-label">为什么</div><div>工程套路：&lt; 5% 同步速 → HFI；5-10% → 加权混合两套估算（避免角度跳变）；&gt; 10% → 纯 BEMF / SMO。切换边界必须有滞回（hysteresis）：例如 HFI → BEMF 在 400 rpm 切，BEMF → HFI 在 250 rpm 切——150 rpm 的&quot;死区&quot;防止在边界附近反复抖动。如果没有滞回，机械负载波动让转速在 350 rpm 上下抖 ±50 rpm 时，观测器在 HFI 和 BEMF 之间每秒切几次，每次切换都让 dq 命令跳变 → 转矩脉动 → 客户听到的就是&quot;压缩机咯噔咯噔&quot;。状态机骨架（属于模块 14）： if (state == BEMF &amp;&amp; rpm &lt; 250) state = HFI; else if (state == HFI &amp;&amp; rpm &gt; 400) state = BEMF; /* 切换瞬间还要清 PI 积分器，避免旧状态的电压指令惯性打到新状态 */</div></div></section><section class="step"><div class="step-no">Step 8 / 8 · recap</div><h3>回到全局</h3><div class="field"><div class="field-label">目标</div><div>把无感 FOC 串回完整变频器链路</div></div><div class="field"><div class="field-label">操作</div><div>回顾：一台空调压缩机上电到额定转速，控制器经历了哪几段？</div></div><div class="field"><div class="field-label">观察</div><div>答：① 母线预充（PFC 模块）② d 轴对齐（给固定 Id 让转子停在零位）③ HFI 低速无感（下一模块）④ HFI→SMO 平滑过渡（带滞回）⑤ SMO 闭环（500 rpm 以上）⑥ 进入弱磁高速段（4000+ rpm）。</div></div><div class="field"><div class="field-label">为什么</div><div>&quot;无感&quot;是一组观测器的协同，不是单一算法。本模块讲的 BEMF/SMO 是高速段的主力，下一模块 HFI 补低速段。两者配合才能撑起压缩机从零速到 6000+ rpm 的全工况。出厂前必跑的无感测试：① 启动失败率（500 次启动失败 &lt; 5 次）；② 切换稳定性（在 250-400 rpm 间反复扫描转速 100 次无切换震荡）；③ Rs 温飘鲁棒性（25°C 调好后烤箱升到 85°C 复测，角度误差 &lt; 5°）；④ 母线跌落鲁棒性（Udc 从 310V 降到 250V，PLL 不失锁）。</div></div><div class="quiz"><div class="q">随堂题：压缩机变频器从静止启动到 3000 rpm，BEMF/SMO 观测器最早能可靠工作的时间点大约是？</div><ol><li>上电瞬间（0 rpm）就行，SMO 不依赖速度</li><li class="correct">转速越过 ~5-10% 额定转速（约 300-500 rpm）之后，BEMF SNR 足够 (正确)</li><li>到达额定转速时</li><li>永远不行，压缩机必须用编码器</li></ol><div class="hint">提示：BEMF ∝ ωe。低于 5% 同步速时 BEMF 比 Rs·i + 死区误差还小，SMO 估不出。越过这个门槛后 SNR 提升，可以从 HFI 平滑切到 SMO。选项 A 是常见的误解——SMO 算法本身不需要速度作为输入，但它能&quot;看见&quot;的信号（BEMF）必须 ≥ 一定量级才有意义。选项 D 是反例——空调和冰箱压缩机大面积是无感，证明完全可行。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：Rs 标错（实测 0.42 Ω 填成 0.6 Ω）</div><p><strong>现象：</strong>稳态下蓝色估算角和绿色真实角差恒定 ~15°，误差曲线不是零均值而是带直流偏置；Iq 大但转矩小</p><p><strong>为什么：</strong>Rs·i 项被高估 → e_α = v_α − Rs·i_α 被多扣一部分 → BEMF 幅值偏小、相位偏移 → atan2 算出的角度有恒定偏差。生产中表现为&quot;扭矩偏低、效率差几个点、铜损发烫&quot;。解决：上电做参数自辨识（注入直流测 Rs，注入高频测 Ls + 凸极比）；运行中做 Rs 在线刷新（id=0、稳态下 v_d ≈ Rs·实际 id 反推）。压缩机生产线必跑参数辨识流程，不允许直接用电机型号标称值。</p></div><div class="pitfall"><div class="label">试错：PLL Kp/Ki 拉到 4 倍</div><p><strong>现象：</strong>启动瞬态变快，但稳态角度抖动放大；电流环也开始振荡</p><p><strong>为什么：</strong>PLL 带宽过高 → BEMF 噪声经 PI 直接进 θ̂ → Park 投影矩阵随机抖动 → Iq 命令在 q 轴和 d 轴间来回错投 → 电流环看到不一致的 dq 参考，产生振荡。工程经验：PLL 带宽 ≤ 电流环带宽 / 3。无感系统 PLL 带宽通常 200-500 Hz（电流环 1 kHz 时），更高就要冒抖动放大的风险。</p></div><div class="pitfall"><div class="label">试错：&lt; 300 rpm 强行闭环（关掉 HFI 切换）</div><p><strong>现象：</strong>电机抖动、可能反转、电流尖峰；峰值误差爆 30° 以上</p><p><strong>为什么：</strong>BEMF 太小（~6V）连不过 Rs·i 的扰动，atan2 输入信噪比 &lt; 1 → 估角度本质上是在追噪声 → Iq 命令方向随机 → 转矩瞬时方向乱变。压缩机零启动失败 99% 是这个原因。修复：低速段必须先 HFI（下一模块），或者用开环 V/f 拖到 200 rpm 再切 SMO。</p></div><div class="pitfall"><div class="label">试错：禁用 PLL 健康检查</div><p><strong>现象：</strong>负载突变或母线跌落时，PLL 一次失锁后没自动回退；电流持续大、保护器跳闸甚至烧管</p><p><strong>为什么：</strong>生产代码必须监测 ① BEMF 幅值是否过低（&lt; 2V 时报警）② 角度误差 |Δθ| 是否持续超阈值（&gt; 30° 持续 50 ms）③ ω̂ 与命令转速偏差是否过大（&gt; 30% 持续 100 ms）。任一条件触发立即切开环 V/f 或封 PWM 报故障。没这层保护 → 一次扰动就可能烧管，是无感 FOC 最致命的设计缺失。健康检查代码加 10 行，能避免 90% 的售后退机。</p></div><h2>下一模块引子</h2><div class="card primary">现在你能用 BEMF/SMO 估算高速角度了，并且知道 Rs 温飘、PLL 带宽、切换滞回、健康检查四道工业坎。但压缩机零启动 BEMF 还没出来——下一模块 HFI 用&quot;主动注入高频电压 + 凸极响应解调&quot;解决 0-300 rpm 这段死区，是空调/冰箱压缩机的标配。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

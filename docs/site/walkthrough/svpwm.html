@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVPWM Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html" class="active">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">07 Walkthrough</span>SVPWM</h1><p class="subtitle">把目标电压矢量按时间分给六边形里相邻两个基本矢量 + 零矢量；调色板只有 8 种颜色，靠&quot;时间比例&quot;调出任意色 + 多榨 15.5% 母线。</p><p><a href="../module/svpwm.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能列举 8 种开关状态及其对应矢量（V0/V7 零矢量，V1-V6 六个非零矢量及其上桥臂二进制码）</li><li>能口算 atan2(Uβ, Uα) → 扇区号，知道 [-π, π] → [0, 2π] 归一化的边界陷阱</li><li>能解释 SVPWM 比 SPWM 多 15.5% 利用率的原因（min-max 偏置 = 三次谐波注入 = 零序不影响线电压）</li><li>能识别过调制（m &gt; 1.0）的现象、硬件后果与两种处置（圆内限幅 / 六步切换）</li><li>知道为什么&quot;七段式&quot;对称序列是嵌入式实现的事实标准 + 它如何天然让 ADC 采样落在电流纹波谷</li><li>会配 STM32 TIM1 BDTR / DTG 设死区，懂 duty 必须钳到 [0.02, 0.98] 给自举电容充电</li></ul><h2>主线步骤（8 步）</h2><section class="step"><div class="step-no">Step 1 / 8 · eight-states</div><h3>8 个状态</h3><div class="field"><div class="field-label">目标</div><div>建立&quot;三相桥臂 8 种开关组合 = 8 个电压矢量&quot;的认知</div></div><div class="field"><div class="field-label">操作</div><div>观察左侧空间矢量六边形：6 个顶点是 V1(100) / V2(110) / V3(010) / V4(011) / V5(001) / V6(101)；中心两个零矢量 V0(000) 和 V7(111)。括号里的三位数表示 A/B/C 三相上桥臂状态（1 = 上管开通）。</div></div><div class="field"><div class="field-label">观察</div><div>六个非零矢量等长（幅值 = 2Udc/3），互相间隔 60°；构成正六边形。零矢量在原点。</div></div><div class="field"><div class="field-label">为什么</div><div>三相两电平逆变器物理上只能输出这 8 种瞬时电压组合——这是硬件给定的&quot;调色板&quot;。SVPWM 的任务就是用&quot;时间加权平均&quot;在这有限调色板上合成出连续旋转的目标矢量。理解这一点，电机控制软件 / 硬件之间的语法就通了。注意 V0(000) 和 V7(111) 都是零矢量但开关状态不同——七段式实现里两者交替用，让 IGBT 开关次数减半（每相每周期开关 1 次），这是省功耗 + 降发热的硬件设计依据。</div></div><div class="field"><div class="field-label">工况</div><div><code>svpwm-sector</code></div></div></section><section class="step"><div class="step-no">Step 2 / 8 · sector-decide</div><h3>判扇区</h3><div class="field"><div class="field-label">目标</div><div>掌握 atan2(Uβ, Uα) → 扇区号的几何与代码</div></div><div class="field"><div class="field-label">操作</div><div>加载预设后，慢慢拖动电压矢量端点（或调 Uα/Uβ）让矢量绕一圈，从 0° → 60° → 120° → 180° → 240° → 300° → 360°。</div></div><div class="field"><div class="field-label">观察</div><div>六边形扇区按 1 → 2 → 3 → 4 → 5 → 6 → 1 依次高亮；探针里&quot;扇区&quot;数字同步切换。</div></div><div class="field"><div class="field-label">为什么</div><div>扇区号决定用哪两个相邻基矢量去合成目标。代码就是 `sector = floor(angle / 60°) + 1`，配合 atan2 的 [-π, π] → [0, 2π] 归一化。这一步算错（特别是 0° / 360° 边界），后面 T1/T2 全错，PWM 输出畸形。工业实现里有一个更巧的&quot;无三角函数&quot;判扇区法（min-max 算法直接给三相 duty），下一步会展开。</div></div><div class="quiz"><div class="q">随堂题：Uα = -100、Uβ = +100，目标矢量落在第几扇区？</div><ol><li>1</li><li class="correct">2 (正确)</li><li>3</li><li>4</li></ol><div class="hint">提示：atan2(100, -100) = 135°，落在 [120°, 180°) → 扇区 3。注意 atan2 参数顺序是 (y, x) = (Uβ, Uα)；写反 (Uα, Uβ) 会让扇区号顺序反转（矢量沿 x 轴镜像 → 旋转方向反），电机反转或卡死，是 SVPWM 实现最高发的 bug。</div></div></section><section class="step"><div class="step-no">Step 3 / 8 · t1-t2-t0</div><h3>T1/T2/T0</h3><div class="field"><div class="field-label">目标</div><div>理解时间分配是&quot;线性组合&quot;的本质</div></div><div class="field"><div class="field-label">操作</div><div>保持矢量在扇区 1 内（如 Uα = 100、Uβ = 60），看右侧 T1 / T2 / T0 三条进度条的长度。把矢量幅值拉大（同时拉大 Uα/Uβ），观察 T0 怎么缩短。</div></div><div class="field"><div class="field-label">观察</div><div>矢量越长 T0 越短；当矢量幅值接近线性区边界时 T0 几乎为 0；继续增大就进入过调制（红色饱和徽标）。</div></div><div class="field"><div class="field-label">为什么</div><div>T1·V1 + T2·V2 + T0·V0 = Ts·Uref。这是矢量加法：用 V1 在 T1 时间 + V2 在 T2 时间，剩下 T0 用零矢量&quot;补足周期&quot;。零矢量不贡献电压但贡献时间。T0 &lt; 0 在物理上不可能（时间不能负），代码必须钳到 0——这就是过调制的硬件根源。扇区 1 内 T1/T2 的精确公式（用 Uα/Uβ 表达）：T1 = Ts·(√3·Uα − Uβ) / (2·Udc/√3) · 简化；T2 = Ts·Uβ/(Udc/√3)。各扇区有 6 套对偶公式——但下一步的 min-max 算法可以完全绕开。</div></div></section><section class="step"><div class="step-no">Step 4 / 8 · modulation-index</div><h3>调制比</h3><div class="field"><div class="field-label">目标</div><div>量化 m = √3·|Uref|/Udc 与线性区边界</div></div><div class="field"><div class="field-label">操作</div><div>把 Uα、Uβ 拖到使 √(Uα² + Uβ²) ≈ Udc/√3 ≈ 179 V（默认 Udc = 310 V）。观察探针里&quot;m&quot;值。</div></div><div class="field"><div class="field-label">观察</div><div>m 接近 1.0 时 T0 几乎为 0；m &gt; 1.0 时饱和徽标变红，三相 duty 撞 [0, 1] 边界。</div></div><div class="field"><div class="field-label">为什么</div><div>SVPWM 线性区上限 m = 1，对应相电压峰值 Udc/√3 ≈ 0.577·Udc。SPWM 线性区上限对应 0.5·Udc。两者比值 = 0.577 / 0.5 = 1.155 → SVPWM 多 15.5% 母线利用率。同样 310 V 母线，SVPWM 能输出更高线电压 → 电机能转更快或在高速段还有 PI 余量。这 15.5% 不是&quot;小聪明&quot;——它直接决定了空调压缩机能不能从 6000 rpm 拉到 7200 rpm（一级能效门槛），决定了 EV 主驱铭牌最大转速，决定了同样电机能省多少弱磁电流。</div></div><div class="quiz"><div class="q">随堂题：母线 Udc = 310 V，SVPWM 线性区最大相电压峰值是？</div><ol><li>155 V</li><li class="correct">179 V (Udc/√3) (正确)</li><li>310 V</li><li>220 V</li></ol><div class="hint">提示：SVPWM 最大相电压峰 = Udc/√3 ≈ 0.577 × Udc ≈ 179 V；SPWM 最大相电压峰 = Udc/2 = 155 V。这是 15.5% 利用率优势的几何来源。310 V 母线时 SVPWM 比 SPWM 多 24 V 可用电压——直接换算到最高转速可以多 13%。</div></div></section><section class="step"><div class="step-no">Step 5 / 8 · min-max-trick</div><h3>min-max 算法</h3><div class="field"><div class="field-label">目标</div><div>理解工程实现里的 min-max 偏置 = 三次谐波注入 + 零序不动线电压</div></div><div class="field"><div class="field-label">操作</div><div>看下方&quot;PWM 占空比&quot;图：三相 duty 在一个 Ts 内是&quot;鞍形波&quot;——A 高、B 中、C 低。读对应的 min-max C 实现。</div></div><div class="field"><div class="field-label">观察</div><div>没有 sin/cos 表、没有扇区 if-else，单次调用 &lt; 1 μs。扇区号只在最后顺手算出来用于诊断。</div></div><div class="field"><div class="field-label">为什么</div><div>这是工业级实现的&quot;标准答案&quot;。数学上等价于 SPWM + 注入三次谐波（频率 3 倍的零序分量）。三次谐波在三相中是同相的（零序），加进每相的占空比不影响线电压（线电压做差时零序抵消），但能把中性点电压&quot;压下去&quot;，让相电压有更大可用空间——这正是 15.5% 利用率优势的代数表达。STM32 上的最小骨架（&lt; 1 μs @ 168 MHz）： /* 输入 vα, vβ, Udc；输出 duty_a/b/c ∈ [0, 1] */ static inline void svpwm_minmax(float valpha, float vbeta, float udc,                                  float *duty_a, float *duty_b, float *duty_c) {   /* 反 Clarke：αβ → abc */   float va = valpha;   float vb = -0.5f * valpha + 0.8660254f * vbeta;  /* −0.5·vα + √3/2·vβ */   float vc = -0.5f * valpha - 0.8660254f * vbeta;   /* min-max 偏置：注入零序让三相居中 */   float vmax = fmaxf(va, fmaxf(vb, vc));   float vmin = fminf(va, fminf(vb, vc));   float voff = -0.5f * (vmax + vmin);   /* 归一化到 [0, 1] 占空比 */   float scale = 1.0f / udc;   *duty_a = 0.5f + (va + voff) * scale;   *duty_b = 0.5f + (vb + voff) * scale;   *duty_c = 0.5f + (vc + voff) * scale;   /* 硬限位（自举电容 + 死区余量），见下一步 */   *duty_a = fmaxf(0.02f, fminf(0.98f, *duty_a));   *duty_b = fmaxf(0.02f, fminf(0.98f, *duty_b));   *duty_c = fmaxf(0.02f, fminf(0.98f, *duty_c)); } /* 调用方式：写 CCR */ TIM1-&gt;CCR1 = (uint32_t)(duty_a * TIM1-&gt;ARR); TIM1-&gt;CCR2 = (uint32_t)(duty_b * TIM1-&gt;ARR); TIM1-&gt;CCR3 = (uint32_t)(duty_c * TIM1-&gt;ARR); 这是 TI Motor SDK / ST FOC SDK 完全一致的实现——没有 atan2、没有扇区 if-else、6 次乘加完成。所有&quot;判扇区→查表 → 算 T1/T2/T0 → 拼七段&quot;的教科书写法在工程上都被 min-max 取代。</div></div><div class="quiz"><div class="q">随堂题：SVPWM 用 min-max 偏置 offset = -(vmax + vmin)/2 注入到三相 duty，对线电压有何影响？</div><ol><li>线电压被削顶</li><li class="correct">没影响——三相加同样偏置（零序分量），线电压做差时偏置抵消 (正确)</li><li>线电压翻倍</li><li>相位被旋转 30°</li></ol><div class="hint">提示：V_AB = V_A − V_B；若 V_A 和 V_B 加同样的 offset，做差时直接消掉。这是&quot;中点平移不影响线电压&quot;的本质，也是为什么可以白白拿到 15.5% 的母线利用率。注意：相电压（相对中性点）会变胖到鞍形波，但电机看的是线电压，鞍形 vs 正弦在电机内部完全等价。</div></div></section><section class="step"><div class="step-no">Step 6 / 8 · seven-segment</div><h3>七段式 + 中心对齐 PWM</h3><div class="field"><div class="field-label">目标</div><div>理解嵌入式 PWM 寄存器层面的&quot;对称插入&quot;</div></div><div class="field"><div class="field-label">操作</div><div>看 PWM 占空比图（右下 PWMChart）：扇区 1 内三相 duty 在一个 Ts 内是&quot;鞍形波&quot;——A 高、B 中、C 低，且开关序列对称。</div></div><div class="field"><div class="field-label">观察</div><div>一个 Ts 内序列：000 → 100 → 110 → 111 → 110 → 100 → 000（七段，关于 Ts/2 对称）。</div></div><div class="field"><div class="field-label">为什么</div><div>中心对齐 PWM 天然实现七段式：CCR 值决定开关切换时刻，对称布置让一个 Ts 内零矢量被劈成两半（前 T0/2 用 V0=000，后 T0/2 用 V7=111），开关次数最少（每相每周期开关 1 次）+ 电流纹波最小 + 谐波低。ADC 注入点放在 Ts/2 处（计数到 ARR），此时所有桥臂处于稳态 111 或 000，电流处于纹波谷——这就是上一模块 FOC 流水线&quot;采样点 = PWM 中点&quot;的硬件依据。STM32 配置： LL_TIM_SetCounterMode(TIM1, LL_TIM_COUNTERMODE_CENTER_UP_DOWN); LL_TIM_OC_SetMode(TIM1, LL_TIM_CHANNEL_CH1, LL_TIM_OCMODE_PWM1); LL_TIM_OC_EnablePreload(TIM1, LL_TIM_CHANNEL_CH1);  /* CCR 预装载：下周期生效 */ LL_TIM_EnableARRPreload(TIM1);  /* ARR 也预装载 */ /* 一次写 CCR1/2/3 后等 update 事件统一锁存，三相同步切换 */</div></div></section><section class="step"><div class="step-no">Step 7 / 8 · deadtime-bdtr</div><h3>死区 + 自举电容</h3><div class="field"><div class="field-label">目标</div><div>把 SVPWM 输出真正接到硬件（TIM1 BDTR/DTG + duty 钳位）</div></div><div class="field"><div class="field-label">操作</div><div>想象目标：IGBT 模块要求 3 μs 死区（关断 + 余量），自举电容驱动上桥要求 duty ≤ 0.98。</div></div><div class="field"><div class="field-label">观察</div><div>STM32 TIM1 168 MHz 时钟，DTG = 3 μs × 168 MHz = 504，按 BDTR DTG 编码规则查表填 0xFD（DTG[7:5]=111, DTG[4:0]=10101 = 21 → 死区 = (64+21)·16/168M ≈ 8 μs，要查表选最接近的）。</div></div><div class="field"><div class="field-label">为什么</div><div>STM32 BDTR/DTG 死区配置完整骨架（生产代码必抄）： /* TIM1 BDTR 配置死区 3 μs（典型 IGBT） */ /* DTG[7:0] 编码规则：见 RM0440 第 1547 页 */ /* 0xxxxxxx：DT = DTG·tDTS，tDTS = 1/168M = 5.95 ns，最大 760 ns */ /* 10xxxxxx：DT = (64+DTG[5:0])·2·tDTS，最大 1.52 μs */ /* 110xxxxx：DT = (32+DTG[4:0])·8·tDTS，最大 3.05 μs */ /* 111xxxxx：DT = (32+DTG[4:0])·16·tDTS，最大 6.10 μs */ uint32_t dtg = 0xE0 | 31;  /* 111 11111 → (32+31)·16·5.95ns ≈ 6.0 μs，按 datasheet 选最接近 3 μs 的值 */ /* 实际 3 μs：tDTS=5.95ns → 504 个 tDTS，落在 110xxxxx 区段（DTG=(504/8)-32=31）→ 0xDF */ LL_TIM_OC_SetDeadTime(TIM1, dtg);  /* 写入 BDTR DTG[7:0] */ LL_TIM_SetBreakPolarity(TIM1, LL_TIM_BREAK_POLARITY_HIGH); LL_TIM_EnableBRK(TIM1);  /* 启用刹车输入（接 OCP COMP 输出） */ LL_TIM_EnableAllOutputs(TIM1);  /* MOE = 1，主输出使能 */ /* 注意 duty 钳位：自举电容需要下管周期性导通充电 */ duty = fmaxf(0.02f, fminf(0.98f, duty));  /* 给自举电容留 2% 周期 */ 三个工程数字必须记：① IGBT 关断时间 ~1-2 μs，死区取关断时间 × 1.5-2，典型 3 μs；② SiC MOSFET 关断 ~100 ns，死区 500 ns 够；③ 自举电容典型 1 μF 自举 + 100 nF 退耦，duty 上限 0.98 留 2% 充电窗口。压缩机产线&quot;出厂正常、客户家三个月后烧管子&quot;几乎都是死区不够 + 上下管短时直通导致 IGBT 内部硅片缓慢退化的累积故障。</div></div></section><section class="step"><div class="step-no">Step 8 / 8 · overmodulation</div><h3>过调制 + 圆内限幅</h3><div class="field"><div class="field-label">目标</div><div>看清 m &gt; 1 时的现象与硬件后果</div></div><div class="field"><div class="field-label">操作</div><div>把 Uα 拉到 200 V、Uβ 拉到 120 V（合成幅值 ~233 V &gt; 179 V 线性区）。</div></div><div class="field"><div class="field-label">观察</div><div>红色饱和警告出现；三相 duty 之一撞到 0 或 1；T0 进度条归零；输出电压频谱出现 5 / 7 / 11 次谐波。</div></div><div class="field"><div class="field-label">为什么</div><div>过调制 = T0 &lt; 0 钳位到 0；输出失真，电流谐波激增，转矩抖动加大。两种工业处置：① **软件层&quot;圆内限幅&quot;** —— 把 PI 输出 (vd, vq) 按比例缩到 |v| ≤ Udc/√3·0.95，让 SVPWM 永远工作在线性区，THD 干净但牺牲 5% 母线利用率；② **切换到&quot;六步运行&quot;** —— 纯方波驱动（每 60° 切一次扇区，T0=0），THD 高但能榨干所有母线电压（峰值利用率 0.637·Udc，比线性区多 10%）。空调压缩机加速段允许短时过调制（甚至六步）以加快启动；稳态运行禁止——THD 高 → 转矩脉动 → 振动加大 → 阀片疲劳。EV 主驱用六步弱磁挤最后几 % 转速，工业伺服永远在线性区跑高精度。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：atan2 参数写成 (Uα, Uβ)</div><p><strong>现象：</strong>扇区号顺序错乱（变成 2 → 1 → 6 → 5 → 4 → 3）；电压矢量&quot;反向旋转&quot;，电机反转或卡死</p><p><strong>为什么：</strong>atan2(y, x) 第一个参数是 y。Uβ 是 y 轴、Uα 是 x 轴，正确写法是 atan2(Uβ, Uα)。参数颠倒等价于把矢量沿 x 轴镜像 → 旋转方向反了。这是 SVPWM 实现里数一数二的高发 bug，特别是从论文公式直接抄代码时。修复 + 预防：用 min-max 算法直接绕开 atan2（上面 svpwm_minmax 函数没有任何三角函数调用），是工程上回避此坑的根本方法。</p></div><div class="pitfall"><div class="label">试错：T0 &lt; 0 不钳位继续输出</div><p><strong>现象：</strong>三相 duty 出现负值或 &gt; 1，CCR 写入异常；电流环输出震荡，PWM 频谱出现亚谐波</p><p><strong>为什么：</strong>T0 &lt; 0 物理不存在。如果代码直接用算出的 T1/T2 而不检查 T1 + T2 ≤ Ts，等价于&quot;借未来时间&quot;——硬件不会借给你，CCR 寄存器会按截断后的奇怪值工作。正确做法：if (T1 + T2 &gt; Ts) { float k = Ts/(T1+T2); T1 *= k; T2 *= k; T0 = 0; } 这就是&quot;过调制圆内限幅&quot;。或者直接用 min-max 算法 + duty 钳位 [0.02, 0.98]，由硬件 PWM 寄存器自动处理上下限。</p></div><div class="pitfall"><div class="label">试错：duty 不限到 [0.02, 0.98]</div><p><strong>现象：</strong>极端 duty（如 0.005 或 0.995）时 PWM 比较器吃不到边沿，自举电容来不及充电，上桥臂驱动失效；或死区无效造成上下管短时直通</p><p><strong>为什么：</strong>IGBT/MOS 上桥臂驱动通常用自举电路，需要下桥臂周期性导通给自举电容充电。duty = 1（永远上管开）时下管永不导通，自举电容放完电后栅极电压塌陷，上管脱栅 → 高边电流断流 → 电流环失控。另一端 duty = 0 时上管永不开，T1 + dt &gt; Ts 时死区生成器会&quot;吃掉&quot;实际开通时间。生产代码必须强制 duty ∈ [0.02, 0.98]（具体边界看驱动芯片 datasheet 的最小脉冲宽度，IR2110 类 0.5 μs，UCC27200 类 0.2 μs）。</p></div><div class="pitfall"><div class="label">试错：死区设太短（IGBT 模块 3 μs 关断却用 1 μs 死区）</div><p><strong>现象：</strong>上电正常，半小时后母线电压偶发跌落 10-20 V，IGBT 模块温度异常高；出厂稳定，3-6 个月后客户家烧模块</p><p><strong>为什么：</strong>死区 &lt; IGBT 关断时间 → 上下管在死区内短时同导（直通），瞬态电流上百安培但持续时间几百纳秒，OCP 来不及响应。能量虽小但累积让 IGBT 硅片缓慢退化（动态闩锁效应），最终突发性失效。修复：① 查 IGBT datasheet &quot;turn-off delay + fall time&quot; 取 1.5-2 倍做死区下限；② STM32 BDTR/DTG 准确编码（见上面 deadtime-bdtr 步骤的查表方法）；③ 死区补偿（FOC 算法层根据 sign(I_phase) 加 ΔV_dt 偏置 Vα/Vβ），抵消死区导致的相电压畸变。</p></div><h2>下一模块引子</h2><div class="card primary">现在你能从 (vα, vβ) 算出三相 duty + 配置死区 + 钳 duty 边界了。下一模块（08 逆变器）讲这 6 个 IGBT/MOS 怎么真正翻译成相电压：死区时间的电压损失补偿、母线电压跌落、共模电压、电流过零畸变——把&quot;软件层完美的 duty&quot;对接到&quot;硬件层真实的相电压波形&quot;。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

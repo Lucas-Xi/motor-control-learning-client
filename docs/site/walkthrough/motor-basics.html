@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电机基础 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html" class="active">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">01 Walkthrough</span>电机基础</h1><p class="subtitle">极对数 + 电角度 + 转矩公式 + BEMF —— 把电机铭牌翻译成 FOC 第一行 C 代码用得到的四个数。</p><p><a href="../module/motor-basics.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能区分&quot;极数 vs 极对数&quot;，并从铭牌&quot;8 极 3000 rpm 220V&quot;反算出额定电频率 200 Hz</li><li>能口算 θe = polePairs × θm、fe = rpm/60 × polePairs，并解释为什么 6 极对压缩机 PWM 选 16 kHz 而不是 4 kHz</li><li>理解 PMSM 转矩公式 τ = 1.5·p·[ψf·Iq + (Ld−Lq)·Id·Iq] 三段含义，区分 SPM 和 IPM 工程含义</li><li>能用 BEMF = ψf·ω_e 反算&quot;6000 rpm 6 极对 ψf=0.05 Wb&quot;时的反电动势峰值并解释为什么需要弱磁</li><li>掌握&quot;上电四件套&quot;标定流程：极对数 → 编码器零位 → Rs（直流注入）→ Ld/Lq（高频注入）</li><li>会用 STM32 编码器接口 (TIM2 TI1/TI2 4 倍频 + Z 输入捕获) 把机械角度变成电角度</li></ul><h2>主线步骤（8 步）</h2><section class="step"><div class="step-no">Step 1 / 8 · anatomy-counted</div><h3>数极对数</h3><div class="field"><div class="field-label">目标</div><div>从转子永磁体几何上&quot;数出&quot;极对数，区分极数与极对数</div></div><div class="field"><div class="field-label">操作</div><div>观察定子截面：默认极对数 = 4，转子表面贴 8 块永磁体（N/S 交替）。把&quot;极对数&quot;滑块拖到 3、5、6 分别看。</div></div><div class="field"><div class="field-label">观察</div><div>极对数 = p 时永磁体块数 = 2p。海立 BSA325CV 标称 4 极对 → 8 块磁体；松下变频电机常见 6 极对 → 12 块磁体。</div></div><div class="field"><div class="field-label">为什么</div><div>铭牌写&quot;8 极&quot;的电机，FOC 里 polePairs 必须填 4，不是 8——这是上电不转最常见 bug。POLE_PAIRS 这个宏要在 motor_config.h 里散布到 Park、SVPWM、速度环、BEMF 观测器、HFI 等十余处。一处填错就连锁错——所以工程上的规矩是：用 #define MOTOR_POLE_PAIRS 4U 一处定义，绝不允许散落字面量。</div></div></section><section class="step"><div class="step-no">Step 2 / 8 · mech-vs-elec</div><h3>θm vs θe</h3><div class="field"><div class="field-label">目标</div><div>用 polePairs=4 实测 θe = 4·θm 的几何根</div></div><div class="field"><div class="field-label">操作</div><div>保持极对数 = 4。把机械角度滑块从 0° 慢慢推到 90°，盯紧蓝色 θm 圆环和 mint 色 θe 圆环。</div></div><div class="field"><div class="field-label">观察</div><div>θm 走 0°→90° 一次；θe 走 0°→360° 整整一圈。机械每转 1/4 圈 = 电场转 1 圈。机械 90° → θe 360° = 0°（mod 2π 后归零）。</div></div><div class="field"><div class="field-label">为什么</div><div>编码器读到的是 θm（机械域），但 Park / 反 Park 矩阵需要的是 θe（电域）。STM32 上的标准做法：encoder ISR 内 theta_e_q31 = (uint32_t)((uint64_t)theta_m_q31 * POLE_PAIRS)（q31 整数表示 0~2π，溢出 = 自然归一）。压缩机 6 极对时 θm 走 1° 对应 θe 走 6°，编码器分辨率不够会直接打到 Park 上变成肉眼可见的力矩纹波。</div></div><div class="quiz"><div class="q">随堂题：一台铭牌&quot;8 极、额定 1500 rpm&quot;的洗衣机直驱电机，控制器代码里 POLE_PAIRS 该填几？额定电频率多少？</div><ol><li>POLE_PAIRS=8，fe=200 Hz（极数 = 极对数）</li><li class="correct">POLE_PAIRS=4，fe=100 Hz（fe = rpm/60·p） (正确)</li><li>POLE_PAIRS=4，fe=50 Hz（fe 就是电网 50 Hz）</li><li>POLE_PAIRS=8，fe=12.5 Hz（rpm/极对数 才是电频率）</li></ol><div class="hint">提示：&quot;8 极&quot;意思是 N+S 共 8 个磁极，极对数 p = 4；fe = (1500/60)·4 = 100 Hz。选项 A 把极数当极对数，是国内技术文档里最高发的口误。选项 C 把电网频率混进来——电机本身的 fe 与电网完全无关。选项 D 公式记反了。</div></div></section><section class="step"><div class="step-no">Step 3 / 8 · electrical-freq</div><h3>电频率 → PWM 选频</h3><div class="field"><div class="field-label">目标</div><div>把 fe 反推到 PWM 载波频率下限</div></div><div class="field"><div class="field-label">操作</div><div>把极对数固定为 6，转速从 1500 拖到 6000 rpm（空调压缩机最大档）。读取右侧 fe 数字。</div></div><div class="field"><div class="field-label">观察</div><div>1500 rpm 6p → fe=150 Hz；3000 rpm → fe=300 Hz；6000 rpm → fe=600 Hz。PWM 载波 fc 至少要 30~50 倍 fe 才能做精细矢量合成。</div></div><div class="field"><div class="field-label">为什么</div><div>fc/fe &lt; 20 时 SVPWM 一个电周期内只有十几个采样点，dq 量呈阶梯状，电流环带宽就被采样定理上限锁死。压缩机 6000 rpm × 6 极对 = 600 Hz fe，所以 PWM 至少 12 kHz，工程上选 16 kHz 既能给电流环留 1.5 kHz 带宽又能避开人耳最敏感的 2~4 kHz 段。EV 主驱 4 极对 × 18000 rpm = 1200 Hz fe，PWM 必须上 20 kHz 才行——这就是 SiC 模块在 EV 上取代 Si IGBT 的根本原因。</div></div><div class="quiz"><div class="q">随堂题：某 6 极对压缩机变频器 PWM 设为 4 kHz，运行到 4000 rpm 时听到&quot;嗞嗞&quot;啸叫且 Iq 阶跃响应肉眼可见拖泥带水。最优先该改什么？</div><ol><li>加大电流环 Kp 加快响应</li><li class="correct">PWM 升到 16 kHz（fc/fe 从 10 升到 40，给电流环留出 ≥30 倍载波余量） (正确)</li><li>降低转速避开共振</li><li>加大母线电容滤啸叫</li></ol><div class="hint">提示：fe = 4000/60·6 = 400 Hz；fc/fe = 4000/400 = 10，太低。每电周期才 10 个 SVPWM 采样点，DSP 算出的 dq 量是阶梯波，PI 控不住。升 PWM 是几何性修复。选 A/C/D 都是治标不治本。</div></div></section><section class="step"><div class="step-no">Step 4 / 8 · torque-equation</div><h3>转矩公式三段</h3><div class="field"><div class="field-label">目标</div><div>把 τ = 1.5p·[ψf·Iq + (Ld−Lq)·Id·Iq] 三段意义吃透</div></div><div class="field"><div class="field-label">操作</div><div>把额定电流 Iq 调到 8A、Id 调到 0，记下&quot;额定转矩&quot;显示值；再把 Id 调到 −3A 看转矩怎么变。</div></div><div class="field"><div class="field-label">观察</div><div>SPM (Ld=Lq) 模型下 Id 改了转矩几乎不动——只有第一项 ψf·Iq 贡献。在 IPM (Ld&lt;Lq) 上 Id&lt;0 时第二项 (Ld−Lq)·Id·Iq &gt; 0（因 Ld−Lq&lt;0、Id&lt;0 同号），转矩反而上升——这就是&quot;磁阻转矩&quot;。</div></div><div class="field"><div class="field-label">为什么</div><div>空调压缩机 / 洗衣机直驱 / EV 主驱 90% 都是 IPM，靠&quot;永磁转矩 + 磁阻转矩&quot;双管齐下：高转速段永磁部分被 BEMF 限制不能再加 Iq，但 (Ld−Lq) 项还能再榨出 15-25% 转矩——这是 MTPA 工作点偏向 −Id 的物理根源，也是模块 11 弱磁要讲的事。SPM 表贴电机只有第一项，结构简单成本低但效率天花板更早撞顶——常见于小电扇、风扇等低端场合。</div></div><div class="quiz"><div class="q">随堂题：一台 IPM 压缩机 Ld=1 mH、Lq=2 mH、p=6、ψf=0.05 Wb。给 Iq=10A、Id=0 vs Iq=10A、Id=−5A，哪种转矩大？</div><ol><li>Id=0 大，因为 Iq 全部用来产生永磁转矩</li><li class="correct">Id=−5A 大约多 10%（磁阻项 (Ld−Lq)·Id·Iq 贡献正转矩） (正确)</li><li>一样大，磁阻项在表贴/凸极上没差别</li><li>Id=−5A 小，因为负 Id 削磁</li></ol><div class="hint">提示：τ_perm=1.5·6·0.05·10=4.5 Nm；τ_rel=1.5·6·(1e-3−2e-3)·(−5)·10=0.45 Nm（负负得正）。τ_total: 4.5 vs 4.95，多约 10%。选项 D 把&quot;负 Id 削磁&quot;和&quot;磁阻转矩贡献&quot;混淆——前者发生在高速弱磁段、后者发生在恒转矩段且 IPM 上是正贡献。</div></div></section><section class="step"><div class="step-no">Step 5 / 8 · bemf-cap</div><h3>BEMF 撞顶</h3><div class="field"><div class="field-label">目标</div><div>量化&quot;BEMF = ψf·ωe 撞母线&quot;——弱磁需求的物理来源</div></div><div class="field"><div class="field-label">操作</div><div>极对数=6、ψf=0.05 Wb（默认值附近），转速从 1500 → 6000 rpm 推。每个挡位算：BEMF_peak = ψf · 2π·rpm·p/60。</div></div><div class="field"><div class="field-label">观察</div><div>1500 rpm: BEMF_peak = 0.05·2π·150 ≈ 47 V；3000 rpm: 94 V；6000 rpm: 188 V。310 V 母线下 SVPWM 线性区峰值是 Udc/√3 ≈ 179 V——所以 6000 rpm 时 BEMF 已经撞顶，必须靠负 Id 削减等效磁链才能继续升速。</div></div><div class="field"><div class="field-label">为什么</div><div>这就是模块 11 弱磁的存在理由——不是控制工程师&quot;为了凉快加个功能&quot;，而是物理上不弱磁就跑不到铭牌转速。空调一级能效要在 7200 rpm 跑 COP 测试，6000 rpm 起步弱磁是出厂硬指标。EV 主驱 18000 rpm 时 BEMF 能到母线 5 倍，弱磁深度 −Id 可达额定电流 70%——一旦温升让永磁退磁阈值降低，就有不可逆退磁风险。</div></div></section><section class="step"><div class="step-no">Step 6 / 8 · encoder-resolution</div><h3>编码器分辨率</h3><div class="field"><div class="field-label">目标</div><div>反算&quot;编码器 PPR + 极对数 = θe 量化步长&quot;</div></div><div class="field"><div class="field-label">操作</div><div>想象 ① 2500 PPR 增量编码器 A/B 正交 4 倍频 → 10000 计数/机械圈；② 6 极对压缩机。算 θe 单位计数 = 360°·polePairs/10000 = 0.216°。换 1024 PPR 同样配置 → θe 单位 = 0.528°。</div></div><div class="field"><div class="field-label">观察</div><div>在 dq 坐标里量化误差 Δθ=0.5° 让 Iq 漏 sin(0.5°)·100% ≈ 0.87% 到 Id。叠加 ADC 噪声 + Z 校准漂移 + 中断抖动 → 实际 Δθ_total 可能到 2-3° → Id 串扰可达 5%。</div></div><div class="field"><div class="field-label">为什么</div><div>编码器选型够不够看 polePairs：① 风扇 1 极对、低速：1024 PPR 已绰绰有余；② 空调压缩机 4-6 极对、6000 rpm：2500 PPR 起步、4096 PPR 更安全；③ 伺服关节 5 极对、要求 ±0.01° 重复定位：必须 17/23 位绝对值编码器（130k+ PPR）。压缩机用 1024 PPR 不是&quot;省钱&quot;——出厂时还能转，三个月后 Z 校准漂移 + 温升让量化噪声成倍放大 → 售后退机。</div></div><div class="quiz"><div class="q">随堂题：STM32 用 TIM2 接 2500 PPR 编码器 + Z 输入捕获，硬件 4 倍频后单圈 10000 计数。配 8 极对压缩机，θe 量化分辨率是？</div><ol><li>0.036° (单纯机械分辨率)</li><li class="correct">0.288° (机械 0.036° × 极对数 8) (正确)</li><li>0.144° (机械 / 极对数)</li><li>0.018° (硬件 8 倍频)</li></ol><div class="hint">提示：θe = polePairs × θm，所以 θe 分辨率 = θm 分辨率 × polePairs。0.036° × 8 = 0.288°——在压缩机 8000 rpm 工况下叠加 ADC 噪声会让 Iq 阶跃响应肉眼可见抖动。选项 C 把方向搞反了——极对数放大量化误差不会缩小它。</div></div></section><section class="step"><div class="step-no">Step 7 / 8 · param-id-cookbook</div><h3>四件套参数辨识</h3><div class="field"><div class="field-label">目标</div><div>掌握上电就能跑的 Rs / Ld / Lq / ψf 离线辨识口诀</div></div><div class="field"><div class="field-label">操作</div><div>回顾标定流程：① 极对数（数永磁体或者手转一圈数编码器圈数）② Rs（堵转下注入 1A 直流测电压 U/I=Rs）③ Ld/Lq（堵转下 d 轴注入小幅 1 kHz 正弦 → Ld；q 轴同步 → Lq）④ ψf（无负载惯性拖到额定转速测 BEMF_rms，ψf = BEMF_rms / (√2·ωe)）。</div></div><div class="field"><div class="field-label">观察</div><div>STM32 实现：四步用 ADC 注入 + TIM 触发 PWM 即可完成，不需要外加仪器；辨识结果存 Flash 上电时读取。</div></div><div class="field"><div class="field-label">为什么</div><div>这四个数全 FOC 算法都用：① Rs 用在 BEMF 观测器和电流环 PI（Ki=ω_bw·R）；② Ld/Lq 用在 PI 整定（Kp=ω_bw·L）和 dq 解耦前馈（ω_e·Lq·iq）；③ ψf 用在 BEMF 估算、转矩反推、弱磁电压椭圆。压缩机出厂前每台都要跑一次 self-id，把这四个数写进自己的 Flash —— 因为生产公差让标称值有 ±15% 散差，光用铭牌额定值跑 FOC 在边角工况一定不稳。Rs 辨识 STM32 HAL 风格骨架（堵转 + d 轴注入直流）： /* Rs identification: inject DC on d-axis, measure voltage */ float Rs_identify(float i_inject_A) {   FOC_set_id_ref(i_inject_A); FOC_set_iq_ref(0);   HAL_Delay(500);  /* let current settle */   float vd_avg = FOC_get_vd_filtered();  /* 100-pt moving avg */   return vd_avg / i_inject_A;  /* Rs = Vd / Id (堵转 di/dt=0) */ } /* 测出来 Rs 通常 0.1-0.5 Ω，写进 motor_params.rs，电流环 PI 用 Ki=2π·1000·Rs */</div></div></section><section class="step"><div class="step-no">Step 8 / 8 · stm32-encoder-skeleton</div><h3>STM32 编码器接口</h3><div class="field"><div class="field-label">目标</div><div>把&quot;θm → θe&quot;接到具体的 STM32 寄存器配置</div></div><div class="field"><div class="field-label">操作</div><div>看下面 STM32 LL 风格代码：TIM2 配 Encoder Mode TI1/TI2 自动 4 倍频；TIM2_CH3 输入捕获接 Z 信号每圈复位。</div></div><div class="field"><div class="field-label">观察</div><div>theta_e_q31 = (uint32_t)((uint64_t)TIM2-&gt;CNT * (UINT32_MAX / ENC_CPR) * POLE_PAIRS) —— 一行算出 θe q31 整数，自动 mod 2π。</div></div><div class="field"><div class="field-label">为什么</div><div>STM32 LL Encoder Interface 代码片段（生产骨架，TIM2 接 ABZ 增量编码器）： /* TIM2 Encoder mode 3 (TI1+TI2 both edges → x4) */ LL_TIM_SetEncoderMode(TIM2, LL_TIM_ENCODERMODE_X4_TI12); LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI); LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ACTIVEINPUT_DIRECTTI); LL_TIM_SetAutoReload(TIM2, ENC_CPR - 1);  /* 10000-1 for 2500 PPR */ /* TIM2 CH3 Input Capture on Z pulse rising edge */ LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH3, LL_TIM_ACTIVEINPUT_DIRECTTI); LL_TIM_EnableIT_CC3(TIM2); LL_TIM_EnableCounter(TIM2); /* In FOC ISR: read θm, scale to θe */ uint32_t cnt = LL_TIM_GetCounter(TIM2); uint32_t theta_e_q31 = (uint32_t)((uint64_t)cnt * (UINT32_MAX / ENC_CPR) * POLE_PAIRS); /* Z callback: 校准漂移 */ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {   if (htim-&gt;Instance == TIM2 &amp;&amp; htim-&gt;Channel == HAL_TIM_ACTIVE_CHANNEL_3)     LL_TIM_SetCounter(TIM2, Z_OFFSET);  /* Z 偏移由对齐流程标定 */ } 这套骨架已经包含了 4 倍频解码、自动溢出归一、Z 信号长期校准三件事——压缩机控制器编码器接入的工程标准答案。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：极对数填成极数（POLE_PAIRS=8 当 4）</div><p><strong>现象：</strong>上电瞬间电机抖动 / 卡转 / 反方向旋转；Iq 命令 = 5A 但电流环输出 Vq 撞限保护跳闸</p><p><strong>为什么：</strong>θe = polePairs · θm。POLE_PAIRS 填成 2 倍正确值 → θe 跑得快 2 倍 → Park 把 Iq 命令投到错误旋转的 d-q 平面 → 力矩方向随 t 周期性翻转 → 电机像被反复推拉，外面看就是&quot;原地抖&quot;。修复：在 motor_config.h 里 #define MOTOR_POLE_PAIRS 4U 一处定义，所有调用全部宏化，禁止散落字面量。出厂前 self-test 脚本：低压 + 开环 V/f 慢转一圈，数编码器走多少计数算极对数自动核对。</p></div><div class="pitfall"><div class="label">试错：忽略 Z 信号长期校准</div><p><strong>现象：</strong>上电时 FOC 正常，运行 8 小时后效率下降 1-2%，电流均值变大但 Iq 命令没变；重启又好了</p><p><strong>为什么：</strong>增量编码器 A/B 计数会因 EMI / 中断抢占 / 接触不良漏脉冲，θm 累积漂移；× polePairs 后 θe 漂移放大极对数倍。压缩机 24/7 运行 8 小时后 θe 偏 1-5° 是常见量级 → Iq 漏 sin(Δθ) 到 Id → 铜损上升、转矩下降。修复：Z 信号必接 + TIM_IC 每圈复位 + 上电做 d 轴对齐确定 Z_OFFSET。无 Z 的磁编码器必须配 BEMF 观测器做长期校准。</p></div><div class="pitfall"><div class="label">试错：在 IPM 压缩机上用 SPM 的 MTPA（Id*=0 全程）</div><p><strong>现象：</strong>低速看似正常但效率比同价位竞品低 8-12%；4000 rpm 以上电流偏大、温升明显</p><p><strong>为什么：</strong>IPM 转矩公式有 (Ld−Lq)·Id·Iq 磁阻项，最优工作点不在 Id=0 而在轻微 −Id 方向（MTPA 曲线偏负 Id）。忽略这项相当于扔掉 10-15% 转矩潜力 —— 同样转矩需求要更大 Iq → I²R 铜损上升。修复：用厂家给的 Ld/Lq 算 MTPA 离线表，按 Iq* 查 Id*；或在线 MTPA 跟踪算法 (Mostafa SignAccum 或 Bobek 注入法)。模块 11 详讲。</p></div><div class="pitfall"><div class="label">试错：1024 PPR 编码器 + 8 极对压缩机</div><p><strong>现象：</strong>θe 跳变（非平滑过渡）；Id/Iq 在静止时也有 ±5% 抖动；高速段电流环必须降到 800 Hz 带宽才不振荡</p><p><strong>为什么：</strong>θe 量化步长 = 360°·polePairs/(4·PPR) = 360·8/4096 = 0.703°。Park 投影里 sin/cos 跳跃式取值 → dq 量阶梯化 → 反 Park 算出的 Vα/Vβ 带高频毛刺 → SVPWM 输出含 ADC 噪声放大版的死区谐波。修复有两条路：① 上 2500/4096 PPR 编码器（BOM 加 5-10 元）② 软件用低通 + 角度插值（增加 1-2 计数周期延迟，对高速影响大）。压缩机选 ② 是错误折中——5 年寿命周期内多换 2 块编码器钱都不止。</p></div><h2>下一模块引子</h2><div class="card primary">你现在能从铭牌读出 polePairs / Rs / Ld / Lq / ψf 五个数，并把 θm 接成 θe 喂给 FOC 后段。下一模块 02 三相磁场：把三个 120° 错开的正弦电流&quot;合成&quot;出旋转磁场——这是 Clarke 变换为什么是矩阵而不是简单求平均的几何根。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

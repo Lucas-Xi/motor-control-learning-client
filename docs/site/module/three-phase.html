@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三相正弦波与旋转磁场 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html" class="active">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">02</span>三相正弦波与旋转磁场</h1><p class="subtitle">观察三相电流如何合成旋转磁场</p><div class="card primary"><div class="label">本模块主旨</div>三个 120° 错开正弦 → 旋转磁场矢量；同时 Ia+Ib+Ic=0 是免费的硬件健康度听诊器。</div><h2>学完应能回答</h2><ul><li>能解释幅值（电流大小）与频率（电频率 = 转速·polePairs/60）在物理上完全独立</li><li>能在 30 秒内用 Ia+Ib+Ic 残差判断三相采样链是否健康（阈值 0.1A）</li><li>能识别&quot;αβ 端点画椭圆 → 不平衡或 ADC 偏置&quot;、&quot;圆带毛边 → 5/7 次谐波&quot;两种典型指纹</li><li>理解死区时间为什么产生 5、7、11、13 次谐波，并知道用什么补偿方案</li><li>掌握 STM32 双 ADC 同步采样 + TIM1 中点注入触发的最小配置代码</li><li>能说出&quot;两路 ADC 重构 Ic = −Ia−Ib&quot;的成立前提（三相星型 + ADC 偏置已校准）</li></ul><p><a class="btn" href="../walkthrough/three-phase.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>三相正弦的核心不是 sin 公式，而是&quot;相位差 120° 的三个量在空间相差 120° 的绕组里合成出一个旋转磁场&quot;。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>三相电流就像三个排成 120° 的人**轮流**推一个旋转门——任何时刻总有人在推，门就一直转。三个人发力大小是正弦曲线，相互错开 120°，合起来给门一个**幅值不变方向连续转动**的力。这个&quot;力&quot;就是定子合成磁场。</div><div class="card measure"><div class="label">核心概念</div>三个固定方向的绕组通入相位差 120° 的正弦电流，合成出一个像转子一样转动的磁场——这是所有 AC 电机能转起来的物理基础。</div><h3>为什么要学</h3><ul><li>不理解&quot;三相→旋转磁场&quot;，后面 Clarke / Park 的几何意义全是数字游戏。</li><li>调试时三相不平衡是最常见故障源（采样偏置、缺相、相序错），看波形和合成矢量就能一眼诊断。</li><li>把&quot;3 相 AC&quot;变成&quot;2 维矢量&quot;是从硬件视角到 FOC 控制视角的关键转换。</li></ul><div class="card primary"><div class="label">第一手操作</div>把右侧&quot;频率&quot;从 50 Hz 拉到 120 Hz，看左侧定子截面的合成磁场箭头转得明显变快；底部三相波形周期变短。然后试试&quot;三相不平衡&quot;=0.3，看箭头轨迹从圆变成椭圆。</div><h2>学习目标</h2><ul><li>理解三相相差 120° 的正弦电流</li><li>观察合成磁场矢量为何匀速旋转</li><li>理解幅值、频率、相位、不平衡、谐波和噪声对磁场的影响</li></ul><h2>核心概念</h2><ul><li>理想三相电流满足 Ia + Ib + Ic = 0，三相在空间上也相差 120°，合成后形成幅值稳定的旋转磁场。</li><li>频率决定磁场旋转速度，幅值决定磁场强度，初始相位决定当前时刻磁场从哪里开始。</li><li>不平衡、谐波和采样噪声会让合成矢量变成椭圆、抖动或带纹波。</li></ul><h2>公式</h2><div class="card"><div class="label">三相正弦电流</div><div class="formula">Ia = I·sin(ωt),  Ib = I·sin(ωt − 2π/3),  Ic = I·sin(ωt + 2π/3)</div><p>I 是峰值，ω = 2πf；三相和恒为 0（平衡时）。</p></div><div class="card"><div class="label">合成磁动势</div><div class="formula">F(t) = (3/2)·I·e^(jωt)</div><p>空间相差 120° 的三个绕组 + 时间相差 120° 的三相电流 → 幅值稳定 (3/2)I 的旋转复矢量。</p></div><div class="card"><div class="label">电频率 vs 同步转速</div><div class="formula">n_s = 60·f / p</div><p>50 Hz 4 极对电机 → 同步转速 750 rpm。FOC 中 f 由控制器选定，决定电机要追的目标转速。</p></div><h2>工程意义</h2><ul><li>FOC 的所有坐标变换都建立在三相正弦量之上。先把波形和旋转磁场看懂，后面的 αβ、dq 才不抽象。</li><li>真实驱动器三相不平衡常来自电流采样偏置、相电阻差异、死区、相序错或 PWM 更新时序错。</li></ul><h2>STM32 移植指南</h2><ul><li>ADC 采样与 PWM 中点同步（注入采样 + 中心对齐 PWM）以避开开关噪声。</li><li>上电后第一件事是 ADC 偏置校准：电机不通电时记录 ia/ib/ic 数百次取均值作为零点。</li><li>调试用开环 V/f 或开环正弦电流模式，低压（12V）观察三相波形对称性，再切闭环。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>只看单相电流，忽略三相相位关系。</li><li>采样点靠近 PWM 边沿，开关纹波直接进控制环。</li><li>RMS / 峰值 / 平均值混用导致标定比例错。</li><li>ADC 偏置没校准就上电流环。</li></ul></div><h2>调试方法</h2><ul><li>示波器/电流钳比较三相峰值和相位关系（应严格 120° 差）。</li><li>运行时记录 ia+ib+ic：平衡系统应 &lt; 0.1A；偏移大就是采样偏置或缺相。</li><li>把 ia/ib/ic 送进 FFT，谐波 &gt; 5% 检查死区和反电动势谐波。</li></ul><h2>建议实验</h2><ul><li>频率 50→120 Hz，看磁场旋转加快（同振幅）。</li><li>注入 5 次谐波，看波形顶部出现凹坑、αβ 轨迹出现波纹。</li><li>不平衡 = 0.3，看圆形轨迹塌成椭圆。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * 三相 ADC 采样 + 偏置校准
+ * 适配 STM32 ADC + DMA + 注入序列触发
+ * ============================================ */
+
+/* 上电校准：电机不通电时取 1024 次平均，记录零电流 ADC 值 */
+typedef struct {
+    int32_t ia_offset;   // ADC 原始码值
+    int32_t ib_offset;
+    int32_t ic_offset;
+    float   adc_to_amps; // 转换系数 = Vref / (4096 × R_shunt × Gain)
+} current_calib_t;
+
+void current_calibrate(current_calib_t *c) {
+    int32_t sa = 0, sb = 0, sc = 0;
+    for (int i = 0; i &lt; 1024; i++) {
+        while (!(ADC1-&gt;JSR &amp; ADC_JSR_JEOC)) { /* 等注入完成 */ }
+        sa += ADC1-&gt;JDR1;
+        sb += ADC1-&gt;JDR2;
+        sc += ADC1-&gt;JDR3;
+        ADC1-&gt;JSR &amp;= ~ADC_JSR_JEOC;
+    }
+    c-&gt;ia_offset = sa &gt;&gt; 10;   // /1024
+    c-&gt;ib_offset = sb &gt;&gt; 10;
+    c-&gt;ic_offset = sc &gt;&gt; 10;
+}
+
+/* 中断中：原始码值 → 真实安培 */
+static inline float adc_to_amps(int32_t raw, int32_t offset, float scale) {
+    return (float)(raw - offset) * scale;
+}
+
+/* 用法（在 FOC ISR 里）：
+ *   float ia = adc_to_amps(ADC1-&gt;JDR1, calib.ia_offset, calib.adc_to_amps);
+ *   float ib = adc_to_amps(ADC1-&gt;JDR2, calib.ib_offset, calib.adc_to_amps);
+ *   float ic = -ia - ib;   // 三相和=0 重构第三相，省一路 ADC
+ *   // 调试断言：fabsf(ia + ib + ic) 应该 &lt; 0.1A
+ */</pre><h2>下一步</h2><ul><li>进入 Clarke 变换，把三相量压缩成二维 αβ 平面矢量——这是 FOC 第一步坐标变换。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">三相平衡正弦电流 Ia + Ib + Ic 理论值是多少？</div><ol><li>正比于幅值 I</li><li>正比于频率 f</li><li class="correct">恒为 0 (正确)</li><li>随 ωt 变化</li></ol><div class="hint">提示：sin(ωt) + sin(ωt − 2π/3) + sin(ωt + 2π/3) = 0 是恒等式。运行时若 |Ia+Ib+Ic| &gt; 0.1A 多半是 ADC 偏置没校准。</div></div><div class="quiz"><div class="q">三相电流频率从 50Hz 调到 120Hz，定子合成磁场会怎样？</div><ol><li>幅值变大</li><li class="correct">幅值不变、转得更快 (正确)</li><li>消失</li><li>反向</li></ol><div class="hint">提示：幅值取决于电流峰值，频率只决定旋转角速度 ω = 2πf。</div></div><div class="quiz"><div class="q">示波器看到三相幅值各 6A 但只有两相相差 120°，第三相相差 100°，会发生什么？</div><ol><li>和正常一样</li><li class="correct">合成磁场幅值不稳定，轨迹变椭圆 (正确)</li><li>电机停转</li><li>PWM 频率改变</li></ol><div class="hint">提示：相位失配让三相不再对称合成出圆形旋转磁场，αβ 矢量端点画椭圆/抖动。</div></div><div class="quiz"><div class="q">STM32 ADC 采样三相电流时为什么强烈推荐放在 PWM 中点？</div><ol><li>硬件要求</li><li>中点是开关边沿，电流变化最快</li><li class="correct">中点电流纹波最小，避开开关噪声 (正确)</li><li>只能这样接线</li></ol><div class="hint">提示：中心对齐 PWM 中点是上下管已经稳定切换完成的位置，电流纹波接近平均值，靠近开关边沿采样会引入巨大噪声。</div></div><div class="quiz"><div class="q">4 极对 PMSM，定子电流频率 100Hz，电机的同步机械转速是？</div><ol><li>100 rpm</li><li class="correct">1500 rpm (正确)</li><li>6000 rpm</li><li>400 rpm</li></ol><div class="hint">提示：n_s = 60·f / p = 60 × 100 / 4 = 1500 rpm。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

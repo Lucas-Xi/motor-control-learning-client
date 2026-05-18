@@ -8,6 +8,7 @@ import { calculateSvpwm, compareSpwmUtilization } from '../../simulation/math/sv
 import { useSimulationStore } from '../../store/simulationStore';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { formatNumber, formatPercent } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 import { SvpwmMinMaxCard } from './SvpwmMinMaxCard';
 
 function TimingBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
@@ -32,11 +33,12 @@ function useResult() {
 
 function Primary() {
   const { svpwm, result } = useResult();
+  const { t } = useI18n();
   const updateSvpwm = useSimulationStore((s) => s.updateSvpwm);
   return (
     <div className="space-y-2">
       <div className="flex justify-end">
-        <FidelityBadge level="exact" hint="扇区判断 + T1/T2/T0 时间分配 + 占空比都是精确算法" />
+        <FidelityBadge level="exact" hint={t('svpwm.fidelityHint')} />
       </div>
       <SpaceVectorHexagon
         uAlpha={svpwm.uAlpha}
@@ -55,31 +57,30 @@ function Primary() {
 
 function Probe() {
   const { svpwm, result } = useResult();
+  const { t } = useI18n();
   const compare = compareSpwmUtilization(result.vectorMagnitude, svpwm.uDc);
   const ts = result.t1 + result.t2 + result.t0;
   return (
     <>
-      <Card title="T1 / T2 / T0 时间分配" eyebrow="switching period" density="compact">
+      <Card title={t('svpwm.timingTitle')} eyebrow={t('svpwm.timingEyebrow')} density="compact">
         <div className="space-y-3">
-          <TimingBar label="T1 第一矢量" value={result.t1} total={ts} color="var(--accent-primary)" />
-          <TimingBar label="T2 第二矢量" value={result.t2} total={ts} color="var(--accent-measure)" />
-          <TimingBar label="T0 零矢量" value={result.t0} total={ts} color="var(--accent-warn)" />
+          <TimingBar label={t('svpwm.t1Label')} value={result.t1} total={ts} color="var(--accent-primary)" />
+          <TimingBar label={t('svpwm.t2Label')} value={result.t2} total={ts} color="var(--accent-measure)" />
+          <TimingBar label={t('svpwm.t0Label')} value={result.t0} total={ts} color="var(--accent-warn)" />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-caption">
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">扇区 </span><span className="text-ink-primary">{result.sector}</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">m </span><span className="text-ink-primary">{formatNumber(result.modulationIndex, 3)}</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">SVPWM 利用率 </span><span className="text-ink-primary">{formatPercent(compare.svpwm)}</span></div>
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">SPWM </span><span className="text-ink-primary">{formatPercent(compare.spwm)}</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('svpwm.sectorLabel')} </span><span className="text-ink-primary">{result.sector}</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('svpwm.modulationLabel')} </span><span className="text-ink-primary">{formatNumber(result.modulationIndex, 3)}</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('svpwm.svpwmUtilLabel')} </span><span className="text-ink-primary">{formatPercent(compare.svpwm)}</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('svpwm.spwmLabel')} </span><span className="text-ink-primary">{formatPercent(compare.spwm)}</span></div>
         </div>
       </Card>
-      <Card title="三相 PWM 占空比" eyebrow="duty compare" density="compact">
+      <Card title={t('svpwm.dutyTitle')} eyebrow={t('svpwm.dutyEyebrow')} density="compact">
         <PWMChart dutyA={result.dutyA} dutyB={result.dutyB} dutyC={result.dutyC} />
       </Card>
       {result.saturated && (
         <Card tone="fault" density="compact">
-          <p className="text-body leading-relaxed text-accent-fault">
-            目标电压矢量已超 SVPWM 线性区，真实电机会出现电流环输出撞限。可提高母线、降低目标转速，或注入负 Id 进入弱磁。
-          </p>
+          <p className="text-body leading-relaxed text-accent-fault">{t('svpwm.saturationWarn')}</p>
         </Card>
       )}
       <SvpwmMinMaxCard />

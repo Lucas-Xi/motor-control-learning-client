@@ -23,10 +23,20 @@ export interface WalkthroughStep {
   id: string;
   /** 3-7 字短标题，会出现在步骤选择 chip 上 */
   title: string;
+  /**
+   * 英文短标题（可选）。若提供，UI 在 locale==='en-US' 时优先采用。
+   * 缺失时回退到 `title`（中文）并由 UI 叠加 sr-only "(zh fallback)" 提示。
+   */
+  titleEn?: string;
   /** 一句话讲"这一步要让学员看到 / 理解什么"，给步骤起锚点 */
   goal: string;
   /** 具体操作指令（祈使句），如 "把极对数从 4 改到 8" */
   action: string;
+  /**
+   * 英文操作指令（可选）。若提供，UI 在 locale==='en-US' 时优先采用；
+   * 缺失时回退到 `action`（中文）。
+   */
+  actionEn?: string;
   /** 操作后应该看到的现象，如 "θe 圆环角速度变成原来的 2 倍" */
   observe: string;
   /** 这一步在 FOC 全局链路里的意义；最终把"为什么"讲清 */

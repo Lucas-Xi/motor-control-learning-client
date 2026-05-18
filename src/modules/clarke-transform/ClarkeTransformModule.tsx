@@ -6,11 +6,13 @@ import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
+import { useI18n } from '../../i18n/useI18n';
 
 function Primary() {
   const clarke = useSimulationStore((s) => s.clarke);
   const updateClarke = useSimulationStore((s) => s.updateClarke);
   const snapshot = SimulationEngine.clarkeSnapshot(clarke);
+  const { t } = useI18n();
   const handleVectorChange = (alpha: number, beta: number) => {
     updateClarke({
       balanced: false,
@@ -21,15 +23,15 @@ function Primary() {
   };
   return (
     <Card
-      title="αβ 矢量平面"
-      eyebrow="clarke output"
+      title={t('clarkeTransform.primaryTitle')}
+      eyebrow={t('clarkeTransform.primaryEyebrow')}
       density="compact"
-      action={<FidelityBadge level="exact" hint="Clarke 是精确矩阵变换，输出与教科书一致" />}
+      action={<FidelityBadge level="exact" hint={t('clarkeTransform.fidelityHint')} />}
     >
       <VectorPlane
         alpha={snapshot.alphaBeta.alpha}
         beta={snapshot.alphaBeta.beta}
-        title="拖拽白点直接改变 αβ"
+        title={t('clarkeTransform.vectorPlaneHint')}
         max={8}
         onVectorChange={handleVectorChange}
       />
@@ -40,9 +42,10 @@ function Primary() {
 function Probe() {
   const clarke = useSimulationStore((s) => s.clarke);
   const snapshot = SimulationEngine.clarkeSnapshot(clarke);
+  const { t } = useI18n();
   return (
     <>
-      <Card title="abc 三相输入" eyebrow="phase currents" density="compact">
+      <Card title={t('clarkeTransform.abcTitle')} eyebrow={t('clarkeTransform.abcEyebrow')} density="compact">
         <div className="space-y-1.5">
           {[
             ['Ia', snapshot.abc.ia, '#34d6ff'],
@@ -57,7 +60,7 @@ function Probe() {
           ))}
         </div>
       </Card>
-      <Card title="变换矩阵" eyebrow="abc → αβ0" density="compact">
+      <Card title={t('clarkeTransform.matrixTitle')} eyebrow={t('clarkeTransform.matrixEyebrow')} density="compact">
         <pre className="formula whitespace-pre rounded-lg border border-line-subtle bg-bg-base p-3 text-caption leading-relaxed text-accent-primary">{`[ Iα ]   [ 1     0      0 ] [ Ia ]
 [ Iβ ] = [ 1/√3 2/√3   0 ] [ Ib ]
 [ I0 ]   [ 1/3  1/3  1/3 ] [ Ic ]`}</pre>

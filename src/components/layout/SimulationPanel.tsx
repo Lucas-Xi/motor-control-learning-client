@@ -6,6 +6,7 @@ import { useUIStore } from '../../store/uiStore';
 import { GuidedExperimentBar } from './GuidedExperimentBar';
 import { moduleSwap } from '../../utils/motion';
 import { CurriculumPanel } from '../curriculum/CurriculumPanel';
+import { InsightsView } from '../insights/InsightsView';
 
 export function SimulationPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
@@ -13,8 +14,8 @@ export function SimulationPanel() {
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
   const meta = moduleMetas.find((item) => item.id === activeModule)!;
-  // currentView: 'module' | 'curriculum'
-  // 课程主线视图不破坏现有 16+1 模块渲染——仅顶层 if 决定渲染哪一支。
+  // currentView: 'module' | 'curriculum' | 'insights'
+  // 三种顶层视图互斥；仅顶层 if 决定渲染哪一支，不破坏现有 16+1 模块渲染。
   if (simPanelView === 'curriculum') {
     return (
       <section
@@ -22,6 +23,16 @@ export function SimulationPanel() {
         aria-label="课程主线视图"
       >
         <CurriculumPanel onLeaveCurriculum={() => setSimPanelView('module')} />
+      </section>
+    );
+  }
+  if (simPanelView === 'insights') {
+    return (
+      <section
+        className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4"
+        aria-label="学习洞察视图"
+      >
+        <InsightsView />
       </section>
     );
   }

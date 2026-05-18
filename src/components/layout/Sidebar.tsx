@@ -1,4 +1,4 @@
-import { BookOpen, Cpu, Gauge, Target, Waves } from 'lucide-react';
+import { BarChart3, BookOpen, Cpu, Gauge, Target, Waves } from 'lucide-react';
 import { moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleId } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -18,6 +18,7 @@ export function Sidebar() {
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
   const isCurriculum = simPanelView === 'curriculum';
+  const isInsights = simPanelView === 'insights';
   const { t } = useI18n();
   return (
     <aside className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-line-subtle bg-bg-surface p-3 xl:h-full">
@@ -47,17 +48,37 @@ export function Sidebar() {
           <span className="hidden truncate text-caption text-ink-muted xl:block">{t('shell.curriculumEntrySubtitle')}</span>
         </span>
       </button>
+      {/* 学习洞察入口：紧跟课程主线下面；同样是顶层视图切换 */}
+      <button
+        type="button"
+        onClick={() => setSimPanelView(isInsights ? 'module' : 'insights')}
+        aria-pressed={isInsights}
+        aria-label={isInsights ? '返回当前模块' : '打开学习洞察（错题本 / 热力图 / 弱项推荐）'}
+        className={`mb-2 flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition-colors xl:mb-3 xl:gap-3 xl:px-3 xl:py-2 ${
+          isInsights
+            ? 'border-accent-primary/60 bg-accent-primary/10'
+            : 'border-line-subtle bg-bg-raised hover:border-line-strong'
+        }`}
+      >
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border xl:h-8 xl:w-8 ${isInsights ? 'border-accent-primary/60 text-accent-primary' : 'border-line-subtle text-ink-secondary'}`}>
+          <BarChart3 className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className={`block truncate text-body font-medium ${isInsights ? 'text-ink-primary' : 'text-ink-secondary'}`}>学习洞察</span>
+          <span className="hidden truncate text-caption text-ink-muted xl:block">错题本 · 热力图 · 弱项推荐</span>
+        </span>
+      </button>
       <nav className="scrollbar-thin mobile-snap-x flex gap-2 overflow-x-auto pb-1 xl:min-h-0 xl:flex-1 xl:flex-col xl:space-y-1 xl:overflow-auto xl:pr-1">
         {moduleMetas.map((module) => {
           const Icon = iconFor(module.id);
-          const active = !isCurriculum && activeModule === module.id;
+          const active = !isCurriculum && !isInsights && activeModule === module.id;
           return (
             <button
               key={module.id}
               onClick={() => {
                 setActiveModule(module.id);
-                // 点模块按钮自动退出课程主线视图
-                if (isCurriculum) setSimPanelView('module');
+                // 点模块按钮自动退出课程主线 / 洞察视图
+                if (isCurriculum || isInsights) setSimPanelView('module');
               }}
               className={`group relative w-[148px] shrink-0 rounded-xl border px-2.5 py-1.5 text-left transition-colors xl:w-full xl:px-3 xl:py-2 ${
                 active

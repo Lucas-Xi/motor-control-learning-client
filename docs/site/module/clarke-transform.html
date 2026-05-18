@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clarke 变换 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html" class="active">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">03</span>Clarke 变换</h1><p class="subtitle">abc 到 alpha-beta 的投影</p><div class="card primary"><div class="label">本模块主旨</div>Clarke = 把 3 维冗余三相投影成 2 维 αβ 平面矢量（丢零序），并把&quot;KCL 残差&quot;留作免费故障鉴别器。</div><h2>学完应能回答</h2><ul><li>能口算 Iα = Ia 和 Iβ = (Ia + 2·Ib)/√3，知道这就是&quot;幅值不变&quot;形式 (TI / ST FOC SDK 缺省)</li><li>能解释三相和 = 0 为什么是星型连接的几何约束、为什么三相三线电机 I0 物理上无回路</li><li>能区分&quot;幅值不变 (αβ 直读相电流)&quot;与&quot;功率不变 (Vd·Id+Vq·Iq=P)&quot;两种 Clarke 的工程后果</li><li>看到 |I0| / |Iαβ| &gt; 5% 就能 30 秒鉴别：ADC 偏置 / 缺相 / 相阻不平衡 / 三角接错型</li><li>理解为什么 Clarke 输出 αβ &quot;跟着时间转&quot;——它仍然是 AC，Park 才把 AC 变 DC</li><li>会写 STM32 上 Clarke q15 整数版（避免 /√3 浮点除法，用 18919 / 32768 ≈ 0.57735 乘加）</li></ul><p><a class="btn" href="../walkthrough/clarke-transform.html">查看完整 Walkthrough（9 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>Clarke 变换 = 把&quot;三个空间方向的标量&quot;投影到&quot;二维平面的矢量&quot;。这是 FOC 用 PI 控两个直流量的几何前提。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>Clarke 变换就像把三个箭头**投影**到一面墙上。三相电流 Ia/Ib/Ic 是三个空间相差 120° 的矢量，它们的合力只有两个独立自由度（因为 Ia+Ib+Ic=0），所以画一个 X-Y 平面就够。Clarke 把&quot;三个箭头&quot;压缩成&quot;X 轴的 Iα + Y 轴的 Iβ&quot;两个数。</div><div class="card measure"><div class="label">核心概念</div>&quot;三相 → 两相静止&quot; 的几何投影。三相平衡时只有 2 个自由度，用 αβ 表示更高效，也是 Park 变换前的必经一步。</div><h3>为什么要学</h3><ul><li>Clarke 是 FOC 链路第一步坐标变换：ADC 三相 → Clarke → Park → PI → 反 Park → SVPWM。</li><li>I0（零序分量）= (Ia+Ib+Ic)/3 是测量三相不平衡和 ADC 偏置的&quot;健康指标&quot;。</li><li>懂了 Clarke 就懂了&quot;为什么 SVPWM 在 αβ 平面上画六边形&quot;——它们坐标系一样。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧切到&quot;手动 Ia/Ib/Ic&quot;，把 Ia 设 5、Ib 设 -5、Ic 设 0。看左侧 αβ 矢量端点跑到 (5, 5.77)。这是教科书例子：α=Ia=5，β=(Ia+2·Ib)/√3=(5−10)/1.732≈-2.89——咦不对？看你试出来对应的数。</div><h2>学习目标</h2><ul><li>理解 abc 三相坐标到 αβ 静止坐标的投影</li><li>掌握零序分量的意义</li><li>识别三相不平衡时 αβ 矢量的变化</li></ul><h2>核心概念</h2><ul><li>Clarke 变换把三个相电流投影到两个互相垂直的静止轴上。平衡三相只有两个自由度，所以二维就够。</li><li>零序 I0 是三相共同偏移，三相三线电机里通常不能形成有效转矩，但能暴露采样偏置或不平衡。</li></ul><h2>公式</h2><div class="card"><div class="label">Clarke 变换（幅值不变）</div><div class="formula">Iα = Ia,   Iβ = (Ia + 2·Ib) / √3</div><p>工程默认形式：Iα 直接等于 Ia，三相 → 二相只动用一次 sin 系数 1/√3。</p></div><div class="card"><div class="label">零序分量</div><div class="formula">I0 = (Ia + Ib + Ic) / 3</div><p>平衡时 ≈ 0；明显偏离 → 排查 ADC 零点、缺相、相阻不一致。</p></div><div class="card"><div class="label">矩阵形式</div><div class="formula">[Iα; Iβ; I0] = (1/3)·[2,−1,−1; 0,√3,−√3; 1,1,1]·[Ia; Ib; Ic]</div><p>功率不变形式还要除 √(2/3)；嵌入式更常用幅值不变形式。</p></div><h2>工程意义</h2><ul><li>Clarke 是 FOC 的入口。ADC 三相电流先过 Clarke，后面才有 Park 和电流环。</li><li>两电阻采样常用 Ic = -Ia - Ib 重构第三相，省一路 ADC，但前提是 ADC 偏置校准过且三相和为零的假设成立。</li></ul><h2>STM32 移植指南</h2><ul><li>ADC 校准记录三相零电流偏置，运行时先减偏置再 Clarke。</li><li>用 static inline 实现 Clarke 函数，编译器把它直接展开到 FOC 中断，无额外开销。</li><li>常量 1/√3 ≈ 0.5773502692f 预先算好作为 const，避免运行时 sqrt。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>没减 ADC 偏置直接用原始电流。</li><li>公式幅值不变 / 功率不变形式混用导致后续 PI 和 SVPWM 标定全错。</li><li>两相采样重构 Ic 时符号写反（应该 Ic = -Ia - Ib，不是 +Ia + Ib）。</li></ul></div><h2>调试方法</h2><ul><li>空载静止时 Iα、Iβ、I0 都应接近 0；偏移就是 ADC 偏置没校准。</li><li>开环 V/f 正弦运行时，αβ 端点应画规则圆；变椭圆 → 三相不平衡或采样标定不一致。</li><li>把 Ia 设 +5 / Ib -2.5 / Ic -2.5（教科书例），应得 Iα=+5, Iβ=0, I0=0。</li></ul><h2>建议实验</h2><ul><li>切换&quot;手动 Ia/Ib/Ic&quot;，故意让三相和不为 0，看 I0 偏离。</li><li>平衡 5A / 0° 相位 → αβ 矢量在 α 轴正方向；相位 90° → β 轴正方向。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * clarke.h — Clarke 变换（幅值不变形式）
+ * 编译器内联展开到 FOC 中断
+ * ============================================ */
+#define ONE_OVER_SQRT3   0.57735026919f
+
+typedef struct {
+    float alpha;
+    float beta;
+    float zero;     // I0 = (Ia+Ib+Ic)/3，零序，用作健康检查
+} alpha_beta_t;
+
+static inline alpha_beta_t clarke(float ia, float ib, float ic) {
+    alpha_beta_t o;
+    o.alpha = ia;
+    o.beta  = (ia + 2.0f * ib) * ONE_OVER_SQRT3;
+    o.zero  = (ia + ib + ic) * 0.33333333f;
+    return o;
+}
+
+/* 两路 ADC 节省版：只用 Ia、Ib，重构 Ic = -Ia-Ib
+ * 前提：三相星型且采样准、三相平衡 */
+static inline alpha_beta_t clarke_2adc(float ia, float ib) {
+    alpha_beta_t o;
+    o.alpha = ia;
+    o.beta  = (ia + 2.0f * ib) * ONE_OVER_SQRT3;
+    o.zero  = 0.0f;     // 假设三相和=0
+    return o;
+}
+
+/* 健康检查：在调试期定期跑，发现 ADC 偏置漂移 */
+static inline int current_health_check(alpha_beta_t s) {
+    return fabsf(s.zero) &lt; 0.1f ? 1 : 0;
+}</pre><h2>下一步</h2><ul><li>进入 Park 变换，让 αβ 平面&quot;跟着转子一起转&quot;，把交流量变成 dq 直流量。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">Clarke 变换中 Iβ 的标准（幅值不变）公式是？</div><ol><li>Iβ = Ib</li><li class="correct">Iβ = (Ia + 2·Ib) / √3 (正确)</li><li>Iβ = Ic - Ib</li><li>Iβ = (Ib - Ic) / √3</li></ol><div class="hint">提示：幅值不变形式 Iα=Ia, Iβ=(Ia+2Ib)/√3。也有写成 (Ib-Ic)/√3 的等价形式（用 Ic=-Ia-Ib 替换可证）。</div></div><div class="quiz"><div class="q">运行时观测到 I0 = 0.8A，电机额定 6A。最可能的原因？</div><ol><li>正常现象</li><li class="correct">ADC 三相零点未校准 / 缺相 / 相阻不平衡 (正确)</li><li>PWM 频率太高</li><li>Park 角度错</li></ol><div class="hint">提示：平衡三相 I0 应远小于幅值（&lt; 1%）。0.8A/6A=13% 是显著偏移，先校 ADC 偏置。</div></div><div class="quiz"><div class="q">两路 ADC 节省方案 Ic=-Ia-Ib 的隐含前提是？</div><ol><li>母线电压稳定</li><li class="correct">三相星型连接且 ADC 偏置已减 (正确)</li><li>PWM 频率高</li><li>电机静止</li></ol><div class="hint">提示：前提是 ia+ib+ic=0 严格成立——星型 + ADC 准确。三角形连接相电流和不为 0，方案不成立。</div></div><div class="quiz"><div class="q">如果 Clarke 公式里 Iβ 的 √3 系数写成 √2，会发生什么？</div><ol><li>没影响</li><li class="correct">αβ 矢量幅值标定错，Park 算 Id/Iq 全部按比例偏 (正确)</li><li>电机不转</li><li>ADC 报错</li></ol><div class="hint">提示：√3 ≈ 1.732、√2 ≈ 1.414，差 18%。所有依赖 αβ 的下游（PI、限幅、SVPWM）会按这个比例偏掉。</div></div><div class="quiz"><div class="q">功率不变 vs 幅值不变 Clarke，在 FOC 中混用最直接的后果是？</div><ol><li>没差别</li><li class="correct">PI 增益、电流限幅、SVPWM 调制比都按 √(2/3) 比例错 (正确)</li><li>电机抖动</li><li>ADC 溢出</li></ol><div class="hint">提示：功率不变多个 √(2/3) ≈ 0.8165 缩放因子。一旦混用，所有下游标定都按这个倍数偏离。</div></div><h2>相关公式索引</h2><div class="card"><div class="label">Clarke 变换</div><div class="formula">Iα = Ia, Iβ = (Ia + 2Ib) / √3</div></div><div class="card"><div class="label">Clarke q15 整数实现</div><div class="formula">Iβ = (Ia + 2·Ib) × 18919 &gt;&gt; 15  (18919 ≈ 32768/√3)</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

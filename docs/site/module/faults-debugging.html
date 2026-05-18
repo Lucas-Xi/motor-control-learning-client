@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>故障与调试 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html" class="active">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">12</span>故障与调试</h1><p class="subtitle">波形现象、原因定位与 STM32 排查路径</p><div class="card primary"><div class="label">本模块主旨</div>把&quot;现象 → 波形 → 中间变量 → 硬件测量&quot;串成证据链——老师傅的排障套路。</div><h2>学完应能回答</h2><ul><li>能把 14 种故障分成&quot;电气波形类&quot;和&quot;状态位类&quot;两大族，并知道前者看示波器、后者查 GPIO / 传感器寄存器</li><li>能从一段三相电流波形特征反推故障类型（过流 vs 缺相 vs 相序错 vs 电流偏置 vs 编码器异常）</li><li>掌握&quot;4 表 + 示波器&quot;工作流：万用表、钳形表、温度枪、绝缘表配示波器，确认是电气、机械还是热故障</li><li>会用&quot;复现 → 注入 → 验证修复&quot;三段式：每次只改一个变量，保留复测，禁止盲改</li><li>理解为什么&quot;换件思维&quot;在 PMSM 控制器上经常换错件——表象一致的故障背后可能是完全不同的根因</li></ul><p><a class="btn" href="../walkthrough/faults-debugging.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>故障调试的目标是把&quot;感觉不对&quot;翻译成&quot;可测、可复现、可修复&quot;。证据链 + 案例库是工程师最值钱的资产。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>故障调试像医生看病——不是看症状（&quot;电机抖动&quot;），而是要把&quot;症状 → 波形 → 中间变量 → 硬件测量&quot;串成一条证据链。每个故障在波形上都有典型特征，会看波形等于会做诊断。</div><div class="card measure"><div class="label">核心概念</div>建立&quot;现象库&quot;：把 8 类常见故障（过流 / 缺相 / 偏置 / 相序 / 角度 / 振荡 / 饱和 / 启动失败）和它们的波形特征 + 排查步骤 + 修复方案对应起来。</div><h3>为什么要学</h3><ul><li>现场调试 80% 时间是定位故障，10% 在改代码。会看波形 = 会调电机。</li><li>&quot;低速啸叫&quot; 可能是死区、PI 振荡、采样噪声、机械共振——同一现象多个原因。证据链思维让你不靠猜。</li><li>工业项目交付前必须做 EFT/ESD/温度循环测试。预先做故障注入实验，能避免上线后的尴尬。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧切换&quot;故障类型&quot;试 8 种故障，看 Ia/Ib/Ic/speed 波形特征。每种故障右侧都有&quot;现象 + 原因 + 排查步骤 + 修复建议&quot;，这是真实现场的诊断手册。</div><h2>学习目标</h2><ul><li>认识 8 类典型故障的波形特征</li><li>建立&quot;波形 → 原因 → 排查 → 修复&quot;调试链</li><li>把软件中间变量与现场示波器/逻辑分析仪测量对应起来</li></ul><h2>核心概念</h2><ul><li>故障 ≠ 报警码。同样&quot;过流报警&quot;可以是 PI 振荡、相序错、角度错、机械堵转、母线电容老化。</li><li>同一现象可能多原因——啸叫可能 PI 振荡 / 死区 / 共振 / 采样噪声。逐一排除是诊断纪律。</li><li>故障快照：触发瞬间记录 Ia/Ib/Ic/Id/Iq/Vd/Vq/duty/theta/speed/fault flags 一组，事后 RTT/串口回看。</li></ul><h2>公式</h2><div class="card"><div class="label">调试黄金循环</div><div class="formula">现象 → 波形 → 中间变量 → 硬件测量 → 假设 → 修改 → 复测</div><p>每次只改一个变量，保留复现实验。盲改多个会迷失。</p></div><div class="card"><div class="label">过流判据（软件）</div><div class="formula">|Ia| &gt; I_OC 或 √(Iα²+Iβ²) &gt; I_OC × 1.15</div><p>软件保护 I_OC = 1.2 × I_rated；硬件保护通常 1.5-2 × I_rated 由比较器直接关 PWM。</p></div><div class="card"><div class="label">相序错诊断</div><div class="formula">正向命令但电机反转 / 同样 Iq 命令转矩偏向反向</div><p>换接线两相 / 软件里 swap Ib 与 Ic 即可修复。</p></div><h2>工程意义</h2><ul><li>现场调试靠证据。把常见错做成案例库，新人上手时间从月级缩到周级。</li><li>故障保护分硬件（比较器 + BKIN）和软件（中断检查 + 分级处理）两层。硬件兜底，软件辅助分类。</li><li>Black-box 数据：每次故障写 256 字节快照到 EEPROM，售后回收能快速定位。</li></ul><h2>STM32 移植指南</h2><ul><li>故障快照结构体放在 RAM 末段（链接脚本指定地址），复位不清除。</li><li>硬件保护：COMP + DAC 比较器输出接 TIM1 BKIN，配合 GPIO 故障 pin。</li><li>分级保护：硬件 → 软件中断 → 主循环慢任务，每级处理时间预算从 &lt; 1μs 到 1ms。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>过流后只降 Kp 不查相序和角度。</li><li>电压饱和时继续加 Iq 命令（无效且伤管）。</li><li>只做软件保护，没硬件兜底——MCU 卡死了保护就没了。</li><li>故障日志没保存，每次都凭印象。</li></ul></div><h2>调试方法</h2><ul><li>故障复现要从安全边界开始：12V 母线 + 限流 1A + 空载，逐步抬升参数。</li><li>示波器 + 逻辑分析仪 + 串口三件套交叉验证。</li><li>同样故障在不同 Kp/Ki/转速下复现 2-3 次，找规律。</li></ul><h2>建议实验</h2><ul><li>切换 8 种故障类型，看波形特征：过流的电流尖峰、缺相的某相消失、相序错的反向、角度错的高频抖动。</li><li>调&quot;故障严重度&quot;看程度：从轻微（可工作）到严重（必须停机）。</li><li>对照右侧&quot;原因 / 排查 / 修复&quot;建议，理解每种故障的诊断套路。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * fault.c — 分级故障保护 + 黑匣子快照
+ * 硬件保护 &lt; 1μs，软件中断 &lt; 50μs，主循环 &lt; 10ms
+ * ============================================ */
+
+typedef enum {
+    FAULT_NONE,
+    FAULT_OVER_CURRENT,
+    FAULT_OVER_VOLTAGE,
+    FAULT_UNDER_VOLTAGE,
+    FAULT_OVER_TEMP,
+    FAULT_PHASE_LOSS,
+    FAULT_ENCODER_LOST,
+    FAULT_ANGLE_DIVERGENCE,
+} fault_code_t;
+
+/* === 黑匣子快照（链接脚本里放在掉电不丢的 RAM 段） === */
+typedef struct __attribute__((packed)) {
+    uint32_t magic;          // 0xDEADBEEF
+    uint32_t timestamp_ms;
+    fault_code_t code;
+    float ia, ib, ic;
+    float id, iq;
+    float vd, vq;
+    float duty_a, duty_b, duty_c;
+    float theta_e;
+    float speed_rpm;
+    float udc;
+    float temp_c;
+    uint32_t crc32;
+} fault_snapshot_t;
+
+extern fault_snapshot_t __noinit_fault_snap __attribute__((section(&quot;.noinit&quot;)));
+
+/* === 第一级：硬件保护（&lt; 1μs，不靠 CPU） ===
+ *   COMP1 比较 ADC4 (相电流) 和 DAC3 (1.8 × I_rated)，
+ *   超限 → BKIN_N → TIM1 MOE=0 → PWM 全关。
+ *
+ * 在 BKIN 的 NMI 中只做：拍快照 + 设置 fault flag */
+void NMI_Handler(void) {
+    if (TIM1-&gt;SR &amp; TIM_SR_BIF) {
+        TIM1-&gt;SR &amp;= ~TIM_SR_BIF;
+        save_snapshot(FAULT_OVER_CURRENT);
+        g_state.fault_pending = 1;
+    }
+}
+
+/* === 第二级：软件保护（PWM 中断尾部，&lt; 50μs） === */
+void check_software_faults(void) {
+    /* 过流（含限幅前的瞬时电流） */
+    float i_mag = sqrtf(g_state.ialpha * g_state.ialpha
+                       + g_state.ibeta * g_state.ibeta);
+    if (i_mag &gt; I_OC_SOFT) {
+        save_snapshot(FAULT_OVER_CURRENT);
+        TIM1-&gt;BDTR &amp;= ~TIM_BDTR_MOE;     // 软关 PWM
+        g_state.fault_pending = 1;
+    }
+    /* 母线电压窗口 */
+    if (g_state.udc &gt; UDC_MAX) save_snapshot(FAULT_OVER_VOLTAGE);
+    if (g_state.udc &lt; UDC_MIN) save_snapshot(FAULT_UNDER_VOLTAGE);
+    /* 相电流和检测缺相 */
+    if (fabsf(g_state.ia + g_state.ib + g_state.ic) &gt; 1.5f)
+        save_snapshot(FAULT_PHASE_LOSS);
+}
+
+/* === 第三级：主循环（10 ms） === */
+void fault_handler_task(void) {
+    if (!g_state.fault_pending) return;
+    /* 显示故障码、点亮 LED、发 CAN 报警、写 Flash 长期日志 */
+    led_blink(g_snap.code);
+    can_send_fault_msg(&amp;__noinit_fault_snap);
+    flash_log_append(&amp;__noinit_fault_snap);
+    /* 解锁条件（PWM 关 + 故障源消失 + 用户复位）*/
+}
+
+/* === 工程套路 ===
+ * 1. 上电先读 __noinit_fault_snap，CRC 通过 = 上次复位前有故障，回放给用户
+ * 2. 黑匣子触发要快，避免现场被破坏
+ * 3. 永远不在中断里做 printf / Flash 写 / Delay
+ */</pre><h2>下一步</h2><ul><li>回到 FOC 流程模块，用单步方式定位每类故障出现在数据流哪一段。整门课闭环。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">硬件过流保护和软件过流保护的关键区别？</div><ol><li>硬件更慢</li><li class="correct">硬件直接关 PWM，不依赖 CPU 状态；软件靠中断 (正确)</li><li>软件更准</li><li>硬件成本高</li></ol><div class="hint">提示：硬件比较器 → BKIN → 直接关 PWM 输出，CPU 卡死也救得了。软件保护需要中断响应（≥10μs）甚至更长，关键时刻可能来不及。两者必须并存。</div></div><div class="quiz"><div class="q">调试时电机不正向转、反向反而正常，最可能的原因？</div><ol><li>Kp 太大</li><li class="correct">相序错（接线 swap 了任意两相，或软件 Ib/Ic 颠倒） (正确)</li><li>编码器坏</li><li>过流</li></ol><div class="hint">提示：相序决定旋转磁场方向。两相互换 = 磁场反转 = 电机反转。修复办法：硬件 swap 任意两根线，或软件里把 Ib 和 Ic 的 ADC 通道互换。</div></div><div class="quiz"><div class="q">示波器看到 Ia 一直比 Ib、Ic 高 1.5A 的固定偏移，最可能的原因？</div><ol><li>过流</li><li class="correct">Ia 通道 ADC 偏置未校准 (正确)</li><li>相序错</li><li>PWM 频率漂移</li></ol><div class="hint">提示：ADC 偏置每路独立。开机时电机不通电，理想 Ia=Ib=Ic=0，但 ADC 读数有几十 mV 偏差对应几百 mA。必须做&quot;零电流采样平均&quot;求出 offset，运行时减掉。</div></div><div class="quiz"><div class="q">电流环 Iq 阶跃响应有 50% 超调，但稳态后 Iq 就稳。最可能的修复？</div><ol><li>加大 Ki</li><li class="correct">减小 Kp 或加大限幅 (正确)</li><li>增大母线</li><li>换电机</li></ol><div class="hint">提示：Kp 过大 → 阶跃瞬间过冲。如果 Kp 不能再减小（影响响应速度），可加大限幅减小积分饱和的释放冲击。Ki 与超调关系小。</div></div><div class="quiz"><div class="q">黑匣子快照 (fault snapshot) 放在哪种内存最合适？</div><ol><li>普通 RAM</li><li class="correct">链接脚本指定的 .noinit 段（复位不清零的 RAM） (正确)</li><li>Flash</li><li>EEPROM</li></ol><div class="hint">提示：复位时普通 RAM 被清零，故障信息就丢了。.noinit 段在复位时不被 startup 代码清，下次开机能读出来。掉电场景再加 EEPROM/Flash 长期备份。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

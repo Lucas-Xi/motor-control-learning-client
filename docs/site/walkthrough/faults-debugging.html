@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>故障与调试 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html" class="active">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">12 Walkthrough</span>故障与调试</h1><p class="subtitle">把&quot;现象 → 波形 → 中间变量 → 硬件测量&quot;串成证据链——老师傅的排障套路。</p><p><a href="../module/faults-debugging.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能把 14 种故障分成&quot;电气波形类&quot;和&quot;状态位类&quot;两大族，并知道前者看示波器、后者查 GPIO / 传感器寄存器</li><li>能从一段三相电流波形特征反推故障类型（过流 vs 缺相 vs 相序错 vs 电流偏置 vs 编码器异常）</li><li>掌握&quot;4 表 + 示波器&quot;工作流：万用表、钳形表、温度枪、绝缘表配示波器，确认是电气、机械还是热故障</li><li>会用&quot;复现 → 注入 → 验证修复&quot;三段式：每次只改一个变量，保留复测，禁止盲改</li><li>理解为什么&quot;换件思维&quot;在 PMSM 控制器上经常换错件——表象一致的故障背后可能是完全不同的根因</li></ul><h2>主线步骤（8 步）</h2><section class="step"><div class="step-no">Step 1 / 8 · taxonomy</div><h3>故障分两族</h3><div class="field"><div class="field-label">目标</div><div>建立&quot;电气波形类 vs 状态位类&quot;的第一刀分类</div></div><div class="field"><div class="field-label">操作</div><div>在右侧&quot;故障类型&quot;下拉里先选&quot;过流&quot;、再切到&quot;过温&quot;和&quot;油位告警&quot;，注意中央画面的差异。</div></div><div class="field"><div class="field-label">观察</div><div>过流是三相同时攀升的电流波形 + 速度回落；过温和油位告警直接显示&quot;状态位告警&quot;卡片，没有波形——因为它们的可视特征不在主回路。</div></div><div class="field"><div class="field-label">为什么</div><div>14 种故障在排查路径上分两族：① 电气波形类（过流、缺相、相序错、电流偏置、编码器、电压饱和、振动、堵转、液击）—— 先看示波器；② 状态位类（启动失败、过温、DC 欠压、过压、油位、电流环饱和）—— 先查传感器寄存器/GPIO/CAN 字段。分错族就会在错的地方花一上午。</div></div><div class="quiz"><div class="q">随堂题：现场报&quot;过温&quot;故障，第一步应该用什么工具？</div><ol><li>示波器看三相电流波形</li><li class="correct">热成像枪看模块表面温度分布 + 查 NTC ADC 读数 (正确)</li><li>钳形表测母线电流</li><li>万用表测相间绝缘</li></ol><div class="hint">提示：过温属于&quot;状态位类&quot;故障，主回路电流通常仍处于正常运行，看示波器看不到任何特征。直接查温度通道才是正路。</div></div></section><section class="step"><div class="step-no">Step 2 / 8 · waveform-id-current</div><h3>波形识别 1：过流</h3><div class="field"><div class="field-label">目标</div><div>认出&quot;三相同时攀升 → 硬件切断 → 速度回落&quot;的过流特征</div></div><div class="field"><div class="field-label">操作</div><div>切到&quot;过流&quot;，把&quot;故障严重度&quot;滑块从 0 拉到 0.8，观察 Ia/Ib/Ic 和 speed 四条线。</div></div><div class="field"><div class="field-label">观察</div><div>t≈0.30 处三相电流同时按比例攀升，到 t≈0.45 触及 OCP 阈值后被快速截止归 0；速度跌到额定值的 60-70%。三相同时响应是关键特征。</div></div><div class="field"><div class="field-label">为什么</div><div>过流不是&quot;某一相突然变大&quot;，是三相按同比例放大（Iq 命令突跳或负载突变）。如果只有一相变大、其他两相反向变化保持 KCL，那是缺相或采样故障，不是过流——这是新手最容易看错的第一关。</div></div></section><section class="step"><div class="step-no">Step 3 / 8 · waveform-id-phase-order</div><h3>波形识别 2：相序错</h3><div class="field"><div class="field-label">目标</div><div>区分&quot;相序错&quot;和&quot;过流&quot;——同样大电流但完全不同病</div></div><div class="field"><div class="field-label">操作</div><div>加载&quot;相序错误&quot;预设；观察波形和右侧&quot;故障现象 + 可能原因 + 排查步骤&quot;。</div></div><div class="field"><div class="field-label">观察</div><div>电流幅值偏大但波形仍是平滑正弦——和过流的&quot;尖峰 + 截断&quot;完全不同；速度方向可能反转。Iq 命令在升但实际转矩偏小、效率低。</div></div><div class="field"><div class="field-label">为什么</div><div>相序错的本质是：Clarke / Park 的符号约定和硬件 U/V/W 接线不一致 → 投影矩阵带一个未知偏角 → 期望&quot;纯 Iq&quot;被分摊到 Id。表象是&quot;电流大、转矩小、可能反转&quot;，和过流报警的电流大很像，但根因是接线 / 软件相序映射，**改 PI 参数毫无意义**。</div></div><div class="field"><div class="field-label">工况</div><div><code>phase-order-error</code></div></div><div class="quiz"><div class="q">随堂题：产线现场报&quot;过流&quot;，断电后手动盘车正常，重新上电低压开环测试电机反转。最可能的故障是？</div><ol><li>PI 参数 Kp 过大</li><li>功率管损坏导致缺相</li><li class="correct">相序错误（U/V/W 接线交换或软件相序枚举错） (正确)</li><li>母线电容老化</li></ol><div class="hint">提示：&quot;正转命令但实际反转&quot;是相序错的标志性现象。换两相接线或软件 swap Ib/Ic 即可修复——不要去动 PI 参数。</div></div></section><section class="step"><div class="step-no">Step 4 / 8 · waveform-id-offset</div><h3>波形识别 3：电流偏置</h3><div class="field"><div class="field-label">目标</div><div>认出&quot;静止时 Id/Iq 不为 0、Ia+Ib+Ic 有恒定偏移&quot;的采样偏置</div></div><div class="field"><div class="field-label">操作</div><div>加载&quot;电流采样偏置&quot;预设；把严重度调到 0.5。注意三相波形和它们的和。</div></div><div class="field"><div class="field-label">观察</div><div>三相正弦整体向上（或向下）平移，Ia+Ib+Ic ≠ 0；如果右侧能看 Id/Iq，会发现空载静止时 Id/Iq 也不是 0 而是一个固定值。</div></div><div class="field"><div class="field-label">为什么</div><div>健康系统满足 KCL：Ia+Ib+Ic ≡ 0。偏置故障是 ADC 零点漂移 / 运放温飘 / 采样窗口错位的结果，在 Park 投影后变成 Id/Iq 的二次谐波 + 直流偏移。新手常把它当编码器问题去查（因为 Id/Iq 异常），但**先查 Ia+Ib+Ic 是不是 0** 能 30 秒鉴别。</div></div><div class="field"><div class="field-label">工况</div><div><code>current-offset</code></div></div></section><section class="step"><div class="step-no">Step 5 / 8 · four-meters-flow</div><h3>4 表 + 示波器工作流</h3><div class="field"><div class="field-label">目标</div><div>建立&quot;先量后猜&quot;的硬件排查纪律</div></div><div class="field"><div class="field-label">操作</div><div>想象现场场景：刚拿到一台报&quot;过流 + 启动失败&quot;的压缩机。按以下顺序操作（在脑子里走一遍）：① 万用表测三相端电压平衡（确认有没有缺相）② 钳形表测三相电流静态偏置（确认没有偏置）③ 温度枪扫 IGBT 模块表面（排除过热）④ 绝缘表测相对地（排除绕组绝缘问题）⑤ 示波器同步看 Ia/Ib/Vbus/PWM。</div></div><div class="field"><div class="field-label">观察</div><div>这一套 5 分钟能排除 60% 的&quot;伪故障&quot;。剩下的才是真正需要钻进代码看 PI / 状态机的部分。</div></div><div class="field"><div class="field-label">为什么</div><div>现场调试 80% 时间花在定位，10% 改代码。新人常犯的错是不量直接改代码——这叫&quot;在显微镜上修望远镜&quot;。老师傅的纪律是：硬件层 → 采样层 → 算法层 → 状态机层，从下往上排，每层都用工具量化确认。</div></div></section><section class="step"><div class="step-no">Step 6 / 8 · snapshot-recovery</div><h3>从快照恢复故障</h3><div class="field"><div class="field-label">目标</div><div>学会从压缩机黑匣子 1-2 个状态码 + 变量快照反推故障类型</div></div><div class="field"><div class="field-label">操作</div><div>想象拿到这样一份压缩机停机日志：`FAULT_OVER_CURRENT, t=1230ms, Ia=12.3 Ib=-6.1 Ic=-6.0 Id=2.1 Iq=11.8 Udc=305 speed=1820 rpm theta_jitter=0.4rad`。基于本模块学过的特征推断真实故障类型。</div></div><div class="field"><div class="field-label">观察</div><div>关键证据：① Ia+Ib+Ic ≈ 0.2A 接近 0 → 不是偏置；② Udc=305V 正常 → 不是欠压；③ Iq=11.8A 异常大但 Id 也偏 → dq 解耦出问题；④ theta_jitter=0.4 rad → 编码器角度抖动剧烈。结论：**根因是编码器角度异常**，过流只是它引发的二次现象——OCP 报警挡住了真正的故障源。</div></div><div class="field"><div class="field-label">为什么</div><div>产线退机日志几乎不会直接告诉你&quot;编码器坏了&quot;，它只给一个最先触发的保护码（这里是 OCP）。会看快照的工程师能从二级证据（KCL、Udc、theta jitter）回推一级根因。这一步是新人 → 老师傅的分水岭。</div></div><div class="quiz"><div class="q">随堂题：日志显示 `FAULT_OVER_CURRENT, Ia=8.5 Ib=-2.0 Ic=-2.0`，KCL 残差 4.5A，theta_jitter=0.05 rad（正常）。最可能的真实故障是？</div><ol><li>编码器角度异常</li><li class="correct">电流采样偏置（A 相零点漂移 ~4.5A） (正确)</li><li>机械堵转</li><li>速度环 Kp 过大</li></ol><div class="hint">提示：KCL 残差 4.5A 远大于正常噪声（&lt; 0.2A），且角度抖动正常——这就是采样偏置的指纹。&quot;过流&quot;是它在 A 相叠加正弦后越限触发的二次报警。</div></div></section><section class="step"><div class="step-no">Step 7 / 8 · reproduce-inject-verify</div><h3>复现/注入/验证修复</h3><div class="field"><div class="field-label">目标</div><div>掌握&quot;安全边界 → 故障注入 → 修复复测&quot;三段式</div></div><div class="field"><div class="field-label">操作</div><div>想象你已经定位为相序错。按三段式走：① **复现**：12V 母线 + 1A 限流 + 空载，给正转命令确认确实反转；② **注入**：在代码里加 swap Ib/Ic（或交换硬件 U/W 两相）；③ **验证修复**：还在 12V/1A 安全边界下复测，确认正转 + Iq 等于命令值后再逐步抬母线到 310V 和满载。</div></div><div class="field"><div class="field-label">观察</div><div>每次只改一个变量、改完必须在原工况复测一次；改完不复测就上量是产线事故的高频原因。</div></div><div class="field"><div class="field-label">为什么</div><div>复现/注入/验证修复 = 嵌入式排障的&quot;红、绿、重构&quot;。安全边界（低压 + 限流 + 空载）保证你出错也烧不了管子；保留复测脚本保证 3 个月后回归测试还能跑。盲改多个参数 = 失控。</div></div></section><section class="step"><div class="step-no">Step 8 / 8 · closing-discipline</div><h3>排障纪律</h3><div class="field"><div class="field-label">目标</div><div>把整门课的故障调试经验落成 5 条军规</div></div><div class="field"><div class="field-label">操作</div><div>回顾本模块，把下列纪律刻进脑子：① 先分族（电气波形 vs 状态位）再看波形；② 先量后猜（4 表+示波器 5 分钟过一遍）；③ KCL 是免费验真器（Ia+Ib+Ic ≠ 0 必有偏置 / 缺相）；④ 黑匣子快照看二级证据，不要相信一级报警码；⑤ 复现-注入-验证 三段式，每次只改一个变量。</div></div><div class="field"><div class="field-label">观察</div><div>这 5 条不是花架子，是产线返修率从 8% 降到 2% 的差距。</div></div><div class="field"><div class="field-label">为什么</div><div>故障调试本身没有银弹，但有&quot;反银弹&quot;——所有产线退机都是因为违反了上面某一条军规：要么没查 KCL、要么直接相信报警码就换 IGBT、要么一次改 3 个参数无法回退。把这 5 条做对，排障从凭印象变成可复现的工程。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：相序错当过流改 PI</div><p><strong>现象：</strong>降低 Kp/Ki 后过流报警频率下降，但电机一上负载就憋停、Iq 命令撞限</p><p><strong>为什么：</strong>相序错的根因是 Clarke / Park 投影矩阵和硬件接线不一致，PI 调小只是把&quot;出错速度&quot;调慢——表象上&quot;不报警&quot;了，但功率从根上就传不进去。产线上这类机器返修后会在用户家三个月内二次故障，**根因从来没修过**。正确做法是换两相接线或软件 swap Ib/Ic。</p></div><div class="pitfall"><div class="label">试错：采样偏置当编码器问题换编码器</div><p><strong>现象：</strong>换了新编码器、重做了零位标定，空载静止时 Id/Iq 依然是恒定偏移</p><p><strong>为什么：</strong>Id/Iq 异常的现象指向&quot;角度有偏&quot;，但根因可能是 ADC 零点漂移 → Park 投影后产生 dq 直流分量。新人看到 Id/Iq 偏立刻怀疑编码器，老师傅先验证 Ia+Ib+Ic 是不是 0。30 秒能鉴别的事，换编码器要 30 分钟还修不好——典型的&quot;换错件&quot;事故。</p></div><div class="pitfall"><div class="label">试错：母线欠压当速度环振荡调</div><p><strong>现象：</strong>把速度环 Kp 一调小转速波动好像缓和了，但开空调/拖大负载就立刻又抖</p><p><strong>为什么：</strong>母线欠压时电流环输出长期撞限 → Iq 实际值跟不上命令 → 速度反馈滞后 → 看上去像速度环振荡。调速度环 Kp 是治表，根因是 PFC 前级或电网。先查 Udc 时域曲线、看是不是大负载瞬态把母线拉低、再查母线电容容值/ESR——而不是动控制环参数。</p></div><div class="pitfall"><div class="label">试错：一次改 3 个参数后不知道哪个起作用</div><p><strong>现象：</strong>同时调了 Kp、Ki、限流值后故障消失，半年后产线另一批料同样故障复现，没人记得到底是哪个起作用</p><p><strong>为什么：</strong>违反&quot;每次只改一个变量&quot;军规的代价。修复时省下的 10 分钟，回归测试和售后定位时要还回去 10 小时。工程师最值钱的资产是&quot;可复现的修复&quot;——盲改多参数等于把这个资产烧掉换一个临时安心。</p></div><h2>下一模块引子</h2><div class="card primary">会看波形 + 会看快照只是半张地图。下一模块 13 HFI 无感低速：当编码器异常 / 成本敏感场景必须扔掉编码器时，怎么从电感凸极性里把转子角度估出来——这是无感控制最难啃的一段，也是排障经验最有用的练兵场。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

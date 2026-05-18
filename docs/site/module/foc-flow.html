@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOC 总体流程 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html" class="active">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">06</span>FOC 总体流程</h1><p class="subtitle">采样、变换、电流环、SVPWM 闭环链路</p><div class="card primary"><div class="label">本模块主旨</div>FOC = 每个 PWM 周期跑一遍的 7 段纯函数流水线；时序预算 + 解析整定 + 解耦前馈三件事不掉链，电机调试就只剩选参数。</div><h2>学完应能回答</h2><ul><li>能背出每个 PWM 周期里依次发生的 7 件事（ADC 注入采样 → Clarke → Park → PI → 反 Park → SVPWM → 写 CCR）</li><li>能解释为什么 PI 要放在 dq 域而不是 abc 域（直流量 vs 交流量，零稳态误差）</li><li>能定位电流环 4 类典型故障：振荡（Kp/延迟）、Id-Iq 串扰（Δθ）、高速发软（缺解耦）、撞限不收（抗饱和）</li><li>能判断哪些代码必须放在 ADC ISR 里、哪些必须放到 1 kHz 低频任务里（按时间预算 &lt; 10 μs）</li><li>理解 ADC 注入触发点必须放在 PWM 中点的硬件原因（电流处于纹波谷 + 桥臂稳态 000/111）</li><li>能用 Kp = ω_bw·L、Ki = ω_bw·R 算出 PI 起点，并解释为什么实测取 0.5-0.7 倍解析值</li><li>理解 ADC 采样 + CCR 预装载产生的 1.5 个 PWM 周期延迟为什么把电流环带宽锁死在 PWM/10~PWM/8</li></ul><p><a class="btn" href="../walkthrough/foc-flow.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>FOC 不是数学难，是工程链路长。把每段都看成一个可独立验证的纯函数，整个系统才稳。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>FOC 就像给三相交流电机装了一台&quot;翻译机&quot;。普通办法直接调三相电压，电机看到的是不停旋转的复杂波形，没法精确控转矩。FOC 把复杂的三相变成两个稳定的直流量（Id 控磁链、Iq 控转矩），就像把摇晃的船舱地板换成静止的——你站在静止的地板上调阀门容易得多。</div><div class="card measure"><div class="label">核心概念</div>FOC 不是某个单一公式，而是一条**每个 PWM 周期跑一遍**的流水线：采样 → Clarke → Park → 电流 PI → 反 Park → SVPWM → 输出。每个环节只做一件事，错了能定位。</div><h3>为什么要学</h3><ul><li>不会 FOC，PMSM 调起来就是开环加点小聪明，转矩控不准、效率低、动态差。</li><li>FOC 是新能源汽车驱动、伺服、机器人关节的工业标准。学会它你就能读懂 90% 的电机控制代码。</li><li>搞清楚流水线每一段后，遇到&quot;电机抖动&quot;&quot;启动失败&quot;等问题能精准定位（采样？角度？PI？SVPWM？硬件？）</li></ul><div class="card primary"><div class="label">第一手操作</div>点击顶部&quot;电流环响应&quot;标签，把右边 Iq 阶跃指令拖到 5A，看 Iq（绿）追指令（虚线）的过程。然后把&quot;角度误差 Δθ&quot;从 0 拖到 15°，看 Iq 阶跃时 Id（蓝）也被拉起来——这就是著名的&quot;dq 串扰&quot;。</div><h2>学习目标</h2><ul><li>串起采样、Clarke、Park、电流环、反 Park、SVPWM 和反馈角度</li><li>理解 FOC 流水线每段的输入输出</li><li>能定位电流环超调 / 振荡 / 串扰的根因</li></ul><h2>核心概念</h2><ul><li>FOC 每个 PWM 周期做一次&quot;小闭环&quot;：采电流 → 算坐标 → 跑 PI → 算电压矢量 → 更新 PWM → 等待下一次反馈。</li><li>角度反馈可来自编码器或观测器；角度质量直接决定 dq 解耦质量。</li><li>PI 在 dq 域工作（直流量），比直接控三相 AC 简单得多。</li><li>电流环带宽 ω_bw ≈ Kp / L，Ki / Kp = R / L 是临界阻尼起点。</li></ul><h2>公式</h2><div class="card"><div class="label">FOC 流水线</div><div class="formula">abc → Clarke → Park → PI(Id, Iq) → inv-Park → SVPWM → 桥臂</div><p>每一段都是纯函数，输入输出明确，便于移植到 C / STM32 / MATLAB。</p></div><div class="card"><div class="label">dq PMSM 模型</div><div class="formula">vd = R·id + Ld·did/dt - ω·Lq·iq;  vq = R·iq + Lq·diq/dt + ω·(Ld·id + ψf)</div><p>dq 之间存在交叉耦合项 ω·L·iq 和 ω·L·id；速度越高耦合越强，需要在 PI 输出加解耦前馈。</p></div><div class="card"><div class="label">电流环典型整定</div><div class="formula">Kp = ω_bw × L,  Ki = ω_bw × R</div><p>想要 1 kHz 带宽，Kp = 6283 × 0.0012 ≈ 7.5（实际 PWM 16k 时取 1-3 较稳）。Ki/Kp = R/L 让零点抵消极点。</p></div><h2>工程意义</h2><ul><li>流水线拆开后，&quot;电机抖动&quot;可以精确定位：采样错？角度错？PI 振荡？SVPWM 饱和？硬件直通？</li><li>电流环带宽决定速度环最大可用带宽。一般电流环 1-5 kHz，速度环 50-500 Hz，差 10× 才稳。</li><li>角度误差 Δθ 直接体现在 Iq 阶跃时 Id 跳一下：这是判断编码器零位是否对齐的实战手段。</li></ul><h2>STM32 移植指南</h2><ul><li>PWM 中心对齐 16-20kHz，ADC 采样点放在 PWM 中点（电流纹波最小处），中断里完整跑完 FOC 链。</li><li>TIM1/TIM8 + ADC1/ADC2 用 InjectedConv + DMA 双采，CPU 只在中断尾部处理（&lt; 5μs）。</li><li>所有算法（Clarke/Park/PI/SVPWM）写成纯函数，主循环传引用，方便单元测试和移植。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>在 UI 或业务层写控制算法，无法移植和单元测试。</li><li>中断里加 printf / HAL_Delay / 浮点除法，PWM 周期超时。</li><li>采样点选在 PWM 边沿附近（噪声大）。</li><li>PI 没做抗积分饱和，输出撞限幅后释放出大超调。</li><li>没在中断尾部用 __DSB() 确保 CCR 写入生效。</li></ul></div><h2>调试方法</h2><ul><li>按段冻结调试：先 ADC 校零（ia+ib+ic ≈ 0）→ 再开环转电压矢量看转子能否拖动 → 再上电流环 → 最后上速度环。</li><li>在 RTT/串口每个 PWM 周期记录 ia/ib/ic/iα/iβ/id/iq/vd/vq/duty 和 sector，跟波形发生器/示波器对照。</li><li>电流环超调先怀疑 Kp 太大或采样延迟过多；稳态误差先看 Ki 和限幅。</li></ul><h2>建议实验</h2><ul><li>把&quot;角度误差 Δθ&quot;从 0 拖到 ±15°，看 Iq 阶跃时 Id 出现峰值——这是 dq 串扰的物理表现。</li><li>把&quot;电频率 ω&quot;从 0 拉到 200Hz，看 Iq 上升过程中带&quot;晃动&quot;——这是交叉耦合 ω·L·iq 进入 vd 的结果。</li><li>把&quot;采样延迟&quot;从 1 拉到 4，相同 Kp 下振荡明显加重——延迟等效相位裕度损失。</li><li>加载&quot;过激振荡&quot;预设，再把 Kp 减半，对比超调减小。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * foc.c — FOC 中断主循环（运行在 PWM 16kHz ISR 内）
+ * 适配 STM32G4 (Cortex-M4F + FPU)，单次执行 &lt; 6 μs
+ * ============================================ */
+#include &quot;foc.h&quot;
+
+static pi_state_t g_pi_d = { .integral = 0 };
+static pi_state_t g_pi_q = { .integral = 0 };
+
+void TIM1_UP_TIM16_IRQHandler(void) {
+    if (TIM1-&gt;SR &amp; TIM_SR_UIF) {
+        TIM1-&gt;SR = ~TIM_SR_UIF;
+
+        /* 1. 采样三相电流（ADC 注入序列已经触发） */
+        float ia = adc_to_amps(ADC1-&gt;JDR1, g_offset.ia);
+        float ib = adc_to_amps(ADC1-&gt;JDR2, g_offset.ib);
+        float ic = -ia - ib;     // 三相和为零，省一路 ADC
+
+        /* 2. 读电角度（编码器/观测器） */
+        float theta_e = encoder_to_theta_e(
+            ENCODER-&gt;CNT, g_param.encoder_zero, g_param.pole_pairs);
+        float sin_t, cos_t;
+        sincosf(theta_e, &amp;sin_t, &amp;cos_t);
+
+        /* 3. Clarke：abc → αβ */
+        float i_alpha = ia;
+        float i_beta  = ONE_OVER_SQRT3 * (ia + 2.0f * ib);
+
+        /* 4. Park：αβ → dq（同步旋转坐标） */
+        float i_d =  cos_t * i_alpha + sin_t * i_beta;
+        float i_q = -sin_t * i_alpha + cos_t * i_beta;
+
+        /* 5. 电流 PI（在 dq 域，控直流量） */
+        float v_d = pi_step(&amp;g_pi_d, g_ref.id - i_d, g_param.kp, g_param.ki, DT);
+        float v_q = pi_step(&amp;g_pi_q, g_ref.iq - i_q, g_param.kp, g_param.ki, DT);
+
+        /* 5b. 解耦前馈（高速时建议加，低速可省） */
+        v_d -= 2.0f * M_PI * g_state.elec_freq * g_param.lq * i_q;
+        v_q += 2.0f * M_PI * g_state.elec_freq * (g_param.ld * i_d + g_param.psi_f);
+
+        /* 5c. 圆形限幅（SVPWM 线性区 ≈ Udc/√3） */
+        float v_lim = g_state.udc * ONE_OVER_SQRT3 * 0.95f;
+        float v_mag = sqrtf(v_d*v_d + v_q*v_q);
+        if (v_mag &gt; v_lim) { v_d *= v_lim/v_mag; v_q *= v_lim/v_mag; }
+
+        /* 6. 反 Park：dq → αβ */
+        float v_alpha = cos_t * v_d - sin_t * v_q;
+        float v_beta  = sin_t * v_d + cos_t * v_q;
+
+        /* 7. SVPWM：αβ → 三相占空比 */
+        svpwm_t sv = svpwm_calc(v_alpha, v_beta, g_state.udc);
+
+        /* 8. 写入 CCR（下一个 PWM 周期生效） */
+        TIM1-&gt;CCR1 = (uint16_t)(sv.duty_a * TIM1-&gt;ARR);
+        TIM1-&gt;CCR2 = (uint16_t)(sv.duty_b * TIM1-&gt;ARR);
+        TIM1-&gt;CCR3 = (uint16_t)(sv.duty_c * TIM1-&gt;ARR);
+        __DSB();
+    }
+}</pre><h2>下一步</h2><ul><li>深入 SVPWM 模块，看反 Park 的 Uα/Uβ 怎么变成 6 个开关状态加零矢量。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">FOC 在 dq 坐标里做 PI，相比直接在 abc 做控制最大的好处是什么？</div><ol><li>计算量少</li><li class="correct">稳态时控制对象是直流量，PI 可以严格消除稳态误差 (正确)</li><li>不需要传感器</li><li>硬件成本低</li></ol><div class="hint">提示：abc 三相是 AC 量，标准 PI 跟踪 AC 会有稳态相位/幅值误差；dq 是 DC 量，PI 可以做到零稳态误差。</div></div><div class="quiz"><div class="q">电流环 Kp 增大到使 Iq 出现 30% 超调和振荡，最可能的原因？</div><ol><li>Ki 太小</li><li>电压限幅太大</li><li class="correct">Kp 已经超过电流环带宽 / 采样延迟匹配 (正确)</li><li>电机参数错</li></ol><div class="hint">提示：电流环带宽 ω_bw ≈ Kp/L。Kp 太大让 ω_bw 高于 1/(2π·延迟)，相位裕度耗尽就开始振荡。</div></div><div class="quiz"><div class="q">同时给 Iq 阶跃指令但 Id 也被拉起来一个峰值，最可能的原因？</div><ol><li>Kp 不够</li><li class="correct">编码器零位没对齐 / 角度有误差 Δθ (正确)</li><li>PWM 频率太低</li><li>ADC 采样错</li></ol><div class="hint">提示：Iq 投影到错误旋转的 d 轴上就会&quot;溢&quot;到 Id 上。试改&quot;角度误差 Δθ&quot;看现象。</div></div><div class="quiz"><div class="q">高速运行时电流环响应变慢、有晃动，加什么能改善？</div><ol><li>加大 Kp</li><li>加大 Ki</li><li class="correct">加 dq 解耦前馈（vd 减 ω·Lq·iq、vq 加 ω·(Ld·id + ψf)） (正确)</li><li>降低 PWM 频率</li></ol><div class="hint">提示：高速时 ω·L 项让 d/q 互相干扰，靠 PI 反馈修复慢。前馈直接抵消这部分耦合。</div></div><div class="quiz"><div class="q">FOC 中断里出现下面哪个最危险？</div><ol><li>浮点乘加</li><li>sincosf 调用</li><li class="correct">printf 或 HAL_Delay (正确)</li><li>CCR 写入</li></ol><div class="hint">提示：printf/Delay 阻塞数百 μs 到 ms 级，PWM 周期 60μs 完全装不下，会立刻丢拍。</div></div><h2>相关公式索引</h2><div class="card"><div class="label">FOC 总采样-生效延迟</div><div class="formula">t_delay ≈ 1.5·Ts (ADC 中点 + CCR 预装载);  电流环带宽上限 ≈ 1/(2π·1.5·Ts)</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

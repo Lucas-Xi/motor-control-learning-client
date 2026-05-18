@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三相逆变器 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html" class="active">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">08</span>三相逆变器</h1><p class="subtitle">桥臂、PWM、死区和线电压</p><div class="card primary"><div class="label">本模块主旨</div>6 个开关 + 3 桥臂 + 死区 + 中心对齐 PWM + BKIN 硬件保护 = 把 Vd/Vq 安全落到电机绕组上。</div><h2>学完应能回答</h2><ul><li>能画出三相桥拓扑，并说明上下管为什么必须互补、为什么必须做硬件死区不能只靠软件 if</li><li>能算出占空比 → 相电压 → 线电压（相电压差 √3 倍），并知道电机铭牌 380V 是线电压有效值不是峰值</li><li>能在 Sanken/Onsemi IPM datasheet 上查 t_d(off) 和 Q_g，反算合理死区和自举电容容值</li><li>理解死区误差幅值 ΔV = t_d·f_pwm·Udc 与极性 sign(I_phase)，知道为什么过零附近补偿要禁用</li><li>能用 TIM1 BDTR.MOE + BKIN 硬件关断把过流响应控制在 &lt; 200 ns，而不是软件中断的 5-10 μs</li><li>理解中心对齐 PWM + TIM1 update 事件触发 ADC = 采样窗精准对齐&quot;电流纹波谷底&quot;</li></ul><p><a class="btn" href="../walkthrough/inverter.html">查看完整 Walkthrough（9 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>逆变器是算法 → 真实电机的功率桥梁。理想模型简洁，但死区 / 过流 / 直通保护是工程必须做对的事。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>逆变器就像 6 个开关组成的&quot;接力开关阵&quot;——上下两个开关互相 toggle，把直流母线斩成想要的交流相电压。要保护这些开关不烧（&quot;死区&quot;=不让上下管同时开），又要把死区造成的失真补偿回来。</div><div class="card measure"><div class="label">核心概念</div>6 个 MOSFET/IGBT 三对，每对上下管互补导通；占空比决定平均相电压；死区时间是必要的保护代价但会造成低速电压畸变。</div><h3>为什么要学</h3><ul><li>不会写 PWM + 死区设置，FOC 算法再好也炸管。</li><li>低速小电流时死区损失最明显，是&quot;低速啸叫&quot;&quot;波形毛刺&quot;的常见根因。</li><li>STM32 高级定时器（TIM1/TIM8）的互补 + 死区 + 刹车输入是工业级电机控制的硬件支撑，必须熟练。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;死区时间&quot;从 1μs 拉到 4μs，看相电压波形顶部出现明显凹槽（死区损失增大）。再把&quot;PWM 频率&quot;从 16kHz 降到 4kHz，看死区在每个周期占比变大、损失放大。</div><h2>学习目标</h2><ul><li>认识三相桥、上下桥臂互补和死区机制</li><li>理解占空比 → 相电压 → 线电压的换算</li><li>识别死区失真、过调制和直通风险</li></ul><h2>核心概念</h2><ul><li>三相桥 6 个开关分 3 对（A/B/C 相），每对上下互补；同时导通 = 直通短路炸管。</li><li>死区时间 td：上管关断后等 td 再开下管，避免直通；典型 0.5-3 μs。</li><li>平均相电压 Va = (Da - 0.5)·Udc；线电压 Vab = Va - Vb。</li><li>死区损失 ΔV ≈ td × fpwm × Udc，与电流方向有关。</li></ul><h2>公式</h2><div class="card"><div class="label">平均相电压（理想）</div><div class="formula">Va = (Da - 0.5) × Udc</div><p>Da 是上桥臂占空比 [0,1]，以母线中点为参考。Da=0.5 → Va=0；Da=1 → Va=+Udc/2。</p></div><div class="card"><div class="label">死区损失</div><div class="formula">ΔV_dt = td × fpwm × Udc × sign(Iphase)</div><p>电流流入电机时上管&quot;少导通&quot;td，电流流出时下管&quot;少导通&quot;td。损失正比于死区时间和频率。</p></div><div class="card"><div class="label">过调制阈值</div><div class="formula">|Vphase| &gt; 0.5 × Udc → 部分 PWM 周期 duty 撞 0 或 1</div><p>SVPWM 线性区单相幅值 ≈ Udc/√3 ≈ 0.577·Udc。继续增大就有 duty 被钳位。</p></div><div class="card"><div class="label">死区补偿</div><div class="formula">Va_cmd = Va_ref + ΔV_dt × sign(Ia)</div><p>提前在 PWM 命令上加补偿值；电流过零附近补偿不准（极性翻转），靠抑制电流过零段抖动。</p></div><h2>工程意义</h2><ul><li>死区是必要的保护代价。td 太大低速畸变重；太小直通烧管，需要按驱动器和管子手册定。</li><li>硬件保护：刹车输入（BKIN）+ 过流比较器（COMP）+ 失能 PWM，软件中断兜底。</li><li>电机参数中的相电压标定（Vphase / Udc）必须和你的逆变器拓扑一致——星型相电压 vs 线电压差 √3 倍。</li></ul><h2>STM32 移植指南</h2><ul><li>TIM1/TIM8 高级定时器互补 PWM：CCxE = 1, CCxNE = 1，死区在 BDTR.DTG 寄存器（步长查 RM）。</li><li>刹车 BKIN 接过流比较器输出（COMP），一旦触发硬件直接 OFF 全部 PWM，无需 CPU。</li><li>调试顺序：先空载只接逆变器看 PWM 互补 + 死区，再低压 12V 接电机，最后母线 48V。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>忘记 enable 互补输出极性（CCxNE）。</li><li>死区过大（&gt;5μs）低速波形严重畸变啸叫。</li><li>没有硬件过流保护，软件来不及救。</li><li>上电瞬间 PWM 占空比未初始化为 0.5，触发母线冲击。</li></ul></div><h2>调试方法</h2><ul><li>先逻辑分析仪抓 PWM_A 高侧 + 低侧，确认互补 + 死区 td 测量值符合设置。</li><li>示波器抓相电压（电机断开时直接看半桥中点）应是干净方波。</li><li>上电机低压（12V），抓三相电流应正弦对称；不对称 → 检查死区补偿和 ADC 偏置。</li></ul><h2>建议实验</h2><ul><li>死区 0.5μs vs 4μs，对比线电压顶部凹槽深度。</li><li>PWM 频率 4kHz vs 32kHz，看死区在周期内占比对失真的影响。</li><li>占空比拉到 0.95，看进入过调制后的扭曲。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * inverter_init.c — STM32G4 TIM1 三相互补 + 死区 + 刹车
+ * ============================================ */
+
+#define PWM_FREQ_HZ      16000
+#define DEAD_TIME_NS     1000      // 1 μs，按驱动器手册调
+#define APB2_CLOCK_HZ    170000000 // G4 主频
+
+void inverter_pwm_init(void) {
+    /* 1. TIM1 时钟 */
+    RCC-&gt;APB2ENR |= RCC_APB2ENR_TIM1EN;
+
+    /* 2. 中心对齐 PWM，ARR = clock / freq / 2 (因为中心对齐计数翻倍) */
+    TIM1-&gt;PSC = 0;
+    TIM1-&gt;ARR = APB2_CLOCK_HZ / PWM_FREQ_HZ / 2 - 1;
+    TIM1-&gt;CR1 |= TIM_CR1_CMS_0;     // 中心对齐 mode 1（向上时更新比较）
+
+    /* 3. PWM mode 1 三通道 + 互补输出 */
+    TIM1-&gt;CCMR1 |= (6 &lt;&lt; TIM_CCMR1_OC1M_Pos) | TIM_CCMR1_OC1PE;
+    TIM1-&gt;CCMR1 |= (6 &lt;&lt; TIM_CCMR1_OC2M_Pos) | TIM_CCMR1_OC2PE;
+    TIM1-&gt;CCMR2 |= (6 &lt;&lt; TIM_CCMR2_OC3M_Pos) | TIM_CCMR2_OC3PE;
+    TIM1-&gt;CCER  |= TIM_CCER_CC1E | TIM_CCER_CC1NE
+                 | TIM_CCER_CC2E | TIM_CCER_CC2NE
+                 | TIM_CCER_CC3E | TIM_CCER_CC3NE;
+
+    /* 4. 死区 + 主输出使能（BDTR）
+     *    DTG[7:5]=0xx → DT = DTG × tCK_INT
+     *    1μs @ 170MHz → DTG ≈ 170 (0xAA) */
+    uint32_t dtg = (uint32_t)((uint64_t)DEAD_TIME_NS * APB2_CLOCK_HZ / 1000000000ULL);
+    if (dtg &gt; 127) dtg = 127;       // 简单上限，更高需切高位编码
+    TIM1-&gt;BDTR = TIM_BDTR_MOE | (dtg &amp; 0xFF);
+
+    /* 5. 刹车输入 BKIN（接过流比较器输出，下降沿触发关断） */
+    TIM1-&gt;BDTR |= TIM_BDTR_BKE | TIM_BDTR_BKP;
+
+    /* 6. 初始占空比 50%，避免上电冲击 */
+    TIM1-&gt;CCR1 = TIM1-&gt;ARR / 2;
+    TIM1-&gt;CCR2 = TIM1-&gt;ARR / 2;
+    TIM1-&gt;CCR3 = TIM1-&gt;ARR / 2;
+
+    /* 7. 中断（更新事件触发 ADC 注入） */
+    TIM1-&gt;DIER |= TIM_DIER_UIE;
+    NVIC_SetPriority(TIM1_UP_TIM16_IRQn, 0);
+    NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
+
+    /* 8. 启动 */
+    TIM1-&gt;CR1 |= TIM_CR1_CEN;
+}
+
+/* 中断里写 CCR：
+ *   TIM1-&gt;CCR1 = (uint16_t)(duty_a * (TIM1-&gt;ARR + 1));
+ * BKIN 触发后 MOE=0，所有 PWM 强制低，无需 CPU。
+ */</pre><h2>下一步</h2><ul><li>进入三闭环模块，看电流环 / 速度环 / 位置环如何级联给逆变器下命令。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">同一桥臂上下管同时导通会发生什么？</div><ol><li>正常工作</li><li class="correct">直通短路，瞬间炸管 (正确)</li><li>只是输出错误</li><li>保护自动启动</li></ol><div class="hint">提示：上下管同时开 = 母线 + 经过两个管子直接接地，瞬态短路电流毫秒级烧毁。死区时间就是为了避免这个。</div></div><div class="quiz"><div class="q">死区时间 td = 2μs，PWM 频率 16kHz，占空比 50% 时一个周期&quot;丢失&quot;的导通时间占比？</div><ol><li>约 0.4%</li><li class="correct">约 3.2% (正确)</li><li>约 32%</li><li>约 50%</li></ol><div class="hint">提示：一个周期 62.5μs，死区 2μs 占 3.2%。低速小电流时这部分电压损失明显。</div></div><div class="quiz"><div class="q">STM32 高级定时器 TIM1 的&quot;刹车输入 BKIN&quot;作用是？</div><ol><li>启动 PWM</li><li class="correct">硬件触发后立刻关断所有 PWM 输出，无需 CPU 介入 (正确)</li><li>改变频率</li><li>复位定时器</li></ol><div class="hint">提示：过流时硬件比较器输出接到 BKIN，触发后 MOE 寄存器自动清零，所有 PWM 强制低。CPU 中断只是事后处理。</div></div><div class="quiz"><div class="q">低速小电流时电机啸叫，最可能的根因是？</div><ol><li>Kp 太大</li><li class="correct">死区时间过大造成低速电压畸变 (正确)</li><li>PWM 频率太低</li><li>编码器分辨率不够</li></ol><div class="hint">提示：死区损失 ΔV 与 td × fpwm 成正比，电流过零附近电压扭曲。可缩短死区或加死区补偿算法。</div></div><div class="quiz"><div class="q">上电瞬间发现母线大冲击电流。检查代码，PWM CCR 初始化值是多少最安全？</div><ol><li>0</li><li>ARR (= 100%)</li><li class="correct">ARR/2 (= 50%) (正确)</li><li>随便</li></ol><div class="hint">提示：CCR=0 → 上桥常闭、下桥常开，下桥电流通过电机绕组到地，无电压差。最安全的是 ARR/2 (50%) → 三相中点电压都等于 Udc/2，相间无电压。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

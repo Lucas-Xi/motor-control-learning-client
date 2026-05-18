@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>弱磁控制 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html" class="active">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">11 Walkthrough</span>弱磁控制</h1><p class="subtitle">弱磁 = 用负 Id 削等效磁链，把 BEMF 压回母线电压能买单的范围。</p><p><a href="../module/field-weakening.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能在 Id-Iq 平面上手画&quot;电流圆 + 电压椭圆&quot;，并指出可行域 = 二者交集</li><li>能从 BEMF = ψf·ωe 撞 V_max = Udc/√3 推导出&quot;基速 ω_base = V_max/ψf&quot;</li><li>能区分恒转矩区（MTPA）、恒功率区（FW 弱磁）、深度弱磁区（MTPV）三段最优轨迹</li><li>理解为什么 IPM（Lq&gt;Ld）比 SPM 弱磁能力强 —— 磁阻转矩 + 椭圆中心偏移</li><li>会用&quot;电压闭环 PI + 前馈解析 + 离线查表&quot;三种主流弱磁工程方案，并说出取舍</li><li>了解弱磁过深会触发退磁阈值（HEV 高温场景）和铁损突增（高频开关 + 高 −Id）</li></ul><h2>主线步骤（9 步）</h2><section class="step"><div class="step-no">Step 1 / 9 · bemf-vs-vbus</div><h3>BEMF 撞顶</h3><div class="field"><div class="field-label">目标</div><div>看到&quot;高速 → BEMF → 撞母线电压&quot;的因果链</div></div><div class="field"><div class="field-label">操作</div><div>保持默认参数（Udc=310V，ψf=0.05Wb，p=6），把&quot;目标转速&quot;从 4200 rpm 拖到 8000 rpm，盯左下角&quot;电压饱和&quot;标签和电压椭圆。</div></div><div class="field"><div class="field-label">观察</div><div>绿色椭圆迅速变扁变小变红，工作点（绿色实心圆）跑到椭圆外面，标签从绿色&quot;安全工作点&quot;变成红色&quot;电压饱和&quot;；右侧 KPI&quot;|V| / V_max&quot;从 0.7 飙到 1.05。</div></div><div class="field"><div class="field-label">为什么</div><div>PMSM 反电动势 BEMF = ψf·ωe 随转速线性涨；SVPWM 线性区电压上限是 V_max = Udc/√3 ≈ 179V（310V 母线）。一旦 BEMF 接近这条线，电流环就&quot;没电压可用&quot;——指令再大输出也加不上去，电流先饱和、再失控。这是&quot;加电压、加 Iq 都不上速度&quot;故障的几何根源。基速 ω_base = V_max/ψf = 179/0.05 = 3580 rad/s 电角度，对应 3580/(2π·6)·60 ≈ 5700 rpm —— 默认电机超过 5700 rpm 必弱磁。</div></div><div class="quiz"><div class="q">随堂题：Udc=310V、ψf=0.05Wb、polePairs=6 的 IPM，按&quot;BEMF 撞 V_max&quot;几何估算基速 ω_base 约多少 rpm？</div><ol><li>约 1800 rpm（V_max/(ψf·p·2π)·60 = 9510）</li><li class="correct">约 5700 rpm（V_max/ψf/(p·2π/60) ≈ 5697） (正确)</li><li>约 18000 rpm（EV 主驱才到这量级）</li><li>约 600 rpm（按电网 50Hz 换算）</li></ol><div class="hint">提示：V_max = 310/√3 ≈ 179V；ω_e_base = V_max/ψf = 3580 rad/s 电；ω_m_base = ω_e/p = 597 rad/s 机械；rpm = 597·60/(2π) ≈ 5700。这条数字记住——压缩机 7200 rpm 一级能效点必弱磁，EV 18000 rpm 巡航深度弱磁。</div></div></section><section class="step"><div class="step-no">Step 2 / 9 · inject-negative-id</div><h3>注入 −Id</h3><div class="field"><div class="field-label">目标</div><div>亲手把 Id 拖到负值，看电压椭圆&quot;长大&quot;</div></div><div class="field"><div class="field-label">操作</div><div>加载&quot;Id 负值注入&quot;预设。在限制图上把绿色工作点向左（−Id 方向）拖，从 0 → −3A → −5A；也可用 ← / Shift+← 微调。</div></div><div class="field"><div class="field-label">观察</div><div>随着 Id 越负，红色电压椭圆边界向外扩张，工作点重新回到椭圆内，标签从红色&quot;电压饱和&quot;切回绿色&quot;安全工作点&quot;；右侧&quot;等效磁链 ψ_eff = ψf+Ld·Id&quot;数字同步减小。</div></div><div class="field"><div class="field-label">为什么</div><div>负 Id 让&quot;等效磁链 ψf + Ld·Id&quot;变小（Ld·Id 项变负，正好抵消一部分 ψf）。等效磁链小 → BEMF = ψ_eff·ωe 小 → 同样转速下 Vq 需求降下来，电压椭圆等价于&quot;变大了&quot;。这就是弱磁的几何本质：不是真把磁体削弱，而是用电流&quot;反向产磁&quot;抵消一部分。在 EV 主驱上 −Id 可达额定电流 60-70%；压缩机上一般不超 30-40%（受退磁阈值和铁损限制）。</div></div><div class="field"><div class="field-label">工况</div><div><code>negative-id</code></div></div><div class="quiz"><div class="q">随堂题：为什么是注入&quot;负 Id&quot;而不是&quot;正 Id&quot;或&quot;负 Iq&quot;？</div><ol><li>负 Id 能直接增大转矩，正 Id 不能</li><li class="correct">负 Id 让等效磁链 ψf+Ld·Id 减小从而压低 BEMF；正 Id 反而增强磁链 (正确)</li><li>Iq 决定速度方向，必须保持正</li><li>硬件电流采样只能测负电流</li></ol><div class="hint">提示：d 轴定义沿转子永磁体 N 极。Id&gt;0 是&quot;加磁&quot;（永磁 + 电磁同向 → ψ_eff 增大 → BEMF 更大 → 椭圆更小，恰恰是弱磁的反方向）；Id&lt;0 是&quot;反磁&quot;（抵消一部分永磁 → ψ_eff 减小 → BEMF 减 → 椭圆扩大）。这是弱磁的方向定义。</div></div></section><section class="step"><div class="step-no">Step 3 / 9 · limit-geometry</div><h3>两个几何边界</h3><div class="field"><div class="field-label">目标</div><div>把&quot;电流圆 + 电压椭圆&quot;这张图刻进脑子</div></div><div class="field"><div class="field-label">操作</div><div>把转速回到 4200 rpm（恒转矩区），观察电流圆（青色虚线，半径 I_max）和电压椭圆（绿色实线，半径 V_max/ωe·1/Lq）的相对大小；然后把转速分别推到 6000、8000，再观察两图相对关系变化。</div></div><div class="field"><div class="field-label">观察</div><div>低速 4200 rpm：电压椭圆比电流圆大很多 → 电流圆才是约束，工作点贴电流圆走（MTPA 区）；中速 6000 rpm：两条线大致相切于一点 → 基速点；高速 8000 rpm：电压椭圆收缩到电流圆里面 → 电压椭圆变成约束，工作点只能在椭圆内沿 −Id 方向滑（FW 区）。</div></div><div class="field"><div class="field-label">为什么</div><div>可行域 = 电流圆 ∩ 电压椭圆。这两个集合的&quot;较小者&quot;决定了你能开到多大的电流。低速 → 电流圆主导（恒转矩区）；中速 → 两线相切（基速点）；高速 → 椭圆主导（恒功率/弱磁区）。这张几何图是弱磁所有公式的&quot;母图&quot;——电压椭圆的中心位于 (−ψf/Ld, 0)，半径反比于 ωe，IPM 椭圆还被 Lq/Ld 拉成扁形。EV 主驱椭圆中心离原点远（ψf 小、Ld 大），所以天然弱磁能力强；压缩机 IPM 椭圆中心靠近原点，弱磁深度有限。</div></div></section><section class="step"><div class="step-no">Step 4 / 9 · mtpa-curve</div><h3>MTPA 走廊</h3><div class="field"><div class="field-label">目标</div><div>看 MTPA 是怎么从原点延伸出来的最优轨迹</div></div><div class="field"><div class="field-label">操作</div><div>看右侧&quot;MTPA / 电压电流极限&quot;卡片。把 Iq 从 5A 调到 8A，观察 MTPA 状态指示（&quot;是 / 偏离&quot;）和 MTPA 红线的位置；再把 Ld 改 1mH、Lq 改 1.8mH 模拟 IPM 凸极性。</div></div><div class="field"><div class="field-label">观察</div><div>在表贴电机 (Ld≈Lq) 上 MTPA 几乎沿 Iq 轴；在 IPM (Lq&gt;Ld) 上 MTPA 弯向 −Id 方向。当前工作点离 MTPA 红线越近，&quot;MTPA：是&quot;绿色，否则黄色&quot;偏离&quot;。把 Iq=8 时 MTPA 上 Id* 约 −1.5A，磁阻转矩贡献约 10-15%。</div></div><div class="field"><div class="field-label">为什么</div><div>MTPA = 同电流幅值下最大转矩的轨迹。对 IPM 来说，τ = 1.5p·[ψf·Iq + (Ld−Lq)·Id·Iq]，第二项是磁阻转矩，需要 Id&lt;0 才贡献正转矩（Ld−Lq&lt;0、Id&lt;0 → 同号正），所以 MTPA 天然带一点负 Id。MTPA 解析解：Id* = (ψf − √(ψf² + 8(Ld−Lq)²·Iq²)) / (4(Ld−Lq))。这是&quot;凸极电机比表贴电机省电&quot;的根源，也是 EV/空调 90% 用 IPM 的根本理由。</div></div><div class="quiz"><div class="q">随堂题：一台 SPM（表贴式，Ld=Lq）电机的 MTPA 轨迹长什么样？</div><ol><li>沿 −Id 轴</li><li class="correct">沿 +Iq 轴（即 Id=0） (正确)</li><li>45° 直线</li><li>随转速变化的曲线</li></ol><div class="hint">提示：Ld=Lq → (Ld−Lq)·Id·Iq = 0，磁阻转矩消失。τ = 1.5p·ψf·Iq 只跟 Iq 有关，所以最省电的策略就是&quot;Id=0 全部给 Iq&quot;。SPM 在低端风扇/泵类常见，但弱磁能力 = 0（椭圆中心在 −ψf/Ld 太近原点）。</div></div></section><section class="step"><div class="step-no">Step 5 / 9 · mtpv-deep-weak</div><h3>MTPV 与深度弱磁</h3><div class="field"><div class="field-label">目标</div><div>理解&quot;再加 −Id 反而转矩下降&quot;的拐点</div></div><div class="field"><div class="field-label">操作</div><div>在 8000 rpm 下，把 Id 从 −3A 继续往左推到 −8A、−10A，看 MtpaCurveCard 上的转矩数字、电压利用率和右侧&quot;功率 P = τ·ω&quot;曲线。</div></div><div class="field"><div class="field-label">观察</div><div>转矩 τ 先稳定后开始下降；电压利用率 |V|/V_max 从 100% 慢慢回落；到某个点（MTPV 拐点）再加 −Id，转矩跌得更快，功率 P 反而减小——已经越过了 MTPV 边界。MTPV 几何点位于电压椭圆与&quot;恒转矩双曲线&quot;相切处。</div></div><div class="field"><div class="field-label">为什么</div><div>MTPV = Maximum Torque Per Voltage，同电压下最大转矩。当工作点已经贴着电压椭圆走，继续加 −Id 是&quot;沿椭圆滑动&quot;，Iq 被迫减小、转矩反而跌。深度弱磁区的最优轨迹是沿电压椭圆边切线方向，不是沿电流圆——这就是 MTPV 公式的几何意义。EV 主驱 18000 rpm 巡航接近 MTPV 区，再深就得功率密度倒挂；压缩机一般在基速到 1.3×基速之间运行，碰不到 MTPV，主要约束是退磁和铁损。</div></div></section><section class="step"><div class="step-no">Step 6 / 9 · vbus-drop</div><h3>母线降压（动态约束）</h3><div class="field"><div class="field-label">目标</div><div>看母线电压如何同步收缩可行域</div></div><div class="field"><div class="field-label">操作</div><div>加载&quot;母线电压降低&quot;工况预设。观察电压椭圆面积变化与原工作点状态。</div></div><div class="field"><div class="field-label">观察</div><div>电压椭圆整体缩小（V_max ∝ Udc）；原来&quot;够用&quot;的工作点立刻变红饱和；要恢复必须把 Iq 拉低或加更深的 −Id；电流圆 I_max 不变。</div></div><div class="field"><div class="field-label">为什么</div><div>工程上电池电量下降、电网电压跌、母线电容老化都会让 Udc 减小。弱磁控制器必须实时跟踪 Udc 而不是用标称值——否则母线掉一点点，整个电压椭圆缩，控制器还以为有余量，就饱和炸了。这就是&quot;V_max = 0.95·Udc/√3&quot;里那个 0.95 余量的来源（给 SVPWM 死区 + 过调制 + 采样延迟留 5% buffer）。EV 上 800V 平台跌到 600V（电池低 SOC + 大功率回收）是常态，必须实时读 Udc 重算 V_max。</div></div><div class="field"><div class="field-label">工况</div><div><code>vbus-drop</code></div></div><div class="quiz"><div class="q">随堂题：24V 母线相比 48V 母线，电压椭圆面积变成原来的多少？</div><ol><li>1/2</li><li class="correct">1/4 (正确)</li><li>相同</li><li>2 倍</li></ol><div class="hint">提示：V_max ∝ Udc，椭圆半径 ∝ V_max ∝ Udc，面积 ∝ V_max² ∝ Udc²。Udc 减半 → 面积变 1/4。这就是为什么压缩机低压版本（24V 房车冰箱）比高压版本（48V）弱磁需求更早、深度更大。</div></div></section><section class="step"><div class="step-no">Step 7 / 9 · engineering-impl</div><h3>三种工程实现</h3><div class="field"><div class="field-label">目标</div><div>把仿真接回 STM32 真实实现——三种主流方案对比</div></div><div class="field"><div class="field-label">操作</div><div>看下方&quot;engineering meaning / stm32Guide&quot;栏，对照三种主流方案：① 电压闭环 PI（误差 = V_max − |V|，输出 Id*）② 前馈解析（直接解 BEMF 抵消方程：Id* = (V_max² − (ωLq·Iq)²)^0.5/ωLd − ψf/Ld）③ 离线查表（Speed × Torque → Id*）。</div></div><div class="field"><div class="field-label">观察</div><div>三种方案各有适用场景：PI 鲁棒但调参难、收敛慢；FF 快但依赖参数精度（Ld/Lq 温漂 ±20%）；LUT 最快但占 Flash、电压/温度变化时表项需扫描。</div></div><div class="field"><div class="field-label">为什么</div><div>压缩机变频在 5700-7200 rpm 区间约 30% 时间在弱磁区，EV 主驱巡航 80% 时间在弱磁区。生产代码里通常用&quot;FF 给初值 + PI 修偏差&quot;的混合方案，慢任务（1 kHz）周期算一次 Id*，喂给电流环（10-20 kHz）。STM32 弱磁 PI 骨架（1 kHz 慢任务里调用）： /* Field-Weakening voltage PI: 输入 V_max−|V|, 输出 Id* */ typedef struct { float kp, ki, ts, i_term, id_min, id_max; } FW_PI_t; float fw_pi_update(FW_PI_t *p, float v_mag, float v_max) {   float err = v_max - v_mag - 0.05f*v_max;  /* 5% 死区，避免抖动 */   if (err &gt; 0.0f) { /* 还没饱和 → Id 回零 */     p-&gt;i_term += p-&gt;ki * err * p-&gt;ts;     if (p-&gt;i_term &gt; 0.0f) p-&gt;i_term = 0.0f;  /* Id*≤0 单边限幅 */   } else { /* 已饱和 → 注负 Id */     p-&gt;i_term += p-&gt;ki * err * p-&gt;ts;     if (p-&gt;i_term &lt; p-&gt;id_min) p-&gt;i_term = p-&gt;id_min;  /* 退磁硬限 */   }   float id_ref = p-&gt;kp * err + p-&gt;i_term;   if (id_ref &gt; 0.0f) id_ref = 0.0f;   if (id_ref &lt; p-&gt;id_min) id_ref = p-&gt;id_min;  /* 例 −0.6·I_rated */   return id_ref; } /* 关键：id_min 必须从永磁体厂家手册取，超过会一次性退磁不可逆 */</div></div></section><section class="step"><div class="step-no">Step 8 / 9 · two-scenarios</div><h3>EV 主驱 vs 压缩机峰值</h3><div class="field"><div class="field-label">目标</div><div>对比两个真实工业场景的弱磁差异</div></div><div class="field"><div class="field-label">操作</div><div>场景 A（EV 主驱巡航）：把 ψf 改 0.08 Wb、Ld 0.3 mH、Lq 0.6 mH、转速 12000 rpm；场景 B（压缩机制冷峰值）：把 ψf 改 0.05、Ld 1.0、Lq 1.8、转速 7200 rpm。各跑一遍，对比 Id* 比例、|V|/V_max、温升关键变量。</div></div><div class="field"><div class="field-label">观察</div><div>场景 A（EV）：Id* 占额定 50-70%、电流圆几乎贴满、磁阻转矩贡献 25%、铁损突增（高 ωe + 高 |I|）；场景 B（压缩机）：Id* 占额定 20-30%、温升受限不能更深、磁阻贡献 10-15%、铁损可控但永磁退磁阈值是硬约束（高温下 NdFeB 矫顽力降低 0.6%/℃）。</div></div><div class="field"><div class="field-label">为什么</div><div>同样是 PMSM 弱磁，两种工业场景的关键约束完全不同：EV 主驱看&quot;功率密度 + 高速效率&quot;，弱磁深度由功率管温度和系统冷却决定；压缩机看&quot;长期稳定 + 退磁阈值&quot;，弱磁深度由永磁体反向工作磁场强度上限决定。一台压缩机 −Id 比 EV 浅是性能不足，是物理硬约束——80℃ 工况下 N42SH 永磁体反向 BH 阈值仅 −350 kA/m，对应 |H_d| = NI/2g·几何因子，超过就退磁。</div></div><div class="quiz"><div class="q">随堂题：一台空调压缩机厂家手册写&quot;−Id 不得超过 −5A&quot;，工程上这条线的物理含义是什么？</div><ol><li>电流环带宽上限</li><li>SVPWM 调制比上限</li><li class="correct">永磁体退磁阈值（高温下不可逆退磁的反向 H_d 边界） (正确)</li><li>PFC 母线电容电流限</li></ol><div class="hint">提示：−5A 不是电流圆约束（电流圆是 |I|=√(Id²+Iq²)≤I_max），而是 d 轴方向独立的硬上限——超过 → 反向磁场强度 H_d 越过永磁体 BH 曲线的&quot;膝点&quot;→ 一次性退磁 → ψf 永久下降 5-20% → 同 Iq 转矩变小 → 效率塌方且不可恢复。永磁体手册给的 Id_min 必须直接硬编进弱磁 PI 的限幅。</div></div></section><section class="step"><div class="step-no">Step 9 / 9 · recap</div><h3>完整轨迹回顾</h3><div class="field"><div class="field-label">目标</div><div>一气呵成画出&quot;恒转矩 → 基速 → 弱磁 → MTPV&quot;完整轨迹</div></div><div class="field"><div class="field-label">操作</div><div>把工作点拖回 (0, 5)，转速回 3000 rpm；缓慢推到 8000 rpm，按 ← 键注负 Id 直到电压饱和警告消失，再继续推到 10000 rpm 持续加 −Id 直到看见转矩开始下降。完整走一遍三段曲线。</div></div><div class="field"><div class="field-label">观察</div><div>工作点画出一条&quot;先沿 Iq 轴上升 → 到基速后向左拐 → 沿椭圆滑动 → 接近 MTPV 拐点&quot;的完整轨迹，就是教科书里那条经典的&quot;PMSM 最优工作曲线&quot;。每段对应的物理约束不同：恒转矩段约束=电流圆、恒功率段约束=电压椭圆、深弱磁段约束=椭圆切线（MTPV）。</div></div><div class="field"><div class="field-label">为什么</div><div>到这一步你已经能用几何直觉解释 90% 的弱磁现象。下一步是把这些理论放到真实控制器里，看它在故障注入（母线跌 / 温升 / 编码器抖）下怎么表现——12 号故障调试模块。</div></div></section><h2>常见误区（5 个）</h2><div class="pitfall"><div class="label">试错：母线降压但不主动弱磁</div><p><strong>现象：</strong>电压椭圆缩到工作点外面，Vdq 命令长期撞 V_max，电流环输出饱和、Iq 实际值跌、转矩跌、速度环狂积积分</p><p><strong>为什么：</strong>控制器认为&quot;母线还有余量&quot;，没意识到 BEMF 已经撞顶。表现为速度跌但电压指令拉满、电流跌但还在报&quot;过流预警&quot;。EV 电池低 SOC 巡航场景非常常见。修复：让弱磁 PI 用实测 Udc 实时算 V_max（每个慢任务周期采一次 Udc），不要用编译期常数。</p></div><div class="pitfall"><div class="label">试错：Id 给正了（方向反）</div><p><strong>现象：</strong>弱磁不仅没缓解，电压饱和警告更严重；同时永磁体被同向加磁——长期高温下也可能退磁</p><p><strong>为什么：</strong>把&quot;−Id 抵消磁链&quot;做反成&quot;+Id 增强磁链&quot; → 等效磁链 ψf+Ld·Id 变大 → BEMF 反而更大。常见原因：编码器零位对齐错了 180°，或 Park 矩阵符号写反。修复：先看&quot;Iq=0、Id=−5A&quot;时电机有没有反向空转——若反向旋转或抖动，说明 d 轴定义反了，做编码器零位重新对齐。</p></div><div class="pitfall"><div class="label">试错：弱磁过度（−Id 超退磁阈值）</div><p><strong>现象：</strong>短期电压饱和解除、速度上去了；长期电机退磁不可逆——磁链 ψf 永久下降 5-20%，相同 Iq 下转矩变小，效率塌方</p><p><strong>为什么：</strong>永磁体（NdFeB）有 BH 曲线&quot;膝点&quot;，工作温度越高膝点越靠近原点（高温下永磁体反向抗磁场能力更弱，0.6%/℃ 退磁系数）。深度弱磁 −Id 接近退磁阈值时若叠加温升 → 一次性退磁。修复：在弱磁 PI 的输出限幅 id_min 里设硬上限（厂家手册给定的 −Id 安全极限，按最高工作温度算），永远不超；同时控制板加 NTC 测永磁体表面温度，温度越高 id_min 限制越严。</p></div><div class="pitfall"><div class="label">试错：弱磁 PI 增益过大</div><p><strong>现象：</strong>Id 指令在 0 和 −5A 之间反复跳，转矩同步抖动，听得到电机&quot;嗡嗡&quot;</p><p><strong>为什么：</strong>弱磁 PI 输出直接是 Id*，进入电流环；电流环响应到电压后，Vdq 改变 → 弱磁 PI 输入改变 → 输出再改 Id*。两个环时常数不匹配会震荡。修复：弱磁 PI 带宽 &lt;&lt; 电流环带宽（典型 10:1，电流环 1 kHz → 弱磁 PI 100 Hz），并加 5-10% 死区（|V|/V_max &lt; 0.93 不动作），慢任务里调用而非 ISR 里。</p></div><div class="pitfall"><div class="label">试错：忽略深弱磁下的铁损突增</div><p><strong>现象：</strong>8000 rpm 弱磁段电机温升异常快、铜损看着不大但定子轭部温度飙；效率比标称低 4-6%</p><p><strong>为什么：</strong>铁损 P_iron ≈ k_h·f·B² + k_e·f²·B²（磁滞 + 涡流），高速 + 大 −Id 时定子内部磁场实际并未减小（−Id 只是抵消&quot;穿过气隙耦合到 stator&quot;的等效磁链；定子铁芯本身磁通密度反而升高）→ 高 f + 大 B → 铁损二次方上升。深度弱磁下铁损可能占总损耗 40-50%（恒转矩区只占 10-15%）。修复：标定弱磁查表时同时记录温升，把&quot;温升 vs Id 深度&quot;作为 MTPA→MTPV 切换的实际约束，不是只看几何；EV 平台用油冷直接喷绕组与铁芯，压缩机靠制冷剂回流冷却 stator。</p></div><h2>下一模块引子</h2><div class="card primary">现在你能用几何看弱磁了。下一模块（12 故障调试）把所有学过的诊断技能串起来——过流、过压、相序错、传感器漂移、弱磁失控、退磁后效率塌方，全部用波形读懂。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

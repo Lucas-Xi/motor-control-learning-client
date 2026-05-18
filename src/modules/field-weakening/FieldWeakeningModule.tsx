@@ -11,6 +11,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { useI18n } from '../../i18n/useI18n';
 import { MtpaTrajectoryCard } from './MtpaTrajectoryCard';
 import { LimitProjectionCard } from './LimitProjectionCard';
 
@@ -20,6 +21,7 @@ function LimitMap({
   id: number; iq: number; currentLimit: number; voltageRatio: number; saturated: boolean;
   onPointChange?: (id: number, iq: number) => void;
 }) {
+  const { t } = useI18n();
   const size = 360;
   const cx = size / 2;
   const cy = size / 2 + 12;
@@ -79,9 +81,9 @@ function LimitMap({
       {/* 主坐标轴 */}
       <line x1="20" y1={cy} x2={size - 20} y2={cy} stroke="#1e2a3d" strokeWidth="1" />
       <line x1={cx} y1={size - 20} x2={cx} y2="20" stroke="#1e2a3d" strokeWidth="1" />
-      <text x={size - 40} y={cy - 6} fill="#5d7793" fontSize="11">Id +</text>
-      <text x={26} y={cy - 6} fill="#5d7793" fontSize="11">Id − (弱磁)</text>
-      <text x={cx + 6} y="32" fill="#5d7793" fontSize="11">Iq</text>
+      <text x={size - 40} y={cy - 6} fill="#5d7793" fontSize="11">{t('weakField.labelIdPlus')}</text>
+      <text x={26} y={cy - 6} fill="#5d7793" fontSize="11">{t('weakField.labelIdMinusWeak')}</text>
+      <text x={cx + 6} y="32" fill="#5d7793" fontSize="11">{t('weakField.labelIq')}</text>
 
       {/* 电流极限圆 */}
       <circle cx={cx} cy={cy} r={currentR}
@@ -100,7 +102,7 @@ function LimitMap({
         markerEnd="url(#weakArrow)" opacity="0.85"
       />
       <text x={cx - currentR * 0.55 - 4} y={cy - 8} textAnchor="end" fill="#ffb84d" fontSize="10">
-        弱磁方向
+        {t('weakField.labelWeakDir')}
       </text>
 
       {/* 工作点 */}
@@ -115,9 +117,9 @@ function LimitMap({
       {/* 角落图例 */}
       <g fontSize="11" fontFamily="Cascadia Code, Consolas, monospace">
         <line x1="22" y1="22" x2="42" y2="22" stroke="#34d6ff" strokeWidth="2" strokeDasharray="6 5" />
-        <text x="48" y="25" fill="#9eb5cb">电流极限圆 |I|≤{formatNumber(currentLimit, 1)} A</text>
+        <text x="48" y="25" fill="#9eb5cb">{t('weakField.labelCurrentCircle')}{formatNumber(currentLimit, 1)} A</text>
         <line x1="22" y1="42" x2="42" y2="42" stroke={saturated ? '#ff5c7a' : '#43f7b5'} strokeWidth="2" />
-        <text x="48" y="45" fill="#9eb5cb">电压极限椭圆 (ω↑→变小)</text>
+        <text x="48" y="45" fill="#9eb5cb">{t('weakField.labelVoltageEllipse')}</text>
       </g>
 
       {/* 工作点状态标签 */}
@@ -126,7 +128,7 @@ function LimitMap({
           stroke={saturated ? '#ff5c7a' : '#43f7b5'} strokeWidth="1" />
         <text x="92" y={size - 22} textAnchor="middle"
           fill={saturated ? '#ff5c7a' : '#43f7b5'} fontSize="11" fontWeight="700">
-          {saturated ? '电压饱和' : '安全工作点'}
+          {saturated ? t('weakField.labelVoltageSaturated') : t('weakField.labelSafePoint')}
         </text>
       </g>
       <text x={size - 22} y={size - 22} textAnchor="end" fill="#e7f3ff" fontSize="11"
@@ -166,14 +168,15 @@ function useDerived() {
 
 function Primary() {
   const { params, voltage, voltageRatio } = useDerived();
+  const { t } = useI18n();
   const updateWeakField = useSimulationStore((s) => s.updateWeakField);
   const handlePointChange = useCallback((id: number, iq: number) => updateWeakField({ id, iq }), [updateWeakField]);
   return (
     <Card
-      title="Id / Iq 限制地图"
-      eyebrow="current and voltage limit"
+      title={t('weakField.primaryTitle')}
+      eyebrow={t('weakField.primaryEyebrow')}
       density="compact"
-      action={<FidelityBadge level="simplified" hint="电压/电流极限圆来自 PMSM 稳态 dq 方程；瞬态切换过程未仿真" />}
+      action={<FidelityBadge level="simplified" hint={t('weakField.fidelityHint')} />}
     >
       <LimitMap
         id={params.id}
@@ -189,9 +192,10 @@ function Primary() {
 
 function Probe() {
   const { voltage, torque, currentMag, suggestedId, curve } = useDerived();
+  const { t } = useI18n();
   return (
     <>
-      <Card title="转矩 / 功率趋势" eyebrow="constant torque / power" density="compact">
+      <Card title={t('weakField.torqueTrendTitle')} eyebrow={t('weakField.torqueTrendEyebrow')} density="compact">
         <div className="h-56">
           <SafeResponsiveContainer>
             <AreaChart data={curve} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
@@ -199,23 +203,23 @@ function Probe() {
               <XAxis dataKey="speed" tick={{ fill: '#9eb5cb', fontSize: 11 }} unit="rpm" />
               <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} />
               <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
-              <Area type="monotone" dataKey="torque" stroke="#43f7b5" fill="rgba(67,247,181,.18)" name="转矩 Nm" isAnimationActive={false} />
-              <Area type="monotone" dataKey="power" stroke="#ffb84d" fill="rgba(255,184,77,.12)" name="功率 kW" isAnimationActive={false} />
+              <Area type="monotone" dataKey="torque" stroke="#43f7b5" fill="rgba(67,247,181,.18)" name={t('weakField.torqueLabel')} isAnimationActive={false} />
+              <Area type="monotone" dataKey="power" stroke="#ffb84d" fill="rgba(255,184,77,.12)" name={t('weakField.powerLabel')} isAnimationActive={false} />
             </AreaChart>
           </SafeResponsiveContainer>
         </div>
       </Card>
       <div className="grid grid-cols-2 gap-2 text-caption">
-        <div className="rounded border border-line-subtle bg-bg-base p-2"><Zap className="mb-1 h-3.5 w-3.5 text-accent-warn" /><span className="text-ink-muted">转矩 </span><span className="text-ink-primary">{formatNumber(torque, 2)} Nm</span></div>
-        <div className="rounded border border-line-subtle bg-bg-base p-2"><BatteryCharging className="mb-1 h-3.5 w-3.5 text-accent-primary" /><span className="text-ink-muted">余量 </span><span className="text-ink-primary">{formatNumber(voltage.reserve, 2)} V</span></div>
+        <div className="rounded border border-line-subtle bg-bg-base p-2"><Zap className="mb-1 h-3.5 w-3.5 text-accent-warn" /><span className="text-ink-muted">{t('weakField.metricTorque')} </span><span className="text-ink-primary">{formatNumber(torque, 2)} Nm</span></div>
+        <div className="rounded border border-line-subtle bg-bg-base p-2"><BatteryCharging className="mb-1 h-3.5 w-3.5 text-accent-primary" /><span className="text-ink-muted">{t('weakField.metricReserve')} </span><span className="text-ink-primary">{formatNumber(voltage.reserve, 2)} V</span></div>
         <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">|I| </span><span className="text-ink-primary">{formatNumber(currentMag, 2)} A</span></div>
-        <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">建议 Id </span><span className="text-ink-primary">{formatNumber(suggestedId, 2)} A</span></div>
+        <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('weakField.metricSuggestedId')} </span><span className="text-ink-primary">{formatNumber(suggestedId, 2)} A</span></div>
       </div>
       {voltage.saturated && (
         <Card tone="fault" density="compact">
           <div className="flex gap-2 text-body leading-relaxed text-accent-fault">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>当前进入电压饱和：Vdq 超过 SVPWM 线性区。可降低 Iq、提高母线，或注入更合适的负 Id。</p>
+            <p>{t('weakField.saturatedHint')}</p>
           </div>
         </Card>
       )}

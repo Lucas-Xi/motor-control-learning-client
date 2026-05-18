@@ -108,6 +108,12 @@ const requiredFiles = [
   'src/utils/snapshotCodec.ts',
   'src/components/share/ShareSnapshotPanel.tsx',
   'src/components/share/ReceiveSnapshotModal.tsx',
+  // 学习洞察：错题本 + 步骤热力图 + 弱项推荐（zustand persist，仅本地）
+  'src/store/insightsStore.ts',
+  'src/components/insights/MistakeBookPanel.tsx',
+  'src/components/insights/HeatmapPanel.tsx',
+  'src/components/insights/WeaknessAdvicePanel.tsx',
+  'src/components/insights/InsightsView.tsx',
   'docs/ASSET_PIPELINE.md',
   'docs/MODULE_EXTENSION.md',
   'scripts/generate-image-assets.ps1',
@@ -118,6 +124,18 @@ const requiredFiles = [
   'scripts/release-audit.mjs',
   'scripts/e2e-smoke.mjs',
   'scripts/verify-project.mjs',
+  'scripts/ci-local.mjs',
+  'scripts/build-docsite.mjs',
+  'scripts/verify-docsite.mjs',
+  // GitHub Actions CI / 模板（与 README badge、PR / Issue 流程对齐）
+  '.github/workflows/pr.yml',
+  '.github/workflows/release-audit.yml',
+  '.github/workflows/nightly-desktop.yml',
+  '.github/ISSUE_TEMPLATE/bug-report.md',
+  '.github/ISSUE_TEMPLATE/feature-request.md',
+  '.github/ISSUE_TEMPLATE/walkthrough-feedback.md',
+  '.github/PULL_REQUEST_TEMPLATE.md',
+  '.github/CODEOWNERS',
   'playwright.config.ts',
   'electron/main.cjs',
   'electron/preload.cjs',
@@ -237,7 +255,7 @@ const weakField = requireFile('src/simulation/math/weakField.ts');
 requireIncludes('weakField.ts', weakField, ['checkVoltageLimit', 'estimateTorque', 'suggestWeakeningId']);
 
 const packageJson = JSON.parse(requireFile('package.json'));
-for (const script of ['dev', 'build', 'verify', 'preview', 'e2e', 'e2e:optional', 'qa:screenshots', 'release:audit', 'desktop:pack', 'desktop:dist']) {
+for (const script of ['dev', 'build', 'verify', 'preview', 'e2e', 'e2e:optional', 'qa:screenshots', 'release:audit', 'desktop:pack', 'desktop:dist', 'ci:local']) {
   if (!packageJson.scripts?.[script]) failures.push(`package.json missing script: ${script}`);
 }
 for (const dep of ['react', 'typescript', 'vite', 'tailwindcss', 'zustand', 'recharts', 'three', '@react-three/fiber', '@react-three/drei', 'framer-motion', 'electron', 'electron-builder']) {

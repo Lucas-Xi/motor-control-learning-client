@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>无感 FOC / 观测器 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html" class="active">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">10</span>无感 FOC / 观测器</h1><p class="subtitle">反电动势、SMO、PLL 与开闭环切换</p><div class="card primary"><div class="label">本模块主旨</div>反电动势是无感的&quot;回声&quot;——速度大听得清、速度小被噪声淹没；要懂 SMO 离散化、Rs 温飘、PLL 带宽、切换滞回四件事才能上量产。</div><h2>学完应能回答</h2><ul><li>能默写 e = v − Rs·i − Ls·di/dt，并解释每一项的物理含义和离散化误差源</li><li>能解释为什么低速 BEMF 幅值小 → 估角度失败（SNR 塌陷），并定量算&quot;信噪比 = 1&quot;的临界转速</li><li>理解 PLL 用 sin(θ_meas − θ̂) 而不是 Δθ 直接做误差的原因（在 ±π/2 内单调）</li><li>掌握 STM32 上 SMO 离散化骨架（一阶 Euler + sat 函数）和稳定步长选择</li><li>能识别 SMO 抖振、Rs 温飘漂角、PLL 增益过大、滤波延迟相位损失四类典型故障现象</li><li>知道 BEMF/HFI 切换的转速边界（5-10% 同步速）和滞回原则，以及健康检查闭环</li></ul><p><a class="btn" href="../walkthrough/sensorless-foc.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>无感 FOC 核心是&quot;角度可信度管理&quot;——什么时候可信、什么时候必须回退到开环。算法只是其中一环。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>无感 FOC 像在黑暗中用回声定位——没有编码器（眼睛），靠&quot;听&quot;反电动势的回声来判断转子在哪儿。回声大（高速）听得清；回声小（低速）就被噪声淹没，得先盲推一段时间（开环启动）等回声出现再切闭环。</div><div class="card measure"><div class="label">核心概念</div>无感不是没有角度，而是用电压、电流、电机模型估算角度。低速反电动势小，估算不可靠；高速精度高。常见方案：开环启动 → 反电动势观测器 → PLL 锁相得角度。</div><h3>为什么要学</h3><ul><li>风机、水泵、压缩机、家电都用无感 FOC（省一个编码器 = 省成本 + 简化结构）。</li><li>&quot;电机不转&quot;&quot;低速失步&quot;&quot;切换瞬间抖动&quot;绝大多数源于角度估算质量。</li><li>理解 BEMF 和 PLL 后才知道为什么风机厂商规定&quot;启动时一定要先开环转 1 秒&quot;。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;转速&quot;从 450 rpm 拉到 2000 rpm，看左侧&quot;PLL 锁相&quot;图：估算角度（蓝）从大幅滞后真实角度（绿）变成几乎重合。下方&quot;BEMF αβ&quot; 波形振幅明显增大——回声变大，定位变准。</div><h2>学习目标</h2><ul><li>区分有感 FOC 与无感 FOC</li><li>理解反电动势观测器和 PLL 的工作原理</li><li>学会&quot;开环启动 → 闭环切换&quot;的工程套路</li></ul><h2>核心概念</h2><ul><li>反电动势 BEMF = Ke·ω，正比于转速。低速 BEMF 小，被 ADC 噪声 + Rs/Ls 参数误差掩盖，估算不可靠。</li><li>PLL = Phase-Locked Loop，是把&quot;测量角度&quot;通过 PI 锁相变成&quot;平滑跟踪角度&quot;，过滤噪声。</li><li>工程套路：上电先开环 V/f 拖到目标速度（典型 30-50% 额定）→ 等观测器置信度上去 → 平滑切到闭环。</li></ul><h2>公式</h2><div class="card"><div class="label">反电动势观测</div><div class="formula">eα = vα − R·iα − L·diα/dt\neβ = vβ − R·iβ − L·diβ/dt</div><p>从 αβ 电压扣除电阻压降和电感压降，剩下的是 BEMF。Rs/Ls 参数错会直接影响精度。</p></div><div class="card"><div class="label">角度提取</div><div class="formula">θ_est = atan2(eα, −eβ)</div><p>BEMF 矢量领先转子磁链 90°；用 atan2 求角后修正 90° 得到电角度。</p></div><div class="card"><div class="label">PLL 锁相</div><div class="formula">Δθ = sin(θ_meas − θ_est)\nω_est = Kp·Δθ + ∫(Ki·Δθ)dt\nθ_est ← θ_est + ω_est·dt</div><p>PI 控制器追相位差。低速时增大 Kp/Ki 加快收敛但增加抖动。</p></div><div class="card"><div class="label">SMO 滑模观测器</div><div class="formula">di_est/dt = (1/L)·(v − R·i_est − Z·sign(i_est − i_meas))</div><p>滑模等效控制项 Z·sign(...) 经低通滤波后近似 BEMF。鲁棒性好，但有抖振。</p></div><h2>工程意义</h2><ul><li>低速时 BEMF 信号比噪声小→必须开环启动。500 rpm 是经验阈值。</li><li>Rs/Ls 参数标定不准 → 估算 BEMF 偏差 → 角度有恒定偏移。生产线必做参数辨识。</li><li>负载突变（开闭环切换、负载冲击）会让 PLL 暂时失锁——需要&quot;健康检查&quot;自动回退到开环。</li></ul><h2>STM32 移植指南</h2><ul><li>离散化用前向欧拉就够（Ts = PWM 周期）；高带宽场景用 Tustin。</li><li>L·diα/dt 用 (iα[k] − iα[k-1]) / Ts，但要先加 Butterworth 低通去高频噪声。</li><li>上电流程：1) 对齐 d 轴 → 2) 开环 V/f 拖动 → 3) 监测 PLL 收敛（角度误差 &lt; 5° 持续 20ms）→ 4) 切闭环。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>低速强行闭环，BEMF 太小 PLL 锁不住，电机抖动甚至反转。</li><li>观测器增益过高 → 角度抖到电流环噪声放大。</li><li>没加 PLL 健康检查，故障情况继续按估算角度送电流→烧管。</li><li>把开环 V/f 启动的电压设得过大或过小，电机失步。</li></ul></div><h2>调试方法</h2><ul><li>临时装个编码器对比：估算角度 vs 真实角度，画误差曲线。</li><li>观察 BEMF αβ 波形是否对称正弦。畸变 → 检查 Rs/Ls 参数和死区补偿。</li><li>阶跃负载，看 PLL 恢复时间（应 &lt; 50ms）；恢复慢 → Kp/Ki 偏低。</li></ul><h2>建议实验</h2><ul><li>速度从 450 rpm 拉到 2000 rpm，看 PLL 锁相质量变化。</li><li>把&quot;噪声&quot;参数从 0.08 拉到 0.5，看角度估算抖动加剧。</li><li>把 PLL Kp/Ki 加倍，看 BEMF 噪声直接放大到角度。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * smo_pll.c — 滑模观测器 + PLL 锁相
+ * 简化教学版，工程版需要参数辨识 + 健康检查
+ * ============================================ */
+typedef struct {
+    /* 电机参数 */
+    float rs;       // Ω
+    float ls;       // H
+    float ke;       // V·s/rad
+
+    /* SMO 状态 */
+    float i_alpha_est, i_beta_est;
+    float z_alpha_filtered, z_beta_filtered;  // 等效 BEMF
+    float smo_gain;
+    float lpf_alpha;     // 低通系数 = Ts·ωc / (1+Ts·ωc)
+
+    /* PLL 状态 */
+    float pll_kp, pll_ki;
+    float pll_integral;
+    float omega_est;     // rad/s
+    float theta_est;     // rad
+} sensorless_t;
+
+static inline float sat_unit(float x) { return x &gt; 1.0f ? 1.0f : (x &lt; -1.0f ? -1.0f : x); }
+
+void sensorless_step(sensorless_t *s,
+                     float v_alpha, float v_beta,
+                     float i_alpha_meas, float i_beta_meas,
+                     float dt)
+{
+    /* 1. 滑模观测器：电流模型 + 等效控制项 */
+    float di_alpha = (v_alpha - s-&gt;rs * s-&gt;i_alpha_est) / s-&gt;ls;
+    float di_beta  = (v_beta  - s-&gt;rs * s-&gt;i_beta_est)  / s-&gt;ls;
+
+    /* 等效 BEMF 项：error 经过 sat 限幅替代 sign，平滑抖振 */
+    float err_a = sat_unit((s-&gt;i_alpha_est - i_alpha_meas) * 5.0f);
+    float err_b = sat_unit((s-&gt;i_beta_est  - i_beta_meas)  * 5.0f);
+    float z_alpha = -s-&gt;smo_gain * err_a;
+    float z_beta  = -s-&gt;smo_gain * err_b;
+
+    s-&gt;i_alpha_est += (di_alpha + z_alpha / s-&gt;ls) * dt;
+    s-&gt;i_beta_est  += (di_beta  + z_beta  / s-&gt;ls) * dt;
+
+    /* 2. 低通滤掉抖振，得到平滑 BEMF */
+    s-&gt;z_alpha_filtered += s-&gt;lpf_alpha * (z_alpha - s-&gt;z_alpha_filtered);
+    s-&gt;z_beta_filtered  += s-&gt;lpf_alpha * (z_beta  - s-&gt;z_beta_filtered);
+
+    /* 3. PLL 锁相：Δθ = sin(θ_meas - θ_est)
+     *    用 BEMF 反算 θ_meas = atan2(z_α, -z_β)，但避免 atan2 抖动用 sin 误差形式 */
+    float sin_dtheta = -s-&gt;z_beta_filtered  * cosf(s-&gt;theta_est)
+                       -s-&gt;z_alpha_filtered * sinf(s-&gt;theta_est);
+    /* 标定到 [-1, 1]: 除以 BEMF 估算幅值 */
+    float bemf_amp = sqrtf(s-&gt;z_alpha_filtered * s-&gt;z_alpha_filtered
+                         + s-&gt;z_beta_filtered  * s-&gt;z_beta_filtered) + 1e-6f;
+    sin_dtheta /= bemf_amp;
+    sin_dtheta = sat_unit(sin_dtheta);
+
+    /* PI 锁相 */
+    s-&gt;pll_integral += s-&gt;pll_ki * sin_dtheta * dt;
+    s-&gt;omega_est = s-&gt;pll_kp * sin_dtheta + s-&gt;pll_integral;
+
+    /* 角度积分 */
+    s-&gt;theta_est += s-&gt;omega_est * dt;
+    if (s-&gt;theta_est &gt;  M_PI) s-&gt;theta_est -= 2.0f * M_PI;
+    if (s-&gt;theta_est &lt; -M_PI) s-&gt;theta_est += 2.0f * M_PI;
+}
+
+/* 健康检查（在主循环慢任务中跑）：
+ *   - BEMF 幅值 &lt; 阈值 → 切回开环
+ *   - 角度误差 |Δθ| &gt; 阈值持续 20ms → 切回开环
+ *   - 估算 ω_est 与命令速度偏差过大 → 报警
+ */</pre><h2>下一步</h2><ul><li>进入弱磁控制，看高速无感场景下电压余量怎么换更高速度。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">为什么无感 FOC 必须有&quot;开环启动&quot;阶段？</div><ol><li>硬件要求</li><li class="correct">低速时 BEMF 信号被噪声淹没，无法估算角度 (正确)</li><li>让用户耐心等待</li><li>降低成本</li></ol><div class="hint">提示：BEMF = Ke·ω 正比于转速。低速（&lt; 500rpm）BEMF 几乎为零，全是 Rs/Ls 参数误差和 ADC 噪声，角度估不出来。先用开环 V/f 把电机拖到一定速度再切闭环。</div></div><div class="quiz"><div class="q">反电动势观测公式 e = v − Ri − L·di/dt 中，最易导致角度偏移的参数误差是？</div><ol><li>v</li><li class="correct">R (正确)</li><li>L</li><li>都不影响</li></ol><div class="hint">提示：R 直接乘电流，误差直接进 BEMF。L 影响 di/dt 项，电流变化率小时影响弱。生产线参数辨识第一项就是 Rs。</div></div><div class="quiz"><div class="q">PLL 锁相中 Kp/Ki 加大的副作用？</div><ol><li>没影响</li><li class="correct">锁相更快但角度抖动放大（噪声经过 PI 直接进 θ） (正确)</li><li>降低带宽</li><li>失锁</li></ol><div class="hint">提示：PI 增益越大跟踪越快，但同时放大输入端的噪声（BEMF 估算抖动）。在低速噪声大时尤其敏感，需要折中。</div></div><div class="quiz"><div class="q">滑模观测器 (SMO) 的&quot;等效控制项&quot;为什么要经过低通滤波？</div><ol><li>硬件要求</li><li class="correct">sign() 切换函数本身有高频抖振，滤掉抖振才得到平滑 BEMF (正确)</li><li>减少计算量</li><li>修正 Rs</li></ol><div class="hint">提示：SMO 让估算电流强制收敛到测量值，依靠 sign(error) 切换。这个切换以采样频率抖动，必须低通才能从中提取 BEMF 平均值作为角度信息源。</div></div><div class="quiz"><div class="q">从开环切到闭环的最佳判据？</div><ol><li>等 1 秒</li><li class="correct">BEMF 幅值 ≥ 阈值 + PLL 角度误差 &lt; 5° 持续 ≥ 20ms (正确)</li><li>检测电流稳定</li><li>速度命令到达</li></ol><div class="hint">提示：切换条件应基于&quot;估算质量&quot;——BEMF 信噪比够高 + PLL 已稳定锁相一段时间。光看时间不够，遇到启动失步会把电机拖跑了。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HFI 高频注入低速无感 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html" class="active">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">13</span>HFI 高频注入低速无感</h1><p class="subtitle">凸极比解调 + 零速启动的压缩机标配方案</p><div class="card primary"><div class="label">本模块主旨</div>零速也要锁角度——往 d 轴主动喊一声，听 IPM 凸极的回声里有没有 2θe；CORDIC + biquad 把这条信号链塞进 ISR。</div><h2>学完应能回答</h2><ul><li>能解释 IPM 凸极性 (Lq &gt; Ld) 的物理来源（永磁体磁阻大）以及为什么这是 HFI 的物理前提</li><li>能描述&quot;注入 → 凸极响应 → 同相解调 → LPF → PLL 锁 sin(2Δθ)&quot;全链路 + 公式</li><li>理解为什么表贴式 PMSM (Ld ≈ Lq) 用 HFI 完全无效（凸极信号增益 (r-1)/(r+1) → 0）</li><li>掌握注入频率选 800-1500 Hz 的三个约束（人耳、PWM 余量、铁损）+ PWM 必须 ≥ 4 × 注入</li><li>知道 HFI 的 180° 极性歧义来源（sin(2Δθ) 周期 π）和上电 d 轴对齐的解决办法</li><li>能写 STM32 上 HFI 解调骨架：CORDIC 算载波 + CMSIS-DSP biquad LPF + PLL PI</li><li>能识别&quot;凸极崩塌 / 注入频率落入 PWM 谐波带 / PLL Kp 过大 / 跳过对齐&quot;四类典型故障现象</li></ul><p><a class="btn" href="../walkthrough/hfi-sensorless.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>HFI 是压缩机低速无感的标配。本质是用主动注入信号克服 BEMF 在低速消失的盲区，但只对 IPM 凸极有效。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>HFI 像往黑屋子里**发声呐**——低速时反电动势太小（&quot;光&quot;看不见），就主动注入一个高频信号，听回声里的&quot;凸极差异&quot;判断转子位置。压缩机零启动靠它。</div><div class="card measure"><div class="label">核心概念</div>在 d 轴注入高频电压，IPM 电机 Ld &lt; Lq 让响应电流幅值与转子位置相关，解调后能反推角度。整个过程电机几乎不转，就能知道&quot;它现在朝哪儿&quot;。</div><h3>为什么要学</h3><ul><li>压缩机要求&quot;零启动&quot;——上电就能直接闭环 FOC，不能像 V/f 那样先盲推。</li><li>BEMF 观测器在 &lt; 500 rpm 时基本失效；HFI 是这一段唯一可行方案。</li><li>只对 IPM 凸极电机有效；表贴式 PMSM 的 Ld ≈ Lq，HFI 失效。所以选压缩机电机时凸极比是硬指标。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;凸极比 Lq/Ld&quot;从 2.18 拉到 1.05（接近表贴式），看角度估算崩溃；再拉回 2.5+，立刻锁相。</div><h2>学习目标</h2><ul><li>理解高频注入的物理直觉与凸极信号机制</li><li>掌握注入 → 响应 → 解调 → PLL 流水线</li><li>知道 HFI 的边界：必须 IPM、低速段、有可听噪声</li></ul><h2>核心概念</h2><ul><li>IPM 电机 Ld &lt; Lq 形成磁阻不对称，注入的高频电流响应在 dq 系不一样。</li><li>解调 = 测量信号 × 同相载波 → 直流分量包含 sin(2·Δθ) 误差信息。</li><li>PLL 用这个误差锁相到 Δθ = 0，得到平滑角度估算。</li></ul><h2>公式</h2><div class="card"><div class="label">凸极信号增益</div><div class="formula">gain ≈ (Lq − Ld) / (Lq·Ld) · V_h</div><p>差越大信号越强；表贴式电机 Lq ≈ Ld 时增益接近 0，HFI 失效。</p></div><div class="card"><div class="label">解调输出</div><div class="formula">demod_lp ∝ sin(2·(θ_true − θ_est))</div><p>注意是 2 倍角差——HFI 只能提取到 180° 内的信息，需要额外极性判断逻辑。</p></div><div class="card"><div class="label">BEMF vs HFI 切换</div><div class="formula">speed &lt; 5%·rated → HFI;  5-10% → 平滑过渡;  &gt; 10% → BEMF / SMO</div><p>过渡段需要加权混合两套估算结果，避免切换瞬间角度跳变。</p></div><h2>工程意义</h2><ul><li>HFI 是压缩机零启动的硬性要求。卖家手册里&quot;凸极比&quot;参数就是为它准备的。</li><li>注入频率折中可听噪声（&gt;1kHz 避开 200-1000Hz 敏感段）和 PWM 余量。</li><li>高频注入会增加铁损和电流谐波，所以高速时必须切 BEMF。</li></ul><h2>STM32 移植指南</h2><ul><li>注入的高频信号叠加在电流环 PI 输出之后、反 Park 之前。</li><li>解调用 IIR 低通（截止 ~200Hz），CMSIS-DSP 内置滤波器能直接用。</li><li>HFI ↔ BEMF 切换用滞回比较器避免抖动。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>用在表贴式电机上（Lq ≈ Ld 完全没用）。</li><li>注入电压过大造成可听噪声；过小信号被噪声淹没。</li><li>没做极性判别，启动方向随机。</li></ul></div><h2>调试方法</h2><ul><li>临时装编码器对比 HFI 估算角度。</li><li>看解调输出 demod_lp，正常应是平滑直流；有强 2ω_h 纹波 → 解调 LPF 不够低。</li><li>高速运行时观察 HFI 切到 BEMF 的瞬态——切换瞬间不能有 &gt; 10° 角度跳变。</li></ul><h2>建议实验</h2><ul><li>凸极比 2.5 → 1.05，看 HFI 失效。</li><li>注入频率 800Hz → 200Hz（太低，被 PWM 谐波污染）→ 1500Hz。</li><li>加噪声看 PLL 锁相速度变化。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* hfi.c — 压缩机低速无感 HFI 控制 */
+typedef struct {
+    float v_inject;       // 注入电压幅值 V
+    float f_inject;       // 注入频率 Hz
+    float omega_inject;   // = 2π × f_inject
+    float carrier_phase;  // 载波相位累加
+    float demod_lp;       // 解调低通输出
+    float lpf_alpha;
+    /* PLL */
+    float pll_kp, pll_ki, pll_int, theta_est, omega_est;
+} hfi_ctx_t;
+
+void hfi_init(hfi_ctx_t *h, float v, float f_hz, float pwm_freq) {
+    h-&gt;v_inject = v;
+    h-&gt;f_inject = f_hz;
+    h-&gt;omega_inject = 2.0f * M_PI * f_hz;
+    h-&gt;lpf_alpha = (2.0f * M_PI * 200.0f / pwm_freq);  // 200Hz LPF
+    /* ... */
+}
+
+/* 在 FOC 中断里：注入信号 + 解调 + PLL */
+void hfi_step(hfi_ctx_t *h, float i_q_meas, float dt,
+              float *out_v_d_inject, float *out_theta_est)
+{
+    /* 1. 累加载波相位 */
+    h-&gt;carrier_phase += h-&gt;omega_inject * dt;
+    if (h-&gt;carrier_phase &gt; 2.0f * M_PI) h-&gt;carrier_phase -= 2.0f * M_PI;
+    float carrier = sinf(h-&gt;carrier_phase);
+
+    /* 2. 注入电压（叠加到电流环 V_d 输出之后） */
+    *out_v_d_inject = h-&gt;v_inject * carrier;
+
+    /* 3. 解调：用 i_q_meas 中的高频分量乘载波 → 包含 sin(2Δθ) */
+    float product = i_q_meas * carrier;
+    h-&gt;demod_lp += h-&gt;lpf_alpha * (product - h-&gt;demod_lp);
+
+    /* 4. PLL 锁相到 sin(2Δθ) = 0 */
+    float err = -h-&gt;demod_lp;
+    h-&gt;pll_int += h-&gt;pll_ki * err * dt;
+    h-&gt;omega_est = h-&gt;pll_kp * err + h-&gt;pll_int;
+    h-&gt;theta_est += h-&gt;omega_est * dt;
+    if (h-&gt;theta_est &gt; M_PI) h-&gt;theta_est -= 2.0f * M_PI;
+    if (h-&gt;theta_est &lt; -M_PI) h-&gt;theta_est += 2.0f * M_PI;
+
+    *out_theta_est = h-&gt;theta_est;
+}</pre><h2>下一步</h2><ul><li>进入启动状态机模块（14），看 HFI 在整个启动流程里如何与 V/f / BEMF 协作。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">HFI 能用于表贴式 PMSM (Lq ≈ Ld) 吗？</div><ol><li>能</li><li class="correct">不能 —— 凸极信号增益接近 0 (正确)</li><li>只能在低速</li><li>硬件改造后能</li></ol><div class="hint">提示：HFI 信号机制依赖 (Lq − Ld) / (Lq·Ld) 不为 0；表贴式电机这一项几乎为零，注入再大也无信号。</div></div><div class="quiz"><div class="q">注入频率为什么常选 800-1500 Hz？</div><ol><li>硬件限制</li><li class="correct">&gt; 1kHz 避开人耳最敏感的 200-1000Hz；PWM 6kHz 时 1.5kHz 还有 4 倍以上余量 (正确)</li><li>无所谓</li><li>电网频率相关</li></ol><div class="hint">提示：可听噪声敏感区 200-1000 Hz；同时要远低于 PWM 频率（一般 &lt; 1/4 PWM）才能保证采样不混叠。</div></div><div class="quiz"><div class="q">HFI 解调输出 sin(2·Δθ) 意味着角度估算只有 180° 周期歧义，怎么解？</div><ol><li>不用解</li><li class="correct">启动时用一个固定方向（强制对齐 d 轴）来消除 (正确)</li><li>改用 cos</li><li>换硬件</li></ol><div class="hint">提示：上电对齐阶段先给 d 轴一个直流让转子停在零位，PLL 从已知方向开始就避免 180° 翻转。</div></div><div class="quiz"><div class="q">HFI 切到 BEMF 的速度边界一般是？</div><ol><li>同步速 1%</li><li class="correct">5-10% 同步速 (正确)</li><li>50% 同步速</li><li>100%</li></ol><div class="hint">提示：5-10% 同步速时 BEMF 已经能被 SMO 稳定观测，再用 HFI 反而引入额外噪声和损耗，所以切到 BEMF。</div></div><div class="quiz"><div class="q">同样压缩机，凸极比从 2.5 改到 1.5，HFI 锁相效果会怎么变？</div><ol><li>没影响</li><li class="correct">锁相时间变长，误差变大 (正确)</li><li>反而更稳</li><li>不收敛</li></ol><div class="hint">提示：凸极信号增益 ≈ (r-1)/(r+1)。r=2.5 时 0.43；r=1.5 时 0.20，下降一半多，信号变弱噪声相对放大。</div></div><h2>相关公式索引</h2><div class="card"><div class="label">HFI 凸极信号增益</div><div class="formula">gain = (r − 1)/(r + 1),  r = Lq/Ld;  r=1.5 → 0.20, r=2.5 → 0.43</div></div><div class="card"><div class="label">HFI 解调误差</div><div class="formula">i_response × cos(ωh·t) → LPF → ≈ 0.5·sin(2·Δθ)</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

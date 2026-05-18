@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电机基础 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html" class="active">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">01</span>电机基础</h1><p class="subtitle">结构、极对数、电角度与机械角度</p><div class="card primary"><div class="label">本模块主旨</div>极对数 + 电角度 + 转矩公式 + BEMF —— 把电机铭牌翻译成 FOC 第一行 C 代码用得到的四个数。</div><h2>学完应能回答</h2><ul><li>能区分&quot;极数 vs 极对数&quot;，并从铭牌&quot;8 极 3000 rpm 220V&quot;反算出额定电频率 200 Hz</li><li>能口算 θe = polePairs × θm、fe = rpm/60 × polePairs，并解释为什么 6 极对压缩机 PWM 选 16 kHz 而不是 4 kHz</li><li>理解 PMSM 转矩公式 τ = 1.5·p·[ψf·Iq + (Ld−Lq)·Id·Iq] 三段含义，区分 SPM 和 IPM 工程含义</li><li>能用 BEMF = ψf·ω_e 反算&quot;6000 rpm 6 极对 ψf=0.05 Wb&quot;时的反电动势峰值并解释为什么需要弱磁</li><li>掌握&quot;上电四件套&quot;标定流程：极对数 → 编码器零位 → Rs（直流注入）→ Ld/Lq（高频注入）</li><li>会用 STM32 编码器接口 (TIM2 TI1/TI2 4 倍频 + Z 输入捕获) 把机械角度变成电角度</li></ul><p><a class="btn" href="../walkthrough/motor-basics.html">查看完整 Walkthrough（8 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>&quot;机械 → 电角度&quot;的乘极对数是 FOC 第一公里。后面所有模块默认你已经会算电角度。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>电机就像一群推秋千的人——定子绕组通电后产生磁极（&quot;手&quot;），转子带着永磁体（&quot;秋千&quot;）被周期性地往同一个方向推。FOC 要解决的核心问题就是&quot;什么时候推、推多大力&quot;，让秋千越荡越快、越荡越稳。</div><div class="card measure"><div class="label">核心概念</div>FOC 控制的所有数学，都建立在&quot;机械角度 → 乘极对数 → 电角度 → 控制磁场方向&quot;这条最基础的链条上。</div><h3>为什么要学</h3><ul><li>极对数搞错，电角度就会差几倍，电机会抖动甚至反转——是 FOC 上电就转不动的最常见原因。</li><li>机械角度（你眼睛看到转子转的角度）和电角度（控制器算法用的角度）是两个量，不能混用。</li><li>后面所有模块（Clarke / Park / SVPWM / 弱磁）都以&quot;我此刻知道电角度是多少&quot;为前提。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;极对数&quot;从 4 改到 8，看右边两个圆环：机械角度 θm 不变（45°），电角度 θe 跳到 360°——8 极对电机，机械转一圈，电角度要循环 8 圈。</div><h2>学习目标</h2><ul><li>区分 DC、BLDC、PMSM、异步电机的控制差异</li><li>理解定子、转子、永磁体、绕组、霍尔和编码器的作用</li><li>掌握机械角度、电角度、极对数之间的关系</li></ul><h2>核心概念</h2><ul><li>机械角度是转子实体转过的角度，电角度是磁场周期对应的角度。极对数越多，转子一圈内电角度转得越多。</li><li>PMSM 的转矩主要来自 q 轴电流，d 轴通常对准永磁体磁链；表贴式电机常用 Id=0，内嵌式电机还会用 MTPA。</li><li>反电动势与转速、磁链相关，速度越高，控制器需要的电压余量越大。</li></ul><h2>公式</h2><div class="card"><div class="label">电角度</div><div class="formula">θe = polePairs × θm</div><p>θm 是机械角度（编码器实际读到的值），polePairs 是极对数。控制算法用的是 θe，这是 FOC 第一行代码。</p></div><div class="card"><div class="label">电频率</div><div class="formula">fe = (rpm / 60) × polePairs</div><p>机械 1500 rpm 的 4 极对电机，电频率 = 25 × 4 = 100 Hz。这个值决定 PWM 频率应该至少是它的几十倍。</p></div><div class="card"><div class="label">电磁转矩</div><div class="formula">Te = 1.5 × p × (ψf × Iq + (Ld - Lq) × Id × Iq)</div><p>p 为极对数，ψf 为永磁体磁链；表贴式电机 Ld=Lq，转矩近似 Te ≈ 1.5 × p × ψf × Iq，与 Iq 成正比。这是为什么 q 轴叫&quot;转矩轴&quot;。</p></div><div class="card"><div class="label">反电动势</div><div class="formula">BEMF = Ke × ω</div><p>转速越高反电动势越大；当 BEMF 接近母线电压时，控制器没电压余量了，就需要弱磁。</p></div><h2>工程意义</h2><ul><li>调试 FOC 第一件事是确认极对数（Datasheet 或者拆机数齿）。错了所有 dq 都错。</li><li>Rs / Ld / Lq / Ke / Kt / J / B 这 7 个参数决定电流环带宽和观测器精度。买电机时尽量要齐。</li><li>机械角度反馈精度（编码器分辨率 ÷ 极对数）决定了电流环最大 dq 误差。低分辨率 + 高极对数 = 大误差。</li></ul><h2>STM32 移植指南</h2><ul><li>编码器或霍尔读到 θm（机械），用 (uint16_t)((theta_raw * polePairs) % ENCODER_RESOLUTION) 得到 θe。</li><li>初始化阶段必须做&quot;对齐&quot;——给定一个已知 dq 电压，让转子停在 d 轴零位，再清编码器零点。</li><li>极对数、Rs、Ls、Ke 放在 motor_param_t 结构体里，从 Flash 加载，方便切换电机不重新编译。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>直接把机械角度送进 Park（电机会抖动或不转）。</li><li>极对数填成&quot;极数&quot;——8 极电机的极对数是 4，不是 8。</li><li>没做编码器零位对齐就直接闭环。</li><li>混用相电流（Ia）、线电流（Iab）、dq 电流的单位和缩放。</li></ul></div><h2>调试方法</h2><ul><li>空载、低母线电压（先 12V）下手动给 Iq=1A、θe 缓慢累加，看转子能不能跟住。</li><li>在 SWO/RTT/串口里每 PWM 周期记录 θm 和 θe，正常应该 θe 跑得比 θm 快 polePairs 倍。</li><li>示波器抓三相电流，应该是 120° 相差的对称正弦。</li></ul><h2>建议实验</h2><ul><li>极对数 4 → 8，机械角度不变，看电角度循环数变化。</li><li>机械转速 0 → 6000 rpm，看电频率随之变化（公式 fe = rpm × p / 60）。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * motor.h — 电机参数与角度计算
+ * 适配 STM32F4/G4/H7，PWM 中心对齐 16kHz
+ * ============================================ */
+typedef struct {
+    uint8_t  pole_pairs;     // 极对数（不是极数）
+    float    rs;             // 相电阻 Ω
+    float    ld_h;           // d 轴电感 H
+    float    lq_h;           // q 轴电感 H
+    float    psi_f;          // 永磁磁链 Wb
+    float    rated_current;  // 额定电流 A
+} motor_param_t;
+
+/* 编码器原始值 → 电角度（rad）
+ * encoder_raw: 0 ~ ENCODER_RESOLUTION-1
+ * encoder_zero: 启动时对齐得到的零位偏置 */
+static inline float encoder_to_theta_e(
+    uint32_t encoder_raw,
+    uint32_t encoder_zero,
+    uint8_t  pole_pairs)
+{
+    /* 1. 减零位偏置，得到机械角度计数 */
+    int32_t mech = (int32_t)encoder_raw - (int32_t)encoder_zero;
+    if (mech &lt; 0) mech += ENCODER_RESOLUTION;
+
+    /* 2. 乘极对数 → 电角度计数（防溢出） */
+    uint32_t elec = ((uint32_t)mech * pole_pairs) % ENCODER_RESOLUTION;
+
+    /* 3. 归一化到 [0, 2π) */
+    return (float)elec * (2.0f * M_PI / ENCODER_RESOLUTION);
+}
+
+/* 在 ADC 中断的最开头调用，整个 FOC 链的起点 */
+volatile float g_theta_e;
+void ADC_IRQHandler_Begin(void) {
+    g_theta_e = encoder_to_theta_e(
+        ENCODER_GetCount(),
+        g_param.encoder_zero,
+        g_param.pole_pairs);
+    /* 之后是 Clarke → Park → PI → 反 Park → SVPWM */
+}</pre><h2>下一步</h2><ul><li>进入三相磁场模块，看三相电流怎么合成出一个真正会转的磁场——这是为什么把电角度算对就能控住电机。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">一台铭牌写&quot;8 极、4 对极&quot;的 PMSM，FOC 中应该用极对数等于多少？</div><ol><li>8</li><li class="correct">4 (正确)</li><li>16</li><li>2</li></ol><div class="hint">提示：&quot;极&quot;指磁极总数（N+S 都数），&quot;对极&quot;=极/2。FOC 算法用极对数，本题为 4。</div></div><div class="quiz"><div class="q">4 极对电机以 1500 rpm 转动，电频率是多少？</div><ol><li>25 Hz</li><li>50 Hz</li><li class="correct">100 Hz (正确)</li><li>6000 Hz</li></ol><div class="hint">提示：fe = rpm/60 × polePairs = 25 × 4 = 100 Hz。PWM 频率应至少是它的 50 倍以上。</div></div><div class="quiz"><div class="q">若把机械角度 θm 直接当成 θe 送进 Park 变换，最可能出现什么现象？</div><ol><li>电机正常转动只是慢一点</li><li class="correct">电机抖动或不转 (正确)</li><li>电流变小</li><li>没影响，FOC 自动纠正</li></ol><div class="hint">提示：θe 应是 θm × 极对数。差了几倍后 dq 投影完全错位，Iq 实际投到 Id 上，几乎产生不了转矩。</div></div><div class="quiz"><div class="q">表贴式 PMSM (Ld=Lq) 在 Id=0 控制下，电磁转矩主要由什么决定？</div><ol><li>Id</li><li class="correct">Iq (正确)</li><li>母线电压</li><li>PWM 频率</li></ol><div class="hint">提示：Te = 1.5p(ψf·Iq + (Ld-Lq)IdIq)。Ld=Lq 时第二项为 0，Iq 直接等比例决定转矩。</div></div><div class="quiz"><div class="q">为什么 FOC 启动前必须做&quot;编码器零位对齐&quot;？</div><ol><li>硬件要求</li><li class="correct">让控制器知道 d 轴在哪里，才能正确算 dq 投影 (正确)</li><li>保护编码器</li><li>减少 PWM 噪声</li></ol><div class="hint">提示：d 轴沿转子永磁体 N 极，对齐就是把&quot;编码器读数 = 0&quot;和&quot;d 轴指向定子 A 相&quot;绑在一起。不对齐会导致 Id/Iq 命令与实际方向有恒定偏差。</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

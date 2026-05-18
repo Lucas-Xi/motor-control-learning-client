@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>制冷系统台架 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html" class="active">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">16 Walkthrough</span>制冷系统台架</h1><p class="subtitle">把 P-h 4 状态点 + EEV 过热度控制 + 系统故障特征 + APF 标定串成压缩机变频器的完整工程闭环。</p><p><a href="../module/refrigeration-bench.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能在 P-h 焓压图上指认 4 状态点（吸气过热气 / 排气 / 冷凝过冷液 / 节流两相）的物理含义</li><li>能口算压缩比、单位功 w = h₂ − h₁、单位冷量 q_c = h₁ − h₄ 与 COP = q_c / w</li><li>能解释循环侧 W_comp → τ_load → Iq* 的耦合链路：为什么变工况后 FOC 的 iqRef 必须跟随</li><li>能从 P_s / P_d / T_d / SH 四表读数差异区分冷媒泄漏 / 冷凝堵塞 / EEV 卡死 / 不凝气</li><li>理解 EEV 必须基于 SH = T_suct − T_sat(P_s) 而非吸气温度做 PI，否则工况漂移触发液击</li><li>理解过冷度 SC 在冷凝侧的工程意义：保证节流前 100% 液态、提升单位冷量、防止 EEV 气塞</li><li>能说出 APF 与单点额定 COP 的差别，以及变频压缩机在部分负荷下 COP 反而更高的物理原因</li></ul><h2>主线步骤（9 步）</h2><section class="step"><div class="step-no">Step 1 / 9 · cycle-anatomy</div><h3>读 P-h 图</h3><div class="field"><div class="field-label">目标</div><div>看懂蒸气压缩循环四状态点的几何形状</div></div><div class="field"><div class="field-label">操作</div><div>加载&quot;夏季典型&quot;工况预设。注视左侧 P-h 图：横轴比焓 h（kJ/kg）、纵轴压力 P（对数刻度）。从 [1] 吸气过热气出发，沿循环方向依次找到 [2] 排气 → [3] 冷凝过冷液 → [4] 节流后两相。</div></div><div class="field"><div class="field-label">观察</div><div>[1]→[2] &quot;右上对角&quot;压缩段（P 升、h 升，斜率 ≈ 多变指数 n=1.18-1.20）；[2]→[3] &quot;等压向左&quot;冷凝放热（P 不变、h 大幅减）；[3]→[4] &quot;垂直向下&quot;等焓节流（h 不变、P 跌）；[4]→[1] &quot;等压向右&quot;蒸发吸热。</div></div><div class="field"><div class="field-label">为什么</div><div>这四步对应硬件：[1]→[2] 在压缩机里发生（消耗电能）、[2]→[3] 在冷凝器（室外机放热）、[3]→[4] 在 EEV 电子膨胀阀里、[4]→[1] 在蒸发器（室内机吸热）。整张 P-h 图就是变频空调的一份&quot;工艺路线图&quot;，看懂它你就能和暖通工程师同频说话。</div></div><div class="field"><div class="field-label">工况</div><div><code>fridge-low-load</code></div></div></section><section class="step"><div class="step-no">Step 2 / 9 · cop-formula</div><h3>COP 怎么算</h3><div class="field"><div class="field-label">目标</div><div>把 q_c、w、COP 从 P-h 图上的&quot;段长&quot;读出来</div></div><div class="field"><div class="field-label">操作</div><div>看下方 4 个状态卡片的 h 值。心算：q_c = h₁ − h₄（蒸发段水平宽度），w = h₂ − h₁（压缩段水平宽度），COP = q_c / w。再与右下卡片 &quot;COP&quot; 实测数对一遍。</div></div><div class="field"><div class="field-label">观察</div><div>低负载工况下 COP 通常落在 5-6 之间。注意 P-h 图上&quot;蒸发段比压缩段长得多&quot;——这就是热泵之所以省电的几何直觉。</div></div><div class="field"><div class="field-label">为什么</div><div>COP 是能效一级的&quot;硬指标&quot;。一台压缩机出厂前要在标定房（GB/T 7725）跑 7 个测试点，每个点都要在 P-h 图上落到正确位置。学会从图上读 COP 比看仪表读数更早发现问题——仪表读 COP=3.0 但 P-h 图上看到 [1] 跑到饱和线左边了，说明吸气湿气，仪表骗了你。</div></div><div class="quiz"><div class="q">随堂题：某工况读到 h₁=420 kJ/kg、h₂=460 kJ/kg、h₃=h₄=250 kJ/kg，COP 是多少？</div><ol><li>1.18</li><li class="correct">4.25 (正确)</li><li>17.0</li><li>0.21</li></ol><div class="hint">提示：q_c = h₁ − h₄ = 170 kJ/kg，w = h₂ − h₁ = 40 kJ/kg，COP = 170/40 = 4.25。这是标准空调制冷的典型值。</div></div></section><section class="step"><div class="step-no">Step 3 / 9 · superheat-subcool</div><h3>过热度 SH 与过冷度 SC</h3><div class="field"><div class="field-label">目标</div><div>理解 SH/SC 这两个工程上比 COP 更早期的健康指标</div></div><div class="field"><div class="field-label">操作</div><div>看 P-h 图上 [1] 和 [3] 的位置——它们都不在饱和线（钟形曲线）上。[1] 偏右进入&quot;过热气&quot;区（水平距饱和线 SH 段）；[3] 偏左进入&quot;过冷液&quot;区（水平距饱和线 SC 段）。把蒸发温度从 7℃ 拖到 4℃，看 SH 数字怎么变。</div></div><div class="field"><div class="field-label">观察</div><div>正常 SH 在 5-10K，SC 在 3-7K；SH&lt;3K 表示吸气可能带液 → 液击预警；SH&gt;15K 表示蒸发器内液态冷媒少 → 缺氟或 EEV 偏关；SC&lt;2K 表示冷凝液不够过冷 → 节流前可能闪发气泡，扰乱 EEV 流量。</div></div><div class="field"><div class="field-label">为什么</div><div>SH 和 SC 是出厂调试和售后诊断的&quot;先行指标&quot;——比 COP / T_d 更早出问题。例：缺氟时 COP 还没降，SH 已经飙到 15K+；冷凝器风机坏时 SC 已经掉到 0K（冷凝压力升、热交换不够），P_d 才开始飙。EEV 控制器的 PI 输入必须是 SH 而不是吸气温度——压力变 → 饱和温度变 → 温度合适不等于 SH 合适。</div></div></section><section class="step"><div class="step-no">Step 4 / 9 · eev-control-pi</div><h3>EEV 闭环控制</h3><div class="field"><div class="field-label">目标</div><div>理解 EEV PI 控 SH 的物理含义和踩雷点</div></div><div class="field"><div class="field-label">操作</div><div>想象 EEV 控制器：目标 SH=8K，反馈 SH=T_suct−T_sat(P_s)。把蒸发温度突变 7℃→3℃（外部工况变化模拟）观察 EEV 应该怎么动作。</div></div><div class="field"><div class="field-label">观察</div><div>T_e 跌 → P_s 跌 → T_sat 跌 → 同 T_suct 下 SH 自动升 → EEV PI 误差变正 → 开大 EEV → 蒸发器冷媒流量增 → T_suct 回落 → SH 回到 8K。整个闭环时间常数 30-60s（慢任务级，1Hz）。</div></div><div class="field"><div class="field-label">为什么</div><div>EEV 是制冷系统的&quot;流量阀&quot;，电机端再快也比不上 EEV 反应。EEV PI 必须基于 SH（饱和温度差）而不是直接看 T_suct，因为 P_s 漂移时 T_sat 也跟着变。STM32 EEV 控制骨架（1 Hz 慢任务，步进电机 480 脉冲全开）： /* EEV SH 闭环 PI: 1 Hz tick, 输出步数 */ typedef struct { float kp, ki, sh_target, i_term, step_min, step_max; } EEV_PI_t; int16_t eev_pi_update(EEV_PI_t *p, float t_suct, float p_suct) {   float t_sat = refrigerant_psat_to_tsat(p_suct);  /* 查冷媒物性表 */   float sh = t_suct - t_sat;   float err = sh - p-&gt;sh_target;  /* SH 大 → 开 EEV */   p-&gt;i_term += p-&gt;ki * err;   if (p-&gt;i_term &gt; 100.0f) p-&gt;i_term = 100.0f;   if (p-&gt;i_term &lt; -100.0f) p-&gt;i_term = -100.0f;   float step_f = p-&gt;kp * err + p-&gt;i_term;   /* 步进电机 480 步全开，限速避免液击 */   if (step_f &gt; 20.0f) step_f = 20.0f;  /* 单 tick 最大 20 步 */   if (step_f &lt; -10.0f) step_f = -10.0f;  /* 关阀比开阀更慢 */   return (int16_t)step_f; } /* 关键约束：从全关到全开必须 &gt;30s 渐进，否则液击；停机前主动关到 480·0.2=96 步保护 */</div></div><div class="quiz"><div class="q">随堂题：EEV PI 反馈如果用吸气温度 T_suct 而不是 SH，会出什么问题？</div><ol><li>响应更快</li><li class="correct">工况漂移时 P_s 变 → T_sat 变，T_suct 看似不变但 SH 已经掉到 0 → 液击 (正确)</li><li>只是占用更多 CPU</li><li>步进电机会反向走</li></ol><div class="hint">提示：SH = T_suct − T_sat(P_s)。压力变化时饱和温度也变，相同 T_suct 对应的 SH 已经不一样。EEV 只看 T_suct 等于&quot;温度合适就停&quot;，实际可能 SH=0 液冷媒直接进压缩机 → 阀片瞬时损坏。这是制冷工程&quot;用机器命换来的规矩&quot;。</div></div></section><section class="step"><div class="step-no">Step 5 / 9 · load-coupling</div><h3>循环↔电机耦合</h3><div class="field"><div class="field-label">目标</div><div>理解循环侧 W_comp 如何反推 FOC 的 Iq 给定</div></div><div class="field"><div class="field-label">操作</div><div>切到右侧&quot;实测面板&quot;标签页，找&quot;电机侧需求（系统↔电机闭环）&quot;卡片。先记下当前 τ_load、所需 Iq；然后把蒸发温度 T_e 从 7℃ 拖到 5℃（在 P-h 图上把 [1] 点向下拖）。</div></div><div class="field"><div class="field-label">观察</div><div>压比 P_d/P_s 拉大 → W_comp 上升 → τ_load 涨 → &quot;所需 Iq&quot; 同步增大。如果&quot;占额定电流&quot;超过 80%，文字变红预警。</div></div><div class="field"><div class="field-label">为什么</div><div>τ = W_comp / ω = W_comp /(2π·rpm/60)，再用 τ = 1.5·p·ψ_f·Iq 反求 Iq*。这条公式链就是&quot;工况映射表&quot;的物理来源——空调厂家给每个室内外温度组合查 Iq 给定表，本质就是预先算好这一步。开启闭环后切到 06 号 FOC 模块，你会看到 iqRef 跟着这里同步变化。</div></div><div class="field"><div class="field-label">工况</div><div><code>fridge-high-load</code></div></div></section><section class="step"><div class="step-no">Step 6 / 9 · fault-fingerprint</div><h3>四表诊断指纹</h3><div class="field"><div class="field-label">目标</div><div>从 P_s / P_d / T_d / SH 的偏移特征识别故障类型</div></div><div class="field"><div class="field-label">操作</div><div>切到&quot;调控&quot;标签页，打开&quot;系统故障注入&quot;。依次注入&quot;冷媒泄漏&quot;（中度）、&quot;冷凝器脏堵&quot;（中度）、&quot;EEV 卡死偏关&quot;。每次回到&quot;实测面板&quot;对比 P_s / P_d / T_d / SH / 压比的变化。</div></div><div class="field"><div class="field-label">观察</div><div>冷媒泄漏：P_s 跌、P_d 略跌、压比基本不变、SH 飙到 15K+、T_d 升；冷凝堵塞：P_d 飙升、P_s 几乎不变、压比拉大、T_d 同步升、COP 直接腰斩；EEV 偏关：流量骤减、SH 冲到 20K+、T_d 报高温保护。</div></div><div class="field"><div class="field-label">为什么</div><div>这就是空调维修工&quot;上门看四表&quot;的原始指法。压缩机不会先烧——它会先在排气温度上抗议（&gt;110℃ PVE 冷冻油碳化、&gt;130℃ 绕组绝缘退化）。学会读这张&quot;指纹表&quot;，比测电机绕组温度更早判断系统侧问题，能避免 80% 的&quot;换完电机还是不冷&quot;售后投诉。</div></div><div class="quiz"><div class="q">随堂题：客户报修&quot;不够冷&quot;，到现场量得 P_s 比铭牌低 0.1 MPa、P_d 也略低、压比基本不变、SH=18K，最可能的故障是？</div><ol><li>冷凝器脏堵</li><li class="correct">冷媒泄漏 (正确)</li><li>EEV 偏开（液击）</li><li>电机绕组缺相</li></ol><div class="hint">提示：P_d 也低排除冷凝堵塞（堵塞特征是 P_d 高）；SH 偏高排除液击（液击是 SH≈0）；电机缺相会直接报错而非 P_s 漂移。冷媒不足 → 蒸发器内液冷媒不够 → 气体在管路末段就过热完了 → SH 飙、P_s 下降但压比不变（因为整个系统冷媒充注量都少）。</div></div></section><section class="step"><div class="step-no">Step 7 / 9 · envelope-protect</div><h3>压缩机包线</h3><div class="field"><div class="field-label">目标</div><div>理解&quot;为什么不能无脑提频&quot;——压缩机有运行包线</div></div><div class="field"><div class="field-label">操作</div><div>回到&quot;实测面板&quot;看&quot;运行包线&quot;卡片。把转速从 3000 rpm 推到 6000 rpm；再把 T_c 从 45℃ 拖到 60℃；观察工作点在 (rpm, 压比) / (T_e, T_c) 包线图上的位置。</div></div><div class="field"><div class="field-label">观察</div><div>高转速 + 大压比时工作点会冲出绿色&quot;安全区&quot;进入黄色&quot;限频区&quot;乃至红色&quot;包线外&quot;。同时排气温度 T_d 爬向 110℃ 红线，弹出&quot;接近包线&quot;警告。</div></div><div class="field"><div class="field-label">为什么</div><div>压缩机包线是机械寿命的硬约束——超出包线运行会出现：① 排气阀片应力开裂；② 油循环不足导致抱轴；③ 排气温度过高烧 PVE 油。变频控制器的&quot;工况-频率映射表&quot;本质就是包线内的优化路径搜索：在每个 (T_e, T_c) 上选 COP 最高且离包线最远的转速。这就是为什么&quot;客户说热得快空调反而降频&quot;——MCU 比客户更知道压缩机什么时候在受罪。</div></div><div class="field"><div class="field-label">工况</div><div><code>fridge-high-load</code></div></div></section><section class="step"><div class="step-no">Step 8 / 9 · apf-vs-cop</div><h3>APF 与变频优势</h3><div class="field"><div class="field-label">目标</div><div>看懂为什么变频压缩机能在年度能效上碾压定频</div></div><div class="field"><div class="field-label">操作</div><div>切到&quot;对比与能效&quot;标签页，看&quot;全年能效 APF&quot;卡片。先观察当前工况的稳态 COP；再观察 APF 综合分（按 GB 21455 加权 5 个工况点）。试着把转速从 5400 rpm（额定）降到 3000 rpm（部分负荷），看 COP 怎么变。</div></div><div class="field"><div class="field-label">观察</div><div>降速后 COP 不降反升（典型从 3.5 → 4.5），因为低转速 → 容积效率 η_v 升 → 单位功小 + 排气温度低 + 换热器换热面积&quot;相对充裕&quot;。APF 加权高比例放在低负荷点，所以变频比定频在 APF 上高 30%+。</div></div><div class="field"><div class="field-label">为什么</div><div>GB 21455 一级能效门槛 APF≥5.0，定频机几乎不可能达标。这就是 2010 年后变频压缩机 + 直流变频空调成主流的根本原因。压缩机厂家做 APF 标定要在标定房泡两周——给电机控制工程师的启示：你优化 FOC 1% 效率换来的可能只是 APF 第三位小数，但优化工况-频率映射表可能直接拉高 0.3 个 APF。</div></div><div class="quiz"><div class="q">随堂题：一台变频空调额定工况 COP=3.6，APF=5.2；另一台定频 COP=3.4，APF=3.2。下列说法哪个对？</div><ol><li>COP 比 APF 更能反映年耗电，应以 COP 选机</li><li class="correct">APF 在部分负荷下加权权重大，变频压缩机降速 COP 反而更高所以 APF 高 (正确)</li><li>APF 高说明额定点效率高</li><li>两台机能效相近，APF 差距是测试误差</li></ol><div class="hint">提示：APF = 全年制冷量 / 全年耗电量，里头部分负荷工况占 60%+ 权重。变频在部分负荷可降速运行，η_v 高、单位功小、COP 比额定点还高；定频只能开开停停，平均效率烂。这就是为什么 GB 21455 把权重往部分负荷倾斜——故意让定频机难达标。</div></div></section><section class="step"><div class="step-no">Step 9 / 9 · closeloop-system</div><h3>商用冷链闭环验证</h3><div class="field"><div class="field-label">目标</div><div>把循环↔电机闭环跑通一遍，回到 FOC 模块印证</div></div><div class="field"><div class="field-label">操作</div><div>勾选&quot;闭环耦合&quot;开关，让循环算出的 Iq* 自动写入 FOC iqRef；切到&quot;商用冷冻&quot;场景（R-134a Te=−25℃）；最后跳到 06 号 FOC 总流程模块查看 iqRef 是否同步变成低温工况下的小流量需求。</div></div><div class="field"><div class="field-label">观察</div><div>R-134a 低温工况下 m_dot 很小（≈3 g/s）但单位功 w 巨大（&gt;50 kJ/kg），所以 W_comp 不小、τ_load 还是有量级；FOC 模块的 iqRef 跟着自动调到对应值。回到台架查能效，COP 通常 1.5-2.0（冷冻应用 COP 低是常态——压比大，单位功被拉高）。</div></div><div class="field"><div class="field-label">为什么</div><div>这就是真正的&quot;压缩机变频器&quot;——MCU 同时跑系统状态机（EEV PI 控制过热度、排气保护、工况映射）和电机控制（FOC 速度环 + 电流环）。整个 16 个模块到这里完成闭环：编码器 → Park → PI → SVPWM → 逆变器 → 电机出力 → 压缩机做功 → 系统侧 P-h 循环 → 反算 τ_load → 反推 Iq* → 回到 FOC。家用空调和商用冷链共享同一套 FOC 内核，差异在系统状态机里。</div></div><div class="field"><div class="field-label">工况</div><div><code>fridge-frozen</code></div></div></section><h2>常见误区（5 个）</h2><div class="pitfall"><div class="label">试错：把 R-32 当 R-410A 灌注</div><p><strong>现象：</strong>P_d 比额定低、T_d 飙到 120℃+、客户报&quot;不够冷且耗电大&quot;</p><p><strong>为什么：</strong>R-32 和 R-410A 的饱和压力曲线不同（同温度下 R-32 压力比 R-410A 低 ~5%），所以 R-410A 标定的压力开关、EEV 流通能力、油牌号（POE 32 cSt vs 68 cSt）都对不上。R-32 的多变指数 n=1.20 也比 R-410A 的 1.18 高 → 同压比下排气温度更烫。生产线上一次混淆就是几百台返修。</p></div><div class="pitfall"><div class="label">试错：冷凝器脏堵误判为缺冷媒</div><p><strong>现象：</strong>现场补充冷媒后 T_d 进一步飙升、压缩机高压保护停机</p><p><strong>为什么：</strong>冷凝堵塞特征是 P_d 高 / 压比拉大；缺氟特征是 P_s 低 / 压比基本不变。新手只看吸气压力 P_s 略低就当缺氟乱补，结果系统过充 + 冷凝堵塞 → 高压侧雪上加霜直接报 E5。正确做法是先量 P_d/P_s 压比和 T_d 趋势：压比正常但 P_s 低 → 缺氟；压比异常大 + T_d 飙 → 先清洗冷凝器或检修风机。</p></div><div class="pitfall"><div class="label">试错：EEV 反馈环只看吸气温度不看 SH</div><p><strong>现象：</strong>工况漂移时吸气管温度看似正常，实际 SH=0 出现液击 → 阀片瞬时损坏</p><p><strong>为什么：</strong>SH = T_suct − T_sat(P_s)，必须用吸气压力反算饱和温度才有意义。只看温度的话，当 P_s 因冷凝压力变化而漂移时，T_sat 也变了，&quot;温度合适&quot; 可能 SH 已经掉到 0 → 液体冷媒被压缩机吸入 → 阀片瞬时损坏。生产代码里 EEV PI 输入必须是 SH 而不是 T_suct，这是一条用机器命换来的规矩。</p></div><div class="pitfall"><div class="label">试错：EEV 单 tick 步进过大</div><p><strong>现象：</strong>工况切换时 EEV 一秒开 100 步 → 蒸发器瞬间灌入大量液态冷媒 → SH 直接掉到 0 → 液击 / 油泡沫化</p><p><strong>为什么：</strong>EEV 是步进电机驱动的针阀，全开 480 步对应几十秒的渐进流量。如果 PI 输出没限速，一次 tick 跳 100 步 → 流通面积瞬时翻倍 → 蒸发器内冷媒来不及气化就被吸进压缩机。生产代码必须限&quot;开 EEV 单 tick ≤ 20 步、关 EEV ≤ 10 步&quot;（关比开还慢，因为快关会让蒸发器液态冷媒积聚）。这就是 EEV PI 输出限幅比电机 PI 还重要的原因。</p></div><div class="pitfall"><div class="label">试错：强制高频运行越过包线</div><p><strong>现象：</strong>客户嫌不够冷把&quot;强劲模式&quot;开到底 → 排气阀片应力开裂 / 抱缸</p><p><strong>为什么：</strong>压缩机包线是 (rpm, 压比) 二维曲线，超出 → 排气温度飙、油循环量不够、阀片应力周次破坏。变频器看似只是 PWM 频率给高一点，实际让压缩机机械结构在跑额定 1.3 倍以上的工况——三个月就退机。正确做法：T_outdoor&gt;42℃ 时主动限频（即&quot;高温降频&quot;），客户感受是&quot;风量没变但不那么凉&quot;，但压缩机能多活 5 年。这就是包线检测必须做硬限不能做软建议的原因。</p></div><h2>下一模块引子</h2><div class="card primary">现在你能用 P-h 图 + 四表 + EEV 闭环读懂系统侧。最后一站（17 整机搭建工作台）把前 16 课的所有概念串成&quot;自由搭建 6 槽位 + 跑诊断 + 解 11 道挑战 + 导出 STM32 main.c&quot;的毕业项目——通过它你就能独立完成压缩机变频器的选型与调试。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

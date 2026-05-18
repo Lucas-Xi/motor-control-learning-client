@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>术语表 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="index.html">首页</a><a href="glossary.html" class="active">术语表</a><a href="formulas.html">公式集</a><a href="faults.html">故障速查</a><a href="search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="module/motor-basics.html">01 · 电机基础</a><a href="module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="module/clarke-transform.html">03 · Clarke 变换</a><a href="module/park-transform.html">04 · Park 变换</a><a href="module/pid-control.html">05 · PID 控制</a><a href="module/foc-flow.html">06 · FOC 总体流程</a><a href="module/svpwm.html">07 · SVPWM</a><a href="module/inverter.html">08 · 三相逆变器</a><a href="module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="module/field-weakening.html">11 · 弱磁控制</a><a href="module/faults-debugging.html">12 · 故障与调试</a><a href="module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="module/apf-frontend.html">15 · APF 前级 PFC</a><a href="module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="glossary.html">术语表</a><a href="formulas.html">公式集</a><a href="faults.html">故障速查</a><a href="search.html">站内搜索</a></aside><article class="content"><h1>术语表</h1><p class="subtitle">共 25 个核心术语。键入关键词可过滤。</p><div class="glossary-search"><input id="gs-input" type="text" placeholder="搜索术语 / 定义..." aria-label="搜索术语" oninput="filterGlossary()"></div><div class="glossary-list" id="glossary-list"><div class="glossary-item" data-key="foc field oriented control，磁场定向控制，把电流分解为励磁 id 和转矩 iq。"><div class="term">FOC</div><div class="def">Field Oriented Control，磁场定向控制，把电流分解为励磁 Id 和转矩 Iq。</div></div><div class="glossary-item" data-key="svpwm space vector pwm，用空间电压矢量合成三相逆变器占空比。"><div class="term">SVPWM</div><div class="def">Space Vector PWM，用空间电压矢量合成三相逆变器占空比。</div></div><div class="glossary-item" data-key="电角度 电磁场周期对应的角度，等于机械角度乘以极对数。"><div class="term">电角度</div><div class="def">电磁场周期对应的角度，等于机械角度乘以极对数。</div></div><div class="glossary-item" data-key="id d 轴电流，通常对应磁链方向；弱磁时常为负。"><div class="term">Id</div><div class="def">d 轴电流，通常对应磁链方向；弱磁时常为负。</div></div><div class="glossary-item" data-key="iq q 轴电流，主要产生电磁转矩。"><div class="term">Iq</div><div class="def">q 轴电流，主要产生电磁转矩。</div></div><div class="glossary-item" data-key="pll 锁相环，用相位误差估算并平滑角度/速度。"><div class="term">PLL</div><div class="def">锁相环，用相位误差估算并平滑角度/速度。</div></div><div class="glossary-item" data-key="jsqr stm32 adc 注入通道序列寄存器；jextsel 选 tim1 trgo/cc4 作为触发源，让 adc 在 pwm 中点自动采样。"><div class="term">JSQR</div><div class="def">STM32 ADC 注入通道序列寄存器；JEXTSEL 选 TIM1 TRGO/CC4 作为触发源，让 ADC 在 PWM 中点自动采样。</div></div><div class="glossary-item" data-key="bdtr stm32 高级定时器（tim1/tim8）的死区与刹车寄存器；dtg 字段编码死区时间，moe 是主输出使能。"><div class="term">BDTR</div><div class="def">STM32 高级定时器（TIM1/TIM8）的死区与刹车寄存器；DTG 字段编码死区时间，MOE 是主输出使能。</div></div><div class="glossary-item" data-key="ocp over-current protection 过流保护；硬件比较器 (comp+tim1 bkin) 触发为快速 ocp，软件累积 i²t 触发为慢速 ocp。"><div class="term">OCP</div><div class="def">Over-Current Protection 过流保护；硬件比较器 (COMP+TIM1 BKIN) 触发为快速 OCP，软件累积 I²t 触发为慢速 OCP。</div></div><div class="glossary-item" data-key="i²t 电流平方对时间积分，用来等价模拟绕组温升；超过预设阈值即报&quot;长时过流&quot;，区别于瞬时过流。"><div class="term">I²t</div><div class="def">电流平方对时间积分，用来等价模拟绕组温升；超过预设阈值即报&quot;长时过流&quot;，区别于瞬时过流。</div></div><div class="glossary-item" data-key="z 信号 增量编码器每圈一次的索引脉冲，用来周期性复位累计计数器漂移；接 tim 输入捕获中断。"><div class="term">Z 信号</div><div class="def">增量编码器每圈一次的索引脉冲，用来周期性复位累计计数器漂移；接 TIM 输入捕获中断。</div></div><div class="glossary-item" data-key="ccr capture / compare register；写入 timx-&gt;ccr1/2/3 决定三相 pwm 占空比，预装载使能后下一周期生效。"><div class="term">CCR</div><div class="def">Capture / Compare Register；写入 TIMx-&gt;CCR1/2/3 决定三相 PWM 占空比，预装载使能后下一周期生效。</div></div><div class="glossary-item" data-key="反液击 压缩机启动时限制加速斜坡（典型 300~800 rpm/s），让液态制冷剂有时间气化避免阀片碎裂。"><div class="term">反液击</div><div class="def">压缩机启动时限制加速斜坡（典型 300~800 rpm/s），让液态制冷剂有时间气化避免阀片碎裂。</div></div><div class="glossary-item" data-key="apf annual performance factor 全年能效比，按 gb 21455 加权多工况点；变频机靠部分负荷高 cop 拉高 apf。"><div class="term">APF</div><div class="def">Annual Performance Factor 全年能效比，按 GB 21455 加权多工况点；变频机靠部分负荷高 COP 拉高 APF。</div></div><div class="glossary-item" data-key="v/f 电压频率比开环拖动；启动初段 bemf 太小观测不到时使用，按 v_min + k·f 给定电压矢量&quot;硬拖&quot;转子。"><div class="term">V/f</div><div class="def">电压频率比开环拖动；启动初段 BEMF 太小观测不到时使用，按 V_min + k·f 给定电压矢量&quot;硬拖&quot;转子。</div></div><div class="glossary-item" data-key="抗积分饱和 anti-windup；pi 输出撞限时停止 / 反算 (back-calc) 积分累加，避免 windup 大超调。"><div class="term">抗积分饱和</div><div class="def">Anti-Windup；PI 输出撞限时停止 / 反算 (Back-Calc) 积分累加，避免 windup 大超调。</div></div><div class="glossary-item" data-key="mtpa maximum torque per ampere，同电流幅值下最大转矩的工作点轨迹；ipm 上 mtpa 天然带负 id。"><div class="term">MTPA</div><div class="def">Maximum Torque Per Ampere，同电流幅值下最大转矩的工作点轨迹；IPM 上 MTPA 天然带负 Id。</div></div><div class="glossary-item" data-key="mtpv maximum torque per voltage，同电压下最大转矩的工作点；深度弱磁的边界，越过则功率反而下降。"><div class="term">MTPV</div><div class="def">Maximum Torque Per Voltage，同电压下最大转矩的工作点；深度弱磁的边界，越过则功率反而下降。</div></div><div class="glossary-item" data-key="电压椭圆 id-iq 平面上 √(vd²+vq²)≤v_max 的几何边界；中心 (−ψf/ld, 0)，半径 ∝ 1/ωe，转速越高椭圆越小。"><div class="term">电压椭圆</div><div class="def">Id-Iq 平面上 √(Vd²+Vq²)≤V_max 的几何边界；中心 (−ψf/Ld, 0)，半径 ∝ 1/ωe，转速越高椭圆越小。</div></div><div class="glossary-item" data-key="退磁阈值 永磁体反向磁场 h_d 越过 bh 曲线&quot;膝点&quot;后发生不可逆退磁；高温下阈值降低 (ndfeb ≈ 0.6%/℃)。"><div class="term">退磁阈值</div><div class="def">永磁体反向磁场 H_d 越过 BH 曲线&quot;膝点&quot;后发生不可逆退磁；高温下阈值降低 (NdFeB ≈ 0.6%/℃)。</div></div><div class="glossary-item" data-key="eev electronic expansion valve 电子膨胀阀；步进电机驱动的针阀，按 sh 闭环 pi 控制冷媒流量。"><div class="term">EEV</div><div class="def">Electronic Expansion Valve 电子膨胀阀；步进电机驱动的针阀，按 SH 闭环 PI 控制冷媒流量。</div></div><div class="glossary-item" data-key="sh 吸气过热度 = t_suct − t_sat(p_s)；eev pi 的反馈量。sh&lt;3k 液击预警，&gt;15k 缺氟预警。"><div class="term">SH</div><div class="def">吸气过热度 = T_suct − T_sat(P_s)；EEV PI 的反馈量。SH&lt;3K 液击预警，&gt;15K 缺氟预警。</div></div><div class="glossary-item" data-key="sc 冷凝过冷度 = t_sat(p_d) − t_liquid；保证节流前 100% 液态，&lt;2k 时 eev 流量会被闪发气泡扰乱。"><div class="term">SC</div><div class="def">冷凝过冷度 = T_sat(P_d) − T_liquid；保证节流前 100% 液态，&lt;2K 时 EEV 流量会被闪发气泡扰乱。</div></div><div class="glossary-item" data-key="p-h 图 焓压图；蒸气压缩循环 4 状态点 (吸气/排气/过冷液/两相) 在图上构成的多边形是制冷工艺路线图。"><div class="term">P-h 图</div><div class="def">焓压图；蒸气压缩循环 4 状态点 (吸气/排气/过冷液/两相) 在图上构成的多边形是制冷工艺路线图。</div></div><div class="glossary-item" data-key="压缩机包线 (rpm, 压比) 或 (t_e, t_c) 平面上的机械寿命安全运行区；超出 → 排气温度/油循环/阀片寿命任何一项报废。"><div class="term">压缩机包线</div><div class="def">(rpm, 压比) 或 (T_e, T_c) 平面上的机械寿命安全运行区；超出 → 排气温度/油循环/阀片寿命任何一项报废。</div></div></div></article><aside class="toc"></aside></main><script>
+    function filterGlossary() {
+      const q = document.getElementById('gs-input').value.trim().toLowerCase();
+      const items = document.querySelectorAll('#glossary-list .glossary-item');
+      for (const it of items) {
+        if (!q || it.dataset.key.includes(q)) it.style.display = '';
+        else it.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

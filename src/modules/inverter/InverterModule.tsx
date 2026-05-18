@@ -11,6 +11,7 @@ import { inverterAverageModel } from '../../simulation/math/inverterModel';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber, formatPercent } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { DeadTimeCompensationCard } from './DeadTimeCompensationCard';
 
 function createVoltageSamples(uDc: number, dutyA: number, dutyB: number, dutyC: number, deadLoss: number) {
@@ -43,12 +44,13 @@ function useOutput() {
 
 function Primary() {
   const { inverter, samples } = useOutput();
+  const { t } = useI18n();
   return (
     <Card
-      title="相电压 / 线电压波形"
-      eyebrow="phase and line voltage"
+      title={t('inverter.primaryTitle')}
+      eyebrow={t('inverter.primaryEyebrow')}
       density="compact"
-      action={<FidelityBadge level="simplified" hint="平均模型：占空比 → 相电压成立，但忽略了开关纹波；死区损失按频率近似估算" />}
+      action={<FidelityBadge level="simplified" hint={t('inverter.fidelityHint')} />}
     >
       <Inverter3D dutyA={inverter.dutyA} dutyB={inverter.dutyB} dutyC={inverter.dutyC} />
       <div className="mt-3 h-56">
@@ -71,22 +73,23 @@ function Primary() {
 
 function Probe() {
   const { inverter, output } = useOutput();
+  const { t } = useI18n();
   return (
     <>
-      <Card title="占空比" eyebrow="phase duty" density="compact">
+      <Card title={t('inverter.dutyTitle')} eyebrow={t('inverter.dutyEyebrow')} density="compact">
         <PWMChart dutyA={inverter.dutyA} dutyB={inverter.dutyB} dutyC={inverter.dutyC} />
         <div className="mt-2 grid grid-cols-2 gap-2 text-caption">
-          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">死区损失 </span><span className="text-ink-primary">{formatPercent(output.deadTimeDistortion)}</span></div>
+          <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">{t('inverter.deadTimeLossLabel')} </span><span className="text-ink-primary">{formatPercent(output.deadTimeDistortion)}</span></div>
           <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">Va </span><span className="text-ink-primary">{formatNumber(output.phaseA, 2)} V</span></div>
           <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">Vb </span><span className="text-ink-primary">{formatNumber(output.phaseB, 2)} V</span></div>
           <div className="rounded border border-line-subtle bg-bg-base p-2"><span className="text-ink-muted">Vab </span><span className="text-ink-primary">{formatNumber(output.lineAB, 2)} V</span></div>
         </div>
       </Card>
-      <Card title="STM32 桥级 Checklist" eyebrow="hardware checklist" density="compact">
+      <Card title={t('inverter.checklistTitle')} eyebrow={t('inverter.checklistEyebrow')} density="compact">
         <ul className="space-y-1.5 text-body text-ink-secondary">
-          <li>· TIM1/TIM8 互补 PWM + 死区 + 刹车 + 过流硬件保护。先 PWM、再母线、再电机。</li>
-          <li>· 死区过大低速畸变啸叫；过小上下管直通风险。</li>
-          <li>· 中心对齐 PWM 的 ADC 采样点放在中点，避开开关边沿。</li>
+          <li>· {t('inverter.checklistItem1')}</li>
+          <li>· {t('inverter.checklistItem2')}</li>
+          <li>· {t('inverter.checklistItem3')}</li>
         </ul>
       </Card>
       <DeadTimeCompensationCard />

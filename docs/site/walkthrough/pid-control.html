@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PID 控制 Walkthrough · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html">04 · Park 变换</a><a href="../module/pid-control.html" class="active">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">05 Walkthrough</span>PID 控制</h1><p class="subtitle">P / I / D + 限幅 + 抗积分饱和 + 采样周期 —— 把这六件事拧成一个能上 STM32 ISR 的闭环。</p><p><a href="../module/pid-control.html">← 返回模块讲义</a></p><h2>学完应能回答</h2><ul><li>能用一句话说清 P / I / D 各自解决什么（响应速度 / 稳态误差 / 变化率抑制）</li><li>能识别 4 类典型病症：响应慢、超调、稳态误差、积分饱和大超调</li><li>理解输出限幅 + 抗积分饱和必须成对出现，并能写出 Back-Calc 的 C 代码（Kt = Ki/Kp）</li><li>知道 Ts 是 PID 参数的&quot;刻度尺&quot;——改 PWM 频率必须重算 Ki/Kd 或换增量式</li><li>能说出&quot;内环带宽 ≥ 外环带宽 × 5~10&quot;和实测如何整定（先内后外、Ziegler-Nichols 临界）</li><li>会用 ARM CMSIS-DSP arm_pid_f32 / STM32 CORDIC 加速 ISR 内 PID 计算</li></ul><h2>主线步骤（8 步）</h2><section class="step"><div class="step-no">Step 1 / 8 · baseline</div><h3>健康基线</h3><div class="field"><div class="field-label">目标</div><div>记住&quot;健康阶跃响应&quot;的样子</div></div><div class="field"><div class="field-label">操作</div><div>默认参数（Kp≈2.2、Ki≈18、Kd=0、目标 1.0、限幅 24 V、抗饱和开），点运行。</div></div><div class="field"><div class="field-label">观察</div><div>输出平滑爬到 1.0，超调 &lt; 10%，上升时间百毫秒级，稳态误差 ≈ 0。指标卡片全 mint。</div></div><div class="field"><div class="field-label">为什么</div><div>所有调参都是在已知基线上做扰动观察。先记住这张曲线——后面失败模式都是它的变形。这是空调电流环典型期望：1 ms 进入 5% 误差带、无超调、稳态零误差。</div></div></section><section class="step"><div class="step-no">Step 2 / 8 · kp-to-nyquist</div><h3>Kp 推到 Nyquist 边界</h3><div class="field"><div class="field-label">目标</div><div>看 Kp 推大到 Nyquist 临界振荡</div></div><div class="field"><div class="field-label">操作</div><div>Kp 从 2.2 慢慢推到 8，记下开始持续等幅振荡的 Kp_critical。</div></div><div class="field"><div class="field-label">观察</div><div>振荡越大→ Kp_critical ≈ 6-7 时进入等幅振荡（既不发散也不衰减），超调跳红。</div></div><div class="field"><div class="field-label">为什么</div><div>Kp 决定&quot;对当前误差有多敏感&quot;。STM32 电流环理论起点 Kp = ω_bw·L —— 1 kHz 带宽、L=1 mH → Kp = 6.28。但实际 PWM 中点采样 + CCR 下周期生效 + 滤波 = 总延迟 1.5 个 PWM 周期，相位裕度缩水，实际取 0.5-0.7 倍解析值才稳。这就是&quot;算得出来 ≠ 调得出来&quot;的核心。</div></div><div class="quiz"><div class="q">随堂题：Kp 推到 Kp_critical 后系统进入等幅振荡（不衰减），物理上意味着？</div><ol><li>CPU 算力不够</li><li class="correct">反馈环路在某频率总相移到 −180°、增益又 = 1，临界稳定边界（Nyquist） (正确)</li><li>Ki 太小</li><li>电源不稳</li></ol><div class="hint">提示：经典 Nyquist 稳定边界。Ziegler-Nichols 临界比例法的用法：Kp_critical 找到后取 0.4-0.6 倍作为工作点 Kp，再加 Ki = 1.2·Kp/Tu（Tu 是振荡周期）。这套方法对一阶 + 延迟的对象很灵——电流环、温度环都适用。</div></div></section><section class="step"><div class="step-no">Step 3 / 8 · windup-disaster</div><h3>Windup 灾难</h3><div class="field"><div class="field-label">目标</div><div>看关掉抗饱和 + 大目标的积分 windup</div></div><div class="field"><div class="field-label">操作</div><div>目标拖到 2.5（接近限幅）、Ki 推到 60、关掉&quot;抗积分饱和&quot;开关，运行。</div></div><div class="field"><div class="field-label">观察</div><div>输出撞限 24 V 后被卡住；积分仍偷偷累加；实际值开始追上目标时，积分已攒成&quot;虚假需求&quot; → 输出冲过目标产生大超调，要花数倍稳态时间消化完。</div></div><div class="field"><div class="field-label">为什么</div><div>这是电机过流保护被频繁触发的头号原因。物理上：限幅期间误差仍非零、Ki·Ts·Σe 仍在累加；解除限幅时 PI 还以为&quot;还差很多&quot;，于是死撑最大输出。压缩机变频空调&quot;刚启动一下子电流冲到限幅然后过流保护&quot;几乎都是这种 bug——Ki 开了但抗饱和忘开。</div></div></section><section class="step"><div class="step-no">Step 4 / 8 · antiwindup-backcalc</div><h3>抗饱和 Back-Calc 落地</h3><div class="field"><div class="field-label">目标</div><div>把&quot;撞限期间冻结 / 反算积分&quot;翻成 C 代码</div></div><div class="field"><div class="field-label">操作</div><div>保持上一步大目标 + 大 Ki，打开&quot;抗饱和&quot;。观察超调被压下来。</div></div><div class="field"><div class="field-label">观察</div><div>撞限期间输出仍贴 24 V，但积分不再无限累加；释放后超调大幅缩水，收敛时间明显变短。</div></div><div class="field"><div class="field-label">为什么</div><div>STM32 标准 PID + Back-Calc 抗饱和 C 实现（每次 ISR 里调用）： typedef struct {   float kp, ki, kd, ts;   float i_term, prev_err;   float u_min, u_max;   float kt;  /* Back-Calc 系数，典型 = ki/kp */ } PID_t; static inline float pid_update(PID_t *p, float ref, float meas) {   float err = ref - meas;   float p_term = p-&gt;kp * err;   p-&gt;i_term += p-&gt;ki * err * p-&gt;ts;   float d_term = p-&gt;kd * (err - p-&gt;prev_err) / p-&gt;ts;   p-&gt;prev_err = err;   float u_unsat = p_term + p-&gt;i_term + d_term;   float u_sat = u_unsat &gt; p-&gt;u_max ? p-&gt;u_max :                 u_unsat &lt; p-&gt;u_min ? p-&gt;u_min : u_unsat;   /* Back-Calculation: 若饱和，把超出部分反算回积分项消掉 */   p-&gt;i_term += p-&gt;kt * (u_sat - u_unsat) * p-&gt;ts;   return u_sat; } Kt 选 ki/kp（典型经验值）— 让积分以&quot;还原时间常数 = kp/ki&quot;被反推。对比另一种简单做法 &quot;Conditional Integration&quot;（撞限就停止累加），Back-Calc 释放后恢复更快、不会出现&quot;卡死在限幅&quot;的现象。生产代码里 Back-Calc 是首选。</div></div><div class="quiz"><div class="q">随堂题：Back-Calc 抗饱和的 Kt 系数选 ki/kp，物理含义是？</div><ol><li class="correct">让积分按时间常数 kp/ki 衰减回来 (正确)</li><li>随便选的经验值</li><li>让积分立刻清零</li><li>保护硬件</li></ol><div class="hint">提示：Kt = ki/kp 让积分的&quot;反推速度&quot;等于 PID 的开环时间常数 ki/kp —— 撞限时积分慢慢被反算消掉，释放限幅时积分残值正好和当前需求匹配。Kt 太小：恢复慢、释放后仍有超调；Kt 太大：积分反推过头、稳态误差被冲掉但易振。</div></div></section><section class="step"><div class="step-no">Step 5 / 8 · sample-rate-shift</div><h3>Ts 改了 Ki/Kd 跟着改</h3><div class="field"><div class="field-label">目标</div><div>理解 Ts 是位置式 PID 的隐性&quot;刻度尺&quot;</div></div><div class="field"><div class="field-label">操作</div><div>把 Kp/Ki 调回基线，单独把&quot;采样周期&quot;从 1 ms 改到 4 ms（PWM 从 1 kHz 降到 250 Hz）。</div></div><div class="field"><div class="field-label">观察</div><div>响应明显变拖；可能从稳定切换到持续振荡。</div></div><div class="field"><div class="field-label">为什么</div><div>位置式 I 项 = ki·Ts·Σe，Ts 变 → 等效积分增益跟着变；D 项 = kd·Δe/Ts，Ts 减半 D 强度翻倍。&quot;代码移植到更高 PWM 频率后 PID 必须重调&quot;就这个理。压缩机控制器 PWM 从 16 k 升到 20 k 一定要重整定。一劳永逸方案：用增量式 PID（Δu = kp·Δe + ki·Ts·e + kd/Ts·(Δe − Δe_prev)），把 Ts 解析嵌入公式——但增量式有积分初值不可控的问题，工程上用得不多。</div></div><div class="quiz"><div class="q">随堂题：把 STM32 电流环 PWM 从 16 kHz 升到 20 kHz（Ts 从 62.5 μs 缩到 50 μs），位置式 PI 的 Ki 该怎么动？</div><ol><li>不变</li><li class="correct">Ki 等比例放大 25%（Ki_new = Ki_old × (Ts_old/Ts_new) 保持 Ki·Ts 等效） (正确)</li><li>Ki 等比例缩小 25%</li><li>只动 Kp</li></ol><div class="hint">提示：位置式积分等效增益 ∝ Ki·Ts。Ts 缩到 0.8 倍，要保持等效就把 Ki 放大 1/0.8 = 1.25 倍。或者干脆用增量式 PID 摆脱 Ts 依赖。注意 Kd 反向：Ts 缩 → Kd 应缩同比例（Kd/Ts 保持）。</div></div></section><section class="step"><div class="step-no">Step 6 / 8 · nesting-bandwidth</div><h3>多环嵌套带宽</h3><div class="field"><div class="field-label">目标</div><div>理解&quot;内环带宽 ≥ 外环 × 5-10&quot;为什么是铁律</div></div><div class="field"><div class="field-label">操作</div><div>回顾：FOC 电流环（最内）→ 速度环 → 位置环（最外）。典型带宽：电流环 1-5 kHz、速度环 50-500 Hz、位置环 5-50 Hz。</div></div><div class="field"><div class="field-label">观察</div><div>带宽逐层降 5-10 倍。</div></div><div class="field"><div class="field-label">为什么</div><div>外环带宽 &gt; 内环 / 5 时，外环命令变化太快、内环跟不上 → 互相打架进入振荡。这是&quot;调单环没问题、合起来就抖&quot;的核心原因。整定顺序永远&quot;先内后外&quot;。工程数字：空调压缩机电流环 1.5 kHz / 速度环 100 Hz / 位置环 10 Hz；伺服关节电流环 4 kHz / 速度环 400 Hz / 位置环 50 Hz。</div></div><div class="quiz"><div class="q">随堂题：速度环 Kp 调到比电流环响应还快（速度环带宽 = 电流环带宽 × 2），会发生？</div><ol><li>响应更快、性能更好</li><li class="correct">速度命令变化快于电流环跟踪能力 → 电流环来不及响应 → 两层互相追逐振荡 (正确)</li><li>只是 CPU 占用变高</li><li>弱磁失效</li></ol><div class="hint">提示：内环必须&quot;看起来像瞬时执行器&quot;才能让外环把它当作纯增益模块去设计。外快内慢 = 内环看到的命令本身在抖 → 内环输出抖 → 反馈给外环 → 形成自激。压缩机调试时&quot;单跑电流环 OK、加速度环立刻嗡嗡叫&quot; 99% 是这个问题。</div></div></section><section class="step"><div class="step-no">Step 7 / 8 · d-on-current-noise</div><h3>电流环不要加 D</h3><div class="field"><div class="field-label">目标</div><div>理解为什么电流环用 PI 而不是 PID</div></div><div class="field"><div class="field-label">操作</div><div>把 Kd 从 0 加到 0.05，看响应。</div></div><div class="field"><div class="field-label">观察</div><div>阶跃响应顶部出现高频毛刺；噪声被放大；严重时听见啸叫。</div></div><div class="field"><div class="field-label">为什么</div><div>D 项 = Kd·Δe/Ts，把 ADC 量化噪声的 Δe 放大 Kd/Ts 倍。电流环 Ts 短（62.5 μs）→ Kd/Ts 极大，噪声直接打到电压指令上 → SVPWM 占空比抖 → 电流再噪化，正反馈式恶化。修复：电流环用 PI 即可（电流系统是一阶，PI 给一个零点 + 极点解析整定足够）。位置环静态条件下才考虑加 D（且必须配截止 50 Hz 左右的低通）。</div></div></section><section class="step"><div class="step-no">Step 8 / 8 · cmsis-dsp-cordic</div><h3>CMSIS-DSP / CORDIC 加速</h3><div class="field"><div class="field-label">目标</div><div>把 PID 真正放进 ISR 里看时序预算</div></div><div class="field"><div class="field-label">操作</div><div>回顾 STM32 上 PI 计算约 5 个 float 乘加，FPU 单周期，约 0.3 μs；ISR 总预算 62.5 μs 里完全够用。</div></div><div class="field"><div class="field-label">观察</div><div>PI 占 0.5 μs，Park / 反 Park 各 0.5 μs（用 CMSIS arm_sin_cos_f32 或 STM32 G4/H7 内置 CORDIC 加速），SVPWM 1 μs，加 ADC 读取 + 各种判断 &lt; 6 μs，CPU 占用 &lt; 10%。</div></div><div class="field"><div class="field-label">为什么</div><div>STM32 G4 / H7 上 CORDIC 协处理器可以硬件算 sin/cos / atan2 / 模 / 平方根，比 CMSIS-DSP 软实现快 5-10 倍。配置示例： /* G4 CORDIC 算 sin/cos for Park */ LL_CORDIC_Config(CORDIC, LL_CORDIC_FUNCTION_COSINE,   LL_CORDIC_PRECISION_6CYCLES, LL_CORDIC_SCALE_0,   LL_CORDIC_NBWRITE_1, LL_CORDIC_NBREAD_2,   LL_CORDIC_INSIZE_32BITS, LL_CORDIC_OUTSIZE_32BITS); LL_CORDIC_WriteData(CORDIC, theta_q31);  /* 写入电角度 q31 */ uint32_t cos_q31 = LL_CORDIC_ReadData(CORDIC); uint32_t sin_q31 = LL_CORDIC_ReadData(CORDIC); /* 6 周期完成，168 MHz 下约 36 ns */ 对比软 sin/cos 表查找 + 插值约 0.4 μs——CORDIC 让 ISR 时序更宽松。压缩机 PWM 升到 20 kHz 时这点余量决定能不能塞下 HFI 解调 + BEMF PLL。</div></div></section><h2>常见误区（4 个）</h2><div class="pitfall"><div class="label">试错：开 Ki 但关抗积分饱和</div><p><strong>现象：</strong>阶跃后大超调、长时间收不住、频繁触发过流保护跳闸</p><p><strong>为什么：</strong>限幅期间积分仍累加 → 攒成虚假需求；撞限解除后 PI 死撑最大输出直到积分被反向消化——这段时间就是过流爆表窗口。修复：用 Back-Calc（Kt=ki/kp）反算积分；或者最简单的 Conditional Integration（撞限就 i_term 不变）。任何 Ki&gt;0 的环路 + 有限幅 = 抗饱和不开 = 定时炸弹。</p></div><div class="pitfall"><div class="label">试错：电流环加 Kd</div><p><strong>现象：</strong>明显啸叫、波形顶部毛刺、温度上升后更不稳</p><p><strong>为什么：</strong>D 项 ∝ Δe/Ts，把 ADC 量化噪声放大 Kd/Ts 倍。电流环 Ts ~62.5 μs → Kd/Ts 极大；噪声进 Vd/Vq 后又通过 SVPWM 回到电流 → 正反馈恶化。电流系统本身是一阶，PI 给零点对消足够。位置环静态条件可考虑 D（配 50 Hz 低通），速度环极少加 D。</p></div><div class="pitfall"><div class="label">试错：速度环带宽 = 电流环带宽</div><p><strong>现象：</strong>单跑电流环 OK，加速度环立刻嗡嗡叫；转速振荡频率约等于电流环带宽</p><p><strong>为什么：</strong>外环命令变化频率接近内环带宽 → 内环跟不上、外环又改命令 → 两层互相追逐自激。规则：内环带宽 ≥ 外环带宽 × 5-10。整定顺序：① 先把电流环阶跃响应调到 10% 超调以内 ② 再调速度环 Kp 从电流环带宽 / 10 起步 ③ 最后调位置环。生产里&quot;内外环带宽比&quot; 是控制器健康度的核心指标。</p></div><div class="pitfall"><div class="label">试错：PWM 频率改了忘了重算 Ki / Kd</div><p><strong>现象：</strong>原本健康的曲线突然变成振荡或拖沓；代码也没动只改了 TIM1 ARR</p><p><strong>为什么：</strong>位置式 I = Ki·Ts·Σe、D = Kd·Δe/Ts，Ts 是参数的&quot;刻度尺&quot;。16 k → 20 k Ki 必须 ×1.25、Kd 必须 ×0.8。修复路径：① 把 Ts 作为 PID_t 结构体字段，初始化时计算并存 ② 升级到增量式 PID（Δu = kp·Δe + ki·Ts·e + kd/Ts·(Δe − Δe_prev)）让 Ts 嵌进公式 ③ 单元测试里加 Ts 变化下行为不变的回归。</p></div><h2>下一模块引子</h2><div class="card primary">PI 单环已能跑稳。下一模块（06 FOC 流水线）把 PI 装到 dq 电流环里，处理真实 PMSM 的 R/L/ω 耦合，看 Kp = ω_bw·L、Ki = ω_bw·R 这套解析整定怎么真正落地，以及 ADC 中点采样 + 1 周期 CCR 延迟怎么吃掉相位裕度。</div></article><aside class="toc"><h3>本页目录</h3><a href="#">学完应能回答</a><a href="#">主线步骤</a><a href="#">常见误区</a><a href="#">下一模块引子</a></aside></main>
+</body>
+</html>

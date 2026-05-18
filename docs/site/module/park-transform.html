@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Park 变换 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="../module/motor-basics.html">01 · 电机基础</a><a href="../module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="../module/clarke-transform.html">03 · Clarke 变换</a><a href="../module/park-transform.html" class="active">04 · Park 变换</a><a href="../module/pid-control.html">05 · PID 控制</a><a href="../module/foc-flow.html">06 · FOC 总体流程</a><a href="../module/svpwm.html">07 · SVPWM</a><a href="../module/inverter.html">08 · 三相逆变器</a><a href="../module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="../module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="../module/field-weakening.html">11 · 弱磁控制</a><a href="../module/faults-debugging.html">12 · 故障与调试</a><a href="../module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="../module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="../module/apf-frontend.html">15 · APF 前级 PFC</a><a href="../module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="../module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="../glossary.html">术语表</a><a href="../formulas.html">公式集</a><a href="../faults.html">故障速查</a><a href="../search.html">站内搜索</a></aside><article class="content"><h1><span class="stage-chip">04</span>Park 变换</h1><p class="subtitle">alpha-beta 到 dq 同步旋转坐标</p><div class="card primary"><div class="label">本模块主旨</div>跳到转子上看 αβ → AC 变 DC：给 PI 创造工作前提的旋转变换，所有 dq 串扰、过零抖、低分编码器异响都在这里发生。</div><h2>学完应能回答</h2><ul><li>能口算 Id = Iα·cosθ + Iβ·sinθ、Iq = −Iα·sinθ + Iβ·cosθ 两条公式，并说明矩阵对应&quot;αβ 顺时针旋转 −θ&quot;</li><li>能解释 d 轴沿永磁体 N 极、q 轴领先 90°，为什么 Iq 才是&quot;转矩电流&quot;且 Id=0 时铜损最低</li><li>理解 θ 必须是电角度且与转子磁链方向对齐，Δθ 错 15° 会让纯 Iq 命令漏 26% 到 Id</li><li>能在 STM32 Q15 实现里避开 sin/cos 表插值、_smmla 累加、防溢出三个坑</li><li>能说出为什么压缩机 6000 rpm+ 必须叠加 dq 交叉解耦前馈 (ω·Lq·iq、ω·Ld·id+ω·ψf)</li></ul><p><a class="btn" href="../walkthrough/park-transform.html">查看完整 Walkthrough（9 步 + 4 误区）</a></p><div class="card measure"><div class="label">总览</div>Park 变换 = &quot;与转子同步看世界&quot;。它把交流控制变成直流控制，给 PI 创造工作前提。</div><h2>零基础速入</h2><div class="card"><div class="label">类比</div>Park 变换就是**站在旋转的木马上看周围**——你和木马一起转，木马上其他点对你看起来就**不动了**。Iαβ 在静止地面看是一个旋转的箭头，但你跳到转子上跟它一起转，那个箭头突然变成&quot;指向固定方向、长度固定&quot;的两根棍子（Id, Iq）。从此 PI 控制器只需控直流量，AC 难题瞬间消失。</div><div class="card measure"><div class="label">核心概念</div>同一个电流矢量，αβ 静止坐标系下是个高速正弦变化的 AC 量；dq 同步旋转坐标系下变成稳定的 DC 量。Park 是这两个视角的旋转变换。</div><h3>为什么要学</h3><ul><li>没有 Park，PI 必须追正弦——稳态相位/幅值误差大。Park 之后 PI 追直流值，零稳态误差。</li><li>Id 控磁链、Iq 控转矩——这条解耦让&quot;电流&quot;和&quot;转矩&quot;建立 1:1 关系，是 FOC 精确转矩控制的根基。</li><li>编码器零位对齐 = 控制器认知的 d 轴和电机真实磁链方向对齐。零位错 X°，Iq 命令就有 sin(X°) 比例的部分跑到 Id 上，转矩损失 + 电流增大。</li></ul><div class="card primary"><div class="label">第一手操作</div>右侧把&quot;电角度 θ&quot;从 0 缓慢拖到 360°，看左侧 d/q 轴跟着转。同时观察 Id/Iq 的两条线段长度此消彼长——同一个 αβ 矢量，θ 不同投影出来 Id/Iq 完全不同。</div><h2>学习目标</h2><ul><li>理解 αβ 静止坐标和 dq 旋转坐标的关系</li><li>掌握 d 轴 / q 轴的物理意义</li><li>看懂&quot;为什么 AC 量在同步坐标中变成 DC 量&quot;</li></ul><h2>核心概念</h2><ul><li>d 轴对准转子永磁体 N 极，q 轴领先 90°（电气角度），主要负责产生转矩。坐标系跟转子同步转。</li><li>Id 控制磁链，Iq 控制转矩。表贴式 PMSM 默认 Id=0；弱磁时注入负 Id。</li><li>θ 必须是电角度（机械×极对数），且零位与转子磁链方向严格对齐。</li></ul><h2>公式</h2><div class="card"><div class="label">Park 变换</div><div class="formula">Id =  Iα·cos θ + Iβ·sin θ\nIq = −Iα·sin θ + Iβ·cos θ</div><p>θ 是电角度。本质是 αβ 平面绕原点旋转 −θ。</p></div><div class="card"><div class="label">反 Park（FOC 输出端用）</div><div class="formula">Uα = Vd·cos θ − Vq·sin θ\nUβ = Vd·sin θ + Vq·cos θ</div><p>电流 PI 在 dq 域算出 Vd/Vq 后，旋转 +θ 回到 αβ 给 SVPWM。</p></div><div class="card"><div class="label">PMSM 转矩</div><div class="formula">Te = 1.5·p·(ψf·Iq + (Ld−Lq)·Id·Iq)</div><p>表贴式 Ld=Lq → Te ≈ 1.5·p·ψf·Iq，Iq 直接决定转矩。</p></div><h2>工程意义</h2><ul><li>Park 让 PI 控直流量 → 零稳态误差、可严格整定。</li><li>角度错就 dq 串扰：表现为同样 Iq 命令转矩偏小、电流偏大、效率下降。</li><li>低分辨率编码器 + 高极对数 → 角度抖动直接转化成 dq 抖动 → 电流环噪声。</li></ul><h2>STM32 移植指南</h2><ul><li>θ_e 来自编码器（机械×极对数）或观测器（无感）；进 sin/cos 前归一化到 [0, 2π)。</li><li>sincosf 单次调用同时算 sin/cos，比分别 sinf+cosf 快 ~30%。</li><li>查表 + 线性插值（256 表 + 8bit 插值）能把 sin/cos 压到 &lt; 50ns，适合 &lt; 100MHz MCU。</li></ul><h2>常见误区</h2><div class="card warn"><ul><li>角度方向（顺/逆时针）和电机相序不匹配，电机反转或转不动。</li><li>机械角度直接当电角度（漏乘极对数）。</li><li>编码器零位没对齐 → 启动一上电 Iq=0 也有转矩偏移。</li><li>sin/cos 符号写错（反 Park 与 Park 必须用同一个 θ 同一种符号）。</li></ul></div><h2>调试方法</h2><ul><li>零速锁定（Vq=0、Vd=固定值）让转子停在 d 轴零位，再清编码器零点。</li><li>低速开环（开环 V/f）记录 Id/Iq；理想情况 Id ≈ 0、Iq 对应负载电流；偏离 → 角度方向或零位错。</li><li>阶跃测试：给 Iq=2A、Id=0；正常 Iq 跟踪、Id 接近 0。Id 飘 ±0.5A 以上 = 角度误差。</li></ul><h2>建议实验</h2><ul><li>拖电角度 θ，观察同一 αβ 在 dq 上投影变化。</li><li>设 Iα=5、Iβ=0、θ=0 → Id=5, Iq=0；θ=90° → Id=0, Iq=5。</li><li>故意改 θ 偏离 15°，观察 Id 漂移到 sin(15°)·5 ≈ 1.3A。</li></ul><h2>STM32 C 代码骨架</h2><pre>/* ============================================
+ * park.h — Park / 反 Park 变换
+ * STM32 FPU 直接算 sincosf；老芯片可换查表
+ * ============================================ */
+
+typedef struct { float d; float q; } dq_t;
+typedef struct { float alpha; float beta; } alpha_beta_t;
+
+/* αβ → dq （Park） */
+static inline dq_t park(float alpha, float beta, float theta_e) {
+    float s, c;
+    sincosf(theta_e, &amp;s, &amp;c);    // 单次同时算
+    dq_t o;
+    o.d =  alpha * c + beta * s;
+    o.q = -alpha * s + beta * c;
+    return o;
+}
+
+/* dq → αβ （反 Park）*/
+static inline alpha_beta_t inv_park(float vd, float vq, float theta_e) {
+    float s, c;
+    sincosf(theta_e, &amp;s, &amp;c);
+    alpha_beta_t o;
+    o.alpha = vd * c - vq * s;
+    o.beta  = vd * s + vq * c;
+    return o;
+}
+
+/* === 编码器零位对齐（启动时一次性执行）===
+ * 给定 Vd &gt; 0、Vq = 0，转子被强制对齐到 d 轴零位。
+ * 然后清编码器计数器，记录这一刻为 encoder_zero。
+ */
+void align_encoder_zero(uint32_t *out_zero) {
+    /* 给 d 轴施加 1A 等效电流（开环电压模式） */
+    set_open_loop_voltage(2.0f /*Vd*/, 0.0f /*Vq*/, 0.0f /*theta_e*/);
+    HAL_Delay(800);                 // 等转子稳定
+    *out_zero = ENCODER-&gt;CNT;       // 此刻 d 轴零位
+    set_open_loop_voltage(0, 0, 0); // 释放
+}
+
+/* 用法：
+ *   align_encoder_zero(&amp;calib.enc_zero);   // 上电一次
+ *   // 之后每 PWM 中断：
+ *   theta_e = encoder_to_theta_e(ENCODER-&gt;CNT, calib.enc_zero, p);
+ *   dq_t i = park(i_alpha, i_beta, theta_e);
+ */</pre><h2>下一步</h2><ul><li>进入 PID 模块，学习如何用 PI 闭环跟踪 Id/Iq 阶跃指令。</li></ul><h2>随堂题</h2><div class="quiz"><div class="q">同一个 Iα=5, Iβ=0，电角度 θ 从 0° 变到 90°，Id/Iq 怎么变？</div><ol><li>始终 Id=5, Iq=0</li><li class="correct">Id 从 5 变到 0、Iq 从 0 变到 5 (正确)</li><li>Id/Iq 同时 5</li><li>不变</li></ol><div class="hint">提示：Id = α cos θ + β sin θ，Iq = −α sin θ + β cos θ。θ=0 → (5,0)，θ=90° → (0,5)。</div></div><div class="quiz"><div class="q">编码器零位偏 10° 没校准，给 Iq=5、Id=0 命令，Id 实际值大约多少？</div><ol><li>0</li><li>5</li><li class="correct">5·sin(10°) ≈ 0.87 (正确)</li><li>5·cos(10°) ≈ 4.92</li></ol><div class="hint">提示：Park 角度误差 Δθ 让 Iq 命令&quot;溢&quot;到 Id 上一份 sin(Δθ) 比例。Iq 自己只剩 cos(Δθ)·5。</div></div><div class="quiz"><div class="q">表贴式 PMSM (Ld=Lq)，转矩主要由谁决定？</div><ol><li>Id</li><li class="correct">Iq (正确)</li><li>|αβ| 总幅值</li><li>电频率 ω</li></ol><div class="hint">提示：Te = 1.5p(ψf·Iq + (Ld−Lq)·IdIq)。Ld=Lq 时第二项为 0，Iq 是唯一决定者。</div></div><div class="quiz"><div class="q">弱磁控制中注入负 Id 的物理意义是？</div><ol><li>增加转矩</li><li class="correct">减小等效磁链 → 降低反电动势 → 换取更高转速 (正确)</li><li>降低损耗</li><li>保护硬件</li></ol><div class="hint">提示：负 Id 沿 −d 方向去减弱永磁磁链 ψf，让 BEMF = Ke·ω 减小，给逆变器输出腾出电压余量。</div></div><div class="quiz"><div class="q">Park 和反 Park 在 FOC 链路上的作用顺序？</div><ol><li>两个都在最前</li><li class="correct">Park 先（采样侧），反 Park 后（输出侧） (正确)</li><li>反 Park 先</li><li>同时使用</li></ol><div class="hint">提示：ADC → Clarke → Park → PI → 反 Park → SVPWM → 桥臂。Park 把&quot;测量 αβ&quot;变 dq；反 Park 把&quot;PI 输出 Vdq&quot;变回 αβ。</div></div><h2>相关公式索引</h2><div class="card"><div class="label">Park 变换</div><div class="formula">Id = Iα cosθ + Iβ sinθ, Iq = -Iα sinθ + Iβ cosθ</div></div></article><aside class="toc"><h3>本页目录</h3><a href="#">本模块主旨</a><a href="#">总览</a><a href="#">零基础速入</a><a href="#">学习目标</a><a href="#">核心概念</a><a href="#">公式</a><a href="#">工程意义</a><a href="#">STM32 移植指南</a><a href="#">常见误区</a><a href="#">C 代码骨架</a></aside></main>
+</body>
+</html>

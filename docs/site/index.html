@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首页 · 电机控制学习文档</title>
+  <style>
+:root {
+  --bg-deep: 7 12 25;
+  --bg-panel: 13 23 44;
+  --bg-card: 18 29 56;
+  --line: 36 58 102;
+  --ink-primary: 226 232 255;
+  --ink-secondary: 153 173 217;
+  --ink-muted: 110 132 178;
+  --accent-primary: 86 207 255;
+  --accent-measure: 95 232 178;
+  --accent-warn: 251 191 36;
+  --accent-fault: 251 113 133;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-primary));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+a { color: rgb(var(--accent-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", "SF Mono", monospace;
+  font-size: 13px;
+}
+pre {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line) / 0.6);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+code:not(pre code) {
+  background: rgb(var(--bg-card));
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgb(var(--accent-measure));
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+/* 顶部导航 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgb(var(--bg-panel) / 0.95);
+  border-bottom: 1px solid rgb(var(--line));
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.topbar .brand {
+  font-weight: 600; font-size: 16px;
+  color: rgb(var(--accent-primary));
+}
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: rgb(var(--ink-secondary)); font-size: 14px; }
+.topbar nav a.active, .topbar nav a:hover { color: rgb(var(--ink-primary)); }
+.topbar .right { margin-left: auto; }
+
+/* 主布局 */
+.layout {
+  max-width: 1080px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  gap: 28px;
+}
+.sidebar, .toc {
+  font-size: 13px;
+  position: sticky; top: 76px; align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.sidebar h3, .toc h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(var(--ink-muted));
+  margin: 16px 0 8px;
+}
+.sidebar a, .toc a {
+  display: block; padding: 4px 0;
+  color: rgb(var(--ink-secondary));
+}
+.sidebar a:hover, .toc a:hover { color: rgb(var(--ink-primary)); }
+.sidebar a.active { color: rgb(var(--accent-primary)); font-weight: 500; }
+
+.content {
+  min-width: 0;
+}
+.content h1 {
+  font-size: 28px; line-height: 1.3;
+  margin: 0 0 8px;
+}
+.content h2 {
+  font-size: 20px; margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--line));
+}
+.content h3 { font-size: 16px; margin: 24px 0 8px; color: rgb(var(--accent-primary)); }
+.content p { margin: 8px 0; color: rgb(var(--ink-primary)); }
+.content ul, .content ol { padding-left: 22px; }
+.content li { margin: 4px 0; }
+.subtitle {
+  color: rgb(var(--ink-muted)); font-size: 14px; margin-bottom: 24px;
+}
+.stage-chip {
+  display: inline-block; padding: 2px 8px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* 卡片与块 */
+.card {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.card.measure { border-left: 3px solid rgb(var(--accent-measure)); }
+.card.warn { border-left: 3px solid rgb(var(--accent-warn)); }
+.card.fault { border-left: 3px solid rgb(var(--accent-fault)); }
+.card.primary { border-left: 3px solid rgb(var(--accent-primary)); }
+.card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgb(var(--ink-muted));
+  margin-bottom: 6px;
+}
+.formula {
+  font-family: "JetBrains Mono", monospace;
+  background: rgb(var(--bg-card));
+  padding: 8px 12px; border-radius: 4px;
+  margin: 6px 0;
+  color: rgb(var(--accent-measure));
+  overflow-x: auto;
+}
+
+/* 主页 grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+.module-tile {
+  display: block;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 14px;
+  color: rgb(var(--ink-primary));
+  transition: border-color 0.15s, transform 0.15s;
+}
+.module-tile:hover {
+  border-color: rgb(var(--accent-primary));
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.module-tile .stage {
+  color: rgb(var(--accent-primary)); font-size: 12px; font-weight: 600;
+}
+.module-tile .ttl { font-size: 15px; margin: 4px 0; font-weight: 500; }
+.module-tile .sub { font-size: 12px; color: rgb(var(--ink-muted)); }
+
+/* walkthrough step */
+.step {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.step .step-no {
+  color: rgb(var(--accent-primary));
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.step h3 {
+  color: rgb(var(--ink-primary));
+  margin: 4px 0 12px;
+}
+.step .field {
+  margin: 8px 0; display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px; font-size: 14px;
+}
+.step .field-label {
+  color: rgb(var(--ink-muted));
+  font-size: 12px;
+}
+.quiz {
+  margin-top: 12px; padding: 12px;
+  background: rgb(var(--accent-primary) / 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgb(var(--accent-primary));
+}
+.quiz .q { font-weight: 500; margin-bottom: 8px; }
+.quiz ol { margin: 6px 0; }
+.quiz .correct { color: rgb(var(--accent-measure)); font-weight: 500; }
+.quiz .hint {
+  margin-top: 8px; font-size: 13px;
+  color: rgb(var(--ink-muted));
+  font-style: italic;
+}
+.pitfall {
+  background: rgb(var(--accent-warn) / 0.08);
+  border-left: 3px solid rgb(var(--accent-warn));
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pitfall .label { color: rgb(var(--accent-warn)); font-size: 12px; font-weight: 600; }
+
+/* 故障速查 */
+.fault-card {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-fault));
+  border-radius: 8px;
+  padding: 16px 18px; margin: 12px 0;
+}
+.fault-card h3 { color: rgb(var(--accent-fault)); margin-top: 0; }
+
+/* 术语表 */
+.glossary-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.glossary-item {
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.glossary-item .term {
+  font-weight: 600; color: rgb(var(--accent-primary));
+  font-size: 15px;
+}
+.glossary-item .def {
+  font-size: 13px; color: rgb(var(--ink-secondary)); margin-top: 4px;
+}
+.glossary-search input {
+  width: 100%; padding: 10px 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 6px;
+  color: rgb(var(--ink-primary)); font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgb(var(--accent-primary) / 0.15);
+  color: rgb(var(--accent-primary));
+  border: 1px solid rgb(var(--accent-primary) / 0.4);
+  border-radius: 4px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: rgb(var(--accent-primary) / 0.25); }
+
+/* 课程主线 */
+.curriculum {
+  background: rgb(var(--bg-panel));
+  border-left: 3px solid rgb(var(--accent-measure));
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.curriculum .ttl { font-weight: 600; color: rgb(var(--accent-measure)); margin-bottom: 4px; }
+.curriculum .mods { font-size: 13px; color: rgb(var(--ink-secondary)); }
+
+/* 移动端 */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  .sidebar, .toc {
+    position: static; max-height: none;
+    border-bottom: 1px solid rgb(var(--line));
+    padding-bottom: 12px;
+  }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+  .topbar nav { gap: 10px; }
+  .content h1 { font-size: 22px; }
+}
+
+/* 打印模式：隐藏导航 + 大字号 + 分页符 + 浅色主题 */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html, body {
+    background: #fff; color: #000;
+    font-size: 13pt; line-height: 1.5;
+  }
+  .topbar, .sidebar, .toc, .print-btn, .glossary-search {
+    display: none !important;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .content { color: #000; }
+  .content h1, .content h2, .content h3 { color: #000; }
+  .content h2 { page-break-before: auto; page-break-after: avoid; }
+  .content h3 { page-break-after: avoid; }
+  .step, .card, .pitfall, .fault-card, .glossary-item, .module-tile, .curriculum {
+    page-break-inside: avoid;
+    background: #fff; color: #000;
+    border-color: #ccc;
+  }
+  .step .step-no, .step .field-label, .stage-chip,
+  .pitfall .label, .glossary-item .term, .fault-card h3, .quiz .correct,
+  .formula, .curriculum .ttl, .module-tile .stage, .content h3 {
+    color: #000 !important;
+  }
+  a { color: #000; text-decoration: underline; }
+  a::after { content: ""; }
+  pre, code:not(pre code), .formula {
+    background: #f4f4f4; color: #000;
+    border: 1px solid #ccc;
+  }
+}
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">电机控制学习文档</div>
+    <nav role="navigation" aria-label="主导航"><a href="index.html" class="active">首页</a><a href="glossary.html">术语表</a><a href="formulas.html">公式集</a><a href="faults.html">故障速查</a><a href="search.html">搜索</a></nav>
+    <div class="right"><button class="btn print-btn" onclick="window.print()">打印</button></div>
+  </header>
+  <main class="layout"><aside class="sidebar" role="navigation" aria-label="模块导航"><h3>16 模块</h3><a href="module/motor-basics.html">01 · 电机基础</a><a href="module/three-phase.html">02 · 三相正弦波与旋转磁场</a><a href="module/clarke-transform.html">03 · Clarke 变换</a><a href="module/park-transform.html">04 · Park 变换</a><a href="module/pid-control.html">05 · PID 控制</a><a href="module/foc-flow.html">06 · FOC 总体流程</a><a href="module/svpwm.html">07 · SVPWM</a><a href="module/inverter.html">08 · 三相逆变器</a><a href="module/control-loops.html">09 · 电流环 / 速度环 / 位置环</a><a href="module/sensorless-foc.html">10 · 无感 FOC / 观测器</a><a href="module/field-weakening.html">11 · 弱磁控制</a><a href="module/faults-debugging.html">12 · 故障与调试</a><a href="module/hfi-sensorless.html">13 · HFI 高频注入低速无感</a><a href="module/startup-statemachine.html">14 · 压缩机启动状态机</a><a href="module/apf-frontend.html">15 · APF 前级 PFC</a><a href="module/refrigeration-bench.html">16 · 制冷系统台架</a><a href="module/assembly-workshop.html">17 · 装配工坊</a><h3>索引页</h3><a href="glossary.html">术语表</a><a href="formulas.html">公式集</a><a href="faults.html">故障速查</a><a href="search.html">站内搜索</a></aside><article class="content"><h1>电机控制学习文档</h1><p class="subtitle">交互式 BLDC / PMSM / FOC / SVPWM 学习客户端的静态文档形态。覆盖 17 个核心模块、17 个深度 walkthrough、30+ 公式、50+ 术语、14 类典型故障。</p><h2>4 条学习主线</h2><div class="curriculum"><div class="ttl">主线 A：电机与坐标变换</div><div class="mods"><a href="module/motor-basics.html">01 电机基础</a> · <a href="module/three-phase.html">02 三相正弦波与旋转磁场</a> · <a href="module/clarke-transform.html">03 Clarke 变换</a> · <a href="module/park-transform.html">04 Park 变换</a></div></div><div class="curriculum"><div class="ttl">主线 B：FOC 与调制</div><div class="mods"><a href="module/pid-control.html">05 PID 控制</a> · <a href="module/foc-flow.html">06 FOC 总体流程</a> · <a href="module/svpwm.html">07 SVPWM</a> · <a href="module/inverter.html">08 三相逆变器</a> · <a href="module/control-loops.html">09 电流环 / 速度环 / 位置环</a></div></div><div class="curriculum"><div class="ttl">主线 C：无感 / 弱磁 / 启动</div><div class="mods"><a href="module/sensorless-foc.html">10 无感 FOC / 观测器</a> · <a href="module/hfi-sensorless.html">13 HFI 高频注入低速无感</a> · <a href="module/field-weakening.html">11 弱磁控制</a> · <a href="module/startup-statemachine.html">14 压缩机启动状态机</a></div></div><div class="curriculum"><div class="ttl">主线 D：系统级（故障 / APF / 制冷台架 / 装配）</div><div class="mods"><a href="module/faults-debugging.html">12 故障与调试</a> · <a href="module/apf-frontend.html">15 APF 前级 PFC</a> · <a href="module/refrigeration-bench.html">16 制冷系统台架</a> · <a href="module/assembly-workshop.html">17 装配工坊</a></div></div><h2>17 模块速查</h2><div class="module-grid"><a class="module-tile" href="module/motor-basics.html"><div class="stage">01</div><div class="ttl">电机基础</div><div class="sub">结构、极对数、电角度与机械角度</div></a><a class="module-tile" href="module/three-phase.html"><div class="stage">02</div><div class="ttl">三相正弦波与旋转磁场</div><div class="sub">观察三相电流如何合成旋转磁场</div></a><a class="module-tile" href="module/clarke-transform.html"><div class="stage">03</div><div class="ttl">Clarke 变换</div><div class="sub">abc 到 alpha-beta 的投影</div></a><a class="module-tile" href="module/park-transform.html"><div class="stage">04</div><div class="ttl">Park 变换</div><div class="sub">alpha-beta 到 dq 同步旋转坐标</div></a><a class="module-tile" href="module/pid-control.html"><div class="stage">05</div><div class="ttl">PID 控制</div><div class="sub">P/I/D、限幅和抗积分饱和</div></a><a class="module-tile" href="module/foc-flow.html"><div class="stage">06</div><div class="ttl">FOC 总体流程</div><div class="sub">采样、变换、电流环、SVPWM 闭环链路</div></a><a class="module-tile" href="module/svpwm.html"><div class="stage">07</div><div class="ttl">SVPWM</div><div class="sub">空间电压矢量、扇区、T1/T2/T0</div></a><a class="module-tile" href="module/inverter.html"><div class="stage">08</div><div class="ttl">三相逆变器</div><div class="sub">桥臂、PWM、死区和线电压</div></a><a class="module-tile" href="module/control-loops.html"><div class="stage">09</div><div class="ttl">电流环 / 速度环 / 位置环</div><div class="sub">内环快、外环慢和参数整定</div></a><a class="module-tile" href="module/sensorless-foc.html"><div class="stage">10</div><div class="ttl">无感 FOC / 观测器</div><div class="sub">反电动势、SMO、PLL 与开闭环切换</div></a><a class="module-tile" href="module/field-weakening.html"><div class="stage">11</div><div class="ttl">弱磁控制</div><div class="sub">电压极限、负 Id、恒功率区</div></a><a class="module-tile" href="module/faults-debugging.html"><div class="stage">12</div><div class="ttl">故障与调试</div><div class="sub">波形现象、原因定位与 STM32 排查路径</div></a><a class="module-tile" href="module/hfi-sensorless.html"><div class="stage">13</div><div class="ttl">HFI 高频注入低速无感</div><div class="sub">凸极比解调 + 零速启动的压缩机标配方案</div></a><a class="module-tile" href="module/startup-statemachine.html"><div class="stage">14</div><div class="ttl">压缩机启动状态机</div><div class="sub">V/f → HFI → BEMF → 弱磁全过程</div></a><a class="module-tile" href="module/apf-frontend.html"><div class="stage">15</div><div class="ttl">APF 前级 PFC</div><div class="sub">单相 220V → Boost PFC → 直流母线</div></a><a class="module-tile" href="module/refrigeration-bench.html"><div class="stage">16</div><div class="ttl">制冷系统台架</div><div class="sub">蒸气压缩循环 + 工况输入 + 与 FOC 闭环耦合</div></a><a class="module-tile" href="module/assembly-workshop.html"><div class="stage">17</div><div class="ttl">装配工坊</div><div class="sub">搭积木式 FOC 调参实战</div></a></div><h2>如何使用本站</h2><ul><li>每个模块页含中文讲义（学习目标 / 概念 / 公式 / 工程意义 / STM32 指南 / 常见误区 / 调试方法 / 实验 / 总结）。</li><li><a href="walkthrough/motor-basics.html">深度 walkthrough</a> 含 5-9 步操作 → 观察 → 为什么 → 随堂题流程；适合打印当纸质教材。</li><li><a href="glossary.html">术语表</a> 支持站内搜索；<a href="formulas.html">公式集</a> 按模块分组；<a href="faults.html">故障速查</a> 含 STM32 调试要点。</li><li>每一页右上角的"打印"按钮触发浏览器打印，CSS 已做打印优化（隐藏导航 + 浅色主题 + 分页符）。</li></ul></article><aside class="toc"></aside></main>
+</body>
+</html>
