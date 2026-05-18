@@ -106,6 +106,10 @@ function LimitMap({
       <circle cx={x} cy={y} r={onPointChange ? 11 : 7}
         fill={saturated ? '#ff5c7a' : '#43f7b5'} stroke="#e7f3ff" strokeWidth="2" />
       <line x1={cx} y1={cy} x2={x} y2={y} stroke={saturated ? '#ff5c7a' : '#43f7b5'} strokeWidth="1.5" opacity="0.5" />
+      {/* 触控热区扩大：透明 r=24 圆，事件冒泡走外层 SVG 的 onPointer* 处理。 */}
+      {onPointChange && (
+        <circle cx={x} cy={y} r="24" fill="transparent" style={{ pointerEvents: 'all' }} />
+      )}
 
       {/* 角落图例 */}
       <g fontSize="11" fontFamily="Cascadia Code, Consolas, monospace">

@@ -87,6 +87,12 @@ const requiredFiles = [
   'src/content/stm32Export/stm32f4Templates.ts',
   'src/content/stm32Export/stm32h7Templates.ts',
   'src/components/lab/ProjectExporter.tsx',
+  // Phase C：解题路径回放 / 历史对比 / 标定单 + 真 zip
+  'src/store/replayStore.ts',
+  'src/utils/zipMinimal.ts',
+  'src/components/workshop/SolutionReplay.tsx',
+  'src/components/workshop/SnapshotDiffPanel.tsx',
+  'src/components/workshop/CalibrationDocExporter.tsx',
   'docs/ASSET_PIPELINE.md',
   'docs/MODULE_EXTENSION.md',
   'scripts/generate-image-assets.ps1',

@@ -25,6 +25,10 @@ async function openModule(page: Page, stage: string) {
   await page.locator('nav button').filter({ hasText: `${stage} ·` }).click();
   // 让 Vite dev 完成按需 transform + lazy chunk 下载
   await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
+  // 等 ModuleRenderer 的 Suspense fallback 真正消失（lazy chunk 已 resolve）。
+  // 否则 ConceptNotes 的 "教学讲义" 在 fallback 阶段不存在，
+  // 后续 toBeVisible 只能依赖 30s 默认超时被动等。
+  await page.locator('text=模块加载中').first().waitFor({ state: 'detached', timeout: 30_000 }).catch(() => {});
 }
 
 test('all learning modules render and controls remain usable', async ({ page }) => {
@@ -34,8 +38,11 @@ test('all learning modules render and controls remain usable', async ({ page }) 
   for (const [stage, title] of modules) {
     await openModule(page, stage);
     await expect(page.getByRole('heading', { name: title }).first()).toBeVisible();
-    await expect(page.getByText('参数控制台')).toBeVisible();
-    await expect(page.getByText('教学讲义')).toBeVisible();
+    // 用 heading role 精确锁定 "参数控制台"——
+    // 否则会同时命中移动端抽屉按钮 "打开参数控制台" 和抽屉顶部 caption，触发 strict 模式。
+    await expect(page.getByRole('heading', { name: '参数控制台' }).first()).toBeVisible();
+    // 同理，"教学讲义" 在 ConceptNotes 内有 Lesson Notes caption 同字符串；锁 heading。
+    await expect(page.getByRole('heading', { name: '教学讲义' }).first()).toBeVisible();
   }
 });
 
@@ -73,13 +80,15 @@ test('module sliders update their displayed values without console errors', asyn
 test('desktop and mobile layouts render critical UI', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.goto('/');
-  await expect(page.getByText('参数控制台')).toBeVisible();
-  await expect(page.getByText('底部波形观察区')).toBeVisible();
+  // 用 heading 精确锁定，避免命中移动端 "打开参数控制台" 按钮触发 strict 模式。
+  await expect(page.getByRole('heading', { name: '参数控制台' }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: '底部波形观察区' }).first()).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(page.getByText(APP_TITLE).first()).toBeVisible();
-  await expect(page.getByText('参数控制台')).toBeVisible();
+  // 移动端：抽屉默认收起，但顶部 "打开参数控制台" 按钮可见；用按钮 role 锁定。
+  await expect(page.getByRole('button', { name: '打开参数控制台抽屉' }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /全屏/ })).toBeVisible();
 });
 

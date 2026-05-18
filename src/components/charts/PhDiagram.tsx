@@ -214,6 +214,17 @@ export function PhDiagram({ refrigerant, states, onPointDrag }: Props) {
             >
               {p.index}
             </text>
+            {/* 触控热区扩大：透明 r=24，仅对可拖动点提供；放在最后保证压在视觉之上。 */}
+            {draggable && (
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="24"
+                fill="transparent"
+                style={{ cursor: 'grab', pointerEvents: 'all' }}
+                onPointerDown={handlePointerDown(p.index as 1 | 3)}
+              />
+            )}
           </g>
         );
       })}

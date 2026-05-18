@@ -113,3 +113,74 @@ button, input, select, textarea { font: inherit; }
   border-radius: 999px;
   background: var(--accent-primary);
 }
+
+/* —— 移动端 UX 增强 ——
+ * 在 <xl (1280px) 视口加大滑块触控热区、提供横向 snap、
+ * 抽屉动画工具类等；桌面端完全 no-op。
+ */
+@media (max-width: 1279px) {
+  /* 触控滑块更高更胖，符合 ≥44px Apple HIG 推荐热区 */
+  .simulation-slider {
+    height: 28px;
+    padding: 6px 0;
+  }
+  .simulation-slider::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -9px;
+  }
+  .simulation-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+  /* 主按钮 ≥44px 高，避免误触 */
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* GuidedExperimentBar 横向 stage chip snap */
+  .mobile-snap-x {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-snap-x > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* 底部抽屉滑入动画（无 framer-motion 依赖，纯 CSS transform） */
+.mobile-drawer-slide {
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+.mobile-drawer-overlay {
+  transition: opacity 0.22s ease-out;
+}
+
+/* 长按显示 tooltip（默认 hover 也能触发） */
+.touch-tooltip {
+  position: relative;
+}
+.touch-tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--ink-primary);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 50;
+  border: 1px solid var(--line-subtle);
+}
+.touch-tooltip:hover::after,
+.touch-tooltip:focus-visible::after,
+.touch-tooltip[data-tip-open="true"]::after {
+  opacity: 1;
+}

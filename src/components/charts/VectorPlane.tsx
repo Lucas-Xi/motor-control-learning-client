@@ -124,6 +124,11 @@ export function VectorPlane({ alpha, beta, theta = 0, d, q, title = 'αβ 矢量
         {/* 主矢量箭头 + 端点白点 */}
         <line x1={cx} y1={cy} x2={vx} y2={vy} stroke="#34d6ff" strokeWidth="3" markerEnd="url(#arrow)" />
         <circle cx={vx} cy={vy} r={onVectorChange ? 10 : 6} fill="#e7f3ff" stroke={onVectorChange ? '#43f7b5' : 'none'} strokeWidth="2" />
+        {/* 触控热区扩大：透明 r=24 圆让手指有足够命中面积。放在最后压在视觉之上；
+            pointer events 走外层 SVG，无需 stopPropagation。 */}
+        {onVectorChange && (
+          <circle cx={vx} cy={vy} r="24" fill="transparent" style={{ pointerEvents: 'all' }} />
+        )}
 
         {typeof d === 'number' && typeof q === 'number' && (
           <text x="18" y={size - 18} fill="#e7f3ff" fontSize="12">Id {formatNumber(d)} · Iq {formatNumber(q)}</text>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, CartesianGrid, ReferenceLine, ReferenceDot, Tooltip, XAxis, YAxis } from 'recharts';
 import { X, CircuitBoard, Cpu, Snowflake, Wrench, Play, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, Activity, Sparkles, Trophy, Lightbulb, Target, Zap, Filter, Save, Trash2, ArrowRightCircle, FileCode, History, ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { compressorBundles, type CompressorSpec, type InverterPlatform } from '../../content/compressorLibrary';
@@ -24,10 +24,16 @@ import {
   type AssemblyChallenge,
 } from '../../content/assemblyChallenges';
 import { exportAssemblyAsC } from '../../content/assemblyExport';
-import { SystemSchematic } from './SystemSchematic';
+// SystemSchematic 是 ~28KB 的复杂 SVG 拓扑图，仅在 AssemblyWorkshop 主视图渲染。
+// 切 lazy 之后挑战 / 历史 tab 切换 + 弹窗关闭都不会再付这个解析成本，
+// 也让 AssemblyWorkshopModule 主 chunk 进一步瘦身。
+const SystemSchematic = lazy(() =>
+  import('./SystemSchematic').then((m) => ({ default: m.SystemSchematic })),
+);
 import { SafeResponsiveContainer } from '../charts/SafeResponsiveContainer';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useAssemblyProgressStore, type AssemblyHistoryEntry, type AssemblySnapshot } from '../../store/assemblyProgressStore';
+import { useReplayStore } from '../../store/replayStore';
 import { downloadText, timestamp } from '../../utils/download';
 
 interface Props {
@@ -83,6 +89,9 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
   const history = useAssemblyProgressStore((s) => s.history);
   const pushHistory = useAssemblyProgressStore((s) => s.pushHistory);
   const clearHistory = useAssemblyProgressStore((s) => s.clearHistory);
+
+  // Phase C：挑战模式下每次"运行整机仿真"把当时的快照写到 replay store（跨刷新持久化）
+  const pushReplayStep = useReplayStore((s) => s.pushStep);
 
   const challenge = useMemo<AssemblyChallenge | null>(
     () => assemblyChallenges.find((c) => c.id === challengeId) ?? null,
@@ -220,8 +229,18 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
     if (mode === 'challenge' && challenge) {
       const nextAttempts = attempts + 1;
       setAttempts(nextAttempts);
-      // push 到路径
+      // push 到路径（会话级）
       setAttemptHistory((prev) => [...prev, { slotIds: currentSlotIds, result: r, timestamp: Date.now() }]);
+      // Phase C：同步 push 到 persist 的 replay store（跨刷新可回放）
+      pushReplayStep(challenge.id, {
+        slotIds: currentSlotIds,
+        verdict: r.verdict,
+        cop: r.metrics.cop,
+        requiredIqA: r.metrics.requiredIqA,
+        pressureRatio: r.metrics.pressureRatio,
+        Tdischarge: r.metrics.Tdischarge,
+        summary: r.summary,
+      });
       if (checkChallengePass(challenge, r)) {
         const prevBest = challengeRecords[challenge.id]?.bestAttempts ?? Infinity;
         if (nextAttempts < prevBest) {
@@ -359,22 +378,30 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                   onResetAll={resetAllProgress}
                 />
               )}
-              <SystemSchematic
-                compressor={compressor}
-                inverter={inverter}
-                strategy={strategy}
-                load={load}
-                pfc={pfc}
-                separator={separator}
-                refrigerantMismatch={refrigerantMismatch}
-                result={result}
-                onSwapCompressor={(v) => handleSlotChange(setCompressorIdx, v)}
-                onSwapInverter={(v) => handleSlotChange(setInverterIdx, v)}
-                onSwapStrategy={(v) => handleSlotChange(setStrategyIdx, v)}
-                onSwapLoad={(v) => handleSlotChange(setLoadIdx, v)}
-                onSwapPfc={(v) => handleSlotChange(setPfcIdx, v)}
-                onSwapSeparator={(v) => handleSlotChange(setSeparatorIdx, v)}
-              />
+              <Suspense
+                fallback={
+                  <div className="flex h-72 items-center justify-center rounded-2xl border border-line-subtle bg-bg-base text-caption text-ink-muted">
+                    系统拓扑图加载中…
+                  </div>
+                }
+              >
+                <SystemSchematic
+                  compressor={compressor}
+                  inverter={inverter}
+                  strategy={strategy}
+                  load={load}
+                  pfc={pfc}
+                  separator={separator}
+                  refrigerantMismatch={refrigerantMismatch}
+                  result={result}
+                  onSwapCompressor={(v) => handleSlotChange(setCompressorIdx, v)}
+                  onSwapInverter={(v) => handleSlotChange(setInverterIdx, v)}
+                  onSwapStrategy={(v) => handleSlotChange(setStrategyIdx, v)}
+                  onSwapLoad={(v) => handleSlotChange(setLoadIdx, v)}
+                  onSwapPfc={(v) => handleSlotChange(setPfcIdx, v)}
+                  onSwapSeparator={(v) => handleSlotChange(setSeparatorIdx, v)}
+                />
+              </Suspense>
 
               <div className="grid gap-2 md:grid-cols-2">
                 <SlotPicker

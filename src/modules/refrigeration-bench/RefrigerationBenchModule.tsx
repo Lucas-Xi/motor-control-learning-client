@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { AlertTriangle, Cpu, Snowflake, Thermometer, Wind, Zap } from 'lucide-react';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
@@ -11,10 +11,33 @@ import { SystemSchematic } from '../../components/charts/SystemSchematic';
 import { simulateCycle, torqueToIq } from '../../simulation/math/vaporCycle';
 import { hLiqSat, hVapSat, tSat } from '../../simulation/math/refrigerantProps';
 import { formatNumber } from '../../utils/format';
-import { SeasonalCopCard } from './SeasonalCopCard';
-import { DefrostCycleCard } from './DefrostCycleCard';
-import { PartLoadEfficiencyCard } from './PartLoadEfficiencyCard';
-import { FourQuadrantCard } from './FourQuadrantCard';
+
+/**
+ * 16 号制冷台架的 4 张分析卡片（年度性能 / 化霜 / 部分负载 / 四象限）
+ * 全部位于 probe 列下方，远离首屏 above-the-fold。各自带 recharts BarChart /
+ * ComposedChart / Sparkline，体积 ~10-15KB raw 一张。
+ * lazy() 之后只在浏览器空闲或用户向下滚动时才解析、不阻塞主视图首挂。
+ */
+const SeasonalCopCard = lazy(() =>
+  import('./SeasonalCopCard').then((m) => ({ default: m.SeasonalCopCard })),
+);
+const DefrostCycleCard = lazy(() =>
+  import('./DefrostCycleCard').then((m) => ({ default: m.DefrostCycleCard })),
+);
+const PartLoadEfficiencyCard = lazy(() =>
+  import('./PartLoadEfficiencyCard').then((m) => ({ default: m.PartLoadEfficiencyCard })),
+);
+const FourQuadrantCard = lazy(() =>
+  import('./FourQuadrantCard').then((m) => ({ default: m.FourQuadrantCard })),
+);
+
+function ProbeCardFallback({ label }: { label: string }) {
+  return (
+    <div className="rounded-2xl border border-line-subtle bg-bg-surface px-4 py-6 text-caption text-ink-muted">
+      {label} 加载中…
+    </div>
+  );
+}
 
 // 制冷剂气相比热（与 refrigerantProps 中的 cpVapor 保持一致）
 const CP_V: Record<string, number> = { R32: 1.05, R410A: 0.97, R134a: 1.02 };
@@ -245,10 +268,18 @@ export function RefrigerationBenchModule() {
       probe={<>
         <MetricsProbe />
         <ScenarioPresets />
-        <SeasonalCopCard />
-        <DefrostCycleCard />
-        <PartLoadEfficiencyCard />
-        <FourQuadrantCard />
+        <Suspense fallback={<ProbeCardFallback label="季节性 COP" />}>
+          <SeasonalCopCard />
+        </Suspense>
+        <Suspense fallback={<ProbeCardFallback label="化霜循环" />}>
+          <DefrostCycleCard />
+        </Suspense>
+        <Suspense fallback={<ProbeCardFallback label="部分负载效率" />}>
+          <PartLoadEfficiencyCard />
+        </Suspense>
+        <Suspense fallback={<ProbeCardFallback label="四象限工作点" />}>
+          <FourQuadrantCard />
+        </Suspense>
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}
     />

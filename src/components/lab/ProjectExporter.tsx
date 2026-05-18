@@ -16,7 +16,8 @@ import {
 } from '../../content/stm32Export/projectGenerator';
 import { guessMcuFamily } from '../../content/stm32Export/mcuTemplate';
 import type { ExportFile, McuFamily, ProjectSlots, SimulationSnapshot } from '../../content/stm32Export/types';
-import { downloadText, timestamp } from '../../utils/download';
+import { downloadBinary, downloadText, timestamp } from '../../utils/download';
+import { buildZip } from '../../utils/zipMinimal';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 
@@ -84,7 +85,7 @@ export function ProjectExporter() {
   const [isOpen, setIsOpen] = useState(false);
   const [mcuFamily, setMcuFamily] = useState<McuFamily>('STM32G4');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
-  const [packMode, setPackMode] = useState<'single-text' | 'multi-file'>('single-text');
+  const [packMode, setPackMode] = useState<'single-text' | 'multi-file' | 'zip'>('zip');
 
   // 打开时根据 inverter 选型推断 MCU family 默认值
   useEffect(() => {
@@ -125,6 +126,10 @@ export function ProjectExporter() {
       const indexLines = selectedFiles.map((f) => `  - ${f.path}  ${f.purpose}`).join('\n');
       const header = `# STM32 工程导出索引\n# Generated: ${ts}\n# MCU Family: ${mcuFamily}\n# 文件清单 (${selectedFiles.length}):\n${indexLines}\n`;
       downloadText(`stm32_${mcuFamily.toLowerCase()}_${ts}.txt`, header + text);
+    } else if (packMode === 'zip') {
+      // Phase C：用浏览器原生 + 自写 80 行 zip 头（STORE 模式）打成真 .zip
+      const bin = buildZip(selectedFiles.map((f) => ({ path: f.path, content: f.content })));
+      downloadBinary(`stm32_${mcuFamily.toLowerCase()}_${ts}.zip`, bin, 'application/zip');
     } else {
       // 逐文件下载
       selectedFiles.forEach((f, i) => {
@@ -285,11 +290,21 @@ export function ProjectExporter() {
                 <input
                   type="radio"
                   name="packMode"
+                  checked={packMode === 'zip'}
+                  onChange={() => setPackMode('zip')}
+                  className="accent-accent-primary"
+                />
+                打成 真 .zip（推荐 · STORE 无压缩）
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5 text-caption text-ink-secondary">
+                <input
+                  type="radio"
+                  name="packMode"
                   checked={packMode === 'single-text'}
                   onChange={() => setPackMode('single-text')}
                   className="accent-accent-primary"
                 />
-                打包为单一 .txt（推荐）
+                打包为单一 .txt
               </label>
               <label className="flex cursor-pointer items-center gap-1.5 text-caption text-ink-secondary">
                 <input

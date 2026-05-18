@@ -21,4 +21,12 @@ export const formulaIndex = [
   { key: 'pfc-boost', name: 'Boost PFC 升压关系', expression: 'Udc = Vrect / (1 − D);  D=0.4 + 220V AC → Udc ≈ 520V (工程限 D≤0.5)' },
   { key: 'pfc-cap-ripple', name: 'PFC 母线电容纹波', expression: 'ΔUdc ≈ I_load / (2·ω_line·C);  按目标纹波 % 反推 C' },
   { key: 'foc-total-delay', name: 'FOC 总采样-生效延迟', expression: 't_delay ≈ 1.5·Ts (ADC 中点 + CCR 预装载);  电流环带宽上限 ≈ 1/(2π·1.5·Ts)' },
+  { key: 'fw-base-speed', name: '弱磁基速', expression: 'ω_base = V_max / ψf;  V_max = Udc/√3 (SVPWM 线性区)' },
+  { key: 'fw-id-feedforward', name: '弱磁 Id 前馈解析', expression: 'Id* = √(V_max² − (ωe·Lq·Iq)²) / (ωe·Ld) − ψf/Ld' },
+  { key: 'mtpa-ipm', name: 'IPM MTPA 解析解', expression: 'Id* = (ψf − √(ψf² + 8(Ld−Lq)²·Iq²)) / (4(Ld−Lq))' },
+  { key: 'voltage-ellipse', name: '电压椭圆', expression: '(ψf + Ld·Id)² + (Lq·Iq)² ≤ (V_max/ωe)²;  中心 (−ψf/Ld, 0)' },
+  { key: 'cop', name: '制冷 COP', expression: 'COP = q_c / w = (h₁ − h₄) / (h₂ − h₁)' },
+  { key: 'superheat', name: '吸气过热度 SH', expression: 'SH = T_suct − T_sat(P_s);  EEV PI 反馈量，目标 5–10K' },
+  { key: 'subcool', name: '冷凝过冷度 SC', expression: 'SC = T_sat(P_d) − T_liquid;  目标 3–7K，<2K 节流闪发气泡' },
+  { key: 'comp-torque-from-cycle', name: '压缩机负载转矩', expression: 'τ_load = W_comp / ω_m = (m_dot·w) / (2π·rpm/60)' },
 ];

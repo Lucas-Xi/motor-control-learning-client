@@ -175,6 +175,10 @@ export function SpaceVectorHexagon({ uAlpha, uBeta, uDc, result, onVectorChange 
         <line x1={cx} y1={cy} x2={vectorX} y2={vectorY} stroke="#34d6ff" strokeWidth="3.5" markerEnd="url(#svpwmArrow)" />
         <circle cx={vectorX} cy={vectorY} r={onVectorChange ? 10 : 6}
           fill="#e7f3ff" stroke={onVectorChange ? '#43f7b5' : '#34d6ff'} strokeWidth="2" />
+        {/* 触控热区扩大：透明 r=24 命中圆，手指点附近也算抓到端点。 */}
+        {onVectorChange && (
+          <circle cx={vectorX} cy={vectorY} r="24" fill="transparent" style={{ pointerEvents: 'all' }} />
+        )}
 
         {/* 图例（左下） */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">

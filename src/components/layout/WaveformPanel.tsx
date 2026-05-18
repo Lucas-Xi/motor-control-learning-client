@@ -1,8 +1,14 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { calculateSvpwm } from '../../simulation/math/svpwm';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
-import { BenchScope } from '../../modules/refrigeration-bench/BenchScope';
+// BenchScope 仅在 refrigeration-bench 模块的底部波形分支用到。
+// 直接 import 会把 BenchScope 及其依赖（vaporCycle / refrigerantProps / 几个 sparkline 工具）
+// 拉进 WaveformPanel 的同一 chunk。改 lazy 后只有切到 16 号模块才下载。
+const BenchScope = lazy(() =>
+  import('../../modules/refrigeration-bench/BenchScope').then((m) => ({ default: m.BenchScope })),
+);
 import { useSimulationStore } from '../../store/simulationStore';
 import { Card } from '../ui/Card';
 import { DQWaveform } from '../charts/DQWaveform';
@@ -145,20 +151,59 @@ function ControlLoopBranch() {
   );
 }
 
+/**
+ * 移动端折叠开关：<xl 默认折叠成 ~120px 高度预览，
+ * 点 chevron 按钮展开 ~420px；桌面端 xl: 移除高度限制。
+ * 切模块自动回到折叠态。
+ */
 export function WaveformPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
+  useEffect(() => {
+    setMobileExpanded(false);
+  }, [activeModule]);
+
+  const branch =
+      activeModule === 'park-transform' ? <DQBranch />
+      : activeModule === 'svpwm' ? <SvpwmBranch />
+      : activeModule === 'inverter' ? <InverterBranch />
+      : activeModule === 'field-weakening' ? <FieldWeakeningBranch />
+      : activeModule === 'pid-control' ? <PIDBranch />
+      : activeModule === 'control-loops' ? <ControlLoopBranch />
+      : activeModule === 'motor-basics' ? <MotorBasicsBranch />
+      : activeModule === 'faults-debugging' ? <FaultBranch />
+      : activeModule === 'refrigeration-bench' ? (
+        <Suspense fallback={<div className="h-56 rounded-xl border border-line-subtle bg-bg-base" />}>
+          <BenchScope />
+        </Suspense>
+      )
+      : <ThreePhaseBranch />;
+
   return (
-    <Card title="底部波形观察区" eyebrow="Scope Dock" className="mt-4">
-      {activeModule === 'park-transform' ? <DQBranch />
-        : activeModule === 'svpwm' ? <SvpwmBranch />
-        : activeModule === 'inverter' ? <InverterBranch />
-        : activeModule === 'field-weakening' ? <FieldWeakeningBranch />
-        : activeModule === 'pid-control' ? <PIDBranch />
-        : activeModule === 'control-loops' ? <ControlLoopBranch />
-        : activeModule === 'motor-basics' ? <MotorBasicsBranch />
-        : activeModule === 'faults-debugging' ? <FaultBranch />
-        : activeModule === 'refrigeration-bench' ? <BenchScope />
-        : <ThreePhaseBranch />}
+    <Card
+      title="底部波形观察区"
+      eyebrow="Scope Dock"
+      className="mt-4"
+      action={
+        <button
+          type="button"
+          onClick={() => setMobileExpanded((v) => !v)}
+          className="mobile-touch-target inline-flex items-center gap-1 rounded-lg border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-secondary hover:text-ink-primary xl:hidden"
+          aria-expanded={mobileExpanded}
+          aria-label={mobileExpanded ? '收起波形面板' : '展开波形面板'}
+        >
+          {mobileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+          <span>{mobileExpanded ? '收起' : '展开'}</span>
+        </button>
+      }
+    >
+      <div
+        className={`overflow-hidden transition-[max-height] duration-300 xl:max-h-none ${
+          mobileExpanded ? 'max-h-[420px]' : 'max-h-[120px]'
+        }`}
+      >
+        {branch}
+      </div>
     </Card>
   );
 }

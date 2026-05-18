@@ -47,14 +47,15 @@ export function GuidedExperimentBar({ moduleId }: Props) {
         <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="space-y-1.5">
             <p className="px-1 text-caption text-ink-muted">{guide.focus}</p>
-            <div className="grid gap-1.5">
+            {/* <lg: 横向 snap chips，节省垂直空间；lg+ 恢复纵向列表 */}
+            <div className="scrollbar-thin mobile-snap-x -mx-1 flex gap-1.5 overflow-x-auto px-1 lg:mx-0 lg:grid lg:overflow-visible lg:px-0">
               {guide.steps.map((step, index) => {
                 const active = index === activeIndex;
                 return (
                   <button
                     key={step.id}
                     onClick={() => selectStep(index)}
-                    className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors ${
+                    className={`mobile-touch-target flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors lg:w-full lg:shrink ${
                       active
                         ? 'border-accent-primary/50 bg-accent-primary/10 text-accent-primary'
                         : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong hover:text-ink-primary'
