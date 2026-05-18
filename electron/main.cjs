@@ -6,6 +6,7 @@ const path = require('node:path');
 const { installMenu, pickAndReadSnapshot, pickAndWriteSnapshot } = require('./menu.cjs');
 const { installTray, disposeTray } = require('./tray.cjs');
 const { createSplash, closeSplash } = require('./splash.cjs');
+const { initAutoUpdater } = require('./update.cjs');
 
 const APP_TITLE = '电机控制学习客户端';
 
@@ -196,16 +197,17 @@ function registerIpc() {
     return filePath; // 路径或 null
   });
 
+  // 兼容旧版本"帮助 → 检查更新"菜单：转发到 update.cjs 注册的 desktop:update-check。
+  // 仅返回当前版本信息；真正的事件流（available / progress / downloaded）走
+  // desktop:update-event 推送。
   ipcMain.handle('desktop:check-update', async () => {
-    // 占位实现：不连真服务器，避免离线学习场景报错。
-    // 真正部署 electron-updater 时把这里换成 autoUpdater.checkForUpdates()。
     return {
       ok: true,
       currentVersion: app.getVersion(),
       latestVersion: app.getVersion(),
       updateAvailable: false,
-      message: '已经是最新版本（占位实现，未连接更新服务器）。',
-      feedUrl: 'https://updates.example.com/compressor-bench',
+      message: '更新检查已发起，详见顶部更新条。',
+      feedUrl: 'github://<OWNER>/<REPO>',
     };
   });
 }
@@ -249,6 +251,8 @@ app.whenReady().then(() => {
   installMenu();
   createMainWindow();
   installTray(resolveIconPath());
+  // 自动更新：注册 IPC + 30s 后跑一次后台检查（dev 模式会广播 disabled）
+  initAutoUpdater({ delayMs: 30_000 });
 
   // Windows 上启动参数里若带了 .compbench 也补一次
   for (const arg of process.argv.slice(1)) {

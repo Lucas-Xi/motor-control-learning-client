@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleId } from '../../simulation/engine/types';
 import { getCachedWalkthrough, hasWalkthrough, loadModuleWalkthrough } from '../../content/walkthroughs';
+import { useAssistantStore } from '../../store/assistantStore';
 import { useProgressStore } from '../../store/progressStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useThemeStore } from '../../store/themeStore';
@@ -153,6 +154,12 @@ export function GlobalKeybindings() {
           e.preventDefault();
           setHelpOpen((v) => !v);
         },
+      },
+      {
+        key: 'a',
+        category: '帮助',
+        description: '打开 / 关闭本地教学助手',
+        handler: () => useAssistantStore.getState().toggleOpen(),
       },
     ];
     return list;

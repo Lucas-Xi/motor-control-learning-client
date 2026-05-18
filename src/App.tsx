@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { GlobalKeybindings } from './components/layout/GlobalKeybindings';
+import { AssistantPanel } from './components/assistant/AssistantPanel';
+import { FloatingChatButton } from './components/assistant/FloatingChatButton';
+import { UpdateBanner } from './components/desktop/UpdateBanner';
 import { ReceiveSnapshotModal } from './components/share/ReceiveSnapshotModal';
 import {
   isDesktopRuntime,
@@ -14,6 +17,12 @@ import { decodeSnapshot, type AppStateInput, type DecodedSnapshot } from './util
 import { useSimulationStore } from './store/simulationStore';
 import { useUIStore } from './store/uiStore';
 import { useThemeStore } from './store/themeStore';
+import { useCloudShareStore } from './store/cloudShareStore';
+import {
+  createBroadcastShareBridge,
+  isBroadcastSupported,
+  type BroadcastShareBridge,
+} from './utils/broadcastShare';
 
 /** 把 snapshotCodec 解出的 sim 段映射到 store 的 update* 方法上 */
 function applyDecodedSimSlices(sim: Partial<Record<keyof AppStateInput, Record<string, unknown>>>) {
@@ -237,14 +246,69 @@ function useShareHashReceiver() {
   return { pending, open, onApply, onClose };
 }
 
+/**
+ * V2 跨标签页实时协作：仅当 cloudShareStore.realtimeSync = true 时打开
+ * BroadcastChannel；收到 patch 消息时把对应 slice 灌进 simulationStore；
+ * 自己 send 由具体 UI（参数面板）触发——这里只做"被动接收"，避免每帧 time 写回。
+ */
+function useBroadcastShareSubscription() {
+  const realtimeSync = useCloudShareStore((s) => s.realtimeSync);
+  const setConnectedTabs = useCloudShareStore((s) => s.setConnectedTabs);
+  const bridgeRef = useRef<BroadcastShareBridge | null>(null);
+  const peersRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!realtimeSync || !isBroadcastSupported()) {
+      setConnectedTabs(1);
+      return;
+    }
+    const bridge = createBroadcastShareBridge({
+      onMessage: (msg) => {
+        if (msg.kind === 'hello') {
+          peersRef.current.add(msg.tabId);
+          setConnectedTabs(peersRef.current.size + 1);
+          bridge.send({ kind: 'pong', tabId: bridge.tabId });
+        } else if (msg.kind === 'bye') {
+          peersRef.current.delete(msg.tabId);
+          setConnectedTabs(peersRef.current.size + 1);
+        } else if (msg.kind === 'ping') {
+          bridge.send({ kind: 'pong', tabId: bridge.tabId });
+        } else if (msg.kind === 'pong') {
+          peersRef.current.add(msg.tabId);
+          setConnectedTabs(peersRef.current.size + 1);
+        } else if (msg.kind === 'patch') {
+          applyDecodedSimSlices({ [msg.slice as keyof AppStateInput]: msg.data });
+        }
+      },
+    });
+    bridgeRef.current = bridge;
+    // 主动 ping 一次发现已在线的兄弟标签
+    const cancelPing = bridge.pingPeers((peer) => {
+      peersRef.current.add(peer);
+      setConnectedTabs(peersRef.current.size + 1);
+    });
+    return () => {
+      cancelPing();
+      bridge.close();
+      bridgeRef.current = null;
+      peersRef.current.clear();
+      setConnectedTabs(1);
+    };
+  }, [realtimeSync, setConnectedTabs]);
+}
+
 export default function App() {
   useDesktopMenuSubscriptions();
+  useBroadcastShareSubscription();
   const { pending, open, onApply, onClose } = useShareHashReceiver();
   return (
     <>
+      <UpdateBanner />
       <AppShell />
       <GlobalKeybindings />
       <ReceiveSnapshotModal open={open} decoded={pending} onApply={onApply} onClose={onClose} />
+      <FloatingChatButton />
+      <AssistantPanel />
     </>
   );
 }

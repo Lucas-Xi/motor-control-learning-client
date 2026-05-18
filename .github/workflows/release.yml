@@ -1,0 +1,75 @@
+name: Release Desktop / 发布桌面客户端
+
+# 触发：
+#   1) 推送形如 v1.2.3 的 tag → 自动构建并上传到对应的 GitHub Release
+#   2) 手动 workflow_dispatch → 用于回归测试，但 publish=always 时必须先准备好 Release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  # electron-builder 需要写 Releases 上传 .exe / latest.yml / .blockmap
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-windows:
+    name: Build & Publish Windows Installer / 打包并上传 Windows 安装器
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repo / 检出仓库
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22 / 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install deps / 安装依赖 (npm ci)
+        run: npm ci
+
+      - name: Type check / TypeScript 类型检查
+        run: npx tsc -b --noEmit
+
+      - name: Unit tests / 单元测试
+        run: npx vitest run
+
+      - name: Build renderer / Vite 生产构建
+        run: npm run build
+
+      # electron-builder 会同时打 NSIS 安装器 + portable + latest.yml + blockmap，
+      # 并通过 GH_TOKEN 把产物上传到与当前 tag 同名的 Release（草稿状态时也会发布）。
+      - name: Build & Publish (electron-builder)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # CSC_LINK / CSC_KEY_PASSWORD 在仓库 Settings → Secrets 配置代码签名证书时使用
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win nsis portable --publish always
+
+      - name: Upload artifacts (backup) / 备份产物到 workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-windows-${{ github.run_number }}
+          path: |
+            release/*.exe
+            release/*.yml
+            release/*.blockmap
+          if-no-files-found: warn
+          retention-days: 14
+
+# 备注：
+#   - tag 推送形如 `git tag v0.2.0 && git push origin v0.2.0` 即可触发；
+#     workflow 会自动找到匹配 release 并上传产物，用户桌面端 30s 内收到更新事件。
+#   - 若仓库 Settings → Secrets 里没配置代码签名证书，Windows SmartScreen
+#     首次安装会弹"未识别的发布者"，用户点"更多信息 → 仍要运行"即可继续。
+#   - 真正发版前必须把 package.json 的 build.publish.owner/repo 从 <OWNER>/<REPO>
+#     替换成真实 GitHub 仓库标识，否则 electron-builder 不知道往哪上传。

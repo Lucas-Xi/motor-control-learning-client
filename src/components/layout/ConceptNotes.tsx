@@ -1,9 +1,11 @@
-import { ChevronDown, Lightbulb, BookOpen, Cpu, Target } from 'lucide-react';
+import { ChevronDown, Lightbulb, BookOpen, Cpu, Target, MessageCircleQuestion } from 'lucide-react';
 import { useState } from 'react';
 import { getLesson } from '../../content/lessons';
+import { lessonsEn } from '../../content/lessonsEn';
 import type { ModuleId } from '../../simulation/engine/types';
 import { useI18n } from '../../i18n/useI18n';
 import type { TKey } from '../../i18n/useI18n';
+import { useAssistantStore } from '../../store/assistantStore';
 import { Quiz } from './Quiz';
 import { CodeBlock } from './CodeBlock';
 
@@ -21,8 +23,10 @@ const TIER_DEFS: Array<{ key: Tier; labelKey: TKey; icon: typeof Lightbulb }> = 
 ];
 
 export function ConceptNotes({ moduleId }: Props) {
-  const lesson = getLesson(moduleId);
   const { t, locale } = useI18n();
+  const lesson = getLesson(moduleId, locale);
+  // Only show "translation pending" when EN is active AND there is no EN lesson entry.
+  const hasEnLesson = !!lessonsEn[moduleId];
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tier>('intro');
   const tiers = TIER_DEFS.filter((tier) => {
@@ -43,7 +47,7 @@ export function ConceptNotes({ moduleId }: Props) {
         <div>
           <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.conceptEyebrow')}</p>
           <h2 className="font-display text-title text-ink-primary">{t('shell.conceptTitle')}</h2>
-          {locale === 'en-US' && (
+          {locale === 'en-US' && !hasEnLesson && (
             <p className="mt-0.5 text-[10px] text-ink-muted">{t('common.translationPending')}</p>
           )}
         </div>
@@ -72,7 +76,12 @@ export function ConceptNotes({ moduleId }: Props) {
           {activeTab === 'intro' && lesson.introBeginner && <IntroPanel intro={lesson.introBeginner} />}
           {activeTab === 'deep' && <DeepPanel lesson={lesson} />}
           {activeTab === 'practice' && <PracticePanel lesson={lesson} />}
-          {activeTab === 'quiz' && lesson.quiz && <Quiz items={lesson.quiz} />}
+          {activeTab === 'quiz' && lesson.quiz && (
+            <div className="space-y-3">
+              <AssistantHandoff quiz={lesson.quiz} />
+              <Quiz items={lesson.quiz} />
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -180,6 +189,41 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div>
       <p className="mb-1.5 text-caption uppercase tracking-[0.18em] text-ink-muted">{title}</p>
       {children}
+    </div>
+  );
+}
+
+/**
+ * 把题目 / 选项预填进教学助手输入框的快捷按钮组。
+ * 每题一个 "🤔 问助手：第 N 题" 按钮——点击后打开浮窗并把题面 + 选项灌进 pendingDraft，
+ * 用户按 Enter 即可让助手基于内置讲义检索答案。
+ */
+function AssistantHandoff({ quiz }: { quiz: NonNullable<ReturnType<typeof getLesson>['quiz']> }) {
+  const { t } = useI18n();
+  const setOpen = useAssistantStore((s) => s.setOpen);
+  const setPendingDraft = useAssistantStore((s) => s.setPendingDraft);
+
+  const handoff = (item: NonNullable<ReturnType<typeof getLesson>['quiz']>[number]) => {
+    const optionsTxt = item.options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join('\n');
+    const draft = `${item.q}\n${optionsTxt}`;
+    setPendingDraft(draft);
+    setOpen(true);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5 rounded-lg border border-line-subtle bg-bg-base px-2.5 py-1.5">
+      {quiz.map((item, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => handoff(item)}
+          className="inline-flex items-center gap-1 rounded border border-line-subtle px-2 py-1 text-caption text-ink-secondary transition-colors hover:border-accent-primary/40 hover:text-accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          aria-label={t('assistant.askAria')}
+        >
+          <MessageCircleQuestion className="h-3 w-3" aria-hidden="true" />
+          {t('assistant.askButton')} · {i + 1}
+        </button>
+      ))}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { DualLoopBlockDiagram } from './DualLoopBlockDiagram';
 import { PfcWaveformCard } from './PfcWaveformCard';
 import { PfcSpectrumCard } from './PfcSpectrumCard';
 import { PfcControlTuningCard } from './PfcControlTuningCard';
+import { SerialComparePFCCard } from './SerialComparePFCCard';
 
 /**
  * 15 号 · APF 前级（Boost PFC）—— 工程级双环 + 谐波抑制学习台。
@@ -54,6 +55,7 @@ export function APFFrontendModule() {
         <>
           <PfcSpectrumCard result={result} />
           <PfcControlTuningCard />
+          <SerialComparePFCCard />
         </>
       }
       concept={<ConceptNotes moduleId="apf-frontend" />}

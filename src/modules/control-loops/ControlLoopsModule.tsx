@@ -11,6 +11,7 @@ import { formatNumber } from '../../utils/format';
 import type { ControlLoopParams } from '../../simulation/engine/types';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
+import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -119,6 +120,7 @@ function Probe() {
           <p className="text-body leading-relaxed text-accent-fault">{t('controlLoops.oscWarn')}</p>
         </Card>
       )}
+      <SerialCompareSpeedLoopCard />
     </>
   );
 }

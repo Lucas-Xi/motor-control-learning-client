@@ -3,9 +3,14 @@ import {
   estimateDeadTimeUsFromDistortion,
   mockFaultInjectionSample,
   mockFocFlowSample,
+  mockHFISample,
   mockInverterSample,
   mockMotorBasicsSample,
+  mockPfcSample,
+  mockSpeedLoopSample,
+  mockStartupSample,
 } from '../serialMockGenerators';
+import { startupDefault, apfDefault } from '../../simulation/engine/presets';
 
 describe('mockFocFlowSample', () => {
   it('iqRef / idRef 透传给定参数', () => {
@@ -171,5 +176,117 @@ describe('mockFaultInjectionSample', () => {
     expect(s.ia).toBe(0);
     expect(s.faulted).toBe(true);
     expect(s.tripped).toBe(false);
+  });
+});
+
+describe('mockSpeedLoopSample', () => {
+  it('阶跃前 rpmRef = 0、rpmSim = 0', () => {
+    const s = mockSpeedLoopSample(50, { rpmRef: 1500, stepMs: 100 });
+    expect(s.rpmRef).toBe(0);
+    expect(s.rpmSim).toBe(0);
+  });
+
+  it('阶跃后 rpmRef 等于指令', () => {
+    const s = mockSpeedLoopSample(200, { rpmRef: 1500, stepMs: 100 });
+    expect(s.rpmRef).toBe(1500);
+    expect(Number.isFinite(s.rpmSim)).toBe(true);
+  });
+
+  it('确定性：相同入参 → 相同输出', () => {
+    const a = mockSpeedLoopSample(250, { rpmRef: 1500, stepMs: 100, zeta: 0.5 });
+    const b = mockSpeedLoopSample(250, { rpmRef: 1500, stepMs: 100, zeta: 0.5 });
+    expect(a.rpmReal).toBe(b.rpmReal);
+    expect(a.rpmSim).toBe(b.rpmSim);
+  });
+
+  it('rpmSim 最终收敛到指令附近（5 倍 τ ≈ 5/ωn 后）', () => {
+    // ωn=50, ζ=0.7 → 5/50 = 100ms 足以稳定
+    const s = mockSpeedLoopSample(800, {
+      rpmRef: 1500,
+      stepMs: 100,
+      omegaN: 50,
+      zeta: 0.7,
+      noiseRpm: 0,
+      steadyErrRpm: 0,
+    });
+    expect(Math.abs(s.rpmSim - 1500)).toBeLessThan(50);
+  });
+});
+
+describe('mockHFISample', () => {
+  it('注入电压幅值不超过 injectV', () => {
+    for (const t of [10, 25, 80]) {
+      const s = mockHFISample(t, { injectV: 30, injectFreqHz: 800, saliencyRatio: 2.0, rpm: 100 });
+      expect(Math.abs(s.injectV)).toBeLessThanOrEqual(30 + 1e-9);
+    }
+  });
+
+  it('thetaReal / thetaEst 都在 [0, 2π) 内', () => {
+    const s = mockHFISample(50, { injectV: 30, injectFreqHz: 800, saliencyRatio: 2.0, rpm: 600 });
+    expect(s.thetaReal).toBeGreaterThanOrEqual(0);
+    expect(s.thetaReal).toBeLessThan(2 * Math.PI);
+    expect(s.thetaEst).toBeGreaterThanOrEqual(0);
+    expect(s.thetaEst).toBeLessThan(2 * Math.PI);
+  });
+
+  it('lockTauMs 几个 τ 后 |thetaErr| 显著小', () => {
+    const early = mockHFISample(5, { injectV: 30, injectFreqHz: 800, saliencyRatio: 2.0, rpm: 600, lockTauMs: 10, noiseRad: 0 });
+    const late = mockHFISample(150, { injectV: 30, injectFreqHz: 800, saliencyRatio: 2.0, rpm: 600, lockTauMs: 10, noiseRad: 0 });
+    expect(Math.abs(late.thetaErr)).toBeLessThan(Math.abs(early.thetaErr));
+  });
+
+  it('saliencyEst 不小于 1（物理下限）', () => {
+    const s = mockHFISample(60, { injectV: 30, injectFreqHz: 800, saliencyRatio: 1.0, rpm: 0 });
+    expect(s.saliencyEst).toBeGreaterThanOrEqual(1.0);
+  });
+});
+
+describe('mockStartupSample', () => {
+  it('返回有效 state 与 rpm', () => {
+    const s = mockStartupSample(500, { startup: startupDefault });
+    expect(['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak']).toContain(s.state);
+    expect(Number.isFinite(s.rpmSim)).toBe(true);
+    expect(Number.isFinite(s.rpmReal)).toBe(true);
+  });
+
+  it('rpmReal 在 rpmSim 附近（噪声 ±2σ 内）', () => {
+    const s = mockStartupSample(2000, { startup: startupDefault, noiseRpm: 5 });
+    expect(Math.abs(s.rpmReal - s.rpmSim)).toBeLessThan(20);
+  });
+
+  it('slugViolation 是布尔值', () => {
+    const s = mockStartupSample(1000, { startup: startupDefault });
+    expect(typeof s.slugViolation).toBe('boolean');
+  });
+});
+
+describe('mockPfcSample', () => {
+  it('返回 PF/THD/Udc 完整字段', () => {
+    const r = mockPfcSample({ apf: apfDefault });
+    expect(r.pfReal).toBeGreaterThanOrEqual(0);
+    expect(r.pfReal).toBeLessThanOrEqual(1);
+    expect(r.pfSim).toBeGreaterThanOrEqual(0);
+    expect(r.thdReal).toBeGreaterThanOrEqual(0);
+    expect(r.udcAvg).toBeGreaterThan(0);
+    expect(r.udcRipple).toBeGreaterThanOrEqual(0);
+  });
+
+  it('实测 PF 在仿真 PF 下方（pfDegrade > 0 默认）', () => {
+    const r = mockPfcSample({ apf: apfDefault, pfDegrade: 0.05 });
+    expect(r.pfReal).toBeLessThanOrEqual(r.pfSim + 1e-6);
+  });
+
+  it('谐波柱状包含 3/5/7/9/11 次 + IEC 限值', () => {
+    const r = mockPfcSample({ apf: apfDefault });
+    expect(r.harmonics.map((h) => h.order)).toEqual([3, 5, 7, 9, 11]);
+    for (const h of r.harmonics) {
+      expect(h.iecLimitPct).not.toBeNull();
+      expect(h.measuredPct).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('iGridReal 长度与 iGridSim 相同', () => {
+    const r = mockPfcSample({ apf: apfDefault, noiseA: 0.1 });
+    expect(r.iGridReal.length).toBe(r.iGridSim.length);
   });
 });

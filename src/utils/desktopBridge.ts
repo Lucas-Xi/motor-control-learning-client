@@ -46,6 +46,37 @@ export interface UpdateCheckResult {
   feedUrl?: string;
 }
 
+/** 自动更新事件 payload（来自主进程 update.cjs::buildUpdateEvent）。 */
+export type UpdateEventStatus =
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+  | 'disabled';
+
+export interface UpdateEvent {
+  status: UpdateEventStatus;
+  currentVersion: string;
+  latest?: string | null;
+  percent?: number;
+  bytesPerSecond?: number;
+  transferred?: number;
+  total?: number;
+  releaseNotes?: string | null;
+  releaseDate?: string | null;
+  message?: string;
+}
+
+export interface UpdateActionResult {
+  status: 'ok' | 'disabled' | 'error' | 'checked';
+  current?: string;
+  latest?: string;
+  error?: string;
+  message?: string;
+}
+
 interface DesktopBridge {
   getMetadata: () => Promise<DesktopMetadata>;
   openSnapshotFile: () => Promise<OpenSnapshotPayload | null>;
@@ -56,6 +87,11 @@ interface DesktopBridge {
   setWindowState: (state: unknown) => Promise<boolean>;
   subscribe: <T = unknown>(channel: string, handler: (payload: T) => void) => () => void;
   unsubscribe: (channel: string, handler: (...args: unknown[]) => void) => void;
+  // 自动更新（electron-updater）
+  checkForUpdateNow?: () => Promise<UpdateActionResult>;
+  startUpdateDownload?: () => Promise<UpdateActionResult>;
+  quitAndInstallUpdate?: () => Promise<UpdateActionResult>;
+  subscribeUpdateEvents?: (handler: (event: UpdateEvent) => void) => () => void;
 }
 
 declare global {
@@ -119,5 +155,75 @@ export async function syncWindowStateOnce(): Promise<void> {
     if (state) persistWindowStateToLocalStorage(state);
   } catch {
     /* 桥不可用 */
+  }
+}
+
+/* ===== 自动更新 helpers（renderer 侧） =====
+ * 所有 API 都做"桥不存在 → 安全降级"处理。订阅函数返回的 unsubscribe 在
+ * Web 浏览器里是 no-op，可以无脑放到 useEffect 的 cleanup。
+ */
+
+const UPDATE_BANNER_SESSION_KEY = 'compbench:update-banner-dismissed';
+
+/** 订阅自动更新事件流；非 Electron 环境返回 no-op 解绑。 */
+export function subscribeUpdateEvents(handler: (event: UpdateEvent) => void): () => void {
+  const bridge = getDesktopBridge();
+  if (!bridge || !bridge.subscribeUpdateEvents) return () => {};
+  return bridge.subscribeUpdateEvents(handler);
+}
+
+/** 主动触发一次后台检查（返回结果不含事件细节，需配合订阅使用）。 */
+export async function checkForUpdateNow(): Promise<UpdateActionResult | null> {
+  const bridge = getDesktopBridge();
+  if (!bridge?.checkForUpdateNow) return null;
+  try {
+    return await bridge.checkForUpdateNow();
+  } catch (err) {
+    return { status: 'error', error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** 触发"立即下载"——用户在 UpdateBanner 上点击。 */
+export async function startUpdateDownload(): Promise<UpdateActionResult | null> {
+  const bridge = getDesktopBridge();
+  if (!bridge?.startUpdateDownload) return null;
+  try {
+    return await bridge.startUpdateDownload();
+  } catch (err) {
+    return { status: 'error', error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** 触发"重启并安装"——下载完成后用户点击。 */
+export async function quitAndInstallUpdate(): Promise<UpdateActionResult | null> {
+  const bridge = getDesktopBridge();
+  if (!bridge?.quitAndInstallUpdate) return null;
+  try {
+    return await bridge.quitAndInstallUpdate();
+  } catch (err) {
+    return { status: 'error', error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * 「暂不更新」：把当前提示版本号写入 sessionStorage，本会话内不再弹。
+ * 下次启动应用（开新进程）时 sessionStorage 自动失效，banner 会重新出现。
+ */
+export function dismissUpdateBannerThisSession(version: string | null | undefined): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    sessionStorage.setItem(UPDATE_BANNER_SESSION_KEY, version ?? '*');
+  } catch {
+    /* 隐私模式 / 配额满 → 静默 */
+  }
+}
+
+/** 读取本会话已暂忽略的版本号；返回 null 表示没有暂忽略。 */
+export function readDismissedBannerVersion(): string | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    return sessionStorage.getItem(UPDATE_BANNER_SESSION_KEY);
+  } catch {
+    return null;
   }
 }

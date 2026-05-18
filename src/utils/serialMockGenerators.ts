@@ -25,7 +25,9 @@
 import { simulateCurrentLoop } from '../simulation/math/motorModel';
 import { inverterAverageModel } from '../simulation/math/inverterModel';
 import { createFaultWaveform, isStatusOnlyFault } from '../simulation/math/faultWaveforms';
-import type { FaultType } from '../simulation/engine/types';
+import { simulateStartup } from '../simulation/math/startup';
+import { simulatePfcCycle, spectrumOf, outputSampleRate } from '../simulation/math/boostPfc';
+import type { APFParams, FaultType, StartupParams, StartupState } from '../simulation/engine/types';
 
 // ---------- 通用工具 ----------
 
@@ -353,4 +355,402 @@ export function mockFaultInjectionSample(
   const ib = tripped ? 0 : inFault ? best.ib : baseline.ib + noise() * 0.05;
   const ic = tripped ? 0 : inFault ? best.ic : baseline.ic + noise() * 0.05;
   return { t_ms, ia, ib, ic, faulted: inFault, tripped };
+}
+
+// ---------- 5. Speed loop step response：rpm_ref / rpm_sim / rpm_real ----------
+
+export interface SpeedLoopMockSample {
+  t_ms: number;
+  /** 阶跃指令转速（rpm，t<stepMs 为 0，t>=stepMs 为 rpmRef） */
+  rpmRef: number;
+  /** 仿真值（二阶欠阻尼步响应：上升 + 超调 + 衰减振荡） */
+  rpmSim: number;
+  /** 实测值（仿真 + 测量噪声 + 静差） */
+  rpmReal: number;
+  /** 仿真 Iq 命令（A，比例于速度环误差） */
+  iqSim: number;
+  /** 实测 Iq（A，仿真 + 噪声） */
+  iqReal: number;
+}
+
+export interface SpeedLoopMockParams {
+  /** 转速指令幅值（rpm） */
+  rpmRef: number;
+  /** 阶跃时刻（ms，默认 100） */
+  stepMs?: number;
+  /** 二阶系统自然频率（rad/s，决定上升时间；典型 30-80） */
+  omegaN?: number;
+  /** 阻尼比 ζ（0.4-0.9；< 1 出现超调，越小超调越大） */
+  zeta?: number;
+  /** 实测稳态静差（rpm，模拟编码器/采样偏差） */
+  steadyErrRpm?: number;
+  /** 实测噪声幅值（rpm） */
+  noiseRpm?: number;
+  /** Iq/rpm 等效系数（A/rpm，仿真用，典型 0.005） */
+  iqPerErrRpm?: number;
+}
+
+/**
+ * 二阶欠阻尼系统的解析阶跃响应：
+ *   y(t) = K · (1 − exp(-ζωn·t)/√(1−ζ²) · sin(ωd·t + φ))
+ *   ωd = ωn·√(1−ζ²), φ = arctan(√(1−ζ²)/ζ)
+ *
+ * 上升时间 tr ≈ (π−φ)/ωd；超调量 Mp = exp(-ζπ/√(1−ζ²)) × 100%。
+ *
+ * 这里用解析公式而不是积分仿真：每帧 O(1)，确定性输出，方便单测。
+ */
+export function mockSpeedLoopSample(t_ms: number, params: SpeedLoopMockParams): SpeedLoopMockSample {
+  const stepMs = params.stepMs ?? 100;
+  const wn = params.omegaN ?? 50;
+  const zeta = Math.min(0.95, Math.max(0.2, params.zeta ?? 0.55));
+  const steadyErr = params.steadyErrRpm ?? 8;
+  const noiseAmp = params.noiseRpm ?? 12;
+  const iqGain = params.iqPerErrRpm ?? 0.005;
+  const noise = makeNoise(Math.floor(t_ms * 1000) ^ 0x1234);
+
+  const dt_s = Math.max(0, (t_ms - stepMs) / 1000);
+  let rpmRefNow = 0;
+  let rpmSim = 0;
+  if (t_ms >= stepMs) {
+    rpmRefNow = params.rpmRef;
+    if (dt_s < 1e-6) {
+      rpmSim = 0;
+    } else {
+      const wd = wn * Math.sqrt(Math.max(1e-9, 1 - zeta * zeta));
+      const phi = Math.atan2(Math.sqrt(1 - zeta * zeta), zeta);
+      const env = Math.exp(-zeta * wn * dt_s) / Math.sqrt(1 - zeta * zeta);
+      rpmSim = params.rpmRef * (1 - env * Math.sin(wd * dt_s + phi));
+    }
+  }
+  const rpmReal = rpmSim + (t_ms >= stepMs ? steadyErr : 0) + noise() * noiseAmp;
+  const errRpm = rpmRefNow - rpmSim;
+  const iqSim = errRpm * iqGain;
+  const iqReal = iqSim + noise() * 0.1;
+
+  return { t_ms, rpmRef: rpmRefNow, rpmSim, rpmReal, iqSim, iqReal };
+}
+
+// ---------- 6. HFI signal chain：inject / demod / θ̂ ----------
+
+export interface HFIMockSample {
+  t_ms: number;
+  /** d 轴注入电压瞬时值（V） */
+  injectV: number;
+  /** 解调得到的 d-q 凸极误差信号（A 等效） */
+  demodErr: number;
+  /** 真实电角度（rad，wrap 到 [0, 2π)） */
+  thetaReal: number;
+  /** HFI 估算电角度（rad，wrap 到 [0, 2π)） */
+  thetaEst: number;
+  /** 估算误差（rad，wrap 到 [-π, π]） */
+  thetaErr: number;
+  /** 由响应幅值反推的凸极比 Lq/Ld（无量纲） */
+  saliencyEst: number;
+}
+
+export interface HFIMockParams {
+  /** 注入电压幅值（V，典型 20-50） */
+  injectV: number;
+  /** 注入频率（Hz，典型 500-1500） */
+  injectFreqHz: number;
+  /** 凸极比 Lq/Ld（IPM 典型 1.5-3） */
+  saliencyRatio: number;
+  /** 转子真实速度（rpm） */
+  rpm: number;
+  /** PLL 锁相时间常数（ms，决定从 0 收敛到真实角度的速度） */
+  lockTauMs?: number;
+  /** 估算噪声幅值（rad） */
+  noiseRad?: number;
+  /** 凸极估算的相对偏差（无量纲，模拟标定误差） */
+  saliencyBias?: number;
+}
+
+/**
+ * HFI mock：解析合成"注入电压 → 凸极响应 → 解调 → PLL 锁相"四个通道。
+ *
+ * 实现要点：
+ *   - 真实 θ_real = ω·t（机械连续转）；
+ *   - 估算 θ_est：用一阶低通跟踪 θ_real，τ = lockTauMs/1000，
+ *     模拟 PLL 收敛过程（启动瞬间 θ_err 接近 ±π，几个 τ 后收敛到 ±噪声）；
+ *   - 解调误差 ∝ saliencyGain × sin(2·θ_err)（与 src/simulation/math/hfi.ts 公式一致）；
+ *   - 凸极反推：由响应幅值反向估算 Lq/Ld，加一个 saliencyBias 模拟标定误差。
+ */
+export function mockHFISample(t_ms: number, params: HFIMockParams): HFIMockSample {
+  const t_s = t_ms / 1000;
+  const wInject = 2 * Math.PI * params.injectFreqHz;
+  // 4 极对默认（与 src/simulation/math/hfi.ts 一致）
+  const wReal = (params.rpm * 2 * Math.PI / 60) * 4;
+  const tau = (params.lockTauMs ?? 30) / 1000;
+  const noiseAmp = params.noiseRad ?? 0.01;
+  const bias = params.saliencyBias ?? 0.08;
+  const noise = makeNoise(Math.floor(t_ms * 1000) ^ 0xc0de);
+
+  const injectV = params.injectV * Math.sin(wInject * t_s);
+
+  // 凸极信号增益 (Lq-Ld)/(Lq+Ld) ∈ [0, 1)
+  const r = Math.max(1, params.saliencyRatio);
+  const saliencyGain = (r - 1) / (r + 1);
+
+  // PLL 一阶跟踪：θ_est(t) = θ_real · (1 − exp(-t/τ))，τ 后收敛
+  const thetaRealRaw = wReal * t_s;
+  const k = 1 - Math.exp(-t_s / Math.max(tau, 1e-4));
+  const thetaEstRaw = thetaRealRaw * k + noise() * noiseAmp;
+
+  // 解调误差信号：与 sin(2·Δθ) 同号 + saliency 加权
+  const dtheta = thetaRealRaw - thetaEstRaw;
+  const demodErr = saliencyGain * Math.sin(2 * dtheta) * params.injectV * 0.03;
+
+  // 凸极反推：从解调误差幅值反推 saliencyGain → r=(1+g)/(1-g)
+  // 加 saliencyBias 模拟实测标定的系统误差
+  const saliencyEst = Math.max(1.0, params.saliencyRatio * (1 + bias * Math.sin(t_s * 5)));
+
+  // wrap 到 [0, 2π) / [-π, π]
+  const thetaReal = wrap2pi(thetaRealRaw);
+  const thetaEst = wrap2pi(thetaEstRaw);
+  const thetaErr = wrapPi(thetaRealRaw - thetaEstRaw);
+
+  return { t_ms, injectV, demodErr, thetaReal, thetaEst, thetaErr, saliencyEst };
+}
+
+// ---------- 7. Startup state machine：state + rpm + dω/dt 违规检测 ----------
+
+export interface StartupMockSample {
+  t_ms: number;
+  state: StartupState;
+  /** 仿真转速（rpm） */
+  rpmSim: number;
+  /** 实测转速（rpm，仿真 + 噪声） */
+  rpmReal: number;
+  /** 仿真 Iq（A） */
+  iqSim: number;
+  /** 板端实际 Iq（A，仿真 + 噪声） */
+  iqReal: number;
+  /** 是否处于反液击斜坡违规（瞬时 dω/dt > accelRampRpmS） */
+  slugViolation: boolean;
+}
+
+export interface StartupMockParams {
+  startup: StartupParams;
+  /** 实测转速噪声幅值（rpm） */
+  noiseRpm?: number;
+  /** 实测斜坡违规阈值倍率（默认 1.5×accelRampRpmS） */
+  slugFactor?: number;
+}
+
+/**
+ * 启动状态机 mock：复用 simulateStartup 的稳定结果作为"理论值"，
+ * 实测在仿真基础上叠加噪声 + 偶发斜坡过冲。
+ *
+ * 缓存 simulateStartup 结果（按 accelRamp + targetRpm + alignDuration 取 key），
+ * 避免每帧重跑 8s 仿真。
+ */
+const startupCache = new Map<string, ReturnType<typeof simulateStartup>>();
+
+function getStartupSeries(startup: StartupParams): ReturnType<typeof simulateStartup> {
+  const key = `${startup.targetRpm}|${startup.accelRampRpmS}|${startup.alignDurationMs}|${startup.hfiHandoffRpm}|${startup.bemfHandoffRpm}|${startup.fieldweakRpm}`;
+  const hit = startupCache.get(key);
+  if (hit) return hit;
+  const series = simulateStartup(startup);
+  if (startupCache.size > 16) startupCache.clear();
+  startupCache.set(key, series);
+  return series;
+}
+
+export function mockStartupSample(t_ms: number, params: StartupMockParams): StartupMockSample {
+  const series = getStartupSeries(params.startup);
+  if (series.length === 0) {
+    return {
+      t_ms,
+      state: 'idle',
+      rpmSim: 0,
+      rpmReal: 0,
+      iqSim: 0,
+      iqReal: 0,
+      slugViolation: false,
+    };
+  }
+  const span = series[series.length - 1].t;
+  const tMod = ((t_ms % span) + span) % span;
+  let best = series[0];
+  let bestIdx = 0;
+  for (let i = 0; i < series.length; i += 1) {
+    if (Math.abs(series[i].t - tMod) < Math.abs(best.t - tMod)) {
+      best = series[i];
+      bestIdx = i;
+    }
+  }
+  const noiseAmp = params.noiseRpm ?? 6;
+  const noise = makeNoise(Math.floor(t_ms * 1000) ^ 0xbeef);
+
+  // 斜坡违规检测：相邻两点的 dω/dt 是否超过 accelRampRpmS × slugFactor
+  const slugFactor = params.slugFactor ?? 1.5;
+  const limit = params.startup.accelRampRpmS * slugFactor;
+  let slugViolation = false;
+  if (bestIdx > 0) {
+    const prev = series[bestIdx - 1];
+    const dtMs = best.t - prev.t;
+    if (dtMs > 0) {
+      const drpm = best.rpm - prev.rpm;
+      const dwdt = (drpm / dtMs) * 1000; // rpm/s
+      slugViolation = Math.abs(dwdt) > limit;
+    }
+  }
+
+  const rpmSim = best.rpm;
+  const rpmReal = rpmSim + noise() * noiseAmp;
+  const iqSim = best.iqA;
+  const iqReal = iqSim + noise() * 0.15;
+
+  return {
+    t_ms,
+    state: best.state,
+    rpmSim,
+    rpmReal,
+    iqSim,
+    iqReal,
+    slugViolation,
+  };
+}
+
+// ---------- 8. PFC：PF / THD / 谐波柱状 / Udc 纹波 ----------
+
+export interface PfcHarmonicBin {
+  /** 谐波次数 */
+  order: number;
+  /** 实测谐波幅值（A，相对于基波 % 表达） */
+  measuredPct: number;
+  /** 仿真谐波幅值（相对于基波 %） */
+  simPct: number;
+  /** IEC 61000-3-2 Class D 限值（相对于基波 %；只覆盖 3/5/7/9/11 次） */
+  iecLimitPct: number | null;
+}
+
+export interface PfcMockResult {
+  /** 实测 PF（介于 0..1） */
+  pfReal: number;
+  /** 仿真 PF */
+  pfSim: number;
+  /** 实测 THD（%） */
+  thdReal: number;
+  /** 仿真 THD（%） */
+  thdSim: number;
+  /** Udc 平均（V） */
+  udcAvg: number;
+  /** Udc 纹波峰峰（V） */
+  udcRipple: number;
+  /** 时间轴（ms） */
+  t_ms: number[];
+  /** 仿真 i_grid 波形（A） */
+  iGridSim: number[];
+  /** 实测 i_grid 波形（A，仿真 + 噪声） */
+  iGridReal: number[];
+  /** 仿真 Udc 时序（V） */
+  udc: number[];
+  /** 谐波柱状图数据（3/5/7/9/11 次） */
+  harmonics: PfcHarmonicBin[];
+}
+
+export interface PfcMockParams {
+  apf: APFParams;
+  /** 实测电流噪声幅值（A） */
+  noiseA?: number;
+  /** 实测 PF 比仿真低的比例（0..0.2，模拟板上元件损耗） */
+  pfDegrade?: number;
+  /** 实测 THD 在仿真基础上的偏差（%，模拟 EMI 引入） */
+  thdInflatePct?: number;
+}
+
+/**
+ * IEC 61000-3-2 Class D（≤ 600 W 家电）部分奇次谐波限值（按基波百分比）
+ * 取自标准 Table 3 列出的"A/W"（电流单位）值，
+ * 这里按 1 A 基波（即 PFC 之后的额定级别）做近似换算到百分比。
+ *
+ * 详细：实际标准是"每瓦 mA"，工程审核时仍要回到电流绝对值；
+ * 教学场景只展示相对趋势，超限/正常用颜色区分。
+ */
+const IEC_CLASS_D_LIMIT_PCT: Record<number, number> = {
+  3: 30, // 标准给 3.4 mA/W；在 100 W 装置上 ≈ 0.34 A，对应基波 ~1A 时占 30%
+  5: 19,
+  7: 10,
+  9: 5,
+  11: 3,
+};
+
+const pfcCache = new Map<string, ReturnType<typeof simulatePfcCycle>>();
+
+function getPfcResult(apf: APFParams): ReturnType<typeof simulatePfcCycle> {
+  const key = `${apf.vAcRms}|${apf.udcRef}|${apf.boostInductanceMh}|${apf.boostCapacitanceUf}|${apf.loadCurrent}|${apf.voltageKp}|${apf.voltageKi}|${apf.currentKp}|${apf.currentKi}`;
+  const hit = pfcCache.get(key);
+  if (hit) return hit;
+  const result = simulatePfcCycle({
+    Vac_rms: apf.vAcRms,
+    Vdc_ref: apf.udcRef,
+    L_mH: apf.boostInductanceMh,
+    C_uF: apf.boostCapacitanceUf,
+    load_W: Math.max(50, apf.udcRef * apf.loadCurrent),
+    Kpv: apf.voltageKp,
+    Kiv: apf.voltageKi,
+    Kpi: apf.currentKp,
+    Kii: apf.currentKi,
+  });
+  if (pfcCache.size > 8) pfcCache.clear();
+  pfcCache.set(key, result);
+  return result;
+}
+
+export function mockPfcSample(params: PfcMockParams): PfcMockResult {
+  const result = getPfcResult(params.apf);
+  const noiseAmp = params.noiseA ?? 0.18;
+  const pfDegrade = Math.min(0.2, Math.max(0, params.pfDegrade ?? 0.02));
+  const thdInflate = params.thdInflatePct ?? 1.5;
+
+  // 实测电流：仿真 + 噪声（按帧序号 seed 噪声 → 确定性）
+  const iGridReal = new Array<number>(result.i_grid_pfc.length);
+  for (let i = 0; i < result.i_grid_pfc.length; i += 1) {
+    const n = makeNoise(i ^ 0xfeed);
+    iGridReal[i] = result.i_grid_pfc[i] + n() * noiseAmp;
+  }
+
+  // PF：实测 = 仿真 × (1 - degrade) ；THD：实测 = 仿真 + inflate
+  const pfReal = Math.max(0, result.pf * (1 - pfDegrade));
+  const thdReal = Math.max(0, result.thd + thdInflate);
+
+  // 谐波柱状：用 spectrumOf 求基波幅值再算每个奇次谐波相对值
+  const fs = outputSampleRate({});
+  const spec = spectrumOf(result.i_grid_pfc, fs);
+  const freq = params.apf.vAcFreqHz;
+  const baseBin = Math.max(1, Math.round((freq * result.i_grid_pfc.length) / fs));
+  // 在 baseBin ±1 内挑实际峰
+  let fundIdx = baseBin;
+  for (let k = Math.max(1, baseBin - 1); k <= Math.min(spec.mag.length - 1, baseBin + 1); k += 1) {
+    if (spec.mag[k] > spec.mag[fundIdx]) fundIdx = k;
+  }
+  const v1 = spec.mag[fundIdx] || 1e-9;
+  const harmonics: PfcHarmonicBin[] = [];
+  for (const order of [3, 5, 7, 9, 11]) {
+    const idx = fundIdx * order;
+    const simPct = idx < spec.mag.length ? (spec.mag[idx] / v1) * 100 : 0;
+    // 实测稍高（含板上噪声 + 测量底）
+    const measuredPct = simPct + thdInflate * 0.4 + (order === 3 ? 1.2 : order === 5 ? 0.8 : 0.3);
+    harmonics.push({
+      order,
+      measuredPct,
+      simPct,
+      iecLimitPct: IEC_CLASS_D_LIMIT_PCT[order] ?? null,
+    });
+  }
+
+  return {
+    pfReal,
+    pfSim: result.pf,
+    thdReal,
+    thdSim: result.thd,
+    udcAvg: result.Udc_avg,
+    udcRipple: result.Udc_ripple,
+    t_ms: result.t_ms,
+    iGridSim: result.i_grid_pfc,
+    iGridReal,
+    udc: result.Udc,
+    harmonics,
+  };
 }

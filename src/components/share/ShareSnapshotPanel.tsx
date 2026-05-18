@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Share2, Copy, Link2, Trash2, Plus, ClipboardPaste, ArrowLeftRight } from 'lucide-react';
+import { Share2, Copy, Link2, Trash2, Plus, ClipboardPaste, ArrowLeftRight, Cloud, Loader2 } from 'lucide-react';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useAssemblyProgressStore } from '../../store/assemblyProgressStore';
 import { useChallengeStore } from '../../store/challengeStore';
 import { useSnapshotsStore } from '../../store/snapshotsStore';
+import { useCloudShareStore } from '../../store/cloudShareStore';
+import { createSnapshot, GistError } from '../../utils/gistCloud';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import {
@@ -97,6 +99,8 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
   const [pasteText, setPasteText] = useState<string>('');
   const [pasteError, setPasteError] = useState<string>('');
   const [feedback, setFeedback] = useState<string>('');
+  const [uploading, setUploading] = useState<boolean>(false);
+  const pat = useCloudShareStore((s) => s.pat);
 
   const feedbackTimerRef = useRef<number | null>(null);
   const showFeedback = useCallback((msg: string) => {
@@ -162,6 +166,30 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
       showFeedback('当前环境不支持系统分享，请手动复制');
     }
   }, [shareUrl, showFeedback]);
+
+  const handleUploadGist = useCallback(async () => {
+    if (!token) {
+      showFeedback('请先点【生成分享链接】');
+      return;
+    }
+    if (!pat) {
+      showFeedback('请先在「云协作」面板绑定 GitHub PAT');
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await createSnapshot(pat, token, {
+        description: '电机控制学习客户端 · 数字孪生 snapshot',
+        public: false,
+      });
+      showFeedback(`已上传到 Gist：${result.gistId.slice(0, 8)}…`);
+    } catch (err) {
+      const msg = err instanceof GistError ? err.message : (err as Error).message;
+      showFeedback(`上传失败：${msg}`);
+    } finally {
+      setUploading(false);
+    }
+  }, [token, pat, showFeedback]);
 
   const handleAddRemote = useCallback(() => {
     const t = extractToken(pasteText);
@@ -233,6 +261,20 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
                     系统分享
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={handleUploadGist}
+                  disabled={uploading || !pat}
+                  aria-label={pat ? '把当前 token 上传到 GitHub Gist' : '需要先在云协作面板绑定 PAT'}
+                  title={pat ? '上传到 GitHub Gist' : '需要先在云协作面板绑定 PAT'}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Cloud className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  上传到 Gist
+                </Button>
               </>
             )}
           </div>

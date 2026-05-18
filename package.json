@@ -21,6 +21,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
+    "electron-updater": "^6.8.3",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.552.0",
     "react": "^19.2.0",
@@ -69,6 +70,12 @@
       "artifactName": "电机控制学习客户端-${version}-${arch}.${ext}",
       "target": [
         {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
           "target": "portable",
           "arch": [
             "x64"
@@ -99,9 +106,10 @@
     ],
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://updates.example.com/compressor-bench",
-        "channel": "latest"
+        "provider": "github",
+        "owner": "<OWNER>",
+        "repo": "<REPO>",
+        "releaseType": "release"
       }
     ]
   }

@@ -1,4 +1,7 @@
 import type { ModuleId } from '../simulation/engine/types';
+import type { Locale } from '../i18n/types';
+import { useI18nStore } from '../store/i18nStore';
+import { lessonsEn } from './lessonsEn';
 
 export interface LessonContent {
   id: ModuleId;
@@ -1984,6 +1987,34 @@ const fallbackLesson: LessonContent = {
   codeExample: '',
 };
 
-export function getLesson(id: ModuleId): LessonContent {
-  return lessons[id] ?? fallbackLesson;
+/**
+ * Resolve which language source (if any) has an entry for the requested module.
+ *
+ * Returns:
+ *  - 'en-US' when the active locale is English and a real English entry exists.
+ *  - 'zh-CN' when a Chinese entry exists (default / fallback).
+ *  - null when neither side has content (very rare; only for placeholder modules).
+ */
+export function getFallbackLanguage(id: ModuleId, locale: Locale): 'zh-CN' | 'en-US' | null {
+  if (locale === 'en-US' && lessonsEn[id]) return 'en-US';
+  if (lessons[id]) return 'zh-CN';
+  if (lessonsEn[id]) return 'en-US';
+  return null;
+}
+
+/**
+ * Look up a lesson by id, honouring the active i18n locale.
+ *
+ * Behaviour:
+ *  - When locale is 'en-US' and `lessonsEn` has the entry, return the English version.
+ *  - Otherwise fall back to the Chinese version in `lessons`.
+ *  - When neither side has the entry, return the empty fallback (legacy behaviour).
+ */
+export function getLesson(id: ModuleId, localeOverride?: Locale): LessonContent {
+  const locale = localeOverride ?? useI18nStore.getState().locale;
+  if (locale === 'en-US') {
+    const en = lessonsEn[id];
+    if (en) return en;
+  }
+  return lessons[id] ?? lessonsEn[id] ?? fallbackLesson;
 }

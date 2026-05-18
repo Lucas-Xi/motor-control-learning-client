@@ -8,6 +8,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { simulateHFI, evaluateHFI } from '../../simulation/math/hfi';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
+import { SerialCompareHFICard } from './SerialCompareHFICard';
 
 function useHfiSamples() {
   const params = useSimulationStore((s) => s.hfi);
@@ -135,6 +136,7 @@ function Probe() {
           <li>· <span className="text-ink-primary">高速时切到 BEMF</span>：HFI 的高频注入会增加铁损和噪声</li>
         </ul>
       </Card>
+      <SerialCompareHFICard />
     </>
   );
 }

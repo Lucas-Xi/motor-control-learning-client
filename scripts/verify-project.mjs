@@ -74,6 +74,7 @@ const requiredFiles = [
   'src/store/simulationStore.ts',
   'src/store/uiStore.ts',
   'src/content/lessons.ts',
+  'src/content/lessonsEn.ts',
   'src/content/faultCases.ts',
   'src/content/guidedExperiments.ts',
   'src/content/visualAssets.ts',
@@ -104,16 +105,40 @@ const requiredFiles = [
   'src/utils/serialBridge.ts',
   'src/store/serialStore.ts',
   'src/components/lab/SerialBenchPanel.tsx',
+  // 模块内 SerialCompare 卡片：8 张分布在 8 个模块的 probe slot
+  'src/components/lab/SerialCompareCardShell.tsx',
+  'src/utils/serialMockGenerators.ts',
+  'src/modules/foc-flow/SerialCompareIqIdCard.tsx',
+  'src/modules/motor-basics/SerialCompareThetaCard.tsx',
+  'src/modules/inverter/SerialCompareDeadTimeCard.tsx',
+  'src/modules/faults-debugging/SerialFaultInjectionCard.tsx',
+  'src/modules/control-loops/SerialCompareSpeedLoopCard.tsx',
+  'src/modules/hfi-sensorless/SerialCompareHFICard.tsx',
+  'src/modules/startup-statemachine/SerialCompareStartupCard.tsx',
+  'src/modules/apf-frontend/SerialComparePFCCard.tsx',
   // 数字孪生分享 token：URL-safe base64 编解码 + 生成 / 接收 modal
   'src/utils/snapshotCodec.ts',
   'src/components/share/ShareSnapshotPanel.tsx',
   'src/components/share/ReceiveSnapshotModal.tsx',
+  // 数字孪生 V2 · 云协作（GitHub Gist + BroadcastChannel + Markdown 评论）
+  'src/utils/gistCloud.ts',
+  'src/utils/broadcastShare.ts',
+  'src/store/cloudShareStore.ts',
+  'src/components/share/GistCredentialsPanel.tsx',
+  'src/components/share/CloudSharePanel.tsx',
+  'src/components/share/CommentRenderer.tsx',
   // 学习洞察：错题本 + 步骤热力图 + 弱项推荐（zustand persist，仅本地）
   'src/store/insightsStore.ts',
   'src/components/insights/MistakeBookPanel.tsx',
   'src/components/insights/HeatmapPanel.tsx',
   'src/components/insights/WeaknessAdvicePanel.tsx',
   'src/components/insights/InsightsView.tsx',
+  // 本地教学助手：纯前端 RAG（BM25 + 启发式拼装），不调外部 LLM
+  'src/utils/ragIndex.ts',
+  'src/store/assistantStore.ts',
+  'src/components/assistant/AssistantPanel.tsx',
+  'src/components/assistant/FloatingChatButton.tsx',
+  'src/components/assistant/CitationLink.tsx',
   'docs/ASSET_PIPELINE.md',
   'docs/MODULE_EXTENSION.md',
   'scripts/generate-image-assets.ps1',
@@ -142,7 +167,11 @@ const requiredFiles = [
   'electron/menu.cjs',
   'electron/tray.cjs',
   'electron/splash.cjs',
+  'electron/update.cjs',
   'src/utils/desktopBridge.ts',
+  'src/components/desktop/UpdateBanner.tsx',
+  'docs/ELECTRON_AUTOUPDATE.md',
+  '.github/workflows/release.yml',
   'tests/e2e/smoke.spec.ts',
   'README.md',
 ];
@@ -258,7 +287,7 @@ const packageJson = JSON.parse(requireFile('package.json'));
 for (const script of ['dev', 'build', 'verify', 'preview', 'e2e', 'e2e:optional', 'qa:screenshots', 'release:audit', 'desktop:pack', 'desktop:dist', 'ci:local']) {
   if (!packageJson.scripts?.[script]) failures.push(`package.json missing script: ${script}`);
 }
-for (const dep of ['react', 'typescript', 'vite', 'tailwindcss', 'zustand', 'recharts', 'three', '@react-three/fiber', '@react-three/drei', 'framer-motion', 'electron', 'electron-builder']) {
+for (const dep of ['react', 'typescript', 'vite', 'tailwindcss', 'zustand', 'recharts', 'three', '@react-three/fiber', '@react-three/drei', 'framer-motion', 'electron', 'electron-builder', 'electron-updater']) {
   if (!packageJson.dependencies?.[dep] && !packageJson.devDependencies?.[dep]) failures.push(`package.json missing dependency: ${dep}`);
 }
 if (packageJson.main !== 'electron/main.cjs') failures.push('package.json main must point to electron/main.cjs');
@@ -268,9 +297,11 @@ const viteConfig = requireFile('vite.config.ts');
 if (!viteConfig.includes("base: './'")) failures.push("vite.config.ts must use base './' for file:// Electron loading");
 
 const electronMain = requireFile('electron/main.cjs');
-requireIncludes('electron/main.cjs', electronMain, ['BrowserWindow', 'contextIsolation: true', 'nodeIntegration: false', 'loadFile']);
+requireIncludes('electron/main.cjs', electronMain, ['BrowserWindow', 'contextIsolation: true', 'nodeIntegration: false', 'loadFile', 'initAutoUpdater']);
 const preload = requireFile('electron/preload.cjs');
-requireIncludes('electron/preload.cjs', preload, ['contextBridge', 'motorControlDesktop']);
+requireIncludes('electron/preload.cjs', preload, ['contextBridge', 'motorControlDesktop', 'desktop:update-event', 'subscribeUpdateEvents']);
+const electronUpdate = requireFile('electron/update.cjs');
+requireIncludes('electron/update.cjs', electronUpdate, ['buildUpdateEvent', 'initAutoUpdater', 'desktop:update-event']);
 
 const visualAssets = requireFile('src/content/visualAssets.ts');
 for (const id of ['motor-basics', 'foc-flow', 'svpwm', 'inverter', 'sensorless-foc', 'field-weakening', 'faults-debugging']) {
