@@ -85,6 +85,22 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "电机控制学习客户端"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "compbench",
+        "name": "压缩机工况快照",
+        "description": "压缩机变频器控制学习客户端工况文件",
+        "icon": "public/favicon.ico",
+        "role": "Editor"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.example.com/compressor-bench",
+        "channel": "latest"
+      }
+    ]
   }
 }

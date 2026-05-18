@@ -24,7 +24,7 @@ export function GlobalKeybindings() {
   const resetTime = useSimulationStore((s) => s.resetTime);
   const toggleFullScreen = useSimulationStore((s) => s.toggleFullScreen);
   const setMode = useSimulationStore((s) => s.setMode);
-  const toggleTheme = useThemeStore((s) => s.toggle);
+  const cycleTheme = useThemeStore((s) => s.cycleTheme);
 
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -99,8 +99,8 @@ export function GlobalKeybindings() {
       {
         key: 'm',
         category: '布局',
-        description: '切换深色 / 明色主题',
-        handler: () => toggleTheme(),
+        description: '循环切主题（深色 → 明色 → 高对比 → 投影）',
+        handler: () => cycleTheme(),
       },
       // —— 模式 ——
       {
@@ -156,7 +156,7 @@ export function GlobalKeybindings() {
       },
     ];
     return list;
-  }, [setActiveModule, setRunning, step, resetTime, toggleFullScreen, setMode, toggleTheme]);
+  }, [setActiveModule, setRunning, step, resetTime, toggleFullScreen, setMode, cycleTheme]);
 
   useKeyboardShortcuts(shortcuts);
 

@@ -1,15 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { calculateSvpwm } from '../../simulation/math/svpwm';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
-// BenchScope 仅在 refrigeration-bench 模块的底部波形分支用到。
-// 直接 import 会把 BenchScope 及其依赖（vaporCycle / refrigerantProps / 几个 sparkline 工具）
-// 拉进 WaveformPanel 的同一 chunk。改 lazy 后只有切到 16 号模块才下载。
-const BenchScope = lazy(() =>
-  import('../../modules/refrigeration-bench/BenchScope').then((m) => ({ default: m.BenchScope })),
-);
+import { BenchScope } from '../../modules/refrigeration-bench/BenchScope';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 import { Card } from '../ui/Card';
 import { DQWaveform } from '../charts/DQWaveform';
 import { PWMChart } from '../charts/PWMChart';
@@ -152,13 +148,16 @@ function ControlLoopBranch() {
 }
 
 /**
- * 移动端折叠开关：<xl 默认折叠成 ~120px 高度预览，
- * 点 chevron 按钮展开 ~420px；桌面端 xl: 移除高度限制。
- * 切模块自动回到折叠态。
+ * 移动端折叠开关：<xl 默认折叠成 ~120px 高的预览，
+ * 点 chevron 按钮展开 ~360px（与默认非折叠高度一致）。
+ * 桌面端 ignore（按 xl: 媒体查询移除高度/可折叠 UI）。
  */
 export function WaveformPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
+  const { t } = useI18n();
+  // 默认折叠：节约移动端首屏空间。用户主动点开后保持展开。
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  // 模块切换时回到折叠态，避免上一个模块用户展开后挤压新模块
   useEffect(() => {
     setMobileExpanded(false);
   }, [activeModule]);
@@ -172,17 +171,13 @@ export function WaveformPanel() {
       : activeModule === 'control-loops' ? <ControlLoopBranch />
       : activeModule === 'motor-basics' ? <MotorBasicsBranch />
       : activeModule === 'faults-debugging' ? <FaultBranch />
-      : activeModule === 'refrigeration-bench' ? (
-        <Suspense fallback={<div className="h-56 rounded-xl border border-line-subtle bg-bg-base" />}>
-          <BenchScope />
-        </Suspense>
-      )
+      : activeModule === 'refrigeration-bench' ? <BenchScope />
       : <ThreePhaseBranch />;
 
   return (
     <Card
-      title="底部波形观察区"
-      eyebrow="Scope Dock"
+      title={t('shell.waveformCardTitle')}
+      eyebrow={t('shell.waveformCardEyebrow')}
       className="mt-4"
       action={
         <button
@@ -190,10 +185,10 @@ export function WaveformPanel() {
           onClick={() => setMobileExpanded((v) => !v)}
           className="mobile-touch-target inline-flex items-center gap-1 rounded-lg border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-secondary hover:text-ink-primary xl:hidden"
           aria-expanded={mobileExpanded}
-          aria-label={mobileExpanded ? '收起波形面板' : '展开波形面板'}
+          aria-label={mobileExpanded ? t('shell.waveformCollapseAria') : t('shell.waveformExpandAria')}
         >
           {mobileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-          <span>{mobileExpanded ? '收起' : '展开'}</span>
+          <span>{mobileExpanded ? t('shell.waveformCollapse') : t('shell.waveformExpand')}</span>
         </button>
       }
     >

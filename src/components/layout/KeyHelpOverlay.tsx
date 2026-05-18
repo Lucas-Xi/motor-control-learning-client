@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
 import type { Shortcut } from '../../utils/useKeyboardShortcuts';
+import { useI18n } from '../../i18n/useI18n';
+import type { TKey } from '../../i18n/useI18n';
 
 interface KeyHelpOverlayProps {
   open: boolean;
@@ -9,6 +11,15 @@ interface KeyHelpOverlayProps {
 }
 
 const CATEGORY_ORDER: Shortcut['category'][] = ['运行控制', '导航', '布局', '模式', '帮助'];
+
+// 类别中文 literal → translations.ts 的 shell.keyHelpCat* key
+const CATEGORY_I18N: Record<Shortcut['category'], TKey> = {
+  '运行控制': 'shell.keyHelpCatRun',
+  '导航': 'shell.keyHelpCatNav',
+  '布局': 'shell.keyHelpCatLayout',
+  '模式': 'shell.keyHelpCatMode',
+  '帮助': 'shell.keyHelpCatHelp',
+};
 
 /** 把按键描述渲染成键帽样式的小标签。 */
 function KeyCap({ children }: { children: React.ReactNode }) {
@@ -20,14 +31,14 @@ function KeyCap({ children }: { children: React.ReactNode }) {
 }
 
 /** 把 Shortcut 转成可视化的键帽序列：含修饰键时拼接为 ctrl + shift + key。 */
-function renderKeys(s: Shortcut) {
+function renderKeys(s: Shortcut, spaceLabel: string) {
   const parts: string[] = [];
   if (s.meta?.includes('ctrl')) parts.push('Ctrl');
   if (s.meta?.includes('shift')) parts.push('Shift');
   if (s.meta?.includes('alt')) parts.push('Alt');
-  // 替换 Space 显示为「空格」，箭头键给个直观符号
+  // 替换 Space 显示，按 locale 取不同标签；箭头键给个直观符号
   let display = s.key;
-  if (display === 'Space') display = '空格';
+  if (display === 'Space') display = spaceLabel;
   else if (display === 'ArrowLeft') display = '←';
   else if (display === 'ArrowRight') display = '→';
   else if (display === 'ArrowUp') display = '↑';
@@ -38,6 +49,7 @@ function renderKeys(s: Shortcut) {
 }
 
 export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps) {
+  const { t } = useI18n();
   // Esc 关闭：直接绑 keydown，避免依赖 hook 同时拦截 Esc——这里一旦 open 就接管。
   useEffect(() => {
     if (!open) return;
@@ -80,15 +92,15 @@ export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps
           >
             <header className="mb-4 flex items-baseline justify-between gap-3">
               <div>
-                <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">Keyboard</p>
-                <h2 className="mt-0.5 font-display text-display text-ink-primary">键盘快捷键</h2>
+                <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">{t('shell.keyHelpEyebrow')}</p>
+                <h2 className="mt-0.5 font-display text-display text-ink-primary">{t('shell.keyHelpTitle')}</h2>
               </div>
-              <p className="text-caption text-ink-muted">按 <KeyCap>Esc</KeyCap> 或点击空白关闭</p>
+              <p className="text-caption text-ink-muted">{t('shell.keyHelpHint')}</p>
             </header>
             <div className="space-y-4">
               {CATEGORY_ORDER.filter((c) => grouped[c]?.length).map((cat) => (
                 <section key={cat}>
-                  <h3 className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">{cat}</h3>
+                  <h3 className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">{t(CATEGORY_I18N[cat])}</h3>
                   <ul className="space-y-1.5">
                     {grouped[cat].map((s, idx) => (
                       <li
@@ -97,7 +109,7 @@ export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps
                       >
                         <span className="text-body text-ink-secondary">{s.description}</span>
                         <span className="flex items-center gap-1">
-                          {renderKeys(s).map((part, i) => (
+                          {renderKeys(s, t('shell.keyHelpKeySpace')).map((part, i) => (
                             <span key={i} className="flex items-center gap-1">
                               {i > 0 && <span className="text-caption text-ink-muted">+</span>}
                               <KeyCap>{part}</KeyCap>

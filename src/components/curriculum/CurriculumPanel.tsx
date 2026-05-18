@@ -16,6 +16,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/useI18n';
 import { downloadText, timestamp } from '../../utils/download';
 
 /**
@@ -190,6 +191,7 @@ interface TrackCardProps {
 }
 
 function TrackCard({ track, active, onSelect }: TrackCardProps) {
+  const { t } = useI18n();
   // 切片选择器：只订阅本路径的进度对象引用，避免任意路径变更全卡片重渲
   const pathProgress = useCurriculumStore((s) => s.paths[track.id]);
   const ratio = useMemo(() => {
@@ -232,14 +234,14 @@ function TrackCard({ track, active, onSelect }: TrackCardProps) {
         {nextCp ? (
           <div className="flex items-center gap-2 text-caption">
             <Target className="h-3.5 w-3.5 text-ink-muted" aria-hidden />
-            <span className="text-ink-muted">下一步：</span>
+            <span className="text-ink-muted">{t('curriculum.nextStep')}</span>
             <span className={`truncate text-ink-primary`}>{nextCp.title}</span>
             <ChevronRight className="ml-auto h-3.5 w-3.5 text-ink-muted" aria-hidden />
           </div>
         ) : (
           <div className="flex items-center gap-2 text-caption text-accent-measure">
             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-            <span>整条路径已完成 · 可导出证书</span>
+            <span>{t('curriculum.pathDone')}</span>
           </div>
         )}
       </div>
@@ -316,6 +318,7 @@ interface CurriculumPanelProps {
 }
 
 export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
+  const { t, locale } = useI18n();
   // 默认选中上次激活的路径，否则选第一条
   const lastActive = useCurriculumStore((s) => s.lastActiveTrack);
   const [activeId, setActiveId] = useState<string>(lastActive ?? curriculumTracks[0].id);
@@ -388,32 +391,32 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
   }, [activeTrack, doneSet]);
 
   return (
-    <section className="space-y-5" aria-label="课程主线">
+    <section className="space-y-5" aria-label={t('curriculum.title')}>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">Curriculum Tracks</p>
-          <h2 className="mt-1 font-display text-display text-ink-primary">课程主线</h2>
-          <p className="mt-1 max-w-2xl text-body text-ink-secondary">
-            把 16 个模块串成 4 条主题路径，按学习目标推进。每个 checkpoint 完成后勾选打钩，
-            走完整条可导出 SVG 学习证书。
-          </p>
+          <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">{t('curriculum.eyebrow')}</p>
+          <h2 className="mt-1 font-display text-display text-ink-primary">{t('curriculum.title')}</h2>
+          <p className="mt-1 max-w-2xl text-body text-ink-secondary">{t('curriculum.description')}</p>
+          {locale === 'en-US' && (
+            <p className="mt-1 text-[10px] text-ink-muted">{t('common.translationPending')}</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="ghost"
             onClick={handleResetPath}
-            aria-label={`重置 ${activeTrack.title} 的进度`}
+            aria-label={`${t('curriculum.resetProgress')} · ${activeTrack.title}`}
           >
             <RotateCcw className="h-4 w-4" aria-hidden />
-            重置进度
+            {t('curriculum.resetProgress')}
           </Button>
           <Button
             variant="primary"
             onClick={handleExportCert}
-            aria-label={`导出 ${activeTrack.title} 的学习证书 SVG`}
+            aria-label={`${t('curriculum.exportCertificate')} · ${activeTrack.title}`}
           >
             <Download className="h-4 w-4" aria-hidden />
-            导出学习证书
+            {t('curriculum.exportCertificate')}
           </Button>
         </div>
       </header>
@@ -440,7 +443,7 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
             <p className="mt-1 max-w-3xl text-caption text-ink-secondary">{activeTrack.description}</p>
           </div>
           <div className="text-right">
-            <p className="font-mono text-caption text-ink-muted">完成度</p>
+            <p className="font-mono text-caption text-ink-muted">{t('curriculum.completionLabel')}</p>
             <p className="font-display text-display text-ink-primary">{Math.round(ratio * 100)}%</p>
             <p className="text-caption text-ink-muted">
               {Math.round(ratio * activeTrack.checkpoints.length)} / {activeTrack.checkpoints.length} checkpoint
@@ -450,10 +453,10 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
         {nextCp && (
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line-subtle bg-bg-surface px-3 py-2">
             <Target className="h-4 w-4 text-accent-primary" aria-hidden />
-            <span className="text-caption text-ink-muted">下一步：</span>
+            <span className="text-caption text-ink-muted">{t('curriculum.nextStep')}</span>
             <span className="text-body text-ink-primary">{nextCp.title}</span>
             <Button variant="primary" className="ml-auto" onClick={() => handleGo(nextCp)}>
-              立即前往
+              {t('curriculum.goNow')}
               <ChevronRight className="h-4 w-4" aria-hidden />
             </Button>
           </div>

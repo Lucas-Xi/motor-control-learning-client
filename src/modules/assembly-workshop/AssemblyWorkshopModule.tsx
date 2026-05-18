@@ -1,8 +1,14 @@
+import { useState } from 'react';
 import { AssemblyWorkshop } from '../../components/workshop/AssemblyWorkshop';
 import { ProjectExporter } from '../../components/lab/ProjectExporter';
 import { SolutionReplay } from '../../components/workshop/SolutionReplay';
 import { SnapshotDiffPanel } from '../../components/workshop/SnapshotDiffPanel';
 import { CalibrationDocExporter } from '../../components/workshop/CalibrationDocExporter';
+import { SerialBenchPanel } from '../../components/lab/SerialBenchPanel';
+import { ShareSnapshotPanel } from '../../components/share/ShareSnapshotPanel';
+import { Tabs } from '../../components/ui/Tabs';
+
+type WorkshopTab = 'workshop' | 'serial';
 
 /**
  * 17 号模块：整机搭建工作台。
@@ -11,20 +17,38 @@ import { CalibrationDocExporter } from '../../components/workshop/CalibrationDoc
  * 工作台自带 6 槽位 + 3 模式 tab（自由搭建 / 挑战 / 历史），所以本模块页面
  * 不需要 ParameterPanel / ConceptNotes 等标准模块脚手架。
  *
- * 工作台之下追加 Phase C 四大功能：
- *  - SolutionReplay：挑战模式解题路径回放（5s/step 自动播放，跨刷新持久化）
- *  - SnapshotDiffPanel：历史会话两两对比（6 slot + 4 KPI 并排）
- *  - ProjectExporter：STM32 C 工程骨架导出（含真 .zip 选项）
- *  - CalibrationDocExporter：Markdown 标定单 + 真 .zip 一键下发
+ * 顶层加一个"虚拟搭建 / 实测对照"切换：
+ *  - 虚拟搭建：原有 AssemblyWorkshop + Phase C 四大功能
+ *  - 实测对照：SerialBenchPanel（Web Serial 连真板 STM32 + 仿真曲线并排比对）
+ *
+ * 选 A 而非新开 sidebar 入口：实测对照天然属于"搭好板子后跑起来对比"这条
+ * 实验路径，留在 17 号模块里上下游连续；新开顶层入口会让 sidebar 16+1+1
+ * 失衡，并且需要改 Sidebar / SimulationPanel / uiStore 三处 layout 壳层。
  */
 export function AssemblyWorkshopModule() {
+  const [tab, setTab] = useState<WorkshopTab>('workshop');
   return (
     <div className="space-y-3">
-      <AssemblyWorkshop embedded />
-      <SolutionReplay />
-      <SnapshotDiffPanel />
-      <ProjectExporter />
-      <CalibrationDocExporter />
+      <Tabs<WorkshopTab>
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'workshop', label: '虚拟搭建' },
+          { value: 'serial', label: '实测对照' },
+        ]}
+      />
+      {tab === 'workshop' ? (
+        <>
+          <AssemblyWorkshop embedded />
+          <SolutionReplay />
+          <SnapshotDiffPanel />
+          <ShareSnapshotPanel />
+          <ProjectExporter />
+          <CalibrationDocExporter />
+        </>
+      ) : (
+        <SerialBenchPanel />
+      )}
     </div>
   );
 }

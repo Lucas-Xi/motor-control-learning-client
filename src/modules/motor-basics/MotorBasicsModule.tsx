@@ -2,6 +2,7 @@ import { RadialBar, RadialBarChart, PolarAngleAxis } from 'recharts';
 import { Magnet, RotateCw, Settings } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { MotorAnatomy2D } from '../../components/charts/MotorAnatomy2D';
+import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -10,6 +11,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { electricalAngle } from '../../simulation/math/transforms';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -63,17 +65,18 @@ function ViewChip({
 function Primary() {
   const params = useSimulationStore((s) => s.motorBasics);
   const time = useSimulationStore((s) => s.time);
+  const { t } = useI18n();
   const [view, setView] = useState<'2d' | '3d'>('2d');
   return (
     <Card
-      title="径向剖面电机解剖图"
-      eyebrow="stator / rotor / magnets"
+      title={t('motorBasics.title')}
+      eyebrow={t('motorBasics.eyebrow')}
       density="compact"
       action={
         <div className="flex items-center gap-2">
-          <div role="group" aria-label="解剖图视图切换" className="flex items-center gap-1 rounded-full border border-line-subtle bg-bg-base p-0.5">
-            <ViewChip active={view === '2d'} onClick={() => setView('2d')} label="切换到 2D 径向剖面视图">2D 剖面</ViewChip>
-            <ViewChip active={view === '3d'} onClick={() => setView('3d')} label="切换到 3D 立体视图">3D 立体</ViewChip>
+          <div role="group" aria-label={t('motorBasics.viewSwitchAria')} className="flex items-center gap-1 rounded-full border border-line-subtle bg-bg-base p-0.5">
+            <ViewChip active={view === '2d'} onClick={() => setView('2d')} label={t('motorBasics.view2D')}>{t('motorBasics.view2D')}</ViewChip>
+            <ViewChip active={view === '3d'} onClick={() => setView('3d')} label={t('motorBasics.view3D')}>{t('motorBasics.view3D')}</ViewChip>
           </div>
           <FidelityBadge level="exact" hint="标准 12 槽 PMSM 结构示意；磁极数随极对数同步变化" />
         </div>
@@ -89,7 +92,7 @@ function Primary() {
         <Suspense
           fallback={
             <div className="flex h-[360px] items-center justify-center rounded-2xl border border-line-subtle bg-bg-base text-caption text-ink-muted">
-              正在加载 3D 视图…
+              {t('motorBasics.rotorLoading')}
             </div>
           }
         >
@@ -102,9 +105,7 @@ function Primary() {
         </Suspense>
       )}
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {view === '2d'
-          ? `这是 PMSM 顶视剖面：外圈定子铁芯 + 12 个槽里嵌着 A / B / C 三相绕组（每相各 4 个截面，⊙ ⊗ 表示电流进出方向），中间转子表面贴 ${params.polePairs * 2} 块交替的 N / S 永磁体。滑动"机械角度"，转子整体旋转；改"极对数"，磁极数对应翻倍但定子槽不变 —— 这就是为什么"极对数错就电角度错"。`
-          : `立体视图：从任意角度观察定子绕组（A 青 / B 绿 / C 黄）与转子永磁极（N 红 / S 蓝）的相对位置，中央 mint 箭头是三相合成的旋转磁通矢量。鼠标拖动可旋转视角，缩放被锁定避免误操作。`}
+        {view === '2d' ? t('motorBasics.note2D') : t('motorBasics.note3D')}
       </p>
     </Card>
   );
@@ -113,6 +114,7 @@ function Primary() {
 function Probe() {
   const params = useSimulationStore((s) => s.motorBasics);
   const time = useSimulationStore((s) => s.time);
+  const { t, locale } = useI18n();
   // 仪表盘跟随仿真时钟：暂停时静止；运行 / 单步把 time 推进，转子和数字一起前进。
   // 滑块的 mechanicalDeg 作为基准角，叠加 rpm × time 的旋转分量。
   const derived = useMemo(() => {
@@ -127,23 +129,25 @@ function Probe() {
       ratedTorque: 0.095 * params.ratedCurrent,
     };
   }, [params, time]);
+  // 极对数描述行，按 locale 组织语法
+  const polePairsLine = locale === 'en-US'
+    ? `${params.polePairs} pole pairs: one mechanical revolution = ${derived.cycles} electrical revolutions, electrical frequency = ${formatNumber(derived.freq, 1)} Hz.`
+    : `${params.polePairs} 极对：转子机械转 1 圈，电角度转 ${derived.cycles} 圈，电频率 ${formatNumber(derived.freq, 1)} Hz。`;
   return (
     <>
-      <Card title="机械角度 vs 电角度" eyebrow="angle relation" density="compact">
+      <Card title={t('motorBasics.angleCardTitle')} eyebrow={t('motorBasics.angleCardEyebrow')} density="compact">
         <div className="grid grid-cols-2 gap-2">
-          <AngleGauge label="θm 机械" valueDeg={derived.mechanical} color="#34d6ff" />
-          <AngleGauge label="θe 电角度" valueDeg={derived.electrical} color="#43f7b5" />
+          <AngleGauge label={t('motorBasics.angleMechanical')} valueDeg={derived.mechanical} color="#34d6ff" />
+          <AngleGauge label={t('motorBasics.angleElectrical')} valueDeg={derived.electrical} color="#43f7b5" />
         </div>
         <p className="formula mt-3 rounded-lg border border-line-subtle bg-bg-base p-3 text-body text-accent-primary">θe = {derived.cycles} × θm</p>
-        <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-          {params.polePairs} 极对：转子机械转 1 圈，电角度转 {derived.cycles} 圈，电频率 {formatNumber(derived.freq, 1)} Hz。
-        </p>
+        <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{polePairsLine}</p>
       </Card>
-      <Card title="关键参数" eyebrow="motor parameters" density="compact">
+      <Card title={t('motorBasics.keyParamsTitle')} eyebrow={t('motorBasics.keyParamsEyebrow')} density="compact">
         <div className="space-y-2 text-body">
-          <div className="flex items-start gap-2"><Magnet className="mt-0.5 h-4 w-4 shrink-0 text-accent-measure" /><span className="text-ink-secondary">定子绕组产生旋转磁场，转子永磁体提供磁链。</span></div>
-          <div className="flex items-start gap-2"><RotateCw className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" /><span className="text-ink-secondary">极对数越多，同样转速电频率越高，FOC 中断压力也越高。</span></div>
-          <div className="flex items-start gap-2"><Settings className="mt-0.5 h-4 w-4 shrink-0 text-accent-warn" /><span className="text-ink-secondary">额定转矩 ≈ Kt × I = {formatNumber(derived.ratedTorque, 2)} Nm。</span></div>
+          <div className="flex items-start gap-2"><Magnet className="mt-0.5 h-4 w-4 shrink-0 text-accent-measure" /><span className="text-ink-secondary">{t('motorBasics.statorMagnet')}</span></div>
+          <div className="flex items-start gap-2"><RotateCw className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" /><span className="text-ink-secondary">{t('motorBasics.polePairLabel')}</span></div>
+          <div className="flex items-start gap-2"><Settings className="mt-0.5 h-4 w-4 shrink-0 text-accent-warn" /><span className="text-ink-secondary">{t('motorBasics.ratedTorqueLabel')} = {formatNumber(derived.ratedTorque, 2)} Nm.</span></div>
         </div>
       </Card>
     </>
@@ -151,5 +155,16 @@ function Probe() {
 }
 
 export function MotorBasicsModule() {
-  return <ModuleLayout primary={<Primary />} probe={<Probe />} concept={<ConceptNotes moduleId="motor-basics" />} />;
+  return (
+    <ModuleLayout
+      primary={
+        <div className="space-y-3">
+          <AssetHero moduleId="motor-basics" />
+          <Primary />
+        </div>
+      }
+      probe={<Probe />}
+      concept={<ConceptNotes moduleId="motor-basics" />}
+    />
+  );
 }

@@ -1,8 +1,11 @@
 import { Maximize2, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
+import { LanguageChip } from '../../i18n/LanguageChip';
 import { Button } from '../ui/Button';
 import { Tabs } from '../ui/Tabs';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 /**
  * 移动端图标按钮：默认只显示图标（节省横向空间），
@@ -52,8 +55,8 @@ function IconBtn({
         onPointerCancel={cancelHold}
       >
         {children}
-        {/* 中等屏起显示中文文本，<sm 仅图标 */}
-        <span className="hidden sm:inline">{label}</span>
+        {/* 中等屏起显示文本，<sm 仅图标 */}
+        <span className="hidden truncate sm:inline">{label}</span>
       </Button>
     </span>
   );
@@ -67,25 +70,35 @@ export function TopBar() {
   const step = useSimulationStore((state) => state.step);
   const resetTime = useSimulationStore((state) => state.resetTime);
   const toggleFullScreen = useSimulationStore((state) => state.toggleFullScreen);
+  const { t } = useI18n();
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-2 sm:gap-3">
       <div className="flex items-center gap-2 text-caption text-ink-muted">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-accent-measure' : 'bg-ink-muted'}`} />
-        <span className="uppercase tracking-[0.18em]">{running ? 'RUN' : 'HOLD'}</span>
+        <span className="uppercase tracking-[0.18em]">{running ? t('shell.runStateRun') : t('shell.runStateHold')}</span>
       </div>
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <Tabs value={mode} onChange={setMode} options={[{ value: 'teach', label: '教学' }, { value: 'lab', label: '实验' }]} />
-        <IconBtn label={running ? '暂停' : '运行'} variant={running ? 'danger' : 'primary'} onClick={() => setRunning(!running)}>
+        <ThemeToggle />
+        <LanguageChip />
+        <Tabs
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'teach', label: t('shell.modeTeach') },
+            { value: 'lab', label: t('shell.modeLab') },
+          ]}
+        />
+        <IconBtn label={running ? t('shell.actionPause') : t('shell.actionRun')} variant={running ? 'danger' : 'primary'} onClick={() => setRunning(!running)}>
           {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </IconBtn>
-        <IconBtn label="单步 5ms" onClick={() => step(0.005)}>
+        <IconBtn label={t('shell.actionStep')} onClick={() => step(0.005)}>
           <StepForward className="h-4 w-4" />
         </IconBtn>
-        <IconBtn label="归零" onClick={resetTime}>
+        <IconBtn label={t('shell.actionResetTime')} onClick={resetTime}>
           <RotateCcw className="h-4 w-4" />
         </IconBtn>
-        <IconBtn label="全屏" onClick={toggleFullScreen}>
+        <IconBtn label={t('shell.actionFullscreen')} onClick={toggleFullScreen}>
           <Maximize2 className="h-4 w-4" />
         </IconBtn>
       </div>

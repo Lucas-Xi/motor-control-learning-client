@@ -1,5 +1,6 @@
 import type { CycleState } from '../../simulation/math/vaporCycle';
 import { formatNumber } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   states: readonly [CycleState, CycleState, CycleState, CycleState];
@@ -76,8 +77,9 @@ function pointAlong(seg: number, t: number) {
 export function SystemSchematic({ states, rpm, T_e, T_c, T_outdoor, T_indoor, eevOpening, flowPhase }: Props) {
   const [s1, s2, s3, s4] = states;
   const seg = Math.floor(flowPhase) % 4;
-  const t = flowPhase - Math.floor(flowPhase);
-  const particle = pointAlong(seg, t);
+  const tt = flowPhase - Math.floor(flowPhase);
+  const particle = pointAlong(seg, tt);
+  const { t } = useI18n();
 
   return (
     <svg
@@ -103,31 +105,31 @@ export function SystemSchematic({ states, rpm, T_e, T_c, T_outdoor, T_indoor, ee
 
       {/* 室外 / 室内分隔背景 */}
       <rect x={COND.x - 16} y={COND.y - 16} width={COND.w + 32} height={COND.h + 28} rx="14" fill="rgba(251,113,133,0.04)" stroke="rgba(251,113,133,0.18)" strokeWidth="1" strokeDasharray="4 6" />
-      <text x={COND.x + COND.w / 2} y={COND.y - 22} textAnchor="middle" fontSize="11" fill="#fb7185">室外环境 {formatNumber(T_outdoor, 0)}°C</text>
+      <text x={COND.x + COND.w / 2} y={COND.y - 22} textAnchor="middle" fontSize="11" fill="#fb7185">{t('refrigerationBench.schOutdoor')} {formatNumber(T_outdoor, 0)}°C</text>
       <rect x={EVAP.x - 16} y={EVAP.y - 14} width={EVAP.w + 32} height={EVAP.h + 30} rx="14" fill="rgba(67,247,181,0.04)" stroke="rgba(67,247,181,0.18)" strokeWidth="1" strokeDasharray="4 6" />
-      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + EVAP.h + 28} textAnchor="middle" fontSize="11" fill="#43f7b5">室内环境 {formatNumber(T_indoor, 0)}°C</text>
+      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + EVAP.h + 28} textAnchor="middle" fontSize="11" fill="#43f7b5">{t('refrigerationBench.schIndoor')} {formatNumber(T_indoor, 0)}°C</text>
 
       {/* 压缩机 */}
       <rect x={COMP.x} y={COMP.y} width={COMP.w} height={COMP.h} rx="8" fill="#0d1929" stroke="#34d6ff" strokeWidth="1.6" />
-      <text x={COMP.x + COMP.w / 2} y={COMP.y + 22} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">压缩机</text>
-      <text x={COMP.x + COMP.w / 2} y={COMP.y + 40} textAnchor="middle" fontSize="10" fill="#9eb5cb">FOC 驱动 IPM 电机</text>
+      <text x={COMP.x + COMP.w / 2} y={COMP.y + 22} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">{t('refrigerationBench.schCompressor')}</text>
+      <text x={COMP.x + COMP.w / 2} y={COMP.y + 40} textAnchor="middle" fontSize="10" fill="#9eb5cb">{t('refrigerationBench.schCompressorSub')}</text>
       <circle cx={COMP.x + COMP.w / 2} cy={COMP.y + 64} r="14" fill="none" stroke="#34d6ff" strokeWidth="1.4" />
       <text x={COMP.x + COMP.w / 2} y={COMP.y + 68} textAnchor="middle" fontSize="11" fontWeight="600" fill="#34d6ff">{formatNumber(rpm, 0)}</text>
       <text x={COMP.x + COMP.w / 2} y={COMP.y + 82} textAnchor="middle" fontSize="9" fill="#9eb5cb">rpm</text>
 
       {/* 冷凝器 */}
       <rect x={COND.x} y={COND.y} width={COND.w} height={COND.h} rx="8" fill="url(#condGrad)" stroke="#fb7185" strokeWidth="1.6" />
-      <text x={COND.x + COND.w / 2} y={COND.y + 24} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">冷凝器</text>
-      <text x={COND.x + COND.w / 2} y={COND.y + 42} textAnchor="middle" fontSize="10" fill="#9eb5cb">高压气 → 高压液 (放热)</text>
+      <text x={COND.x + COND.w / 2} y={COND.y + 24} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">{t('refrigerationBench.schCondenser')}</text>
+      <text x={COND.x + COND.w / 2} y={COND.y + 42} textAnchor="middle" fontSize="10" fill="#9eb5cb">{t('refrigerationBench.schCondenserSub')}</text>
       <text x={COND.x + COND.w / 2} y={COND.y + 78} textAnchor="middle" fontSize="11" fill="#fb7185">T_c = {formatNumber(T_c, 1)}°C</text>
-      <text x={COND.x + COND.w / 2} y={COND.y + 96} textAnchor="middle" fontSize="9" fill="#9eb5cb">→ 风扇排热到 {formatNumber(T_outdoor, 0)}°C 室外</text>
+      <text x={COND.x + COND.w / 2} y={COND.y + 96} textAnchor="middle" fontSize="9" fill="#9eb5cb">{t('refrigerationBench.schCondenserFan')} {formatNumber(T_outdoor, 0)}°C</text>
 
       {/* 蒸发器 */}
       <rect x={EVAP.x} y={EVAP.y} width={EVAP.w} height={EVAP.h} rx="8" fill="url(#evapGrad)" stroke="#43f7b5" strokeWidth="1.6" />
-      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 24} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">蒸发器</text>
-      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 42} textAnchor="middle" fontSize="10" fill="#9eb5cb">低压两相 → 低压气 (吸热)</text>
+      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 24} textAnchor="middle" fontSize="13" fontWeight="600" fill="#e7f3ff">{t('refrigerationBench.schEvaporator')}</text>
+      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 42} textAnchor="middle" fontSize="10" fill="#9eb5cb">{t('refrigerationBench.schEvaporatorSub')}</text>
       <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 78} textAnchor="middle" fontSize="11" fill="#43f7b5">T_e = {formatNumber(T_e, 1)}°C</text>
-      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 96} textAnchor="middle" fontSize="9" fill="#9eb5cb">← 从 {formatNumber(T_indoor, 0)}°C 室内吸热</text>
+      <text x={EVAP.x + EVAP.w / 2} y={EVAP.y + 96} textAnchor="middle" fontSize="9" fill="#9eb5cb">{t('refrigerationBench.schEvaporatorFan')} {formatNumber(T_indoor, 0)}°C</text>
 
       {/* EEV：蝶形阀符号 */}
       <g transform={`translate(${EEV.cx}, ${EEV.cy})`}>

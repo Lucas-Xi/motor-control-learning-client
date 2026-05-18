@@ -1,50 +1,54 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
-import { useThemeStore } from '../../store/themeStore';
+import { Sun, Moon, Eye, Projector } from 'lucide-react';
+import type { ComponentType, SVGProps } from 'react';
+import { THEME_ORDER, useThemeStore, type Theme } from '../../store/themeStore';
+
+/** 4 主题 chip 元数据（图标 + 中文短标签 + 长描述）。 */
+const META: Record<Theme, { label: string; description: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }> = {
+  dark: { label: '深色', description: '深色 · 工程仪表盘', Icon: Moon },
+  light: { label: '明色', description: '明色 · 打印 / 演示', Icon: Sun },
+  'high-contrast': { label: '高对比', description: '高对比 · 视障辅助', Icon: Eye },
+  projector: { label: '投影', description: '投影 · 大屏教学', Icon: Projector },
+};
 
 /**
- * 主题切换按钮：圆形小按钮，深色态显示 Sun（提示「点亮」），明色态显示 Moon。
- * 使用 framer-motion 旋转 90deg 过渡。
+ * 主题切换：4 段 segmented control。
+ * 当前态 aria-pressed="true"；点击任一段直接 setTheme。
+ * 不再用 framer-motion 的 AnimatePresence 旋转过渡，纯 CSS hover 即可。
  */
 export function ThemeToggle() {
   const theme = useThemeStore((s) => s.theme);
-  const toggle = useThemeStore((s) => s.toggle);
-  const isDark = theme === 'dark';
+  const setTheme = useThemeStore((s) => s.setTheme);
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      title={isDark ? '切换到明色主题（演示/打印）' : '切换到深色主题（工程仪表盘）'}
-      aria-label={isDark ? '切换到明色主题' : '切换到深色主题'}
-      className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-line-subtle bg-bg-surface text-ink-secondary transition-colors hover:border-accent-primary hover:text-accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+    <div
+      role="group"
+      aria-label="主题切换"
+      className="inline-flex items-center gap-0.5 rounded-full border border-line-subtle bg-bg-surface p-0.5"
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {isDark ? (
-          <motion.span
-            key="sun"
-            initial={{ rotate: -90, opacity: 0 }}
-            animate={{ rotate: 0, opacity: 1 }}
-            exit={{ rotate: 90, opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="inline-flex"
+      {THEME_ORDER.map((id) => {
+        const { label, description, Icon } = META[id];
+        const active = theme === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={active}
+            aria-label={description}
+            title={description}
+            onClick={() => setTheme(id)}
+            data-theme-chip={id}
+            className={`inline-flex h-7 items-center gap-1 rounded-full px-2 text-caption transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${
+              active
+                ? 'bg-accent-primary/15 text-accent-primary'
+                : 'text-ink-secondary hover:bg-bg-raised hover:text-ink-primary'
+            }`}
           >
-            <Sun size={16} strokeWidth={2} />
-          </motion.span>
-        ) : (
-          <motion.span
-            key="moon"
-            initial={{ rotate: 90, opacity: 0 }}
-            animate={{ rotate: 0, opacity: 1 }}
-            exit={{ rotate: -90, opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="inline-flex"
-          >
-            <Moon size={16} strokeWidth={2} />
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </button>
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

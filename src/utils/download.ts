@@ -21,7 +21,7 @@ export function downloadText(filename: string, text: string, mimeType = 'text/pl
 /**
  * 二进制文件下载（zip / tar / 任何 ArrayBuffer-like）。
  *
- * 与 downloadText 同骨架，只是 Blob 默认 MIME 为 application/octet-stream。
+ * 与 downloadText 同骨架，只是 Blob 类型默认为 application/octet-stream。
  * 用于 Phase C 的 STM32 真 zip 下载：buildZip() 返回的 Uint8Array 直接喂进来即可。
  */
 export function downloadBinary(
@@ -29,16 +29,10 @@ export function downloadBinary(
   data: ArrayBuffer | Uint8Array,
   mimeType = 'application/octet-stream',
 ): void {
-  // 显式 copy 到一个新的、强类型的 ArrayBuffer，避免 Uint8Array<SharedArrayBuffer> /
-  // ArrayBufferLike 推断撞到 BlobPart 的严格约束（不同 TS lib 版本对此宽严不一）。
-  let buffer: ArrayBuffer;
-  if (data instanceof Uint8Array) {
-    buffer = new ArrayBuffer(data.byteLength);
-    new Uint8Array(buffer).set(data);
-  } else {
-    buffer = new ArrayBuffer(data.byteLength);
-    new Uint8Array(buffer).set(new Uint8Array(data));
-  }
+  // 显式拿到 ArrayBuffer，避免 Uint8Array<SharedArrayBuffer> 类型推断踩到 BlobPart 严格约束
+  const buffer: ArrayBuffer = data instanceof Uint8Array
+    ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+    : data;
   const blob = new Blob([buffer], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

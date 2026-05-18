@@ -214,7 +214,8 @@ export function PhDiagram({ refrigerant, states, onPointDrag }: Props) {
             >
               {p.index}
             </text>
-            {/* 触控热区扩大：透明 r=24，仅对可拖动点提供；放在最后保证压在视觉之上。 */}
+            {/* 触控热区扩大：透明 r=24，仅对可拖动点提供。
+                放在最后保证压在视觉之上；pointerdown 同步触发，再由父 SVG 的 move/up 接管。 */}
             {draggable && (
               <circle
                 cx={p.x}

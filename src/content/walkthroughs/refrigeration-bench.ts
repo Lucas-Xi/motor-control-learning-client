@@ -63,7 +63,7 @@ export const refrigerationBenchWalkthrough: ModuleWalkthrough = {
       observe: 'T_e 跌 → P_s 跌 → T_sat 跌 → 同 T_suct 下 SH 自动升 → EEV PI 误差变正 → 开大 EEV → 蒸发器冷媒流量增 → T_suct 回落 → SH 回到 8K。整个闭环时间常数 30-60s（慢任务级，1Hz）。',
       whyMatters: 'EEV 是制冷系统的"流量阀"，电机端再快也比不上 EEV 反应。EEV PI 必须基于 SH（饱和温度差）而不是直接看 T_suct，因为 P_s 漂移时 T_sat 也跟着变。STM32 EEV 控制骨架（1 Hz 慢任务，步进电机 480 脉冲全开）：' +
         ' /* EEV SH 闭环 PI: 1 Hz tick, 输出步数 */' +
-        ' typedef struct { float kp, ki, sh_target, i_term; int16_t step_pos; } EEV_PI_t;' +
+        ' typedef struct { float kp, ki, sh_target, i_term, step_min, step_max; } EEV_PI_t;' +
         ' int16_t eev_pi_update(EEV_PI_t *p, float t_suct, float p_suct) {' +
         '   float t_sat = refrigerant_psat_to_tsat(p_suct);  /* 查冷媒物性表 */' +
         '   float sh = t_suct - t_sat;' +

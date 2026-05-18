@@ -1,0 +1,330 @@
+import { useCallback, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { X, Check, CircleAlert } from 'lucide-react';
+import { useSimulationStore } from '../../store/simulationStore';
+import { Button } from '../ui/Button';
+import {
+  packAppState,
+  SLICE_LABELS,
+  type AppStateInput,
+  type DecodedSnapshot,
+} from '../../utils/snapshotCodec';
+
+/**
+ * 数字孪生接收对比 modal。
+ *
+ * 进入流程：App.tsx 启动时检查 `window.location.hash`，命中 `#snapshot=...` 解码成功后
+ * 把 decoded 推给本组件。**不立即应用** —— 用户必须显式点"应用"才会调用 store update
+ * 方法批量灌入。点"取消"或 Esc 关闭，hash 同时被清掉，避免下次刷新再触发。
+ *
+ * UI：左右两列对照 + diff 高亮（采用 SnapshotDiffPanel 的"●+变色"范式精简版）。
+ */
+
+interface ReceiveSnapshotModalProps {
+  open: boolean;
+  decoded: DecodedSnapshot | null;
+  /** 应用：把 decoded 灌进各 store；caller 决定具体策略 */
+  onApply: () => void;
+  /** 关闭：调用前请清掉 location.hash */
+  onClose: () => void;
+}
+
+/** 把当前 store snapshot 拍成 AppStateInput（供对照用） */
+function pickCurrentInput(): AppStateInput {
+  const s = useSimulationStore.getState();
+  return packAppState({
+    motorBasics: s.motorBasics,
+    threePhase: s.threePhase,
+    clarke: s.clarke,
+    park: s.park,
+    pid: s.pid,
+    svpwm: s.svpwm,
+    inverter: s.inverter,
+    sensorless: s.sensorless,
+    weakField: s.weakField,
+    fault: s.fault,
+    controlLoop: s.controlLoop,
+    foc: s.foc,
+    hfi: s.hfi,
+    startup: s.startup,
+    apf: s.apf,
+    refrigeration: s.refrigeration,
+  });
+}
+
+/** 简单数值/对象等价比较（用于 diff 标红）。深度=1 够用 */
+function shallowEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a === 'number' && typeof b === 'number') {
+    return Math.abs(a - b) < 1e-6;
+  }
+  return false;
+}
+
+function fmtVal(v: unknown): string {
+  if (v === undefined || v === null) return '—';
+  if (typeof v === 'number') {
+    if (Number.isInteger(v)) return String(v);
+    return v.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  }
+  if (typeof v === 'boolean') return v ? '是' : '否';
+  return String(v);
+}
+
+interface FieldDiff {
+  key: string;
+  current: unknown;
+  incoming: unknown;
+  same: boolean;
+}
+
+interface SliceDiff {
+  sliceKey: keyof typeof SLICE_LABELS;
+  label: string;
+  fields: FieldDiff[];
+  changedCount: number;
+}
+
+function diffSlice(
+  sliceKey: keyof typeof SLICE_LABELS,
+  current: Record<string, unknown>,
+  incoming: Record<string, unknown> | undefined,
+): SliceDiff {
+  if (!incoming) {
+    return { sliceKey, label: SLICE_LABELS[sliceKey], fields: [], changedCount: 0 };
+  }
+  const allKeys = new Set([...Object.keys(current), ...Object.keys(incoming)]);
+  const fields: FieldDiff[] = [];
+  let changedCount = 0;
+  for (const k of allKeys) {
+    const inc = incoming[k];
+    if (inc === undefined) continue; // 远端没发的字段不算 diff
+    const cur = current[k];
+    const same = shallowEqual(cur, inc);
+    if (!same) changedCount++;
+    fields.push({ key: k, current: cur, incoming: inc, same });
+  }
+  // 把变化项排在前
+  fields.sort((a, b) => Number(a.same) - Number(b.same));
+  return { sliceKey, label: SLICE_LABELS[sliceKey], fields, changedCount };
+}
+
+export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: ReceiveSnapshotModalProps) {
+  // Esc 关闭
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  const diffs = useMemo<SliceDiff[]>(() => {
+    if (!open || !decoded) return [];
+    const current = pickCurrentInput();
+    const out: SliceDiff[] = [];
+    for (const sliceKey of Object.keys(SLICE_LABELS) as Array<keyof typeof SLICE_LABELS>) {
+      const curSlice = (current[sliceKey as keyof AppStateInput] as Record<string, unknown>) ?? {};
+      const incSlice = decoded.sim[sliceKey as keyof AppStateInput];
+      const d = diffSlice(sliceKey, curSlice, incSlice);
+      if (d.fields.length > 0) out.push(d);
+    }
+    return out;
+  }, [open, decoded]);
+
+  const totalChanged = diffs.reduce((acc, d) => acc + d.changedCount, 0);
+  const hasAsm = !!decoded?.asm;
+  const challengeCount = decoded?.ch ? Object.keys(decoded.ch).length : 0;
+
+  const handleApply = useCallback(() => {
+    onApply();
+    onClose();
+  }, [onApply, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && decoded && (
+        <motion.div
+          key="receive-snapshot-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="receive-snap-title"
+          className="fixed inset-0 z-[110] grid place-items-center bg-bg-base/70 p-4 sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="scrollbar-thin flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line-subtle bg-bg-surface shadow-xl"
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-start justify-between gap-3 border-b border-line-subtle p-4">
+              <div className="min-w-0">
+                <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">
+                  收到分享 · 预览对比
+                </p>
+                <h2
+                  id="receive-snap-title"
+                  className="mt-0.5 font-display text-display text-ink-primary"
+                >
+                  应用远端 snapshot 到当前 store？
+                </h2>
+                <p className="mt-1 text-caption text-ink-muted">
+                  共 <span className="text-accent-primary">{totalChanged}</span> 个字段不同 ·
+                  装配选型 <span className={hasAsm ? 'text-accent-measure' : 'text-ink-muted'}>{hasAsm ? '已包含' : '未包含'}</span> ·
+                  通关摘要 <span className="text-ink-secondary">{challengeCount} 条</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="关闭接收对比窗口"
+                className="rounded-lg border border-line-subtle bg-bg-base p-1.5 text-ink-secondary hover:text-ink-primary focus-visible:ring-2 focus-visible:ring-accent-primary"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="flex-1 overflow-auto p-4">
+              {diffs.length === 0 ? (
+                <div className="rounded-xl border border-line-subtle bg-bg-base p-4 text-center text-body text-ink-muted">
+                  <Check className="mx-auto mb-2 h-6 w-6 text-accent-measure" aria-hidden="true" />
+                  远端 snapshot 与当前状态<span className="text-accent-measure">完全一致</span>，无需应用。
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="rounded-lg border border-accent-warn/40 bg-accent-warn/5 px-3 py-2 text-caption text-accent-warn">
+                    <CircleAlert className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
+                    左 = 当前状态，右 = 远端 snapshot。点"应用"会覆盖当前 store 对应字段；
+                    取消或 Esc 仅关闭窗口。
+                  </p>
+                  {diffs.map((d) => (
+                    <section
+                      key={d.sliceKey}
+                      className="overflow-hidden rounded-xl border border-line-subtle"
+                      aria-labelledby={`diff-${d.sliceKey}`}
+                    >
+                      <header className="flex items-center justify-between bg-bg-base px-3 py-1.5">
+                        <h3
+                          id={`diff-${d.sliceKey}`}
+                          className="text-caption uppercase tracking-[0.18em] text-ink-muted"
+                        >
+                          {d.label}
+                        </h3>
+                        <span
+                          className={`text-caption ${
+                            d.changedCount > 0 ? 'text-accent-primary' : 'text-ink-muted'
+                          }`}
+                        >
+                          {d.changedCount > 0 ? `${d.changedCount} 个字段不同` : '完全相同'}
+                        </span>
+                      </header>
+                      <table className="w-full text-caption">
+                        <thead className="bg-bg-base text-ink-muted">
+                          <tr>
+                            <th scope="col" className="px-2 py-1 text-left">字段</th>
+                            <th scope="col" className="px-2 py-1 text-right text-accent-measure">
+                              当前
+                            </th>
+                            <th scope="col" className="px-2 py-1 text-right text-accent-warn">
+                              远端
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {d.fields.map((f) => (
+                            <tr
+                              key={f.key}
+                              className={`border-t border-line-subtle ${
+                                !f.same ? 'bg-accent-primary/5' : ''
+                              }`}
+                            >
+                              <th
+                                scope="row"
+                                className="px-2 py-1 text-left font-mono text-ink-secondary"
+                              >
+                                {!f.same && (
+                                  <span className="mr-1 text-accent-primary" aria-hidden="true">
+                                    ●
+                                  </span>
+                                )}
+                                {!f.same && <span className="sr-only">已变更：</span>}
+                                {f.key}
+                              </th>
+                              <td className="px-2 py-1 text-right font-mono text-ink-primary">
+                                {fmtVal(f.current)}
+                              </td>
+                              <td
+                                className={`px-2 py-1 text-right font-mono ${
+                                  f.same ? 'text-ink-secondary' : 'text-accent-primary'
+                                }`}
+                              >
+                                {fmtVal(f.incoming)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+                  ))}
+                  {hasAsm && decoded?.asm && (
+                    <section className="overflow-hidden rounded-xl border border-line-subtle">
+                      <header className="bg-bg-base px-3 py-1.5">
+                        <h3 className="text-caption uppercase tracking-[0.18em] text-ink-muted">
+                          装配选型（6 槽位）
+                        </h3>
+                      </header>
+                      <ul className="divide-y divide-line-subtle">
+                        {Object.entries(decoded.asm).map(([slot, value]) => (
+                          <li
+                            key={slot}
+                            className="flex items-center justify-between px-3 py-1 text-caption"
+                          >
+                            <span className="font-mono text-ink-secondary">{slot}</span>
+                            <span className="font-mono text-accent-warn">{value}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="px-3 py-1.5 text-[10px] text-ink-muted">
+                        注：装配槽位 ID 只会被记录在最近一次 history 引用里供 STM32 工程导出使用；不会自动改动工作台当前选型。
+                      </p>
+                    </section>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line-subtle bg-bg-base p-3">
+              <Button variant="ghost" onClick={onClose} aria-label="取消应用，关闭窗口">
+                取消
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleApply}
+                disabled={diffs.length === 0}
+                aria-label={
+                  diffs.length === 0
+                    ? '当前已与远端一致，无需应用'
+                    : `应用远端 snapshot，覆盖当前 ${totalChanged} 个字段`
+                }
+              >
+                <Check className="h-4 w-4" aria-hidden="true" />
+                应用（覆盖 {totalChanged} 字段）
+              </Button>
+            </footer>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}

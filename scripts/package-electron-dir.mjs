@@ -19,7 +19,15 @@ function assertInsideRoot(pathname) {
   }
 }
 
-for (const required of [join(root, 'dist', 'index.html'), join(root, 'electron', 'main.cjs'), join(root, 'electron', 'preload.cjs'), electronDist]) {
+for (const required of [
+  join(root, 'dist', 'index.html'),
+  join(root, 'electron', 'main.cjs'),
+  join(root, 'electron', 'preload.cjs'),
+  join(root, 'electron', 'menu.cjs'),
+  join(root, 'electron', 'tray.cjs'),
+  join(root, 'electron', 'splash.cjs'),
+  electronDist,
+]) {
   if (!existsSync(required)) {
     throw new Error(`Missing required build input: ${required}`);
   }
@@ -46,6 +54,17 @@ const runtimePackage = {
   productName,
 };
 await writeFile(join(resourcesApp, 'package.json'), `${JSON.stringify(runtimePackage, null, 2)}\n`, 'utf8');
+
+// 写一份 electron-updater 友好的 latest.yml 骨架。不真正连服务器；
+// 留作未来发版时上传更新源的占位证据。
+const latestYml = [
+  `version: ${runtimePackage.version}`,
+  `files:`,
+  `  - url: ${productName}.exe`,
+  `releaseDate: ${new Date().toISOString()}`,
+  '',
+].join('\n');
+await writeFile(join(outDir, 'latest.yml'), latestYml, 'utf8');
 
 console.log(`Windows client packaged: ${appExe}`);
 console.log('Run the exe from release/win-unpacked; keep the sibling resources folder next to it.');

@@ -1,11 +1,250 @@
+import { useCallback, useEffect, useState } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { GlobalKeybindings } from './components/layout/GlobalKeybindings';
+import { ReceiveSnapshotModal } from './components/share/ReceiveSnapshotModal';
+import {
+  isDesktopRuntime,
+  subscribeMenu,
+  subscribeOpenSnapshot,
+  syncWindowStateOnce,
+  type DesktopMenuEvent,
+  type OpenSnapshotPayload,
+} from './utils/desktopBridge';
+import { decodeSnapshot, type AppStateInput, type DecodedSnapshot } from './utils/snapshotCodec';
+import { useSimulationStore } from './store/simulationStore';
+import { useUIStore } from './store/uiStore';
+import { useThemeStore } from './store/themeStore';
+
+/** 把 snapshotCodec 解出的 sim 段映射到 store 的 update* 方法上 */
+function applyDecodedSimSlices(sim: Partial<Record<keyof AppStateInput, Record<string, unknown>>>) {
+  const s = useSimulationStore.getState();
+  const map: Array<[keyof AppStateInput, (patch: Record<string, unknown>) => void]> = [
+    ['motorBasics', s.updateMotorBasics as (p: Record<string, unknown>) => void],
+    ['threePhase', s.updateThreePhase as (p: Record<string, unknown>) => void],
+    ['clarke', s.updateClarke as (p: Record<string, unknown>) => void],
+    ['park', s.updatePark as (p: Record<string, unknown>) => void],
+    ['pid', s.updatePid as (p: Record<string, unknown>) => void],
+    ['svpwm', s.updateSvpwm as (p: Record<string, unknown>) => void],
+    ['inverter', s.updateInverter as (p: Record<string, unknown>) => void],
+    ['sensorless', s.updateSensorless as (p: Record<string, unknown>) => void],
+    ['weakField', s.updateWeakField as (p: Record<string, unknown>) => void],
+    ['fault', s.updateFault as (p: Record<string, unknown>) => void],
+    ['controlLoop', s.updateControlLoop as (p: Record<string, unknown>) => void],
+    ['foc', s.updateFoc as (p: Record<string, unknown>) => void],
+    ['hfi', s.updateHfi as (p: Record<string, unknown>) => void],
+    ['startup', s.updateStartup as (p: Record<string, unknown>) => void],
+    ['apf', s.updateApf as (p: Record<string, unknown>) => void],
+    ['refrigeration', s.updateRefrigeration as (p: Record<string, unknown>) => void],
+  ];
+  let touched = 0;
+  for (const [key, fn] of map) {
+    const slice = sim[key];
+    if (slice && typeof slice === 'object' && typeof fn === 'function') {
+      fn(slice);
+      touched += 1;
+    }
+  }
+  return touched;
+}
+
+/**
+ * 接收 .compbench 文件：先尝试当 URL token 解码，失败再当原始 JSON 处理。
+ * 拿不到 sim 段就放弃；拿到就 confirm 一次再应用。
+ */
+function applyIncomingSnapshot(payload: OpenSnapshotPayload) {
+  if (!payload || !payload.json) return;
+  let decodedSim: Partial<Record<keyof AppStateInput, Record<string, unknown>>> | null = null;
+  let label = payload.source ?? '收到的快照';
+
+  const trimmed = payload.json.trim();
+  // 形式 1：原始 JSON，含 sim 段
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed) as { sim?: Record<string, Record<string, unknown>>; token?: string };
+      if (parsed.sim && typeof parsed.sim === 'object') {
+        // 已经是长 key 直接用；保持向前兼容用 snapshotCodec 的短 key 也行
+        decodedSim = parsed.sim as Partial<Record<keyof AppStateInput, Record<string, unknown>>>;
+      } else if (typeof parsed.token === 'string') {
+        const decoded = decodeSnapshot(parsed.token);
+        if (decoded.ok && decoded.state) decodedSim = decoded.state.sim;
+      }
+    } catch {
+      /* 落到 token 分支 */
+    }
+  }
+  // 形式 2：版本号 + base64 token
+  if (!decodedSim) {
+    const decoded = decodeSnapshot(trimmed);
+    if (decoded.ok && decoded.state) decodedSim = decoded.state.sim;
+  }
+  if (!decodedSim) {
+    window.alert(`无法识别快照文件：${label}\n格式必须是 .compbench JSON 或 snapshotCodec token。`);
+    return;
+  }
+
+  // 临时确认弹窗：未来若有 ReceiveSnapshotModal，可在此处复用
+  const ok = window.confirm(
+    `检测到工况快照：${label}\n\n是否把其中的参数应用到当前学习客户端？\n（不会清除你已有的参数，只覆盖快照中明确给出的字段。）`,
+  );
+  if (!ok) return;
+
+  const touched = applyDecodedSimSlices(decodedSim);
+  if (touched === 0) {
+    window.alert('快照里没有可识别的参数段，未做任何更改。');
+  }
+}
+
+function useDesktopMenuSubscriptions() {
+  useEffect(() => {
+    if (!isDesktopRuntime()) return;
+
+    const bridge = window.motorControlDesktop;
+    void syncWindowStateOnce();
+    // 启动后把当前主题透给原生菜单 / 系统
+    const initialTheme = useThemeStore.getState().theme;
+    bridge?.setTheme?.(initialTheme === 'light' ? 'light' : 'dark').catch(() => {});
+
+    const offMenu = subscribeMenu(async (event: DesktopMenuEvent) => {
+      switch (event.action) {
+        case 'file:new-snapshot':
+          useSimulationStore.getState().resetActiveParams();
+          useSimulationStore.getState().resetTime();
+          break;
+        case 'file:save-snapshot': {
+          try {
+            const state = useSimulationStore.getState() as unknown as Record<string, unknown>;
+            const sim: Record<string, unknown> = {};
+            for (const key of [
+              'motorBasics',
+              'threePhase',
+              'clarke',
+              'park',
+              'pid',
+              'svpwm',
+              'inverter',
+              'sensorless',
+              'weakField',
+              'fault',
+              'controlLoop',
+              'foc',
+              'hfi',
+              'startup',
+              'apf',
+              'refrigeration',
+            ]) {
+              if (state[key]) sim[key] = state[key];
+            }
+            const json = JSON.stringify({ version: '1', sim, savedAt: new Date().toISOString() }, null, 2);
+            await bridge?.saveSnapshotFile(json);
+          } catch (err) {
+            console.error('save-snapshot failed', err);
+          }
+          break;
+        }
+        case 'file:export-stm32':
+          // 触发一个全局 event；ProjectExporter 可以监听打开自身。
+          window.dispatchEvent(new CustomEvent('compbench:open-stm32-exporter'));
+          break;
+        case 'view:toggle-theme': {
+          useThemeStore.getState().cycleTheme();
+          const next = useThemeStore.getState().theme;
+          bridge?.setTheme?.(next === 'light' ? 'light' : 'dark').catch(() => {});
+          break;
+        }
+        case 'view:open-curriculum':
+          useUIStore.getState().setSimPanelView('curriculum');
+          break;
+        case 'help:keybindings':
+          window.dispatchEvent(new CustomEvent('compbench:open-keybindings'));
+          break;
+        case 'help:check-update': {
+          try {
+            const res = await bridge?.checkForUpdate();
+            if (res) {
+              window.alert(
+                `当前版本：${res.currentVersion}\n最新版本：${res.latestVersion}\n${res.message}`,
+              );
+            }
+          } catch (err) {
+            console.error('check-update failed', err);
+          }
+          break;
+        }
+        default:
+          /* 未识别的 action 忽略 */
+          break;
+      }
+    });
+
+    const offOpen = subscribeOpenSnapshot((payload) => {
+      applyIncomingSnapshot(payload);
+    });
+
+    return () => {
+      offMenu();
+      offOpen();
+    };
+  }, []);
+}
+
+/** 解析 `#snapshot=...` hash；返回 token 字符串或空串 */
+function readSnapshotHash(): string {
+  if (typeof window === 'undefined') return '';
+  const m = window.location.hash.match(/#snapshot=([^&]+)/);
+  return m ? m[1] : '';
+}
+
+/** 清掉 hash，避免下次刷新 / 切换路由再次触发接收 modal */
+function clearSnapshotHash(): void {
+  if (typeof window === 'undefined') return;
+  const { origin, pathname, search } = window.location;
+  window.history.replaceState(null, '', `${origin}${pathname}${search}`);
+}
+
+/** 启动时和 hashchange 时检查 #snapshot=...，命中且解码成功就弹 ReceiveSnapshotModal */
+function useShareHashReceiver() {
+  const [pending, setPending] = useState<DecodedSnapshot | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const tryConsume = () => {
+      const token = readSnapshotHash();
+      if (!token) return;
+      const result = decodeSnapshot(token);
+      if (result.ok && result.state) {
+        setPending(result.state);
+        setOpen(true);
+      } else {
+        clearSnapshotHash();
+        console.warn('[snapshot] 接收失败：', result.error);
+      }
+    };
+    tryConsume();
+    window.addEventListener('hashchange', tryConsume);
+    return () => window.removeEventListener('hashchange', tryConsume);
+  }, []);
+
+  const onApply = useCallback(() => {
+    if (!pending) return;
+    applyDecodedSimSlices(pending.sim);
+  }, [pending]);
+
+  const onClose = useCallback(() => {
+    setOpen(false);
+    clearSnapshotHash();
+  }, []);
+
+  return { pending, open, onApply, onClose };
+}
 
 export default function App() {
+  useDesktopMenuSubscriptions();
+  const { pending, open, onApply, onClose } = useShareHashReceiver();
   return (
     <>
       <AppShell />
       <GlobalKeybindings />
+      <ReceiveSnapshotModal open={open} decoded={pending} onApply={onApply} onClose={onClose} />
     </>
   );
 }

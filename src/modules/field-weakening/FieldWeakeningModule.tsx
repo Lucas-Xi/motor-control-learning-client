@@ -1,6 +1,7 @@
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, BatteryCharging, Zap } from 'lucide-react';
 import { useCallback, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react';
+import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -225,5 +226,16 @@ function Probe() {
 }
 
 export function FieldWeakeningModule() {
-  return <ModuleLayout primary={<Primary />} probe={<Probe />} concept={<ConceptNotes moduleId="field-weakening" />} />;
+  return (
+    <ModuleLayout
+      primary={
+        <div className="space-y-3">
+          <AssetHero moduleId="field-weakening" />
+          <Primary />
+        </div>
+      }
+      probe={<Probe />}
+      concept={<ConceptNotes moduleId="field-weakening" />}
+    />
+  );
 }

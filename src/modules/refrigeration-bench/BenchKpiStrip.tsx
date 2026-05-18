@@ -5,6 +5,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { useBenchCycle } from './useBenchCycle';
 import { useCycleHistory } from './useCycleHistory';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 台架顶部常显的 KPI 条：4 个核心指标（COP / 排气温度 / 制冷量 / 所需 Iq）
@@ -13,6 +14,7 @@ import { useCycleHistory } from './useCycleHistory';
 export function BenchKpiStrip() {
   const motor = useSimulationStore((s) => s.motorBasics);
   const result = useBenchCycle();
+  const { t } = useI18n();
 
   const cop = result.cop;
   const Td = result.Tdischarge;
@@ -31,39 +33,43 @@ export function BenchKpiStrip() {
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <KpiTile
         icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-        label="COP"
+        label={t('refrigerationBench.kpiCop')}
         value={formatNumber(cop, 2)}
         unit=""
         status={copStatus}
+        statusLabels={{ good: t('refrigerationBench.statusGood'), warn: t('refrigerationBench.statusWarn'), bad: t('refrigerationBench.statusBad') }}
         history={h.cop}
-        hint={cop >= 4 ? '高效区' : cop >= 2.5 ? '一般' : '低效'}
+        hint={cop >= 4 ? t('refrigerationBench.hintCopHigh') : cop >= 2.5 ? t('refrigerationBench.hintCopMid') : t('refrigerationBench.hintCopLow')}
       />
       <KpiTile
         icon={<Thermometer className="h-3.5 w-3.5" />}
-        label="排气温度"
+        label={t('refrigerationBench.kpiTdischarge')}
         value={formatNumber(Td, 1)}
         unit="°C"
         status={TdStatus}
+        statusLabels={{ good: t('refrigerationBench.statusGood'), warn: t('refrigerationBench.statusWarn'), bad: t('refrigerationBench.statusBad') }}
         history={h.Td}
-        hint={Td > 110 ? '超限保护' : Td > 90 ? '接近警戒' : '正常'}
+        hint={Td > 110 ? t('refrigerationBench.hintTdHigh') : Td > 90 ? t('refrigerationBench.hintTdMid') : t('refrigerationBench.hintTdOk')}
       />
       <KpiTile
         icon={<Snowflake className="h-3.5 w-3.5" />}
-        label="制冷量"
+        label={t('refrigerationBench.kpiCapacity')}
         value={formatNumber(Qc, 2)}
         unit="kW"
         status={QcStatus}
+        statusLabels={{ good: t('refrigerationBench.statusGood'), warn: t('refrigerationBench.statusWarn'), bad: t('refrigerationBench.statusBad') }}
         history={h.Qc}
-        hint={Qc >= 1 ? '充足' : Qc >= 0.3 ? '偏低' : '不足'}
+        hint={Qc >= 1 ? t('refrigerationBench.hintCapAmple') : Qc >= 0.3 ? t('refrigerationBench.hintCapLow') : t('refrigerationBench.hintCapMin')}
       />
       <KpiTile
         icon={<Zap className="h-3.5 w-3.5" />}
-        label="所需 Iq"
+        label={t('refrigerationBench.kpiIqRequired')}
         value={formatNumber(Iq, 1)}
         unit="A"
         status={IqStatus}
+        statusLabels={{ good: t('refrigerationBench.statusGood'), warn: t('refrigerationBench.statusWarn'), bad: t('refrigerationBench.statusBad') }}
         history={h.Iq}
-        hint={Math.abs(Iq) > motor.ratedCurrent ? '超额定' : `${((Math.abs(Iq) / motor.ratedCurrent) * 100).toFixed(0)}% 额定`}
+        hint={Math.abs(Iq) > motor.ratedCurrent ? t('refrigerationBench.hintIqOver') : `${((Math.abs(Iq) / motor.ratedCurrent) * 100).toFixed(0)}% ${t('refrigerationBench.hintIqRatedSuffix')}`}
       />
     </div>
   );
@@ -77,11 +83,13 @@ interface TileProps {
   value: string;
   unit: string;
   status: Status;
+  /** good/warn/bad 三状态的本地化短文案；由父组件根据当前 locale 注入。 */
+  statusLabels: Record<Status, string>;
   history: number[];
   hint: string;
 }
 
-function KpiTile({ icon, label, value, unit, status, history, hint }: TileProps) {
+function KpiTile({ icon, label, value, unit, status, statusLabels, history, hint }: TileProps) {
   const bg = status === 'good' ? 'border-accent-measure/40 bg-accent-measure/[0.04]'
     : status === 'warn' ? 'border-accent-warn/40 bg-accent-warn/[0.04]'
     : 'border-accent-fault/40 bg-accent-fault/[0.04]';
@@ -97,7 +105,7 @@ function KpiTile({ icon, label, value, unit, status, history, hint }: TileProps)
   const StatusIcon = status === 'good' ? CheckCircle2
     : status === 'warn' ? AlertTriangle
     : AlertOctagon;
-  const statusText = status === 'good' ? '正常' : status === 'warn' ? '警戒' : '超限';
+  const statusText = statusLabels[status];
   // sparkline 形状区分：good 实线、warn 虚线、bad 点线
   const sparkDash = status === 'good' ? undefined : status === 'warn' ? '3 2' : '1 2';
   // hint 区域的图标也分形状（避免重复使用 Activity）

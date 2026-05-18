@@ -1,6 +1,7 @@
 import { Line, LineChart, CartesianGrid, ReferenceArea, ReferenceLine, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { AlertTriangle, RadioTower, RotateCw } from 'lucide-react';
 import { useMemo } from 'react';
+import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -143,5 +144,16 @@ function Probe() {
 }
 
 export function SensorlessFOCModule() {
-  return <ModuleLayout primary={<Primary />} probe={<Probe />} concept={<ConceptNotes moduleId="sensorless-foc" />} />;
+  return (
+    <ModuleLayout
+      primary={
+        <div className="space-y-3">
+          <AssetHero moduleId="sensorless-foc" />
+          <Primary />
+        </div>
+      }
+      probe={<Probe />}
+      concept={<ConceptNotes moduleId="sensorless-foc" />}
+    />
+  );
 }

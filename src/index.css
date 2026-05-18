@@ -2,21 +2,135 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+ * 主题变量（dark：默认 / light / high-contrast / projector）
+ *
+ * 维护说明：
+ * - `--xxx`     完整 hex / 颜色字符串，供直接 CSS `var(--xxx)` 使用
+ * - `--xxx-rgb` 同色的 `R G B` 三元组，供 tailwind `rgb(var(--xxx-rgb)/<alpha>)`
+ *               opacity modifier 使用
+ * 添加新颜色时务必同时维护两份；高对比度 / 投影主题中只重写差异色。
+ * ============================================================ */
 :root {
   color-scheme: dark;
-  --bg-base: #07111f;
-  --bg-surface: #0d1929;
-  --bg-raised: #11203b;
-  --line-subtle: #1e2a3d;
-  --line-strong: #2c3d57;
-  --ink-primary: #e7f3ff;
-  --ink-secondary: #9eb5cb;
-  --ink-muted: #5d7793;
-  --accent-primary: #34d6ff;
-  --accent-measure: #43f7b5;
-  --accent-warn: #ffb84d;
-  --accent-fault: #ff5c7a;
+
+  --bg-base: #07111f;          --bg-base-rgb: 7 17 31;
+  --bg-surface: #0d1929;       --bg-surface-rgb: 13 25 41;
+  --bg-raised: #11203b;        --bg-raised-rgb: 17 32 59;
+  --line-subtle: #1e2a3d;      --line-subtle-rgb: 30 42 61;
+  --line-strong: #2c3d57;      --line-strong-rgb: 44 61 87;
+  --ink-primary: #e7f3ff;      --ink-primary-rgb: 231 243 255;
+  --ink-secondary: #9eb5cb;    --ink-secondary-rgb: 158 181 203;
+  --ink-muted: #5d7793;        --ink-muted-rgb: 93 119 147;
+  --accent-primary: #34d6ff;   --accent-primary-rgb: 52 214 255;
+  --accent-measure: #43f7b5;   --accent-measure-rgb: 67 247 181;
+  --accent-warn: #ffb84d;      --accent-warn-rgb: 255 184 77;
+  --accent-fault: #ff5c7a;     --accent-fault-rgb: 255 92 122;
+
+  --fs-caption: 12px;
+  --fs-body: 14px;
+  --fs-title: 16px;
+  --fs-display: 24px;
+  --lh-caption: 1.4;
+  --lh-body: 1.5;
+  --lh-title: 1.4;
+  --lh-display: 1.25;
+
+  --theme-border-width: 1px;
 }
+
+/* —— Light 主题：白底深字（演示 / 打印） —— */
+html.light {
+  color-scheme: light;
+  --bg-base: #f7f9fc;          --bg-base-rgb: 247 249 252;
+  --bg-surface: #ffffff;       --bg-surface-rgb: 255 255 255;
+  --bg-raised: #eef2f7;        --bg-raised-rgb: 238 242 247;
+  --line-subtle: #d8dee6;      --line-subtle-rgb: 216 222 230;
+  --line-strong: #b0bac8;      --line-strong-rgb: 176 186 200;
+  --ink-primary: #0b1726;      --ink-primary-rgb: 11 23 38;
+  --ink-secondary: #344256;    --ink-secondary-rgb: 52 66 86;
+  --ink-muted: #5f6e85;        --ink-muted-rgb: 95 110 133;
+  --accent-primary: #1374b5;   --accent-primary-rgb: 19 116 181;
+  --accent-measure: #128a5a;   --accent-measure-rgb: 18 138 90;
+  --accent-warn: #b96d00;      --accent-warn-rgb: 185 109 0;
+  --accent-fault: #c11b3e;     --accent-fault-rgb: 193 27 62;
+}
+
+/* —— High contrast：纯黑底 + 纯白字 + 加粗边框 + 字号放大 ——
+ * 对比度全部 ≥ WCAG AAA（背景黑 vs 文字白 = 21:1）。accent 使用饱和纯色。
+ */
+html.high-contrast {
+  color-scheme: dark;
+  --bg-base: #000000;          --bg-base-rgb: 0 0 0;
+  --bg-surface: #050505;       --bg-surface-rgb: 5 5 5;
+  --bg-raised: #0a0a0a;        --bg-raised-rgb: 10 10 10;
+  --line-subtle: #ffffff;      --line-subtle-rgb: 255 255 255;
+  --line-strong: #ffffff;      --line-strong-rgb: 255 255 255;
+  --ink-primary: #ffffff;      --ink-primary-rgb: 255 255 255;
+  --ink-secondary: #f0f0f0;    --ink-secondary-rgb: 240 240 240;
+  --ink-muted: #cfcfcf;        --ink-muted-rgb: 207 207 207;
+  --accent-primary: #00ffff;   --accent-primary-rgb: 0 255 255;
+  --accent-measure: #00ff66;   --accent-measure-rgb: 0 255 102;
+  --accent-warn: #ffd000;      --accent-warn-rgb: 255 208 0;
+  --accent-fault: #ff3060;     --accent-fault-rgb: 255 48 96;
+
+  --fs-caption: 14px;
+  --fs-body: 16px;
+  --fs-title: 19px;
+  --fs-display: 28px;
+
+  --theme-border-width: 2px;
+}
+
+/* high-contrast 下：所有 border-line-* / border-accent-* 自动加粗到 2px。 */
+html.high-contrast [class*="border-line-"],
+html.high-contrast [class*="border-accent-"],
+html.high-contrast .border,
+html.high-contrast .border-t,
+html.high-contrast .border-b,
+html.high-contrast .border-l,
+html.high-contrast .border-r {
+  border-width: var(--theme-border-width);
+}
+
+/* —— Projector：白底深字 + 字号放大 + 行距加大 + 鲜艳 accent ——
+ * 投影场景下 ambient light 高，对比度不能太低。 */
+html.projector {
+  color-scheme: light;
+  --bg-base: #ffffff;          --bg-base-rgb: 255 255 255;
+  --bg-surface: #f5f8fc;       --bg-surface-rgb: 245 248 252;
+  --bg-raised: #e8eef6;        --bg-raised-rgb: 232 238 246;
+  --line-subtle: #b8c2d0;      --line-subtle-rgb: 184 194 208;
+  --line-strong: #6c7a8e;      --line-strong-rgb: 108 122 142;
+  --ink-primary: #06111c;      --ink-primary-rgb: 6 17 28;
+  --ink-secondary: #1f3147;    --ink-secondary-rgb: 31 49 71;
+  --ink-muted: #475b76;        --ink-muted-rgb: 71 91 118;
+  --accent-primary: #0046d8;   --accent-primary-rgb: 0 70 216;
+  --accent-measure: #007a3d;   --accent-measure-rgb: 0 122 61;
+  --accent-warn: #b35100;      --accent-warn-rgb: 179 81 0;
+  --accent-fault: #a10024;     --accent-fault-rgb: 161 0 36;
+
+  --fs-caption: 14px;
+  --fs-body: 16px;
+  --fs-title: 19px;
+  --fs-display: 28px;
+
+  --lh-caption: 1.6;
+  --lh-body: 1.7;
+  --lh-title: 1.55;
+  --lh-display: 1.4;
+}
+
+/* light / projector 在 body 网格底纹改为更淡的灰线 */
+html.light body::before,
+html.projector body::before {
+  background-image:
+    linear-gradient(rgba(11, 23, 38, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 23, 38, 0.04) 1px, transparent 1px);
+}
+
+/* high-contrast 下：去掉装饰网格（纯黑底更清晰） */
+html.high-contrast body::before { display: none; }
 
 * { box-sizing: border-box; }
 
@@ -29,9 +143,25 @@ body {
   background: var(--bg-base);
   color: var(--ink-primary);
   font-family: 'Microsoft YaHei UI', Aptos, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--fs-body, 14px);
+  line-height: var(--lh-body, 1.5);
   overflow-x: hidden;
+}
+
+/* 全局 :focus-visible：2px 主色描边，所有主题一致 */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* prefers-reduced-motion：关掉非必要动效 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* 极轻 1px 网格底纹 — 不再叠多层径向光斑 */
@@ -133,7 +263,7 @@ button, input, select, textarea { font: inherit; }
     width: 22px;
     height: 22px;
   }
-  /* 主按钮 ≥44px 高，避免误触 */
+  /* 主按钮 ≥40px 高，避免误触 */
   .mobile-touch-target {
     min-height: 44px;
     min-width: 44px;

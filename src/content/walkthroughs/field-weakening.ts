@@ -123,9 +123,13 @@ export const fieldWeakeningWalkthrough: ModuleWalkthrough = {
         ' typedef struct { float kp, ki, ts, i_term, id_min, id_max; } FW_PI_t;' +
         ' float fw_pi_update(FW_PI_t *p, float v_mag, float v_max) {' +
         '   float err = v_max - v_mag - 0.05f*v_max;  /* 5% 死区，避免抖动 */' +
-        '   p->i_term += p->ki * err * p->ts;' +
-        '   if (p->i_term > 0.0f) p->i_term = 0.0f;  /* Id*≤0 单边限幅 */' +
-        '   if (p->i_term < p->id_min) p->i_term = p->id_min;  /* 退磁硬限 */' +
+        '   if (err > 0.0f) { /* 还没饱和 → Id 回零 */' +
+        '     p->i_term += p->ki * err * p->ts;' +
+        '     if (p->i_term > 0.0f) p->i_term = 0.0f;  /* Id*≤0 单边限幅 */' +
+        '   } else { /* 已饱和 → 注负 Id */' +
+        '     p->i_term += p->ki * err * p->ts;' +
+        '     if (p->i_term < p->id_min) p->i_term = p->id_min;  /* 退磁硬限 */' +
+        '   }' +
         '   float id_ref = p->kp * err + p->i_term;' +
         '   if (id_ref > 0.0f) id_ref = 0.0f;' +
         '   if (id_ref < p->id_min) id_ref = p->id_min;  /* 例 −0.6·I_rated */' +

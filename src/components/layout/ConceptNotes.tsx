@@ -2,6 +2,8 @@ import { ChevronDown, Lightbulb, BookOpen, Cpu, Target } from 'lucide-react';
 import { useState } from 'react';
 import { getLesson } from '../../content/lessons';
 import type { ModuleId } from '../../simulation/engine/types';
+import { useI18n } from '../../i18n/useI18n';
+import type { TKey } from '../../i18n/useI18n';
 import { Quiz } from './Quiz';
 import { CodeBlock } from './CodeBlock';
 
@@ -11,25 +13,26 @@ interface Props {
 
 type Tier = 'intro' | 'deep' | 'practice' | 'quiz';
 
-const TIER_DEFS: Array<{ key: Tier; label: string; icon: typeof Lightbulb }> = [
-  { key: 'intro', label: '初识', icon: Lightbulb },
-  { key: 'deep', label: '深入', icon: BookOpen },
-  { key: 'practice', label: '上机', icon: Cpu },
-  { key: 'quiz', label: '题目', icon: Target },
+const TIER_DEFS: Array<{ key: Tier; labelKey: TKey; icon: typeof Lightbulb }> = [
+  { key: 'intro', labelKey: 'shell.conceptTabIntro', icon: Lightbulb },
+  { key: 'deep', labelKey: 'shell.conceptTabDeep', icon: BookOpen },
+  { key: 'practice', labelKey: 'shell.conceptTabPractice', icon: Cpu },
+  { key: 'quiz', labelKey: 'shell.conceptTabQuiz', icon: Target },
 ];
 
 export function ConceptNotes({ moduleId }: Props) {
   const lesson = getLesson(moduleId);
+  const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tier>('intro');
-  const tiers = TIER_DEFS.filter((t) => {
-    if (t.key === 'intro') return !!lesson.introBeginner;
-    if (t.key === 'quiz') return !!lesson.quiz?.length;
+  const tiers = TIER_DEFS.filter((tier) => {
+    if (tier.key === 'intro') return !!lesson.introBeginner;
+    if (tier.key === 'quiz') return !!lesson.quiz?.length;
     return true;
   });
   // 没有初识的旧模块默认开到深入
   const defaultTab: Tier = lesson.introBeginner ? 'intro' : 'deep';
-  const activeTab = tiers.find((t) => t.key === tab) ? tab : defaultTab;
+  const activeTab = tiers.find((tier) => tier.key === tab) ? tab : defaultTab;
 
   return (
     <section className="rounded-2xl border border-line-subtle bg-bg-surface">
@@ -38,27 +41,30 @@ export function ConceptNotes({ moduleId }: Props) {
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <div>
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">Lesson Notes</p>
-          <h2 className="font-display text-title text-ink-primary">教学讲义</h2>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.conceptEyebrow')}</p>
+          <h2 className="font-display text-title text-ink-primary">{t('shell.conceptTitle')}</h2>
+          {locale === 'en-US' && (
+            <p className="mt-0.5 text-[10px] text-ink-muted">{t('common.translationPending')}</p>
+          )}
         </div>
         <ChevronDown className={`h-4 w-4 text-ink-secondary transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="border-t border-line-subtle px-4 py-3">
           <div className="mb-3 flex flex-wrap gap-1 rounded-lg border border-line-subtle bg-bg-base p-1">
-            {tiers.map((t) => {
-              const Icon = t.icon;
+            {tiers.map((tier) => {
+              const Icon = tier.icon;
               return (
                 <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
+                  key={tier.key}
+                  onClick={() => setTab(tier.key)}
                   className={`inline-flex items-center gap-1 rounded px-3 py-1.5 text-caption font-medium transition-colors ${
-                    activeTab === t.key
+                    activeTab === tier.key
                       ? 'bg-accent-primary/15 text-accent-primary'
                       : 'text-ink-secondary hover:text-ink-primary'
                   }`}
                 >
-                  <Icon className="h-3.5 w-3.5" />{t.label}
+                  <Icon className="h-3.5 w-3.5" />{t(tier.labelKey)}
                 </button>
               );
             })}

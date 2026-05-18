@@ -8,22 +8,25 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Slider } from '../ui/Slider';
 import { Tabs } from '../ui/Tabs';
+import { useI18n } from '../../i18n/useI18n';
+import type { TKey } from '../../i18n/useI18n';
 
-const FAULT_TYPES = [
-  ['over-current', '过流'],
-  ['phase-loss', '缺相'],
-  ['current-offset', '采样偏置'],
-  ['phase-order', '相序错误'],
-  ['encoder-angle', '角度错误'],
-  ['speed-oscillation', '速度振荡'],
-  ['voltage-saturation', '电压饱和'],
-  ['startup-fail', '启动失败'],
-  ['liquid-slugging', '液击'],
-  ['locked-rotor', '堵转'],
-  ['dc-undervolt', '母线欠压'],
-  ['over-temp', '过温'],
-  ['vibration', '振动超限'],
-  ['oil-low', '油位告警'],
+// 故障类型 → translations.ts 的 faults.* key 映射；走 useI18n 拿到当前语种字符串。
+const FAULT_TYPES: ReadonlyArray<readonly [string, TKey]> = [
+  ['over-current', 'faults.overCurrent'],
+  ['phase-loss', 'faults.phaseLoss'],
+  ['current-offset', 'faults.currentOffset'],
+  ['phase-order', 'faults.phaseOrder'],
+  ['encoder-angle', 'faults.encoderAngle'],
+  ['speed-oscillation', 'faults.speedOscillation'],
+  ['voltage-saturation', 'faults.voltageSaturation'],
+  ['startup-fail', 'faults.startupFail'],
+  ['liquid-slugging', 'faults.liquidSlugging'],
+  ['locked-rotor', 'faults.lockedRotor'],
+  ['dc-undervolt', 'faults.dcUndervolt'],
+  ['over-temp', 'faults.overTemp'],
+  ['vibration', 'faults.vibration'],
+  ['oil-low', 'faults.oilLow'],
 ] as const;
 
 /**
@@ -45,9 +48,10 @@ function renderCustomSlot(slot: string): ReactNode {
 function RefrigerantPicker() {
   const refrigerant = useSimulationStore((s) => s.refrigeration.refrigerant);
   const update = useSimulationStore((s) => s.updateRefrigeration);
+  const { t } = useI18n();
   return (
     <div>
-      <p className="mb-2 text-caption text-ink-muted">制冷剂选择：</p>
+      <p className="mb-2 text-caption text-ink-muted">{t('parameters.refrigerantTitle')}</p>
       <div className="grid grid-cols-3 gap-2">
         {(['R32', 'R410A', 'R134a'] as const).map((r) => (
           <Button key={r} variant={refrigerant === r ? 'primary' : 'ghost'} onClick={() => update({ refrigerant: r })}>
@@ -62,12 +66,13 @@ function RefrigerantPicker() {
 function ClosedLoopToggle() {
   const closedLoop = useSimulationStore((s) => s.refrigeration.closedLoop);
   const update = useSimulationStore((s) => s.updateRefrigeration);
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-3">
-      <p className="mb-1 text-body font-medium text-ink-primary">FOC 闭环耦合</p>
-      <p className="mb-2 text-caption text-ink-muted">开启后，循环算出的负载扭矩会反映成 FOC 模块所需的 Iq 给定，让"系统侧"和"电机侧"互相印证。</p>
+      <p className="mb-1 text-body font-medium text-ink-primary">{t('parameters.closedLoopTitle')}</p>
+      <p className="mb-2 text-caption text-ink-muted">{t('parameters.closedLoopHint')}</p>
       <Button variant={closedLoop ? 'primary' : 'ghost'} onClick={() => update({ closedLoop: !closedLoop })}>
-        {closedLoop ? '已启用闭环' : '启用闭环'}
+        {closedLoop ? t('parameters.closedLoopEnabled') : t('parameters.closedLoopEnable')}
       </Button>
     </div>
   );
@@ -75,28 +80,29 @@ function ClosedLoopToggle() {
 
 function MotorPresets() {
   const update = useSimulationStore((s) => s.updateMotorBasics);
+  const { t } = useI18n();
   return (
     <div>
-      <p className="mb-2 text-caption text-ink-muted">常见压缩机 IPM 电机预设：</p>
+      <p className="mb-2 text-caption text-ink-muted">{t('parameters.motorPresetsHint')}</p>
       <div className="grid grid-cols-3 gap-2">
         {/* 空调压缩机：~1-2kW、4 极对、IPM 凸极、典型工作 1500-7200 rpm */}
         <Button variant="ghost" onClick={() => update({
           polePairs: 4, ratedCurrent: 12, ratedSpeed: 7200,
           rs: 0.42, ldMh: 1.1, lqMh: 2.4, flux: 0.052,
           inertiaUm: 320, dampingUm: 120,
-        })}>空调压缩机</Button>
+        })}>{t('parameters.motorPresetHvac')}</Button>
         {/* 冰箱压缩机：小功率、6 极对、低速运行 1500-3500 rpm，惯量小 */}
         <Button variant="ghost" onClick={() => update({
           polePairs: 6, ratedCurrent: 4, ratedSpeed: 3500,
           rs: 1.6, ldMh: 5.2, lqMh: 8.5, flux: 0.038,
           inertiaUm: 60, dampingUm: 30,
-        })}>冰箱压缩机</Button>
+        })}>{t('parameters.motorPresetFridge')}</Button>
         {/* 工业制冷大功率压缩机：~10kW、4 极对、母线高、惯量大 */}
         <Button variant="ghost" onClick={() => update({
           polePairs: 4, ratedCurrent: 30, ratedSpeed: 6000,
           rs: 0.12, ldMh: 0.45, lqMh: 1.2, flux: 0.092,
           inertiaUm: 1200, dampingUm: 350,
-        })}>工业制冷</Button>
+        })}>{t('parameters.motorPresetIndustrial')}</Button>
       </div>
     </div>
   );
@@ -104,14 +110,33 @@ function MotorPresets() {
 
 function FocPresets() {
   const update = useSimulationStore((s) => s.updateFoc);
+  const { locale } = useI18n();
+  // FOC 调参 preset 标签：通用术语，按 locale 切。不进 translations.ts（仅这一处用到）。
+  const labels = locale === 'en-US'
+    ? {
+        slow: 'Slow (conservative)',
+        typical: 'Compressor typical',
+        overshoot: 'Aggressive / oscillation',
+        thetaErr: 'Angle error',
+        highSpeed: 'High speed 7200rpm',
+        lowSpeed: 'Low speed heavy load',
+      }
+    : {
+        slow: '慢响应（保守）',
+        typical: '压缩机典型',
+        overshoot: '过激振荡',
+        thetaErr: '观测器角度误差',
+        highSpeed: '高速 7200rpm',
+        lowSpeed: '低速重载',
+      };
   return (
     <div className="grid grid-cols-2 gap-2">
-      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 0.5, ki: 50, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 100 })}>慢响应（保守）</Button>
-      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 100 })}>压缩机典型</Button>
-      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 3.5, ki: 900, thetaErrorDeg: 0, samplingDelaySamples: 2, electricalFreq: 100 })}>过激振荡</Button>
-      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 15, samplingDelaySamples: 1, electricalFreq: 100 })}>观测器角度误差</Button>
-      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 480 })}>高速 7200rpm</Button>
-      <Button variant="ghost" onClick={() => update({ iqRef: 12, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 30 })}>低速重载</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 0.5, ki: 50, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 100 })}>{labels.slow}</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 100 })}>{labels.typical}</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 3.5, ki: 900, thetaErrorDeg: 0, samplingDelaySamples: 2, electricalFreq: 100 })}>{labels.overshoot}</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 15, samplingDelaySamples: 1, electricalFreq: 100 })}>{labels.thetaErr}</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 480 })}>{labels.highSpeed}</Button>
+      <Button variant="ghost" onClick={() => update({ iqRef: 12, kp: 1.2, ki: 180, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 30 })}>{labels.lowSpeed}</Button>
     </div>
   );
 }
@@ -119,10 +144,11 @@ function FocPresets() {
 function ClarkeModeToggle() {
   const balanced = useSimulationStore((s) => s.clarke.balanced);
   const update = useSimulationStore((s) => s.updateClarke);
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-2">
-      <Button variant={balanced ? 'primary' : 'ghost'} onClick={() => update({ balanced: true })}>平衡三相</Button>
-      <Button variant={!balanced ? 'primary' : 'ghost'} onClick={() => update({ balanced: false })}>手动 Ia/Ib/Ic</Button>
+      <Button variant={balanced ? 'primary' : 'ghost'} onClick={() => update({ balanced: true })}>{t('parameters.chipBalanced')}</Button>
+      <Button variant={!balanced ? 'primary' : 'ghost'} onClick={() => update({ balanced: false })}>{t('parameters.chipManualAbc')}</Button>
     </div>
   );
 }
@@ -130,13 +156,14 @@ function ClarkeModeToggle() {
 function PidPresets() {
   const update = useSimulationStore((s) => s.updatePid);
   const antiWindup = useSimulationStore((s) => s.pid.antiWindup);
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-2">
       <Button variant={antiWindup ? 'primary' : 'ghost'} onClick={() => update({ antiWindup: !antiWindup })}>
-        抗积分饱和 {antiWindup ? '开' : '关'}
+        {antiWindup ? t('parameters.chipAntiWindupOn') : t('parameters.chipAntiWindupOff')}
       </Button>
-      <Button variant="ghost" onClick={() => update({ kp: 0.8, ki: 4, kd: 0, target: 1, limit: 18 })}>慢响应</Button>
-      <Button variant="ghost" onClick={() => update({ kp: 6.5, ki: 58, kd: 0.02, target: 1, limit: 24 })}>振荡</Button>
+      <Button variant="ghost" onClick={() => update({ kp: 0.8, ki: 4, kd: 0, target: 1, limit: 18 })}>{t('parameters.chipSlowResponse')}</Button>
+      <Button variant="ghost" onClick={() => update({ kp: 6.5, ki: 58, kd: 0.02, target: 1, limit: 24 })}>{t('parameters.chipOscillation')}</Button>
     </div>
   );
 }
@@ -165,15 +192,16 @@ function SvpwmPolar() {
 function FaultTypes() {
   const faultType = useSimulationStore((s) => s.fault.faultType);
   const update = useSimulationStore((s) => s.updateFault);
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-2">
-      {FAULT_TYPES.map(([type, label]) => (
+      {FAULT_TYPES.map(([type, labelKey]) => (
         <Button
           key={type}
           variant={faultType === type ? 'primary' : 'ghost'}
           onClick={() => update({ faultType: type as typeof faultType })}
         >
-          {label}
+          {t(labelKey)}
         </Button>
       ))}
     </div>
@@ -222,12 +250,13 @@ function SchemaCard({ schema, moduleId }: { schema: ParameterSchema; moduleId: M
 
 function PresetGrid({ moduleId }: { moduleId: ModuleId }) {
   const apply = useSimulationStore((s) => s.applyExperimentPreset);
+  const { t } = useI18n();
   const items = useMemo(() => {
     const filtered = experimentPresets.filter((p) => p.moduleId === moduleId);
     return filtered.length ? filtered : experimentPresets.slice(0, 4);
   }, [moduleId]);
   return (
-    <Card title="内置实验案例" eyebrow="preset experiments" density="compact">
+    <Card title={t('shell.presetCardTitle')} eyebrow={t('shell.presetCardEyebrow')} density="compact">
       <div className="space-y-1.5">
         {items.map((item) => (
           <button
@@ -249,24 +278,32 @@ export function ParameterPanel() {
   const resetActiveParams = useSimulationStore((s) => s.resetActiveParams);
   const [tab, setTab] = useState<'params' | 'presets'>('params');
   const schema = parameterSchemas[activeModule];
+  const { t, locale } = useI18n();
 
   return (
     <aside className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">Control Rack</p>
-          <h2 className="font-display text-title text-ink-primary">参数控制台</h2>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramPanelEyebrow')}</p>
+          <h2 className="font-display text-title text-ink-primary">{t('shell.paramPanelTitle')}</h2>
         </div>
-        <Button onClick={resetActiveParams}><RotateCcw className="h-4 w-4" />重置</Button>
+        <Button onClick={resetActiveParams}><RotateCcw className="h-4 w-4" />{t('shell.paramReset')}</Button>
       </div>
       <Tabs
         value={tab}
         onChange={setTab}
         options={[
-          { value: 'params', label: '参数' },
-          { value: 'presets', label: '案例' },
+          { value: 'params', label: t('shell.paramTabParams') },
+          { value: 'presets', label: t('shell.paramTabPresets') },
         ]}
       />
+      {/* schema.title / item.label / preset.title 仍来自 parameterSchemas（中文）。
+          在 en-US locale 下加 "translation pending" 小字提示，避免被误以为是漏 i18n。 */}
+      {locale === 'en-US' && (
+        <p className="rounded-md border border-line-subtle/60 bg-bg-base px-2 py-1 text-[10px] text-ink-muted">
+          {t('common.translationPending')}
+        </p>
+      )}
       {tab === 'params' && schema && <SchemaCard schema={schema} moduleId={activeModule} />}
       {tab === 'presets' && <PresetGrid moduleId={activeModule} />}
     </aside>

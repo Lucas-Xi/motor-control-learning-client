@@ -1,10 +1,20 @@
 import { useEffect, useRef } from 'react';
-import { useThemeStore } from '../../store/themeStore';
+import { useThemeStore, THEME_ORDER, type Theme } from '../../store/themeStore';
 
 const STORAGE_KEY = 'compressor-bench-theme';
 
+/** 主题 → <html> 上的 class 名（dark 态无 class）。 */
+const THEME_CLASSES: Record<Theme, string | null> = {
+  dark: null,
+  light: 'light',
+  'high-contrast': 'high-contrast',
+  projector: 'projector',
+};
+
+const ALL_CLASSES = (Object.values(THEME_CLASSES).filter(Boolean) as string[]);
+
 /**
- * 把 themeStore.theme 同步到 <html> 的 class（`light` / 无）。
+ * 把 themeStore.theme 同步到 <html> 的 class（互斥应用 light / high-contrast / projector）。
  * 渲染 null。挂载时若 localStorage 还没存过主题，则按系统 prefers-color-scheme 决定一次。
  */
 export function ThemeApplier() {
@@ -24,17 +34,18 @@ export function ThemeApplier() {
       hasPersisted = false;
     }
 
-    if (!hasPersisted && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    // 校验持久化值合法：旧版本写过 'dark'/'light'，新增的两个主题来自当前会话；
+    // 若读出非法值（比如手动改过 storage），回落到 dark
+    const persisted = useThemeStore.getState().theme;
+    if (!THEME_ORDER.includes(persisted)) {
+      setTheme('dark');
+    } else if (!hasPersisted && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-      if (prefersLight) {
-        setTheme('light');
-      }
+      if (prefersLight) setTheme('light');
     }
-    // 立即同步一次（即使 theme 还是默认值，也确保 class 状态正确）
     syncDocumentClass(useThemeStore.getState().theme);
   }, [setTheme]);
 
-  // theme 变化 → 切换 <html class>
   useEffect(() => {
     syncDocumentClass(theme);
   }, [theme]);
@@ -42,14 +53,13 @@ export function ThemeApplier() {
   return null;
 }
 
-function syncDocumentClass(theme: 'dark' | 'light') {
+function syncDocumentClass(theme: Theme) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  if (theme === 'light') {
-    root.classList.add('light');
-  } else {
-    root.classList.remove('light');
-  }
+  // 先清掉所有非默认 class，再贴上当前主题对应的
+  for (const cls of ALL_CLASSES) root.classList.remove(cls);
+  const next = THEME_CLASSES[theme];
+  if (next) root.classList.add(next);
 }
 
 export default ThemeApplier;

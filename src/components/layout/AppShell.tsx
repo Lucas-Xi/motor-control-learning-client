@@ -66,11 +66,8 @@ export function AppShell() {
           <main className={`grid min-h-0 grid-cols-1 gap-4 ${fullScreen ? '' : 'xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]'}`}>
             <div className="min-h-0">
               <SimulationPanel />
-              <Suspense fallback={<WaveformFallback />}>
-                <WaveformPanel />
-              </Suspense>
-              {/* 移动端：在 SimulationPanel + WaveformPanel 之后插一个抽屉入口卡片，
-                  让用户不用滚到最底部就能调参数；桌面端 xl: 隐藏（右侧已有粘性 ParameterPanel）。 */}
+              <WaveformPanel />
+              {/* 移动端：在 SimulationPanel 与 WaveformPanel 之后插占位提示用户去打开抽屉拿参数 */}
               <div className="mt-4 xl:hidden">
                 <button
                   type="button"
@@ -105,8 +102,8 @@ export function AppShell() {
  * 半透明遮罩点击 / Esc 键关闭 / 顶部抓手关闭。CSS transform 动画，零依赖。
  */
 function MobileParamsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  // 关闭时直接 unmount（避免 fullPage 截图工具下 translate-y-full 失效）。
-  // open 切换时 React 自动重新挂载 → CSS transition 在 mount 后立刻应用，仍有动画感。
+  // 关闭时直接 unmount ParameterPanel：避免 `aside input[type="range"]` 在桌面端误中
+  // 隐藏的 drawer ParameterPanel（4 个 slider 而不是 2 个）导致 e2e .nth(2) 找到不可见输入。
   if (!open) {
     return <div className="xl:hidden" aria-hidden="true" />;
   }

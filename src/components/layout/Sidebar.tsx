@@ -3,6 +3,7 @@ import { moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleId } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
+import { useI18n } from '../../i18n/useI18n';
 
 function iconFor(id: ModuleId) {
   if (id.includes('phase') || id.includes('clarke') || id.includes('park')) return Waves;
@@ -17,20 +18,21 @@ export function Sidebar() {
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
   const isCurriculum = simPanelView === 'curriculum';
+  const { t } = useI18n();
   return (
     <aside className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-line-subtle bg-bg-surface p-3 xl:h-full">
       {/* 移动端折叠 brand 头：保留行高，但去掉副标题段落避免占满 1/3 屏 */}
       <div className="mb-2 px-1 xl:mb-3">
-        <p className="hidden text-caption uppercase tracking-[0.22em] text-ink-muted xl:block">Compressor Drive Lab</p>
-        <h1 className="mt-0.5 font-display text-title text-ink-primary xl:text-display">压缩机变频器控制</h1>
-        <p className="mt-1.5 hidden text-caption leading-relaxed text-ink-secondary xl:block">面向空调 / 冰箱 / 工业制冷压缩机的 FOC + V/f 启动 + HFI 无感 + 弱磁交互式学习。</p>
+        <p className="hidden text-caption uppercase tracking-[0.22em] text-ink-muted xl:block">{t('shell.brandEyebrow')}</p>
+        <h1 className="mt-0.5 font-display text-title text-ink-primary xl:text-display">{t('shell.brandTitle')}</h1>
+        <p className="mt-1.5 hidden text-caption leading-relaxed text-ink-secondary xl:block">{t('shell.brandSubtitle')}</p>
       </div>
       {/* 课程主线入口：移动端只显图标 + 短标题，桌面端保留两行副标题 */}
       <button
         type="button"
         onClick={() => setSimPanelView(isCurriculum ? 'module' : 'curriculum')}
         aria-pressed={isCurriculum}
-        aria-label={isCurriculum ? '回到当前模块视图' : '打开课程主线总览'}
+        aria-label={isCurriculum ? t('shell.curriculumBack') : t('shell.curriculumOpen')}
         className={`mb-2 flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition-colors xl:mb-3 xl:gap-3 xl:px-3 xl:py-2 ${
           isCurriculum
             ? 'border-accent-measure/60 bg-accent-measure/10'
@@ -41,8 +43,8 @@ export function Sidebar() {
           <Target className="h-4 w-4" aria-hidden />
         </span>
         <span className="min-w-0">
-          <span className={`block truncate text-body font-medium ${isCurriculum ? 'text-ink-primary' : 'text-ink-secondary'}`}>课程主线</span>
-          <span className="hidden truncate text-caption text-ink-muted xl:block">4 条主题路径 · 自报进度 + 证书</span>
+          <span className={`block truncate text-body font-medium ${isCurriculum ? 'text-ink-primary' : 'text-ink-secondary'}`}>{t('shell.curriculumEntry')}</span>
+          <span className="hidden truncate text-caption text-ink-muted xl:block">{t('shell.curriculumEntrySubtitle')}</span>
         </span>
       </button>
       <nav className="scrollbar-thin mobile-snap-x flex gap-2 overflow-x-auto pb-1 xl:min-h-0 xl:flex-1 xl:flex-col xl:space-y-1 xl:overflow-auto xl:pr-1">

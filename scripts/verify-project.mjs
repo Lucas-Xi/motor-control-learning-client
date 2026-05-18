@@ -87,12 +87,27 @@ const requiredFiles = [
   'src/content/stm32Export/stm32f4Templates.ts',
   'src/content/stm32Export/stm32h7Templates.ts',
   'src/components/lab/ProjectExporter.tsx',
+  // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
+  'src/i18n/types.ts',
+  'src/i18n/translations.ts',
+  'src/i18n/useI18n.ts',
+  'src/i18n/LanguageChip.tsx',
+  'src/i18n/index.ts',
+  'src/store/i18nStore.ts',
   // Phase C：解题路径回放 / 历史对比 / 标定单 + 真 zip
   'src/store/replayStore.ts',
   'src/utils/zipMinimal.ts',
   'src/components/workshop/SolutionReplay.tsx',
   'src/components/workshop/SnapshotDiffPanel.tsx',
   'src/components/workshop/CalibrationDocExporter.tsx',
+  // 实测对照（Web Serial 实板对接）
+  'src/utils/serialBridge.ts',
+  'src/store/serialStore.ts',
+  'src/components/lab/SerialBenchPanel.tsx',
+  // 数字孪生分享 token：URL-safe base64 编解码 + 生成 / 接收 modal
+  'src/utils/snapshotCodec.ts',
+  'src/components/share/ShareSnapshotPanel.tsx',
+  'src/components/share/ReceiveSnapshotModal.tsx',
   'docs/ASSET_PIPELINE.md',
   'docs/MODULE_EXTENSION.md',
   'scripts/generate-image-assets.ps1',
@@ -106,6 +121,10 @@ const requiredFiles = [
   'playwright.config.ts',
   'electron/main.cjs',
   'electron/preload.cjs',
+  'electron/menu.cjs',
+  'electron/tray.cjs',
+  'electron/splash.cjs',
+  'src/utils/desktopBridge.ts',
   'tests/e2e/smoke.spec.ts',
   'README.md',
 ];
