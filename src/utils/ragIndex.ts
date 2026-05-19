@@ -156,12 +156,18 @@ export function buildRagIndex(): RagIndex {
     });
   }
 
-  // 2) formulas
+  // 2) formulas —— 双语：把英文 name/explanation 也喂进 chunk，让英文 query 也能命中
   for (const f of formulaIndex) {
+    const titleParts = [f.name];
+    if (f.nameEn) titleParts.push(f.nameEn);
+    const textParts = [`${f.name}：${f.expression}`];
+    if (f.explanation) textParts.push(f.explanation);
+    if (f.nameEn) textParts.push(`${f.nameEn}: ${f.expression}`);
+    if (f.explanationEn) textParts.push(f.explanationEn);
     chunks.push({
       id: chunks.length,
-      title: `公式 · ${f.name}`,
-      text: `${f.name}：${f.expression}`,
+      title: `公式 · ${titleParts.join(' / ')}`,
+      text: textParts.join('\n'),
       source: { kind: 'formula', key: f.key },
       tokens: [],
       length: 0,
@@ -644,6 +650,45 @@ export function composeAnswer(
 function shorten(s: string, max: number): string {
   if (s.length <= max) return s;
   return s.slice(0, max - 1) + '…';
+}
+
+// ─── BYOK LLM 用：把 top-k chunk 拼成 system prompt 上下文 ───────────────────
+
+/**
+ * 给 BYOK LLM 注入的 system prompt：约束身份 + 注入 top-k chunk 作为参考资料。
+ *
+ * 选字段策略（与启发式 composeAnswer 一致的"权威 → 实操"权重）：
+ *  - 每个 chunk 输出三段：标题（来源类型 + 模块/术语）、正文（截断到 600 字符
+ *    避免单 chunk 把上下文窗口塞满）、引用编号 [n] 让 LLM 学着引用；
+ *  - 顺序：BM25 排序原样，confidence 已经在 search 阶段折算；
+ *  - 末尾加"未知则说不知道"的硬约束，最大限度防止编造。
+ *
+ * 这是 prompt engineering 而非算法 —— 模型不同效果可能略有差异，对教学场景这套
+ * 'glossary + formula + walkthrough' 混合上下文经实测对 GPT-4o-mini / Haiku / Flash
+ * 都能给出引用清晰的回答。
+ */
+export function buildLLMSystemPrompt(
+  results: SearchResult[],
+  locale: Locale = 'zh-CN',
+  maxChunkChars = 600,
+): string {
+  const isZh = locale === 'zh-CN';
+  const header = isZh
+    ? `你是 BLDC / PMSM / FOC / SVPWM 控制教学助手，面向自学初级嵌入式工程师。请基于下方"参考资料"回答用户问题；不确定时直说"不确定"，绝不编造公式 / 寄存器 / API。`
+    : `You are a tutoring assistant for BLDC / PMSM / FOC / SVPWM motor control, helping a self-taught beginner embedded engineer. Answer strictly based on the reference material below; if uncertain, say so plainly. Do not fabricate formulas, registers, or APIs.`;
+  const refsTitle = isZh ? '参考资料（top-k 检索结果，按相关度排序）：' : 'Reference material (top-k retrieval, by relevance):';
+  const rule = isZh
+    ? '回答约束：\n- 中文回答，简洁可执行；\n- 引用资料用 [1] [2] 形式标在句末；\n- 给出动作建议时尽量贴 STM32 / 仿真模块操作步骤；\n- 公式 / 数值要核对资料原文，不要凭印象编。'
+    : 'Answer constraints:\n- Reply in the same language as the question;\n- Cite sources inline as [1] [2];\n- Prefer concrete STM32 / simulation actions for how-to questions;\n- For formulas or numbers, verify against the reference; do not paraphrase from memory.';
+  const lines = [header, '', refsTitle];
+  results.forEach((r, i) => {
+    const body = r.chunk.text.length > maxChunkChars
+      ? r.chunk.text.slice(0, maxChunkChars - 1) + '…'
+      : r.chunk.text;
+    lines.push(`[${i + 1}] ${r.chunk.title}\n${body}`);
+  });
+  lines.push('', rule);
+  return lines.join('\n');
 }
 
 /** 把 chunk source 映射成"打开模块时该跳到哪一步" */

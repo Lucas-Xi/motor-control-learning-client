@@ -16,6 +16,12 @@ export interface QuizCheck {
   options: [string, string, string, string]; // 严格 4 个选项
   correct: 0 | 1 | 2 | 3;
   hint: string;
+  /** 英文题干（可选）。locale==='en-US' 时优先采用；缺失回退中文。 */
+  qEn?: string;
+  /** 英文选项（可选）。正确索引 correct 不变。 */
+  optionsEn?: [string, string, string, string];
+  /** 英文提示（可选）。 */
+  hintEn?: string;
 }
 
 export interface WalkthroughStep {
@@ -37,10 +43,17 @@ export interface WalkthroughStep {
    * 缺失时回退到 `action`（中文）。
    */
   actionEn?: string;
+  /** 英文 goal（可选）。locale==='en-US' 时优先采用；缺失回退中文。 */
+  goalEn?: string;
+  // (action 字段在上方已含 actionEn)
   /** 操作后应该看到的现象，如 "θe 圆环角速度变成原来的 2 倍" */
   observe: string;
+  /** 英文 observe（可选）。 */
+  observeEn?: string;
   /** 这一步在 FOC 全局链路里的意义；最终把"为什么"讲清 */
   whyMatters: string;
+  /** 英文 whyMatters（可选）。 */
+  whyMattersEn?: string;
   /** 自动加载工况预设（presetId 引用 presets.ts 的 experimentPresets，可选） */
   presetId?: string;
   /** 步内小测；6 步以上模块建议穿插 2-3 道 */
@@ -51,10 +64,16 @@ export interface Pitfall {
   id: string;
   /** 按钮显示文案，如 "试错：把极对数填成极数" */
   label: string;
+  /** 英文按钮文案（可选）。locale==='en-US' 时优先采用。 */
+  labelEn?: string;
   /** 触发后一句话现象描述 */
   symptom: string;
+  /** 英文 symptom（可选）。 */
+  symptomEn?: string;
   /** 为什么会这样；接回正确概念 */
   why: string;
+  /** 英文 why（可选）。 */
+  whyEn?: string;
   /** 错工况预设（presetId 引用 presets.ts，可选） */
   presetId?: string;
 }
@@ -63,14 +82,20 @@ export interface ModuleWalkthrough {
   moduleId: ModuleId;
   /** 模块主旨，< 30 字 */
   bigPicture: string;
+  /** 英文 bigPicture（可选）。 */
+  bigPictureEn?: string;
   /** 学完应能回答的核心问题 3-5 条 */
   successCriteria: string[];
+  /** 英文 successCriteria（可选，逐条对应）。 */
+  successCriteriaEn?: string[];
   /** 主线步骤 5-8 步 */
   steps: WalkthroughStep[];
   /** 常见误区演示按钮 2-4 个 */
   pitfalls: Pitfall[];
   /** 学完到下一模块的一句话引子 */
   nextModuleHook: string;
+  /** 英文 nextModuleHook（可选）。 */
+  nextModuleHookEn?: string;
 }
 
 /**

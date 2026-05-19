@@ -19,6 +19,8 @@ export const GIST_API_BASE = 'https://api.github.com';
 export const GIST_SCHEMA_VERSION = 1 as const;
 export const SNAPSHOT_FILENAME = 'snapshot.json';
 export const COMMENTS_FILENAME = 'comments.md';
+/** V3：PR-style 行级评论 + 建议改动；另起一个 file 以免和 V2 comments.md 冲突 */
+export const REVIEW_COMMENTS_FILENAME = 'review-comments.json';
 
 /** 内部存储格式（写到 gist 的 snapshot.json） */
 export interface GistSnapshotFile {
@@ -458,3 +460,164 @@ export { b64Encode as __encodeBase64ForTests, b64Decode as __decodeBase64ForTest
 
 // SnapshotPayload 用于类型导出（即便此文件内部不直接用，consumers 可能需要） — 防止 TS6133
 export type { SnapshotPayload };
+
+// ---------------------------------------------------------------------------
+// V3 · PR-style review 扩展
+// ---------------------------------------------------------------------------
+
+/**
+ * 拉取 gist 中的 review-comments.json（不存在时返回 ''）。
+ *
+ * 设计：复用 fetchSnapshot 不合适——后者会校验 snapshot.json 存在；这里允许 gist
+ * 只是普通 gist，没有 snapshot.json 也能拉评论文件。我们直接 hit /gists/:id 然后
+ * 读 files[REVIEW_COMMENTS_FILENAME]?.content。
+ */
+export async function fetchReviewDoc(
+  gistId: string,
+  token?: string,
+): Promise<{ raw: string; updatedAt: string; revisionsCount: number }> {
+  if (!gistId) throw new GistError('parse', 'gist id 为空');
+  let resp: Response;
+  try {
+    resp = await fetch(`${GIST_API_BASE}/gists/${encodeURIComponent(gistId)}`, {
+      headers: token ? authHeaders(token) : publicHeaders(),
+    });
+  } catch (err) {
+    throw new GistError('network', `网络错误：拉取 review 失败（${(err as Error).message}）`);
+  }
+  await ensureOk(resp, '拉取 review-comments');
+  let json: {
+    files?: Record<string, { content?: string }>;
+    updated_at?: string;
+    history?: Array<unknown>;
+  };
+  try {
+    json = await resp.json();
+  } catch {
+    throw new GistError('parse', '拉取 review-comments：返回不是合法 JSON');
+  }
+  const raw = json.files?.[REVIEW_COMMENTS_FILENAME]?.content ?? '';
+  return {
+    raw,
+    updatedAt: json.updated_at ?? '',
+    revisionsCount: Array.isArray(json.history) ? json.history.length : 0,
+  };
+}
+
+/** 更新 review-comments.json（PATCH gist；批量整文件一次写完，避免逐条 commit 烧配额） */
+export async function updateReviewDoc(
+  token: string,
+  gistId: string,
+  content: string,
+): Promise<void> {
+  if (!token) throw new GistError('unauthorized', '更新 review 需要 PAT。');
+  if (!gistId) throw new GistError('parse', 'gist id 为空');
+  const body = {
+    files: { [REVIEW_COMMENTS_FILENAME]: { content } },
+  };
+  let resp: Response;
+  try {
+    resp = await fetch(`${GIST_API_BASE}/gists/${encodeURIComponent(gistId)}`, {
+      method: 'PATCH',
+      headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw new GistError('network', `网络错误：更新 review 失败（${(err as Error).message}）`);
+  }
+  await ensureOk(resp, '更新 review');
+}
+
+/** 一条 gist revision（history 数组中的一条） */
+export interface GistRevisionMeta {
+  version: string;
+  committedAt: string;
+  url: string;
+  changeStatus?: {
+    total: number;
+    additions: number;
+    deletions: number;
+  };
+  userLogin?: string;
+}
+
+/**
+ * 拉取 gist history（每次 PATCH 都会产生一条 history 条目，gist 自带 30 条上限）。
+ *
+ * V3 时间线靠它展示"每次 submit changes 的修订列表"。
+ */
+export async function fetchRevisions(gistId: string, token?: string): Promise<GistRevisionMeta[]> {
+  if (!gistId) throw new GistError('parse', 'gist id 为空');
+  let resp: Response;
+  try {
+    resp = await fetch(`${GIST_API_BASE}/gists/${encodeURIComponent(gistId)}`, {
+      headers: token ? authHeaders(token) : publicHeaders(),
+    });
+  } catch (err) {
+    throw new GistError('network', `网络错误：拉取 history 失败（${(err as Error).message}）`);
+  }
+  await ensureOk(resp, '拉取 gist history');
+  let json: {
+    history?: Array<{
+      version?: string;
+      committed_at?: string;
+      url?: string;
+      change_status?: { total?: number; additions?: number; deletions?: number };
+      user?: { login?: string };
+    }>;
+  };
+  try {
+    json = await resp.json();
+  } catch {
+    throw new GistError('parse', '拉取 gist history：返回不是合法 JSON');
+  }
+  if (!Array.isArray(json.history)) return [];
+  return json.history.map((h) => ({
+    version: h.version ?? '',
+    committedAt: h.committed_at ?? '',
+    url: h.url ?? '',
+    ...(h.change_status
+      ? {
+          changeStatus: {
+            total: h.change_status.total ?? 0,
+            additions: h.change_status.additions ?? 0,
+            deletions: h.change_status.deletions ?? 0,
+          },
+        }
+      : {}),
+    ...(h.user?.login ? { userLogin: h.user.login } : {}),
+  }));
+}
+
+/**
+ * 拉取某个 revision 的 snapshot / review 内容（GitHub Gist 支持
+ * /gists/:id/:sha 取历史快照）。
+ */
+export async function fetchRevisionContent(
+  gistId: string,
+  version: string,
+  token?: string,
+): Promise<{ snapshotRaw: string; reviewRaw: string; commentsMd: string }> {
+  if (!gistId || !version) throw new GistError('parse', 'gist id / version 为空');
+  let resp: Response;
+  try {
+    resp = await fetch(
+      `${GIST_API_BASE}/gists/${encodeURIComponent(gistId)}/${encodeURIComponent(version)}`,
+      { headers: token ? authHeaders(token) : publicHeaders() },
+    );
+  } catch (err) {
+    throw new GistError('network', `网络错误：拉取 revision 失败（${(err as Error).message}）`);
+  }
+  await ensureOk(resp, '拉取 revision 内容');
+  let json: { files?: Record<string, { content?: string }> };
+  try {
+    json = await resp.json();
+  } catch {
+    throw new GistError('parse', '拉取 revision：返回不是合法 JSON');
+  }
+  return {
+    snapshotRaw: json.files?.[SNAPSHOT_FILENAME]?.content ?? '',
+    reviewRaw: json.files?.[REVIEW_COMMENTS_FILENAME]?.content ?? '',
+    commentsMd: json.files?.[COMMENTS_FILENAME]?.content ?? '',
+  };
+}

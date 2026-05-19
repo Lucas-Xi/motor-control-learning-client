@@ -1,92 +1,268 @@
 import type { FaultType } from '../simulation/engine/types';
 
+/**
+ * 14 故障案例双语库。每个 entry 保留原中文字段，并新增可选英文备用字段：
+ *   titleEn / phenomenonEn / causesEn[] / stepsEn[] / fixEn[] / stm32En
+ *
+ * UI（FaultsDebuggingModule / WaveformPanel）按 useI18n().locale 切：
+ *   en-US 时优先英文字段，缺失自动回退中文。
+ */
 export interface FaultCase {
   id: FaultType;
   title: string;
+  titleEn?: string;
   phenomenon: string;
+  phenomenonEn?: string;
   causes: string[];
+  causesEn?: string[];
   steps: string[];
+  stepsEn?: string[];
   fix: string[];
+  fixEn?: string[];
   stm32: string;
+  stm32En?: string;
 }
 
 export const faultCases: Record<FaultType, FaultCase> = {
   'over-current': {
     id: 'over-current',
     title: '过流',
+    titleEn: 'Over-current',
     phenomenon: '电流峰值突然冲高，驱动器进入硬件保护或软件 fault。',
+    phenomenonEn: 'Current peak spikes suddenly; the drive trips into hardware protection or a software fault.',
     causes: ['PI 参数过大', '相序或角度错误', '堵转/负载突变', '采样噪声触发误判'],
+    causesEn: [
+      'PI gains too high',
+      'Wrong phase sequence or rotor angle',
+      'Locked rotor or sudden load step',
+      'Sampling noise mis-triggering protection',
+    ],
     steps: ['降低母线电压和电流限幅', '确认相序和编码器方向', '查看 Id/Iq 是否突变', '用示波器确认硬件电流波形'],
+    stepsEn: [
+      'Lower the bus voltage and current limit',
+      'Verify phase sequence and encoder direction',
+      'Check whether Id/Iq jumped',
+      'Confirm hardware current waveform with a scope',
+    ],
     fix: ['先调低 Kp/Ki', '加入输出斜坡和限流', '检查比较器阈值和采样滤波', '保留故障前 5~20ms 快照'],
+    fixEn: [
+      'Reduce Kp/Ki first',
+      'Add output ramp and current limiting',
+      'Check comparator threshold and sampling filter',
+      'Keep a 5–20 ms pre-fault snapshot',
+    ],
     stm32: '检查 TIM Break、COMP/OPAMP、ADC injected conversion、FOC 中断执行时间。',
+    stm32En: 'Check TIM Break, COMP/OPAMP, ADC injected conversion, and FOC ISR execution time.',
   },
   'phase-loss': {
     id: 'phase-loss',
     title: '缺相',
+    titleEn: 'Phase loss',
     phenomenon: '某一相电流接近 0，另外两相畸变，电机抖动并伴随明显噪声。',
+    phenomenonEn: 'One phase current is near zero, the other two distort, the motor shakes with audible noise.',
     causes: ['功率管或驱动损坏', '相线松脱', '电流采样通道异常', 'PWM 互补输出未使能'],
+    causesEn: [
+      'Power switch or gate driver damaged',
+      'Phase wire loose',
+      'Current sampling channel faulty',
+      'PWM complementary output not enabled',
+    ],
     steps: ['测三相端子电压', '看三相电流是否一相长期为 0', '检查 gate driver fault', '交换采样通道排除 ADC 问题'],
+    stepsEn: [
+      'Measure the three terminal voltages',
+      'See if one phase current stays at 0',
+      'Check the gate-driver fault flag',
+      'Swap sampling channels to rule out ADC issues',
+    ],
     fix: ['修复硬件连接', '增加缺相检测', '启动前做静态相电阻/电感自检'],
+    fixEn: [
+      'Repair the hardware connection',
+      'Add phase-loss detection',
+      'Run a static phase R/L self-test before start-up',
+    ],
     stm32: '检查 GPIO AF、TIM CHx/CHxN、驱动器 nFAULT、ADC DMA buffer 对应关系。',
+    stm32En: 'Check GPIO AF, TIM CHx/CHxN, driver nFAULT and the ADC-DMA buffer mapping.',
   },
   'current-offset': {
     id: 'current-offset',
     title: '电流采样偏置',
+    titleEn: 'Current sampling offset',
     phenomenon: '空载静止时 Id/Iq 不为 0，Ia+Ib+Ic 有固定偏移。',
+    phenomenonEn: 'At idle stand-still Id/Iq is non-zero and Ia+Ib+Ic carries a fixed offset.',
     causes: ['上电未校准 offset', '运放漂移', '采样窗口不对', 'ADC 通道映射错误'],
+    causesEn: [
+      'No offset calibration at power-up',
+      'Op-amp drift',
+      'Wrong sampling window',
+      'ADC channel mapping error',
+    ],
     steps: ['断 PWM 后记录 ADC 零点', '计算 Ia+Ib+Ic', '温升后复测 offset', '比较示波器电流探头'],
+    stepsEn: [
+      'Disable PWM, record the ADC zero point',
+      'Compute Ia+Ib+Ic',
+      'Re-measure offset after warm-up',
+      'Cross-check with a scope current probe',
+    ],
     fix: ['启动前多次平均校准', '运行中低通跟踪小漂移', '避开 PWM 边沿采样'],
+    fixEn: [
+      'Calibrate by multi-sample averaging before start-up',
+      'Low-pass-track small drift during operation',
+      'Avoid sampling on PWM edges',
+    ],
     stm32: '用 ADC injected trigger 同步 TIM1 update/compare，校准值放入 Flash 或 RAM 参数区。',
+    stm32En: 'Use ADC injected trigger synchronised with TIM1 update/compare; store the calibration in Flash or RAM parameters.',
   },
   'phase-order': {
     id: 'phase-order',
     title: '相序错误',
+    titleEn: 'Phase-order error',
     phenomenon: '给正转命令时反转，或开环能转但闭环电流很大。',
+    phenomenonEn: 'A forward command runs the motor backwards, or open-loop runs but closed-loop current is huge.',
     causes: ['U/V/W 接线交换', 'Clarke 符号与硬件相序不一致', '编码器方向相反'],
+    causesEn: [
+      'U/V/W wiring swapped',
+      'Clarke sign disagrees with hardware phase order',
+      'Encoder direction reversed',
+    ],
     steps: ['低压开环给旋转电压矢量', '观察机械方向', '交换任意两相验证', '检查 theta 增量方向'],
+    stepsEn: [
+      'Apply a rotating voltage vector in low-voltage open loop',
+      'Observe mechanical direction',
+      'Swap any two phases to verify',
+      'Check the sign of theta increment',
+    ],
     fix: ['统一相序定义', '在软件里修正相序映射', '重新做编码器零位和方向标定'],
+    fixEn: [
+      'Unify the phase-order definition',
+      'Patch the phase-order mapping in software',
+      'Recalibrate encoder zero and direction',
+    ],
     stm32: '确认 PWM 通道、ADC 通道、丝印 U/V/W 和软件枚举一致。',
+    stm32En: 'Make sure PWM channel, ADC channel, silkscreen U/V/W and software enum all agree.',
   },
   'encoder-angle': {
     id: 'encoder-angle',
     title: '编码器角度错误',
+    titleEn: 'Encoder angle error',
     phenomenon: 'Id/Iq 串扰严重，转矩小、电流大，启动时抖动。',
+    phenomenonEn: 'Heavy Id/Iq cross-coupling: low torque, high current, shaky start.',
     causes: ['零位未校准', '机械角度未乘极对数', '方向相反', '通信丢码或延迟'],
+    causesEn: [
+      'Zero position not calibrated',
+      'Mechanical angle not multiplied by pole pairs',
+      'Direction reversed',
+      'Communication drops codes or is delayed',
+    ],
     steps: ['锁轴测零位', '比较机械角/电角', '低速记录 theta 与反电动势相位', '检查 SPI/ABI 计数'],
+    stepsEn: [
+      'Lock the shaft and measure zero',
+      'Compare mechanical vs electrical angle',
+      'Log theta and BEMF phase at low speed',
+      'Check SPI / ABI count',
+    ],
     fix: ['重做零位标定', '角度归一化', '加入角度异常检测和滤波'],
+    fixEn: [
+      'Redo zero-position calibration',
+      'Wrap-normalise the angle',
+      'Add angle-anomaly detection and filtering',
+    ],
     stm32: '检查 QEI/SPI DMA、极对数参数、theta offset、方向 bit。',
+    stm32En: 'Check QEI / SPI DMA, the pole-pair parameter, theta offset, and the direction bit.',
   },
   'speed-oscillation': {
     id: 'speed-oscillation',
     title: '速度环振荡',
+    titleEn: 'Speed-loop oscillation',
     phenomenon: '速度围绕目标来回摆动，Iq 命令周期性大幅变化。',
+    phenomenonEn: 'Speed swings around the set-point; Iq command oscillates periodically with large amplitude.',
     causes: ['速度环 Kp/Ki 过大', '电流环带宽不足', '速度滤波延迟过大', '机械共振'],
+    causesEn: [
+      'Speed-loop Kp/Ki too high',
+      'Current-loop bandwidth insufficient',
+      'Speed-filter lag too large',
+      'Mechanical resonance',
+    ],
     steps: ['先固定速度环输出验证电流环', '降低速度环增益', '记录 speed/Iq/torque', '检查负载惯量'],
+    stepsEn: [
+      'Freeze the speed-loop output and validate the current loop first',
+      'Lower the speed-loop gains',
+      'Log speed / Iq / torque',
+      'Check load inertia',
+    ],
     fix: ['按内环到外环整定', '加速度前馈/限斜率', '加入陷波或低通但控制延迟'],
+    fixEn: [
+      'Tune from the inner loop outward',
+      'Add acceleration feed-forward or slew-rate limit',
+      'Insert notch or low-pass filters, watching the added lag',
+    ],
     stm32: '速度环低频分频执行，不要和电流环同频硬追。',
+    stm32En: 'Run the speed loop at a sub-divided rate — do not push it at the current-loop frequency.',
   },
   'voltage-saturation': {
     id: 'voltage-saturation',
     title: '电压饱和',
+    titleEn: 'Voltage saturation',
     phenomenon: '速度上不去，Vd/Vq 长期撞限，Iq 给定增加但实际电流跟不上。',
+    phenomenonEn: 'Speed cannot rise; Vd/Vq sit at the limit, more Iq command but actual current lags.',
     causes: ['母线电压低', '高速反电动势大', '未启用弱磁', 'SVPWM 进入过调制'],
+    causesEn: [
+      'Bus voltage low',
+      'High-speed BEMF too large',
+      'Field-weakening not enabled',
+      'SVPWM entered over-modulation',
+    ],
     steps: ['计算 Vdq 幅值和 Udc/sqrt(3)', '观察 duty 是否贴边', '降低速度目标复测', '检查弱磁 Id'],
+    stepsEn: [
+      'Compute |Vdq| and compare to Udc/√3',
+      'Check whether duty hugs the rail',
+      'Lower speed target and re-measure',
+      'Check the field-weakening Id',
+    ],
     fix: ['提高 Udc', '进入弱磁控制', '限制速度/Iq', '优化 SVPWM 和死区补偿'],
+    fixEn: [
+      'Raise Udc',
+      'Enter field-weakening',
+      'Limit speed or Iq',
+      'Improve SVPWM and dead-time compensation',
+    ],
     stm32: '记录 Vd/Vq、duty、sector、Udc ADC，作为电压饱和 fault 条件。',
+    stm32En: 'Log Vd / Vq, duty, sector and Udc ADC as the voltage-saturation fault trigger.',
   },
   'startup-fail': {
     id: 'startup-fail',
     title: '启动失败',
+    titleEn: 'Start-up failure',
     phenomenon: '开环拖动失败、闭环切换后掉速、过流或估算角度乱跳。',
+    phenomenonEn: 'Open-loop drag fails; after closed-loop hand-off the speed drops, over-current trips or estimated angle jumps wildly.',
     causes: ['负载过大', '无感低速反电动势不足', '开环 ramp 太快', '切换条件不可靠'],
+    causesEn: [
+      'Load too heavy',
+      'Sensor-less low-speed BEMF too weak',
+      'Open-loop ramp too fast',
+      'Hand-off condition unreliable',
+    ],
     steps: ['降低 ramp 斜率', '记录速度纹波和角度误差', '延后闭环切换', '检查负载和静摩擦'],
+    stepsEn: [
+      'Lower the ramp slope',
+      'Log speed ripple and angle error',
+      'Delay the closed-loop hand-off',
+      'Check load and static friction',
+    ],
     fix: ['建立 readiness 指标', '开环到闭环平滑混合', '启动阶段限流和防反转'],
+    fixEn: [
+      'Define a readiness metric',
+      'Blend smoothly from open to closed loop',
+      'Apply start-up current limit and reverse-rotation protection',
+    ],
     stm32: '保存 startup state、speed ripple、angle jitter proxy、Id/Iq step、fault timing。',
+    stm32En: 'Persist start-up state, speed ripple, angle-jitter proxy, Id/Iq step, and fault timing.',
   },
   'liquid-slugging': {
     id: 'liquid-slugging',
     title: '液击（压缩机）',
+    titleEn: 'Liquid slugging (compressor)',
     phenomenon: '启动或加速瞬间出现剧烈的电流尖峰 + 异常机械响声 + 速度短时回落；连续液击可能损坏阀片、活塞甚至连杆。',
+    phenomenonEn: 'Sharp current spikes plus mechanical knocking and a brief speed dip at start-up or acceleration; repeated slugging can damage valves, pistons, even the connecting rod.',
     causes: [
       '启动加速斜坡过陡（> 800 rpm/s）',
       '气缸内残留液态制冷剂（停机时间长 / 制冷剂迁移）',
@@ -94,11 +270,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '回液（蒸发器结霜 / 冷媒过量充注）',
       'PWM 软启动电压跳变',
     ],
+    causesEn: [
+      'Start-up ramp too steep (> 800 rpm/s)',
+      'Residual liquid refrigerant in the cylinder (long stand-still / refrigerant migration)',
+      'Oil level too low so cylinder lubrication is poor',
+      'Liquid return (evaporator frosting / over-charged refrigerant)',
+      'PWM soft-start voltage jump',
+    ],
     steps: [
       '记录启动瞬间 Iq 峰值和 dω/dt（液击特征：< 50ms 内 Iq 跃变）',
       '检查 accel_ramp_rpm_s 是否 > 厂商限值（典型 600）',
       '查停机前后压缩机温度（液击常发生在长时间停机后冷启动）',
       '听声辨位：金属敲击声接近液击，齿轮啸叫接近共振',
+    ],
+    stepsEn: [
+      'Log Iq peak and dω/dt at start-up (slug signature: Iq jumps within 50 ms)',
+      'Check whether accel_ramp_rpm_s exceeds the OEM limit (typically 600)',
+      'Inspect compressor temperature before/after shutdown (slugging usually follows long stand-still cold-starts)',
+      'Listen to the noise — metallic knock = slug; gear whine = resonance',
     ],
     fix: [
       '加速斜坡降到 300-500 rpm/s',
@@ -106,12 +295,21 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '加入"短脉冲低速预拖动"程序：50 rpm 抖动 1-2 秒赶走液体',
       '系统设计层减少回液：低位油分离器、停机阀',
     ],
+    fixEn: [
+      'Bring the accel ramp down to 300–500 rpm/s',
+      'Pre-heat the compressor (crankcase heater) for 30 min before start-up',
+      'Add a "short low-speed jog" sequence: 50 rpm shake for 1–2 s to clear liquid',
+      'System-level mitigation: low oil separator, shut-off valve',
+    ],
     stm32: '在启动状态机的 OPEN_LOOP / HFI 阶段挂监控钩子：dIq/dt > 阈值 → 软关 PWM + 报警，记录黑匣子（state, rpm, Iq 峰值, t-1s 历史）。',
+    stm32En: 'Hook monitors into the OPEN_LOOP / HFI stages of the start-up state machine: dIq/dt > threshold → soft-disable PWM + alarm, log the black box (state, rpm, Iq peak, last 1 s history).',
   },
   'locked-rotor': {
     id: 'locked-rotor',
     title: '堵转',
+    titleEn: 'Locked rotor',
     phenomenon: '电机不转或抖动，电流维持高位（接近限幅），转速反馈为 0 或抖动；几秒内触发硬件过流保护。',
+    phenomenonEn: 'Motor will not spin or just judders, current sits near the limit, speed feedback is 0 or jittery; hardware over-current trips within seconds.',
     causes: [
       '机械卡死（活塞抱死 / 异物 / 轴承烧结）',
       '负载远超电机额定（高压差 + 低吸气压）',
@@ -119,11 +317,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '编码器反馈丢失被误判为静止',
       '上电初始角度对齐失败',
     ],
+    causesEn: [
+      'Mechanical lock-up (piston seized / debris / bearing welded)',
+      'Load far above the motor rating (high pressure differential + low suction)',
+      'Rotor demagnetisation drops torque at the same current',
+      'Encoder feedback lost — interpreted as stand-still',
+      'Initial angle alignment failed at power-up',
+    ],
     steps: [
       '断电检查机械（手动盘车看能否转动）',
       '记录电流 / 速度 / 母线电压三联画面，看是否电流满限速度为 0',
       '比较母线电压压缩机入口端与额定 — 排除欠压拖不动',
       '复测电机相电阻（堵转 + 大电流容易烧绕组）',
+    ],
+    stepsEn: [
+      'Cut power and check mechanically (turn the shaft by hand to see if it moves)',
+      'Capture current / speed / bus-voltage together to confirm current at limit while speed is 0',
+      'Compare bus voltage at the compressor inlet with rated — rule out under-voltage stall',
+      'Re-measure phase resistance (locked-rotor + high current easily burns the windings)',
     ],
     fix: [
       '硬件 Brake + 软件 Iq 限幅 → 堵转 1-2s 自动停机',
@@ -131,12 +342,21 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '系统侧检查吸排气压差是否合理',
       '生产线测试电机静态相阻 / 退磁状态',
     ],
+    fixEn: [
+      'Hardware Brake + software Iq limit → auto-stop after 1–2 s of stall',
+      'Add retry logic (5 min interval, up to 3 attempts)',
+      'System-side: verify the suction/discharge differential is reasonable',
+      'Production-line test of static phase resistance / demagnetisation state',
+    ],
     stm32: '堵转判据：|rpm_actual| < 50 持续 > 1s 且 |Iq| > 0.8·I_rated → FAULT_LOCKED_ROTOR。状态机切到 FAULT 状态、disable PWM、写黑匣子、CAN 报警。',
+    stm32En: 'Lock criterion: |rpm_actual| < 50 for > 1 s and |Iq| > 0.8·I_rated → FAULT_LOCKED_ROTOR. State machine to FAULT, disable PWM, write the black box, raise the CAN alarm.',
   },
   'dc-undervolt': {
     id: 'dc-undervolt',
     title: '母线欠压',
+    titleEn: 'DC-bus under-voltage',
     phenomenon: '运行中母线电压持续低于阈值（如 < 250V）；电机响应变慢、电流环输出长期撞限、可能掉速或停机。',
+    phenomenonEn: 'During operation the bus stays below the threshold (e.g. < 250 V); motor response slows, the current loop output hugs the rail, the motor may lose speed or shut down.',
     causes: [
       '电网电压偏低或瞬时跌落',
       'PFC 前级故障导致升压不足',
@@ -144,11 +364,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '负载侧大电流瞬态把母线拉低',
       '母线电压采样分压电阻阻值漂移',
     ],
+    causesEn: [
+      'Grid voltage low or transient sag',
+      'PFC front-end fault under-boosting',
+      'Bus capacitor aged with capacitance loss (large ripple)',
+      'Load-side current transient pulls the bus down',
+      'Bus-voltage sense divider drifted',
+    ],
     steps: [
       '示波器看 Udc 时域，是缓降还是瞬时跌落',
       '同时看输入交流电压（电网原因 vs PFC 原因）',
       '记录大负载瞬态前后 Udc 跌幅 ',
       '检查母线电容温度和容值（ESR 增大 → 容值下降）',
+    ],
+    stepsEn: [
+      'Scope Udc — gradual droop or transient sag?',
+      'Look at the input AC voltage at the same time (grid vs PFC root cause)',
+      'Log the Udc drop before/after a large load transient',
+      'Check bus-capacitor temperature and capacitance (rising ESR → falling C)',
     ],
     fix: [
       'PFC 前级母线目标值上调（典型 380V → 400V 留余量）',
@@ -156,12 +389,21 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '负载侧加电流斜坡限制瞬态',
       '欠压保护：< 200V 持续 100ms → 报警 + 软停机',
     ],
+    fixEn: [
+      'Raise the PFC bus set-point (e.g. 380 V → 400 V for headroom)',
+      'Add (or parallel) bus capacitance',
+      'Apply current ramp on the load side to limit transients',
+      'Under-voltage trip: < 200 V for 100 ms → alarm + soft stop',
+    ],
     stm32: '母线 ADC 通道做 1ms 移动平均，欠压判据带滞回（< UDC_MIN 触发，> UDC_MIN + 20V 才解除）。掉电检测要早于 MCU 失电，靠 PFC 前级电容能量。',
+    stm32En: 'Bus ADC: 1 ms moving average; under-voltage trip with hysteresis (set at < UDC_MIN, clear only above UDC_MIN + 20 V). Brown-out detection must trigger before the MCU loses power, relying on PFC capacitor energy.',
   },
   'over-temp': {
     id: 'over-temp',
     title: '过温',
+    titleEn: 'Over-temperature',
     phenomenon: 'IGBT/IPM 模块 NTC 温度超过阈值（典型 100°C）；散热不良场景常发生；长期过温会导致 IGBT 失效和 PCB 老化。',
+    phenomenonEn: 'IGBT/IPM module NTC temperature exceeds the threshold (typically 100 °C); common in poor-cooling scenarios; sustained over-temperature kills IGBTs and ages the PCB.',
     causes: [
       '环境温度过高（夏季室外机）',
       '散热器堵塞 / 风扇停转',
@@ -169,11 +411,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       'PWM 死区设置不合理 → 开关损耗变大',
       '硅脂干涸 / 模块老化',
     ],
+    causesEn: [
+      'Ambient temperature too high (summer outdoor unit)',
+      'Heatsink blocked / fan stopped',
+      'Load too heavy / prolonged high-current operation',
+      'Poor PWM dead-time → switching losses balloon',
+      'Thermal paste dried / module aged',
+    ],
     steps: [
       '热成像枪看模块表面温度分布（IGBT 单管异常 → 失效预兆）',
       '检查冷却风扇 / 水流量',
       '记录温度上升曲线（突跳 = 散热失效；缓升 = 负载过重）',
       '看是否进入弱磁也压不住电流',
+    ],
+    stepsEn: [
+      'Thermal-camera scan of the module surface (single-IGBT hotspot foretells failure)',
+      'Check cooling fan / water flow',
+      'Log temperature rise (sudden jump = cooling failure; slow climb = overload)',
+      'See whether field-weakening still cannot tame the current',
     ],
     fix: [
       '降功率运行（限制 Iq 上限）直到温度回落',
@@ -181,12 +436,21 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '风扇升级 / 加大水流量',
       '过温分级：80°C 警告，95°C 限流 50%，105°C 停机',
     ],
+    fixEn: [
+      'Derate (cap Iq) until temperature recovers',
+      'Clean the heatsink and re-apply thermal paste',
+      'Upgrade the fan / increase water flow',
+      'Tiered protection: 80 °C warning, 95 °C limit Iq by 50 %, 105 °C shutdown',
+    ],
     stm32: 'NTC ADC + 查表 → 温度。三档保护：warning（仅日志）、derate（Iq 限幅按温度斜降）、shutdown（关 PWM 报警）。状态机退出时记录最后温度。',
+    stm32En: 'NTC ADC + lookup → temperature. Three-stage protection: warning (log only), derate (Iq cap ramps with temperature), shutdown (kill PWM + alarm). Record the last temperature when leaving the state machine.',
   },
   'vibration': {
     id: 'vibration',
     title: '振动超限',
+    titleEn: 'Excess vibration',
     phenomenon: '在某个特定转速段（如 70-90 Hz / 2100-2700 rpm）出现强烈振动 + 噪声 + 转速波动；进入或离开这个区间后立即正常。',
+    phenomenonEn: 'A specific speed band (e.g. 70–90 Hz / 2100–2700 rpm) shows strong vibration, noise and speed ripple; outside the band everything is fine.',
     causes: [
       '机械共振点（压缩机 + 管路 + 安装支架的固有频率）',
       '电流 / 转矩谐波激励了共振',
@@ -194,11 +458,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '减震脚松动 / 老化',
       '管路约束不足导致整机摇摆',
     ],
+    causesEn: [
+      'Mechanical resonance (compressor + pipework + mounting bracket eigenfrequency)',
+      'Current / torque harmonics excite the resonance',
+      'Poor rotor balance (mis-alignment / eccentricity)',
+      'Damping feet loose / aged',
+      'Insufficient pipe restraint lets the whole unit sway',
+    ],
     steps: [
       '加速度计扫频找共振点（10-200 Hz 缓变扫描）',
       '与相同型号正常机对比振动谱',
       '检查紧固件松动 / 减震脚状态',
       '示波器看 Iq 波形是否出现共振频率分量',
+    ],
+    stepsEn: [
+      'Accelerometer sweep to find the resonance (10–200 Hz slow scan)',
+      'Compare vibration spectrum against a healthy unit of the same model',
+      'Check fastener torque and damping-foot condition',
+      'Scope Iq for the resonance frequency component',
     ],
     fix: [
       '"跳过共振区"：在状态机里禁止稳态运行在 70-90 Hz 段，转速调度时快速通过',
@@ -206,12 +483,21 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '加机械配重做动平衡',
       '换橡胶减震脚 / 重新安装支架',
     ],
+    fixEn: [
+      'Skip-band: forbid steady-state operation in 70–90 Hz inside the state machine; pass through quickly',
+      'Add a notch filter at the speed-loop input to suppress the resonance frequency',
+      'Add mechanical balancing weights',
+      'Replace rubber feet / re-install the bracket',
+    ],
     stm32: '在速度调度模块加"禁区列表"：if (target_rpm in forbidden_band) → 跳到带外最近允许值 + 记录原因。陷波滤波器用 IIR 二阶节实现。',
+    stm32En: 'Add a forbidden-band list to the speed scheduler: if (target_rpm in forbidden_band) → snap to the nearest allowed value + log the reason. Implement the notch filter as a 2nd-order IIR section.',
   },
   'oil-low': {
     id: 'oil-low',
     title: '油位告警',
+    titleEn: 'Low-oil alarm',
     phenomenon: '油压传感器（或油位浮子）报低；电机仍能运转但润滑不足，长期运行会烧轴承 / 卡缸。',
+    phenomenonEn: 'Oil-pressure sensor (or float) reports low; the motor still runs but with insufficient lubrication; long-term operation will burn bearings or seize the cylinder.',
     causes: [
       '系统泄漏 / 制冷剂带油过多',
       '回油管堵塞 / 油分离器失效',
@@ -219,11 +505,24 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '油泵故障',
       '油位传感器故障（误报）',
     ],
+    causesEn: [
+      'System leak / refrigerant carrying too much oil',
+      'Return-oil pipe blocked / oil separator failed',
+      'Low suction-pressure regime (insufficient oil-return driving force)',
+      'Oil pump failure',
+      'Oil-level sensor fault (false alarm)',
+    ],
     steps: [
       '查油位传感器输出是否合理（断电观察）',
       '看回油管路温度（堵塞 → 出口冷）',
       '检查吸气压力是否过低',
       '与往年同季节对比油位下降速率',
+    ],
+    stepsEn: [
+      'Check the oil sensor output is reasonable (power off and observe)',
+      'Inspect return-oil pipe temperature (blockage → cold outlet)',
+      'Check whether suction pressure is too low',
+      'Compare oil-level drop rate against prior seasons',
     ],
     fix: [
       '运行限制：油位低 → 限制最高转速和负载',
@@ -231,6 +530,13 @@ export const faultCases: Record<FaultType, FaultCase> = {
       '系统级加回油增强（油分离器 / U 型回油弯）',
       '油位低 + 吸气压力低 双条件触发停机',
     ],
+    fixEn: [
+      'Operating restriction: low oil → cap max speed and load',
+      'Add auto-oil-injection / oil-pump activation logic',
+      'System-level: enhance oil return (oil separator / U-bend return)',
+      'Low oil + low suction-pressure dual condition triggers shutdown',
+    ],
     stm32: '油压 ADC + 滤波 + 滞回报警。油位低触发"derate 模式"——降转速 30% + Iq 限制 60%；同时延长换油周期监控。',
+    stm32En: 'Oil-pressure ADC + filter + hysteresis alarm. Low oil triggers a "derate mode" — drop speed by 30 % and cap Iq at 60 %, with extended oil-change interval monitoring.',
   },
 };
