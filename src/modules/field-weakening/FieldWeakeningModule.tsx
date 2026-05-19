@@ -14,6 +14,7 @@ import { useRafThrottle } from '../../utils/useRafThrottle';
 import { useI18n } from '../../i18n/useI18n';
 import { MtpaTrajectoryCard } from './MtpaTrajectoryCard';
 import { LimitProjectionCard } from './LimitProjectionCard';
+import { SerialCompareFieldWeakeningCard } from './SerialCompareFieldWeakeningCard';
 
 function LimitMap({
   id, iq, currentLimit, voltageRatio, saturated, onPointChange,
@@ -225,6 +226,7 @@ function Probe() {
       )}
       <MtpaTrajectoryCard />
       <LimitProjectionCard />
+      <SerialCompareFieldWeakeningCard />
     </>
   );
 }

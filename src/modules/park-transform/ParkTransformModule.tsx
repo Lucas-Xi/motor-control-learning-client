@@ -8,6 +8,7 @@ import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
+import { SerialCompareParkCard } from './SerialCompareParkCard';
 
 function Primary() {
   const park = useSimulationStore((s) => s.park);
@@ -64,6 +65,7 @@ function Probe() {
           </div>
         ))}
       </div>
+      <SerialCompareParkCard />
     </>
   );
 }

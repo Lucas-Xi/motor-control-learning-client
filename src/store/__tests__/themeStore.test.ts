@@ -19,12 +19,12 @@ describe('themeStore', () => {
     expect(useThemeStore.getState().theme).toBe('dark');
   });
 
-  it('THEME_ORDER 严格按 dark → light → high-contrast → projector', () => {
-    expect(THEME_ORDER).toEqual(['dark', 'light', 'high-contrast', 'projector']);
+  it('THEME_ORDER 严格按 dark → light → high-contrast → projector → colorblind', () => {
+    expect(THEME_ORDER).toEqual(['dark', 'light', 'high-contrast', 'projector', 'colorblind']);
   });
 
-  it('setTheme 直接切到任意 4 态主题', () => {
-    const targets: Theme[] = ['light', 'high-contrast', 'projector', 'dark'];
+  it('setTheme 直接切到任意 5 态主题', () => {
+    const targets: Theme[] = ['light', 'high-contrast', 'projector', 'colorblind', 'dark'];
     for (const t of targets) {
       useThemeStore.getState().setTheme(t);
       expect(useThemeStore.getState().theme).toBe(t);
@@ -35,7 +35,8 @@ describe('themeStore', () => {
     expect(nextTheme('dark')).toBe('light');
     expect(nextTheme('light')).toBe('high-contrast');
     expect(nextTheme('high-contrast')).toBe('projector');
-    expect(nextTheme('projector')).toBe('dark');
+    expect(nextTheme('projector')).toBe('colorblind');
+    expect(nextTheme('colorblind')).toBe('dark');
   });
 
   it('nextTheme 对未知主题回落到 dark（避免脏 storage 卡死）', () => {
@@ -43,23 +44,22 @@ describe('themeStore', () => {
     expect(nextTheme('legacy-blue')).toBe('dark');
   });
 
-  it('cycleTheme 4 次回到起点', () => {
+  it('cycleTheme 5 次回到起点', () => {
     const start = useThemeStore.getState().theme;
     const { cycleTheme } = useThemeStore.getState();
-    cycleTheme();
-    cycleTheme();
-    cycleTheme();
-    cycleTheme();
+    for (let i = 0; i < THEME_ORDER.length; i++) {
+      cycleTheme();
+    }
     expect(useThemeStore.getState().theme).toBe(start);
   });
 
-  it('cycleTheme 按 dark → light → high-contrast → projector → dark 推进', () => {
+  it('cycleTheme 按 dark → light → high-contrast → projector → colorblind → dark 推进', () => {
     const seen: Theme[] = [useThemeStore.getState().theme];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       useThemeStore.getState().cycleTheme();
       seen.push(useThemeStore.getState().theme);
     }
-    expect(seen).toEqual(['dark', 'light', 'high-contrast', 'projector', 'dark']);
+    expect(seen).toEqual(['dark', 'light', 'high-contrast', 'projector', 'colorblind', 'dark']);
   });
 
   it('toggle 兼容老代码：等价于 cycleTheme', () => {

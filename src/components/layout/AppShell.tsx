@@ -63,7 +63,7 @@ export function AppShell() {
         {!fullScreen && <Sidebar />}
         <div className="grid min-h-[calc(100vh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-4">
           <TopBar />
-          <main className={`grid min-h-0 grid-cols-1 gap-4 ${fullScreen ? '' : 'xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]'}`}>
+          <main id="main" tabIndex={-1} className={`grid min-h-0 grid-cols-1 gap-4 ${fullScreen ? '' : 'xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]'}`}>
             <div className="min-h-0">
               <SimulationPanel />
               <WaveformPanel />

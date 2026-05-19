@@ -13,6 +13,7 @@ import type { ModuleWalkthrough } from './types';
 export const inverterWalkthrough: ModuleWalkthrough = {
   moduleId: 'inverter',
   bigPicture: '6 个开关 + 3 桥臂 + 死区 + 中心对齐 PWM + BKIN 硬件保护 = 把 Vd/Vq 安全落到电机绕组上。',
+  bigPictureEn: '6 switches + 3 bridge legs + dead time + center-aligned PWM + BKIN hardware protection = deliver Vd/Vq safely to the motor windings.',
   successCriteria: [
     '能画出三相桥拓扑，并说明上下管为什么必须互补、为什么必须做硬件死区不能只靠软件 if',
     '能算出占空比 → 相电压 → 线电压（相电压差 √3 倍），并知道电机铭牌 380V 是线电压有效值不是峰值',
@@ -20,6 +21,14 @@ export const inverterWalkthrough: ModuleWalkthrough = {
     '理解死区误差幅值 ΔV = t_d·f_pwm·Udc 与极性 sign(I_phase)，知道为什么过零附近补偿要禁用',
     '能用 TIM1 BDTR.MOE + BKIN 硬件关断把过流响应控制在 < 200 ns，而不是软件中断的 5-10 μs',
     '理解中心对齐 PWM + TIM1 update 事件触发 ADC = 采样窗精准对齐"电流纹波谷底"',
+  ],
+  successCriteriaEn: [
+    'Draw the three-phase bridge topology and explain why upper and lower switches must be complementary and why hardware dead time is required (a software if cannot replace it).',
+    'Compute duty → phase voltage → line voltage (phase × √3), and know the 380 V nameplate is the line-voltage RMS, not the peak.',
+    'Look up t_d(off) and Q_g on a Sanken/Onsemi IPM datasheet and back-calculate a reasonable dead time and bootstrap-capacitor value.',
+    'Understand the dead-time error magnitude ΔV = t_d·f_pwm·Udc and its polarity sign(I_phase), and why compensation must be disabled near zero crossing.',
+    'Use TIM1 BDTR.MOE + BKIN to keep overcurrent response under 200 ns instead of the 5–10 μs of a software interrupt.',
+    'Understand center-aligned PWM + TIM1 update event triggering ADC = a sampling window precisely aligned with the "current ripple valley".',
   ],
   steps: [
     {
@@ -192,4 +201,5 @@ export const inverterWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能让逆变器安全地把任意 Vd/Vq 落到电机上了，并且知道死区补偿、自举电容、BKIN 保护、ADC 同步四道硬件坎。下一步：09 控制回路看电流环 / 速度环 / 位置环三层级联怎么给这个执行器下命令，以及"为什么内环必须比外环快 5-10 倍"。',
+  nextModuleHookEn: 'You can now have the inverter safely deliver any Vd/Vq to the motor, and know four hardware hurdles: dead-time compensation, bootstrap capacitor, BKIN protection, and ADC synchronization. Module 09 (control loops) covers how the cascaded current / speed / position loops command this actuator, and why the inner loop must be 5–10× faster than the outer.',
 };

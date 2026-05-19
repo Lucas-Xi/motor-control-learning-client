@@ -175,10 +175,10 @@ export function WaveformPanel() {
       : <ThreePhaseBranch />;
 
   return (
+    <aside aria-label="底部波形观察区" className="mt-4 block">
     <Card
       title={t('shell.waveformCardTitle')}
       eyebrow={t('shell.waveformCardEyebrow')}
-      className="mt-4"
       action={
         <button
           type="button"
@@ -200,5 +200,6 @@ export function WaveformPanel() {
         {branch}
       </div>
     </Card>
+    </aside>
   );
 }

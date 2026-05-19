@@ -11,6 +11,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
+import { SerialCompareSensorlessCard } from './SerialCompareSensorlessCard';
 
 function useSamples() {
   const params = useSimulationStore((s) => s.sensorless);
@@ -140,6 +141,7 @@ function Probe() {
     <>
       <ObserverDiagnostic />
       <SMOInternals />
+      <SerialCompareSensorlessCard />
     </>
   );
 }

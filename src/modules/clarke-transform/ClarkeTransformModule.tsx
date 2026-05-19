@@ -7,6 +7,7 @@ import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
+import { SerialCompareClarkeCard } from './SerialCompareClarkeCard';
 
 function Primary() {
   const clarke = useSimulationStore((s) => s.clarke);
@@ -65,6 +66,7 @@ function Probe() {
 [ Iβ ] = [ 1/√3 2/√3   0 ] [ Ib ]
 [ I0 ]   [ 1/3  1/3  1/3 ] [ Ic ]`}</pre>
       </Card>
+      <SerialCompareClarkeCard />
     </>
   );
 }

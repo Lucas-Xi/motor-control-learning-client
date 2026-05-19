@@ -26,6 +26,11 @@ export function Slider({ label, value, min, max, step = 1, unit = '', hint, onCh
         step={step}
         onChange={(event) => onChange(Number(event.target.value))}
         className="simulation-slider w-full"
+        aria-label={`${label}${unit ? ` (${unit})` : ''}`}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={`${formatNumber(value, step < 1 ? 2 : 1)}${unit}`}
       />
       {hint && <p className="mt-1.5 text-caption leading-relaxed text-ink-muted">{hint}</p>}
     </div>

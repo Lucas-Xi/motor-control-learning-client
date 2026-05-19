@@ -14,6 +14,7 @@ import type { ModuleWalkthrough } from './types';
 export const fieldWeakeningWalkthrough: ModuleWalkthrough = {
   moduleId: 'field-weakening',
   bigPicture: '弱磁 = 用负 Id 削等效磁链，把 BEMF 压回母线电压能买单的范围。',
+  bigPictureEn: 'Field weakening = use negative Id to cut the effective flux, pushing back-EMF into the range the DC link can pay for.',
   successCriteria: [
     '能在 Id-Iq 平面上手画"电流圆 + 电压椭圆"，并指出可行域 = 二者交集',
     '能从 BEMF = ψf·ωe 撞 V_max = Udc/√3 推导出"基速 ω_base = V_max/ψf"',
@@ -21,6 +22,14 @@ export const fieldWeakeningWalkthrough: ModuleWalkthrough = {
     '理解为什么 IPM（Lq>Ld）比 SPM 弱磁能力强 —— 磁阻转矩 + 椭圆中心偏移',
     '会用"电压闭环 PI + 前馈解析 + 离线查表"三种主流弱磁工程方案，并说出取舍',
     '了解弱磁过深会触发退磁阈值（HEV 高温场景）和铁损突增（高频开关 + 高 −Id）',
+  ],
+  successCriteriaEn: [
+    'Sketch the current circle + voltage ellipse on the Id-Iq plane and identify the feasible region as their intersection.',
+    'Derive the base speed ω_base = V_max/ψf from BEMF = ψf·ωe hitting V_max = Udc/√3.',
+    'Distinguish the constant-torque (MTPA), constant-power (FW), and deep field-weakening (MTPV) trajectories.',
+    'Understand why IPM (Lq > Ld) has stronger field-weakening capability than SPM — reluctance torque + voltage-ellipse center offset.',
+    'Use the three mainstream engineering options — voltage-loop PI, analytic feed-forward, offline lookup — and state the trade-offs.',
+    'Know that deep field weakening can trigger the demagnetization threshold (HEV high-temperature scenarios) and sudden iron-loss rise (HF switching + large −Id).',
   ],
   steps: [
     {
@@ -199,4 +208,5 @@ export const fieldWeakeningWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能用几何看弱磁了。下一模块（12 故障调试）把所有学过的诊断技能串起来——过流、过压、相序错、传感器漂移、弱磁失控、退磁后效率塌方，全部用波形读懂。',
+  nextModuleHookEn: 'You can now reason about field weakening geometrically. Module 12 (fault debugging) stitches together every diagnostic skill so far — overcurrent, overvoltage, wrong phase order, sensor drift, runaway field weakening, post-demagnetization efficiency collapse — all readable from waveforms.',
 };

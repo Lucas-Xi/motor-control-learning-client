@@ -281,7 +281,7 @@ export function ParameterPanel() {
   const { t, locale } = useI18n();
 
   return (
-    <aside className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
+    <aside aria-label="参数控制台" className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramPanelEyebrow')}</p>

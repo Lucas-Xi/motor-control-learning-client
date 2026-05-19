@@ -303,6 +303,14 @@ export default function App() {
   const { pending, open, onApply, onClose } = useShareHashReceiver();
   return (
     <>
+      {/* Skip link：键盘 / 屏幕阅读器用户进入页面第一个 Tab 命中此项，
+          回车跳到主区，跳过侧栏 / TopBar。WCAG 2.4.1 (Bypass Blocks) AA。 */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:border focus:border-accent-primary focus:bg-bg-surface focus:px-3 focus:py-1.5 focus:text-body focus:text-ink-primary"
+      >
+        跳到主内容
+      </a>
       <UpdateBanner />
       <AppShell />
       <GlobalKeybindings />

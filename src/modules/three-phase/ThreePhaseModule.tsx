@@ -9,6 +9,7 @@ import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
+import { SerialCompareThreePhaseCard } from './SerialCompareThreePhaseCard';
 
 function useSnapshot() {
   const threePhase = useSimulationStore((s) => s.threePhase);
@@ -70,6 +71,7 @@ function Probe() {
           </div>
         ))}
       </div>
+      <SerialCompareThreePhaseCard />
     </>
   );
 }

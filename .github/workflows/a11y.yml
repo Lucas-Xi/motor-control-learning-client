@@ -1,0 +1,96 @@
+name: A11y CI / 无障碍检查
+
+# 触发：所有 PR + 手动触发；与 pr.yml 并行（不阻塞 PR 主线 ~5 分钟门）
+# Trigger: pull_request targeting main + workflow_dispatch (manual)
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: a11y-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  a11y:
+    name: axe-core 17 模块全量扫描 + Playwright 注入断言
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repo / 检出仓库
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22 / 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache node_modules / 缓存 node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-a11y-node22-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-a11y-node22-
+            ${{ runner.os }}-node22-
+
+      - name: Install deps / 安装依赖
+        run: npm ci
+
+      - name: Install Playwright chromium / 安装 Playwright + Chromium + 系统依赖
+        run: npx playwright install --with-deps chromium
+
+      - name: Run a11y axe smoke (6 modules) / 跑无障碍抽样扫描
+        run: npx playwright test tests/e2e/a11y.spec.ts --reporter=line
+        continue-on-error: false
+
+      - name: Run a11y full scan (17 modules) / 跑 17 模块全量 axe 扫描
+        run: npx playwright test tests/e2e/a11y-full.spec.ts --reporter=line
+        continue-on-error: false
+
+      - name: Summarize violations / 输出 violations 摘要
+        if: always()
+        run: |
+          echo "## A11y 扫描结果摘要" >> $GITHUB_STEP_SUMMARY
+          if [ -f tmp/a11y-full-results.json ]; then
+            node -e "
+              const r = require('./tmp/a11y-full-results.json');
+              for (const [key, { summary }] of Object.entries(r)) {
+                console.log(\`- \${key}: critical=\${summary.critical} serious=\${summary.serious} moderate=\${summary.moderate} minor=\${summary.minor} (passes=\${summary.passes})\`);
+              }
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f tmp/a11y-results.json ]; then
+            echo "Smoke (a11y.spec.ts) results: $(wc -c < tmp/a11y-results.json) bytes" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f tmp/a11y-keyboard.json ]; then
+            echo "Keyboard findings: $(cat tmp/a11y-keyboard.json)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload axe JSON artifacts / 上传 axe 扫描 JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-axe-json
+          path: |
+            tmp/a11y-results.json
+            tmp/a11y-full-results.json
+            tmp/a11y-keyboard.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Playwright test-results / 上传失败截图 / trace
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-playwright-failures
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14

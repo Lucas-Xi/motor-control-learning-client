@@ -11,12 +11,21 @@ export const startupStateMachineWalkthrough: ModuleWalkthrough = {
   moduleId: 'startup-statemachine',
   bigPicture:
     '7 段启动状态机：idle → precharge → align → V/f → HFI → BEMF → fieldweak，每段有显式进入/退出条件。',
+  bigPictureEn:
+    'A 7-state startup machine: idle → precharge → align → V/f → HFI → BEMF → fieldweak, each with explicit entry/exit conditions.',
   successCriteria: [
     '能背出 7 个状态的顺序，并说清每段的进入条件与退出条件',
     '理解 V/f → HFI → BEMF 的两次握手为什么按转速分档：取决于"角度信号信噪比"',
     '会用反液击斜坡 accelRampRpmS（300-800 rpm/s）保护压缩机阀片',
     '看到 Iq 突冲 / 转速反向 / 停在 align 三类波形，能快速定位是哪一段出错',
     '能在 STM32 上把 7 状态映射成 enum + switch，并写出 timeout / fault 兜底',
+  ],
+  successCriteriaEn: [
+    'Recite the 7 states in order and state each one\'s entry and exit conditions.',
+    'Understand why V/f → HFI → BEMF takes two handoffs by speed band: it depends on the angle-signal SNR.',
+    'Use an anti-slugging ramp accelRampRpmS (300–800 rpm/s) to protect the compressor valves.',
+    'From an Iq spike / reverse-speed / stuck-in-align waveform, quickly locate which state misbehaved.',
+    'Map the 7 states on STM32 to an enum + switch with timeout / fault fallbacks.',
   ],
   steps: [
     {
@@ -178,4 +187,6 @@ export const startupStateMachineWalkthrough: ModuleWalkthrough = {
   ],
   nextModuleHook:
     '现在你拿到的是一台"能可靠启动到稳态"的压缩机。但前面还有一关——母线电压从哪来？下一模块 15 号 APF 前级 PFC 讲单相 220V 经 Boost PFC 整流到 380V 直流母线，把谐波抑制 + 功率因数 + 与启动状态机的联动一次讲透。',
+  nextModuleHookEn:
+    'You now have a compressor that can reliably start and reach steady state. But one upstream question remains — where does the DC link come from? Module 15 (APF front-end PFC) covers single-phase 220 V rectified through a Boost PFC into a 380 V DC link, addressing harmonic suppression, power factor, and the linkage with the startup state machine in one go.',
 };

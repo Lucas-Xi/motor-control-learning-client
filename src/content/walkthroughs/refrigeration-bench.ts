@@ -14,6 +14,7 @@ import type { ModuleWalkthrough } from './types';
 export const refrigerationBenchWalkthrough: ModuleWalkthrough = {
   moduleId: 'refrigeration-bench',
   bigPicture: '把 P-h 4 状态点 + EEV 过热度控制 + 系统故障特征 + APF 标定串成压缩机变频器的完整工程闭环。',
+  bigPictureEn: 'Stitch the 4-state P-h points + EEV superheat control + system-fault fingerprints + APF calibration into the complete engineering closed loop of a compressor drive.',
   successCriteria: [
     '能在 P-h 焓压图上指认 4 状态点（吸气过热气 / 排气 / 冷凝过冷液 / 节流两相）的物理含义',
     '能口算压缩比、单位功 w = h₂ − h₁、单位冷量 q_c = h₁ − h₄ 与 COP = q_c / w',
@@ -22,6 +23,15 @@ export const refrigerationBenchWalkthrough: ModuleWalkthrough = {
     '理解 EEV 必须基于 SH = T_suct − T_sat(P_s) 而非吸气温度做 PI，否则工况漂移触发液击',
     '理解过冷度 SC 在冷凝侧的工程意义：保证节流前 100% 液态、提升单位冷量、防止 EEV 气塞',
     '能说出 APF 与单点额定 COP 的差别，以及变频压缩机在部分负荷下 COP 反而更高的物理原因',
+  ],
+  successCriteriaEn: [
+    'On a P-h enthalpy-pressure chart, identify the 4 state points (suction superheated gas / discharge / condensed subcooled liquid / throttled two-phase) and their physical meaning.',
+    'Mentally compute pressure ratio, unit work w = h₂ − h₁, unit cooling q_c = h₁ − h₄, and COP = q_c / w.',
+    'Explain the cycle-side W_comp → τ_load → Iq* coupling — why FOC iqRef must follow when operating conditions shift.',
+    'From P_s / P_d / T_d / SH readings, distinguish refrigerant leak / condenser fouling / EEV stuck / non-condensable gas.',
+    'Understand the EEV PI must use SH = T_suct − T_sat(P_s) and not suction temperature, otherwise condition drift triggers slugging.',
+    'Understand the subcool SC engineering meaning on the condenser side: guarantee 100% liquid before throttling, raise unit cooling, prevent EEV gas-locking.',
+    'Distinguish APF from single-point rated COP and explain the physical reason variable-speed compressors have higher COP at part load.',
   ],
   steps: [
     {
@@ -185,4 +195,5 @@ export const refrigerationBenchWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能用 P-h 图 + 四表 + EEV 闭环读懂系统侧。最后一站（17 整机搭建工作台）把前 16 课的所有概念串成"自由搭建 6 槽位 + 跑诊断 + 解 11 道挑战 + 导出 STM32 main.c"的毕业项目——通过它你就能独立完成压缩机变频器的选型与调试。',
+  nextModuleHookEn: 'You can now read the system side with a P-h chart, four meters, and an EEV closed loop. The final stop (Module 17, full-system workshop) stitches every concept from the prior 16 lessons into a graduation project — "free-build 6 slots + run diagnostics + solve 11 challenges + export STM32 main.c" — after which you can independently size and commission a compressor drive.',
 };

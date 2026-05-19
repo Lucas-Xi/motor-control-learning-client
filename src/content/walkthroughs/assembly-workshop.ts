@@ -12,6 +12,7 @@ import type { ModuleWalkthrough } from './types';
 export const assemblyWorkshopWalkthrough: ModuleWalkthrough = {
   moduleId: 'assembly-workshop',
   bigPicture: '把前 16 模块串成毕业项目：6 槽位选型 → 时域仿真 → verdict 判读 → 导出 STM32 main.c。',
+  bigPictureEn: 'Stitch the prior 16 modules into a graduation project: 6-slot selection → time-domain simulation → verdict interpretation → export STM32 main.c.',
   successCriteria: [
     '能从 6 个槽位（压缩机 / 变频器 / 控制策略 / 工况 / PFC / 液气分离器）选出合理组合让 verdict 至少到 pass-warn',
     '能从诊断条目里读出每个 fault / warn 的原因，知道每条对应回去哪个核心模块复习',
@@ -20,6 +21,15 @@ export const assemblyWorkshopWalkthrough: ModuleWalkthrough = {
     '能用历史会话两两对比看出"换某个 slot 对 KPI 的具体影响"',
     '能按当前组合导出对应 MCU 厂商风格的 main.c 骨架，看懂顶部 banner 和 ISR 名',
     '能把导出的 main.c 丢进 STM32CubeIDE/e²Studio/CCS 工程，补 TODO 填实并烧到真机',
+  ],
+  successCriteriaEn: [
+    'From 6 slots (compressor / inverter / control strategy / operating conditions / PFC / accumulator) pick a combination that lifts the verdict to at least pass-warn.',
+    'From the diagnostic list, read each fault/warn cause and know which core module to revisit.',
+    'Explain "constraint propagation": compressor rating → inverter current → DC link → modulation limit → need for field weakening.',
+    'Pass at least 5 of the Lv.1–Lv.4 challenges in challenge mode and review your own solution path.',
+    'Use history sessions to A/B compare two records and see the impact of a specific slot swap on the KPIs.',
+    'Export a main.c skeleton in the appropriate MCU vendor style for the current combination and understand the top banner and ISR names.',
+    'Drop the exported main.c into an STM32CubeIDE / e²Studio / CCS project, fill in the TODOs, and flash a real device.',
   ],
   steps: [
     {
@@ -149,4 +159,5 @@ export const assemblyWorkshopWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '至此 17 个模块全部学完。继续：(1) 11 道挑战刷个全勤 +1 个 trophy，(2) 把导出的 main.c 丢进真机跑通完整 align→openloop→hfi→bemf→steady 流程，(3) 回到任意核心模块（如 13 HFI 无感 / 11 弱磁 / 12 故障调试）按工作台诊断的 hintModule 指引深挖。从这里开始，你不再是学员，是压缩机厂家招聘清单里那个"系统级电机工程师"。',
+  nextModuleHookEn: 'All 17 modules done. Next: (1) clear all 11 challenges for a full sweep + a trophy; (2) drop the exported main.c into a real device and walk through align → openloop → hfi → bemf → steady; (3) return to any core module (Module 13 HFI sensorless / Module 11 field weakening / Module 12 fault debugging) and dig deeper following the workshop\'s hintModule pointers. From here you are no longer a student — you are the "system-level motor engineer" on a compressor maker\'s hiring list.',
 };

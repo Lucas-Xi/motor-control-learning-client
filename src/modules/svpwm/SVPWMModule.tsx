@@ -10,6 +10,7 @@ import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { formatNumber, formatPercent } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
 import { SvpwmMinMaxCard } from './SvpwmMinMaxCard';
+import { SerialCompareSvpwmCard } from './SerialCompareSvpwmCard';
 
 function TimingBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
   const pct = total <= 0 ? 0 : (value / total) * 100;
@@ -84,6 +85,7 @@ function Probe() {
         </Card>
       )}
       <SvpwmMinMaxCard />
+      <SerialCompareSvpwmCard />
     </>
   );
 }

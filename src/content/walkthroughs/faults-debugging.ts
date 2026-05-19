@@ -10,12 +10,20 @@ import type { ModuleWalkthrough } from './types';
 export const faultsDebuggingWalkthrough: ModuleWalkthrough = {
   moduleId: 'faults-debugging',
   bigPicture: '把"现象 → 波形 → 中间变量 → 硬件测量"串成证据链——老师傅的排障套路。',
+  bigPictureEn: 'Chain phenomenon → waveform → intermediate variables → hardware measurements into a single evidence trail — the veteran fault-finder\'s playbook.',
   successCriteria: [
     '能把 14 种故障分成"电气波形类"和"状态位类"两大族，并知道前者看示波器、后者查 GPIO / 传感器寄存器',
     '能从一段三相电流波形特征反推故障类型（过流 vs 缺相 vs 相序错 vs 电流偏置 vs 编码器异常）',
     '掌握"4 表 + 示波器"工作流：万用表、钳形表、温度枪、绝缘表配示波器，确认是电气、机械还是热故障',
     '会用"复现 → 注入 → 验证修复"三段式：每次只改一个变量，保留复测，禁止盲改',
     '理解为什么"换件思维"在 PMSM 控制器上经常换错件——表象一致的故障背后可能是完全不同的根因',
+  ],
+  successCriteriaEn: [
+    'Partition the 14 fault types into "electrical waveform" and "status bit" families and know the former needs a scope while the latter needs GPIO / sensor registers.',
+    'From three-phase current waveform features infer the fault type (overcurrent vs lost phase vs wrong phase order vs current offset vs encoder anomaly).',
+    'Apply the "4-meter + scope" workflow: multimeter, clamp meter, IR thermometer, insulation tester paired with a scope to determine electrical, mechanical, or thermal fault.',
+    'Use the "reproduce → inject → verify-fix" three-step method: change one variable at a time, keep a regression test, never blind-tune.',
+    'Understand why "replacement thinking" often swaps the wrong part on a PMSM drive — identical symptoms can hide completely different root causes.',
   ],
   steps: [
     {
@@ -147,4 +155,5 @@ export const faultsDebuggingWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '会看波形 + 会看快照只是半张地图。下一模块 13 HFI 无感低速：当编码器异常 / 成本敏感场景必须扔掉编码器时，怎么从电感凸极性里把转子角度估出来——这是无感控制最难啃的一段，也是排障经验最有用的练兵场。',
+  nextModuleHookEn: 'Reading waveforms and snapshots is only half the map. Module 13 (HFI low-speed sensorless): when encoder anomalies or cost pressure force you to drop the encoder, how do you estimate rotor angle from inductance saliency — the hardest part of sensorless control, and the best practice ground for fault-finding skills.',
 };

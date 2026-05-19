@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Check, CircleAlert } from 'lucide-react';
 import { useSimulationStore } from '../../store/simulationStore';
 import { Button } from '../ui/Button';
+import { useFocusTrap } from '../../utils/useFocusTrap';
 import {
   packAppState,
   SLICE_LABELS,
@@ -110,6 +111,7 @@ function diffSlice(
 }
 
 export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: ReceiveSnapshotModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   // Esc 关闭
   useEffect(() => {
     if (!open) return;
@@ -122,6 +124,9 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  // Focus trap：open 期间锁住 Tab，关闭还焦点（WCAG 2.4.3 / Section 508 §1194.22(o)）
+  useFocusTrap(open && !!decoded, dialogRef);
 
   const diffs = useMemo<SliceDiff[]>(() => {
     if (!open || !decoded) return [];
@@ -161,6 +166,7 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
             className="scrollbar-thin flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line-subtle bg-bg-surface shadow-xl"
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

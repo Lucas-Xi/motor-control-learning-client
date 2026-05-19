@@ -15,6 +15,7 @@ import type { ModuleWalkthrough } from './types';
 export const apfFrontendWalkthrough: ModuleWalkthrough = {
   moduleId: 'apf-frontend',
   bigPicture: 'Boost PFC 双环：外环稳 380V 母线，内环让输入电流跟电压同形——PF→1、THD→低、过认证 + 给后级 FOC 留弱磁余量。',
+  bigPictureEn: 'Boost PFC, two loops: the outer loop regulates the 380 V DC link; the inner loop shapes the input current to match the voltage — PF → 1, low THD, certification passes, and field-weakening headroom for the downstream FOC.',
   successCriteria: [
     '能讲清 Boost PFC 的四大件（升压电感、MOSFET、二极管、母线电容）各自的工程作用 + 选型公式',
     '能解释"为什么是双环、为什么外环慢内环快"，并说出典型带宽（电压环 50-200 Hz / 电流环 1-5 kHz）',
@@ -23,6 +24,15 @@ export const apfFrontendWalkthrough: ModuleWalkthrough = {
     '理解为什么压缩机变频器必须先升压到 380V 才好做弱磁（弱磁电压余量 = 母线 − BEMF）',
     '能算电容选型：ΔU = I_load / (2·ω_line·C)，配合纹波 % 目标反推 C',
     '会写 STM32 TIM1 + ADC + DMA 双缓冲的 PFC 同步采样骨架（电网过零 + |sin| 模板 + 电感电流采样）',
+  ],
+  successCriteriaEn: [
+    'Explain the engineering roles + selection formulas of the four Boost PFC components (boost inductor, MOSFET, diode, DC-link capacitor).',
+    'Explain why two loops with outer slow / inner fast, and give typical bandwidths (voltage 50–200 Hz / current 1–5 kHz).',
+    'Know the engineering targets for PF / THD / DC-link ripple (home appliances PF > 0.95 / commercial PF > 0.99 / THD < 10%).',
+    'Identify four typical pitfalls: current-loop bandwidth too low / inductor saturation / under-sized capacitor / inverted inner-outer bandwidths.',
+    'Understand why a compressor drive must boost to 380 V for proper field weakening (FW headroom = bus − BEMF).',
+    'Size the capacitor: ΔU = I_load / (2·ω_line·C), and back-solve C from a ripple % target.',
+    'Write the STM32 TIM1 + ADC + DMA double-buffered PFC synchronous-sampling skeleton (grid zero-cross + |sin| template + inductor-current sampling).',
   ],
   steps: [
     {
@@ -176,4 +186,5 @@ export const apfFrontendWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你把电网到母线这一段串通了：380V 稳压 + PF≈1 + THD<10%。最后一模块 16 制冷台架把 PFC + FOC + 压缩机 + 蒸气压缩循环连成一个完整系统，看工况扰动如何沿这条链路传导（冷凝器水温升高 → 排气压力 → 转矩需求 → Iq → 母线电流 → PFC 内环幅值参考 → 电网电流）。',
+  nextModuleHookEn: 'You have now connected the grid-to-bus section: 380 V regulated + PF ≈ 1 + THD < 10%. Module 16 (refrigeration bench) ties PFC + FOC + compressor + vapor-compression cycle into a single system and traces how an operating-condition disturbance propagates along this chain (rising condenser water temperature → discharge pressure → torque demand → Iq → bus current → PFC inner-loop amplitude reference → grid current).',
 };

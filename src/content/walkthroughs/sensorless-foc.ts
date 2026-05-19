@@ -11,6 +11,7 @@ import type { ModuleWalkthrough } from './types';
 export const sensorlessFocWalkthrough: ModuleWalkthrough = {
   moduleId: 'sensorless-foc',
   bigPicture: '反电动势是无感的"回声"——速度大听得清、速度小被噪声淹没；要懂 SMO 离散化、Rs 温飘、PLL 带宽、切换滞回四件事才能上量产。',
+  bigPictureEn: 'Back-EMF is the sensorless "echo" — clear at high speed, drowned in noise at low speed; you need SMO discretization, Rs thermal drift, PLL bandwidth, and switching hysteresis to take a sensorless drive to mass production.',
   successCriteria: [
     '能默写 e = v − Rs·i − Ls·di/dt，并解释每一项的物理含义和离散化误差源',
     '能解释为什么低速 BEMF 幅值小 → 估角度失败（SNR 塌陷），并定量算"信噪比 = 1"的临界转速',
@@ -18,6 +19,14 @@ export const sensorlessFocWalkthrough: ModuleWalkthrough = {
     '掌握 STM32 上 SMO 离散化骨架（一阶 Euler + sat 函数）和稳定步长选择',
     '能识别 SMO 抖振、Rs 温飘漂角、PLL 增益过大、滤波延迟相位损失四类典型故障现象',
     '知道 BEMF/HFI 切换的转速边界（5-10% 同步速）和滞回原则，以及健康检查闭环',
+  ],
+  successCriteriaEn: [
+    'Recite e = v − Rs·i − Ls·di/dt and explain the physical meaning of each term and the discretization error sources.',
+    'Explain why low-speed BEMF amplitude is small → angle estimation fails (SNR collapse), and quantitatively compute the critical speed at SNR = 1.',
+    'Understand why the PLL uses sin(θ_meas − θ̂) instead of Δθ directly (monotone within ±π/2).',
+    'Master the STM32 SMO discretization skeleton (1st-order Euler + sat function) and stable step-size selection.',
+    'Identify four typical fault phenomena: SMO chatter, Rs-drift angle bias, excessive PLL gain, filter-induced phase loss.',
+    'Know the BEMF/HFI handoff speed boundary (5–10% synchronous speed) and hysteresis principle, plus the health-check loop.',
   ],
   steps: [
     {
@@ -182,4 +191,5 @@ export const sensorlessFocWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能用 BEMF/SMO 估算高速角度了，并且知道 Rs 温飘、PLL 带宽、切换滞回、健康检查四道工业坎。但压缩机零启动 BEMF 还没出来——下一模块 HFI 用"主动注入高频电压 + 凸极响应解调"解决 0-300 rpm 这段死区，是空调/冰箱压缩机的标配。',
+  nextModuleHookEn: 'You can now estimate high-speed angle with BEMF/SMO and know four industrial hurdles: Rs thermal drift, PLL bandwidth, switching hysteresis, and health checks. But a compressor at zero start has no BEMF — Module 13 (HFI) solves the 0–300 rpm dead zone via "active high-frequency voltage injection + saliency-response demodulation", the standard option for HVAC and refrigerator compressors.',
 };

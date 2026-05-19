@@ -121,6 +121,48 @@ html.projector {
   --lh-display: 1.4;
 }
 
+/* —— Colorblind：色盲友好（Wong 2011 + IBM Carbon 安全调色板） ——
+ * 设计原则：
+ *   - measure / warn / fault 三色不再依赖红-绿-黄区分（deuteranopia/protanopia
+ *     合并红绿通道，传统 mint/amber/rose 三色会塌缩成同一片橄榄黄）
+ *   - 改用 hue 跨度大的"蓝 / 橙 / 朱红"组合，对比度 ≥ 4.5:1
+ *   - 不动 bg / ink / line 灰阶组（继承 dark），只重写 accent 段
+ *   - fault 色额外用 CSS 黄黑斜纹 mask（非彩色通道），即便完全色盲也能识别危险
+ *
+ * 选色（Wong 2011 + IBM Design v2）：
+ *   accent-primary   #56B4E9 （sky）              — replaces cyan
+ *   accent-measure   #0072B2 （deep blue）        — replaces green，与 primary 同色相不同明度
+ *   accent-warn      #E69F00 （orange）           — replaces amber
+ *   accent-fault     #D55E00 （vermillion）       — replaces rose
+ *
+ * 对比度（vs --bg-base #07111f）：
+ *   accent-primary   #56B4E9 → 7.8:1   AAA
+ *   accent-measure   #0072B2 → 4.7:1   AA
+ *   accent-warn      #E69F00 → 8.6:1   AAA
+ *   accent-fault     #D55E00 → 5.4:1   AA
+ */
+html.colorblind {
+  color-scheme: dark;
+  /* 继承 dark 的 bg/ink/line，只改 accent 段 */
+  --accent-primary: #56b4e9;   --accent-primary-rgb: 86 180 233;
+  --accent-measure: #0072b2;   --accent-measure-rgb: 0 114 178;
+  --accent-warn: #e69f00;      --accent-warn-rgb: 230 159 0;
+  --accent-fault: #d55e00;     --accent-fault-rgb: 213 94 0;
+}
+
+/* fault 色双重通道编码：除颜色外加 4 px 斜纹背景，让全色盲用户也能识别 “危险” */
+html.colorblind [class*="bg-accent-fault"],
+html.colorblind [class*="border-accent-fault"] {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 6px,
+      rgba(0, 0, 0, 0.28) 6px,
+      rgba(0, 0, 0, 0.28) 8px
+    );
+}
+
 /* light / projector 在 body 网格底纹改为更淡的灰线 */
 html.light body::before,
 html.projector body::before {

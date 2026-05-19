@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Shortcut } from '../../utils/useKeyboardShortcuts';
 import { useI18n } from '../../i18n/useI18n';
 import type { TKey } from '../../i18n/useI18n';
+import { useFocusTrap } from '../../utils/useFocusTrap';
 
 interface KeyHelpOverlayProps {
   open: boolean;
@@ -50,6 +51,7 @@ function renderKeys(s: Shortcut, spaceLabel: string) {
 
 export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps) {
   const { t } = useI18n();
+  const dialogRef = useRef<HTMLDivElement>(null);
   // Esc 关闭：直接绑 keydown，避免依赖 hook 同时拦截 Esc——这里一旦 open 就接管。
   useEffect(() => {
     if (!open) return;
@@ -63,6 +65,10 @@ export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  // Focus trap：open 期间锁住 Tab，关闭时还焦点给打开 modal 的元素（WCAG 2.4.3 / Section 508 §1194.22(o)）
+  // Esc 由上面的 useEffect 负责，这里不再重复绑。
+  useFocusTrap(open, dialogRef);
+
   // 按 category 分组，保持声明顺序
   const grouped: Record<string, Shortcut[]> = {};
   for (const s of shortcuts) {
@@ -75,6 +81,9 @@ export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps
       {open && (
         <motion.div
           key="key-help-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('shell.keyHelpTitle')}
           className="fixed inset-0 z-[100] grid place-items-center bg-bg-base/70 p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -83,6 +92,7 @@ export function KeyHelpOverlay({ open, shortcuts, onClose }: KeyHelpOverlayProps
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
             className="scrollbar-thin max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-5 shadow-xl"
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

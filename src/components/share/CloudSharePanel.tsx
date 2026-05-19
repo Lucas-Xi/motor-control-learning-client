@@ -3,6 +3,7 @@ import {
   Cloud,
   CloudDownload,
   Copy,
+  GitPullRequest,
   Loader2,
   RefreshCw,
   Trash2,
@@ -45,6 +46,9 @@ import {
   type DecodedSnapshot,
 } from '../../utils/snapshotCodec';
 import { CommentRenderer } from './CommentRenderer';
+import { SnapshotReviewPanel } from './SnapshotReviewPanel';
+import { SnapshotTimeline } from './SnapshotTimeline';
+import { SnapshotPickerDialog } from './SnapshotPickerDialog';
 
 /**
  * 数字孪生 V2 · 云协作面板。
@@ -57,7 +61,7 @@ import { CommentRenderer } from './CommentRenderer';
  * V1 本地 URL token 分享继续生效（ShareSnapshotPanel 仍保留）。
  */
 
-type Tab = 'mine' | 'import' | 'team';
+type Tab = 'mine' | 'import' | 'team' | 'review';
 
 function pickCurrentState(): AppStateInput {
   const sim = useSimulationStore.getState();
@@ -114,6 +118,10 @@ export function CloudSharePanel({ onReceive }: CloudSharePanelProps = {}) {
   const [tab, setTab] = useState<Tab>('mine');
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+
+  // V3 · PR Review tab：当前选中的 snapshot gistId + picker dialog 开关
+  const [reviewGistId, setReviewGistId] = useState<string>('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const showFlash = useCallback((kind: 'ok' | 'err', msg: string) => {
     setFlash({ kind, msg });
@@ -404,6 +412,7 @@ export function CloudSharePanel({ onReceive }: CloudSharePanelProps = {}) {
               { id: 'mine', label: '我的快照', icon: Cloud },
               { id: 'import', label: '导入分享', icon: CloudDownload },
               { id: 'team', label: '团队时间线', icon: Users },
+              { id: 'review', label: 'PR Review', icon: GitPullRequest },
             ] as const
           ).map((t) => {
             const Icon = t.icon;
@@ -709,6 +718,61 @@ export function CloudSharePanel({ onReceive }: CloudSharePanelProps = {}) {
           </section>
         )}
 
+        {/* Tab: V3 PR Review */}
+        {tab === 'review' && (
+          <section
+            id="cloud-tab-review"
+            role="tabpanel"
+            aria-labelledby="cloud-tab-review"
+            className="space-y-3"
+          >
+            {/* snapshot 选择条 */}
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line-subtle bg-bg-base px-3 py-2">
+              <div className="min-w-0 flex-1">
+                {reviewGistId ? (
+                  <p className="text-caption text-ink-primary">
+                    当前 review 目标：
+                    <code className="ml-1 rounded bg-bg-surface px-1.5 py-0.5 font-mono text-accent-primary">
+                      {reviewGistId.slice(0, 12)}…
+                    </code>
+                  </p>
+                ) : (
+                  <p className="text-caption text-ink-muted">
+                    尚未选择 snapshot。点【选择 snapshot】从【我的快照】或粘贴 gist URL 入口加载。
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="primary"
+                onClick={() => setPickerOpen(true)}
+                aria-label="打开 snapshot 选择窗口"
+              >
+                <GitPullRequest className="h-4 w-4" aria-hidden="true" />
+                {reviewGistId ? '更换 snapshot' : '选择 snapshot'}
+              </Button>
+              {reviewGistId && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setReviewGistId('')}
+                  aria-label="清空当前 review 目标"
+                >
+                  清空
+                </Button>
+              )}
+            </div>
+
+            {/* 组合视图：review 面板（参数级评论 + 建议改动） + 时间线 */}
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+              <div className="min-w-0">
+                <SnapshotReviewPanel gistId={reviewGistId} onFlash={showFlash} />
+              </div>
+              <div className="min-w-0">
+                <SnapshotTimeline gistId={reviewGistId} onFlash={showFlash} />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 评论抽屉 */}
         {commentTarget && (
           <div
@@ -780,6 +844,16 @@ export function CloudSharePanel({ onReceive }: CloudSharePanelProps = {}) {
           </div>
         )}
       </div>
+
+      {/* V3 · snapshot picker dialog（review tab 入口）；放在 Card 内最末，避免抢 tab 焦点 */}
+      <SnapshotPickerDialog
+        open={pickerOpen}
+        onPick={(id) => {
+          setReviewGistId(id);
+          setTab('review');
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </Card>
   );
 }

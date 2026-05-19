@@ -105,7 +105,7 @@ const requiredFiles = [
   'src/utils/serialBridge.ts',
   'src/store/serialStore.ts',
   'src/components/lab/SerialBenchPanel.tsx',
-  // 模块内 SerialCompare 卡片：8 张分布在 8 个模块的 probe slot
+  // 模块内 SerialCompare 卡片：16 张分布在各模块的 probe slot
   'src/components/lab/SerialCompareCardShell.tsx',
   'src/utils/serialMockGenerators.ts',
   'src/modules/foc-flow/SerialCompareIqIdCard.tsx',
@@ -116,6 +116,15 @@ const requiredFiles = [
   'src/modules/hfi-sensorless/SerialCompareHFICard.tsx',
   'src/modules/startup-statemachine/SerialCompareStartupCard.tsx',
   'src/modules/apf-frontend/SerialComparePFCCard.tsx',
+  // Round 9 新增 8 张：覆盖剩余基础 / 控制 / 调制 / 进阶 / 系统模块
+  'src/modules/three-phase/SerialCompareThreePhaseCard.tsx',
+  'src/modules/clarke-transform/SerialCompareClarkeCard.tsx',
+  'src/modules/park-transform/SerialCompareParkCard.tsx',
+  'src/modules/pid-control/SerialComparePIDCard.tsx',
+  'src/modules/svpwm/SerialCompareSvpwmCard.tsx',
+  'src/modules/sensorless-foc/SerialCompareSensorlessCard.tsx',
+  'src/modules/field-weakening/SerialCompareFieldWeakeningCard.tsx',
+  'src/modules/refrigeration-bench/SerialCompareRefrigerationCard.tsx',
   // 数字孪生分享 token：URL-safe base64 编解码 + 生成 / 接收 modal
   'src/utils/snapshotCodec.ts',
   'src/components/share/ShareSnapshotPanel.tsx',
@@ -127,6 +136,12 @@ const requiredFiles = [
   'src/components/share/GistCredentialsPanel.tsx',
   'src/components/share/CloudSharePanel.tsx',
   'src/components/share/CommentRenderer.tsx',
+  // 数字孪生 V3 · PR-style review（参数级评论 + 建议改动 + 修订时间线）
+  'src/utils/reviewModel.ts',
+  'src/store/reviewersStore.ts',
+  'src/components/share/SnapshotReviewPanel.tsx',
+  'src/components/share/SnapshotTimeline.tsx',
+  'src/components/share/SnapshotPickerDialog.tsx',
   // 学习洞察：错题本 + 步骤热力图 + 弱项推荐（zustand persist，仅本地）
   'src/store/insightsStore.ts',
   'src/components/insights/MistakeBookPanel.tsx',
@@ -139,6 +154,7 @@ const requiredFiles = [
   'src/components/assistant/AssistantPanel.tsx',
   'src/components/assistant/FloatingChatButton.tsx',
   'src/components/assistant/CitationLink.tsx',
+  'src/components/assistant/LLMSettingsModal.tsx',
   'docs/ASSET_PIPELINE.md',
   'docs/MODULE_EXTENSION.md',
   'scripts/generate-image-assets.ps1',
@@ -173,6 +189,13 @@ const requiredFiles = [
   'docs/ELECTRON_AUTOUPDATE.md',
   '.github/workflows/release.yml',
   'tests/e2e/smoke.spec.ts',
+  // a11y R2：focus trap util + 17 模块 axe 扫描 + CI workflow + 二期审计文档
+  'src/utils/useFocusTrap.ts',
+  'src/utils/__tests__/useFocusTrap.test.ts',
+  'tests/e2e/a11y-full.spec.ts',
+  '.github/workflows/a11y.yml',
+  'docs/A11Y_AUDIT_R2.md',
+  'docs/SECTION_508_COMPLIANCE.md',
   'README.md',
 ];
 

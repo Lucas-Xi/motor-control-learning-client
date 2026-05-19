@@ -1,17 +1,18 @@
-import { Sun, Moon, Eye, Projector } from 'lucide-react';
+import { Sun, Moon, Eye, Projector, Glasses } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import { THEME_ORDER, useThemeStore, type Theme } from '../../store/themeStore';
 
-/** 4 主题 chip 元数据（图标 + 中文短标签 + 长描述）。 */
+/** 5 主题 chip 元数据（图标 + 中文短标签 + 长描述）。 */
 const META: Record<Theme, { label: string; description: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }> = {
   dark: { label: '深色', description: '深色 · 工程仪表盘', Icon: Moon },
   light: { label: '明色', description: '明色 · 打印 / 演示', Icon: Sun },
   'high-contrast': { label: '高对比', description: '高对比 · 视障辅助', Icon: Eye },
   projector: { label: '投影', description: '投影 · 大屏教学', Icon: Projector },
+  colorblind: { label: '色盲友好', description: '色盲友好 · Wong/IBM 安全调色板', Icon: Glasses },
 };
 
 /**
- * 主题切换：4 段 segmented control。
+ * 主题切换：5 段 segmented control。
  * 当前态 aria-pressed="true"；点击任一段直接 setTheme。
  * 不再用 framer-motion 的 AnimatePresence 旋转过渡，纯 CSS hover 即可。
  */

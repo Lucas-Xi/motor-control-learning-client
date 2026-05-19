@@ -10,6 +10,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
 import { AntiWindupCompareCard } from './AntiWindupCompareCard';
+import { SerialComparePIDCard } from './SerialComparePIDCard';
 
 type Tone = 'primary' | 'measure' | 'warn' | 'fault';
 const toneColor: Record<Tone, string> = {
@@ -86,6 +87,7 @@ function Probe() {
         </div>
       </Card>
       <AntiWindupCompareCard />
+      <SerialComparePIDCard />
     </>
   );
 }

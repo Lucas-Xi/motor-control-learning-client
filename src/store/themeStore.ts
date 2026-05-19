@@ -2,15 +2,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 /**
- * 4 态主题：
+ * 5 态主题：
  *  - dark           工程仪表盘（默认）
  *  - light          打印 / 普通日光环境
  *  - high-contrast  视障 / 强反差：纯黑底 + 纯白字 + 加粗 2px 边框 + 大字号
  *  - projector      投影到大屏：白底深字 + 大字号 + 加大行距 + 鲜艳 accent
+ *  - colorblind     色盲友好（基于 Wong 2011 / IBM Carbon 色盲安全调色板）：
+ *                   把 measure(绿) → 天蓝、warn(琥珀) → 橙、fault(玫瑰) → 朱红，
+ *                   保证 deuteranopia / protanopia 模拟下三色 hue 仍可区分。
  */
-export type Theme = 'dark' | 'light' | 'high-contrast' | 'projector';
+export type Theme = 'dark' | 'light' | 'high-contrast' | 'projector' | 'colorblind';
 
-export const THEME_ORDER: readonly Theme[] = ['dark', 'light', 'high-contrast', 'projector'] as const;
+export const THEME_ORDER: readonly Theme[] = [
+  'dark',
+  'light',
+  'high-contrast',
+  'projector',
+  'colorblind',
+] as const;
 
 /** 给定当前主题，返回循环顺序的下一项；外部模块（GlobalKeybindings 等）共用同一份排序。 */
 export function nextTheme(current: Theme): Theme {
@@ -22,7 +31,7 @@ export function nextTheme(current: Theme): Theme {
 interface ThemeState {
   theme: Theme;
   setTheme: (t: Theme) => void;
-  /** 在 dark → light → high-contrast → projector → dark 之间循环。 */
+  /** 在 dark → light → high-contrast → projector → colorblind → dark 之间循环。 */
   cycleTheme: () => void;
   /** @deprecated 兼容旧代码，等价 cycleTheme。 */
   toggle: () => void;

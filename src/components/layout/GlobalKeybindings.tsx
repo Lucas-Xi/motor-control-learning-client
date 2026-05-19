@@ -100,7 +100,7 @@ export function GlobalKeybindings() {
       {
         key: 'm',
         category: '布局',
-        description: '循环切主题（深色 → 明色 → 高对比 → 投影）',
+        description: '循环切主题（深色 → 明色 → 高对比 → 投影 → 色盲友好）',
         handler: () => cycleTheme(),
       },
       // —— 模式 ——

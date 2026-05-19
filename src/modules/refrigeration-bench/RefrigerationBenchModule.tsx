@@ -32,6 +32,9 @@ const PartLoadEfficiencyCard = lazy(() =>
 const FourQuadrantCard = lazy(() =>
   import('./FourQuadrantCard').then((m) => ({ default: m.FourQuadrantCard })),
 );
+const SerialCompareRefrigerationCard = lazy(() =>
+  import('./SerialCompareRefrigerationCard').then((m) => ({ default: m.SerialCompareRefrigerationCard })),
+);
 
 function ProbeCardFallback({ label }: { label: string }) {
   return (
@@ -286,6 +289,9 @@ export function RefrigerationBenchModule() {
         </Suspense>
         <Suspense fallback={<ProbeCardFallback label={t('refrigerationBench.quadrant')} />}>
           <FourQuadrantCard />
+        </Suspense>
+        <Suspense fallback={<ProbeCardFallback label="实测对照" />}>
+          <SerialCompareRefrigerationCard />
         </Suspense>
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}

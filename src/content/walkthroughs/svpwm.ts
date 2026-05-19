@@ -20,6 +20,7 @@ import type { ModuleWalkthrough } from './types';
 export const svpwmWalkthrough: ModuleWalkthrough = {
   moduleId: 'svpwm',
   bigPicture: '把目标电压矢量按时间分给六边形里相邻两个基本矢量 + 零矢量；调色板只有 8 种颜色，靠"时间比例"调出任意色 + 多榨 15.5% 母线。',
+  bigPictureEn: 'Time-share the target voltage vector across the two adjacent basic vectors + zero vectors of the hexagon; only 8 palette colors, but "time ratio" mixes any color and squeezes 15.5% more out of the bus.',
   successCriteria: [
     '能列举 8 种开关状态及其对应矢量（V0/V7 零矢量，V1-V6 六个非零矢量及其上桥臂二进制码）',
     '能口算 atan2(Uβ, Uα) → 扇区号，知道 [-π, π] → [0, 2π] 归一化的边界陷阱',
@@ -27,6 +28,14 @@ export const svpwmWalkthrough: ModuleWalkthrough = {
     '能识别过调制（m > 1.0）的现象、硬件后果与两种处置（圆内限幅 / 六步切换）',
     '知道为什么"七段式"对称序列是嵌入式实现的事实标准 + 它如何天然让 ADC 采样落在电流纹波谷',
     '会配 STM32 TIM1 BDTR / DTG 设死区，懂 duty 必须钳到 [0.02, 0.98] 给自举电容充电',
+  ],
+  successCriteriaEn: [
+    'List 8 switch states and their vectors (V0/V7 zero vectors, V1–V6 nonzero vectors with their high-side binary codes).',
+    'Mentally compute atan2(Uβ, Uα) → sector number and handle the [−π, π] → [0, 2π] normalization edge case.',
+    'Explain why SVPWM gains 15.5% utilization over SPWM (min-max bias = 3rd-harmonic injection = zero sequence does not affect line voltage).',
+    'Identify over-modulation (m > 1.0) phenomena, hardware consequences, and two handling options (in-circle limiting / six-step switching).',
+    'Know why the seven-segment symmetric sequence is the de-facto embedded standard and how it naturally places ADC sampling at the current ripple valley.',
+    'Configure STM32 TIM1 BDTR / DTG for dead time, and clamp duty to [0.02, 0.98] for bootstrap-capacitor charging.',
   ],
   steps: [
     {
@@ -191,4 +200,5 @@ export const svpwmWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能从 (vα, vβ) 算出三相 duty + 配置死区 + 钳 duty 边界了。下一模块（08 逆变器）讲这 6 个 IGBT/MOS 怎么真正翻译成相电压：死区时间的电压损失补偿、母线电压跌落、共模电压、电流过零畸变——把"软件层完美的 duty"对接到"硬件层真实的相电压波形"。',
+  nextModuleHookEn: 'You can now compute three-phase duty from (vα, vβ), configure dead time, and clamp duty bounds. Module 08 (inverter) explains how these 6 IGBT/MOSFETs are actually translated into phase voltages: dead-time voltage-loss compensation, DC-link sag, common-mode voltage, zero-crossing distortion — bridging "software-perfect duty" to "hardware-real phase voltage waveforms".',
 };

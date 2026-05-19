@@ -15,6 +15,7 @@ import type { ModuleWalkthrough } from './types';
 export const hfiSensorlessWalkthrough: ModuleWalkthrough = {
   moduleId: 'hfi-sensorless',
   bigPicture: '零速也要锁角度——往 d 轴主动喊一声，听 IPM 凸极的回声里有没有 2θe；CORDIC + biquad 把这条信号链塞进 ISR。',
+  bigPictureEn: 'Lock the angle even at zero speed — actively call into the d axis and listen for 2θe in the IPM saliency echo; CORDIC + biquad squeeze this signal chain into the ISR.',
   successCriteria: [
     '能解释 IPM 凸极性 (Lq > Ld) 的物理来源（永磁体磁阻大）以及为什么这是 HFI 的物理前提',
     '能描述"注入 → 凸极响应 → 同相解调 → LPF → PLL 锁 sin(2Δθ)"全链路 + 公式',
@@ -23,6 +24,15 @@ export const hfiSensorlessWalkthrough: ModuleWalkthrough = {
     '知道 HFI 的 180° 极性歧义来源（sin(2Δθ) 周期 π）和上电 d 轴对齐的解决办法',
     '能写 STM32 上 HFI 解调骨架：CORDIC 算载波 + CMSIS-DSP biquad LPF + PLL PI',
     '能识别"凸极崩塌 / 注入频率落入 PWM 谐波带 / PLL Kp 过大 / 跳过对齐"四类典型故障现象',
+  ],
+  successCriteriaEn: [
+    'Explain the physical source of IPM saliency (Lq > Ld, magnet has high reluctance) and why this is the prerequisite for HFI.',
+    'Describe the full chain: injection → saliency response → in-phase demodulation → LPF → PLL locking sin(2Δθ), with formulas.',
+    'Understand why surface-mount PMSM (Ld ≈ Lq) makes HFI useless (saliency-signal gain (r − 1)/(r + 1) → 0).',
+    'Master the three constraints on the 800–1500 Hz injection frequency (hearing, PWM headroom, iron loss) plus PWM ≥ 4× injection.',
+    'Know the 180° polarity ambiguity from sin(2Δθ) (period π) and the boot d-axis alignment that resolves it.',
+    'Write the STM32 HFI demodulation skeleton: CORDIC for the carrier + CMSIS-DSP biquad LPF + PLL PI.',
+    'Identify four typical fault phenomena: saliency collapse / injection frequency in PWM harmonic band / oversized PLL Kp / skipped alignment.',
   ],
   steps: [
     {
@@ -178,4 +188,5 @@ export const hfiSensorlessWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能用 HFI 在零速锁角度了，但 HFI、SMO、开环 V/f 之间什么时候切、怎么切才平滑？下一模块"启动状态机"用一张状态图把整个压缩机启动流程（预充→对齐→极性判别→HFI→过渡→SMO→弱磁）串起来，是生产代码真正的样子。',
+  nextModuleHookEn: 'You can now lock the angle at zero speed with HFI, but when do you switch between HFI, SMO, and open-loop V/f, and how do you keep it smooth? Module 14 (startup state machine) chains the full compressor startup (precharge → align → polarity check → HFI → handoff → SMO → field weakening) into a state diagram — what production code actually looks like.',
 };

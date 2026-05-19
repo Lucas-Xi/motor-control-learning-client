@@ -15,6 +15,7 @@ import type { ModuleWalkthrough } from './types';
 export const controlLoopsWalkthrough: ModuleWalkthrough = {
   moduleId: 'control-loops',
   bigPicture: '位置 → 速度 → 电流三层级联，外层给参考、内层快速执行；带宽逐层降 5-10 倍，整定从内向外。',
+  bigPictureEn: 'A three-layer cascade — position → speed → current; the outer layers issue references, the inner layers execute quickly; bandwidth drops by 5–10× per layer, tuned from inside out.',
   successCriteria: [
     '能画出三闭环框图，并说明每环的输入/输出/执行频率（电流 16 kHz / 速度 1 kHz / 位置 100 Hz）',
     '能解释"内环必须比外环快 5-10 倍"的 Nyquist 物理边界，并从振荡频率反推哪一层出错',
@@ -22,6 +23,14 @@ export const controlLoopsWalkthrough: ModuleWalkthrough = {
     '能写出抗积分饱和的两种主流实现（条件冻结 + back-calculation）并知道各自利弊',
     '懂得每层输出必须限幅（速度限 / 电流限 / 电压限），并按物理量纲限不是按"代码喜欢的数"',
     '能在嵌入式上正确实现增量式 PID 摆脱 Ts 显式依赖，应对 PWM 频率切换场景',
+  ],
+  successCriteriaEn: [
+    'Draw the three-cascade block diagram and state each loop\'s input/output and execution frequency (current 16 kHz / speed 1 kHz / position 100 Hz).',
+    'Explain the Nyquist physical boundary of "inner-loop must be 5–10× faster than outer" and identify which layer is misbehaving from the oscillation frequency.',
+    'Tune the current loop with the analytic formulas Kp = ω_bw·L, Ki = ω_bw·R and understand why the measured value is 0.5–0.7× analytic.',
+    'Write the two mainstream anti-windup implementations (conditional integration + back-calculation) and know their trade-offs.',
+    'Understand that each layer\'s output must be saturated, in physical units (not arbitrary code-friendly numbers).',
+    'Correctly implement an embedded incremental PID to remove explicit Ts dependence and handle PWM-frequency switching.',
   ],
   steps: [
     {
@@ -170,4 +179,5 @@ export const controlLoopsWalkthrough: ModuleWalkthrough = {
     },
   ],
   nextModuleHook: '现在你能让三闭环协同稳定跑了，并且知道抗饱和、增量式 PID、按物理量限幅、速度反馈滤波四道工业级细节。下一步：10 无感 FOC——把"假设有编码器"的拐杖丢掉，看反电动势观测器和 PLL 怎么从相电压/相电流里反推出转子角度 θe。',
+  nextModuleHookEn: 'You can now run the three-loop cascade stably and know four industrial details: anti-windup, incremental PID, saturation by physical units, and speed-feedback filtering. Module 10 (sensorless FOC) discards the "assume an encoder" crutch and shows how the back-EMF observer and PLL recover rotor angle θe from phase voltages and currents.',
 };

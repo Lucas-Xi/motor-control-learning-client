@@ -9,6 +9,7 @@ const THEME_CLASSES: Record<Theme, string | null> = {
   light: 'light',
   'high-contrast': 'high-contrast',
   projector: 'projector',
+  colorblind: 'colorblind',
 };
 
 const ALL_CLASSES = (Object.values(THEME_CLASSES).filter(Boolean) as string[]);
