@@ -1,4 +1,4 @@
-import { Maximize2, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
+import { Info, Maximize2, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useI18n } from '../../i18n/useI18n';
@@ -6,6 +6,7 @@ import { LanguageChip } from '../../i18n/LanguageChip';
 import { Button } from '../ui/Button';
 import { Tabs } from '../ui/Tabs';
 import { ThemeToggle } from '../ui/ThemeToggle';
+import { AboutModal } from '../about/AboutModal';
 
 /**
  * 移动端图标按钮：默认只显示图标（节省横向空间），
@@ -70,7 +71,9 @@ export function TopBar() {
   const step = useSimulationStore((state) => state.step);
   const resetTime = useSimulationStore((state) => state.resetTime);
   const toggleFullScreen = useSimulationStore((state) => state.toggleFullScreen);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutLabel = locale === 'en-US' ? 'About' : '关于';
 
   return (
     <header role="banner" aria-label="顶栏 · 运行与主题控制" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-2 sm:gap-3">
@@ -101,7 +104,11 @@ export function TopBar() {
         <IconBtn label={t('shell.actionFullscreen')} onClick={toggleFullScreen}>
           <Maximize2 className="h-4 w-4" />
         </IconBtn>
+        <IconBtn label={aboutLabel} onClick={() => setAboutOpen(true)}>
+          <Info className="h-4 w-4" />
+        </IconBtn>
       </div>
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </header>
   );
 }

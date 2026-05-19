@@ -88,6 +88,11 @@ const requiredFiles = [
   'src/content/stm32Export/stm32f4Templates.ts',
   'src/content/stm32Export/stm32h7Templates.ts',
   'src/components/lab/ProjectExporter.tsx',
+  // 关于 / 许可证 / 隐私声明（round-9 商业化要件）
+  'src/components/about/AboutModal.tsx',
+  'LICENSE',
+  'LICENSE-COMMERCIAL.md',
+  'docs/PRIVACY.md',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
