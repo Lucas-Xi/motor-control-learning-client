@@ -93,6 +93,10 @@ const requiredFiles = [
   'LICENSE',
   'LICENSE-COMMERCIAL.md',
   'docs/PRIVACY.md',
+  // round-10 物理真实化 Tier 1：饱和电感 / 铁损 / 齿槽 + BEMF 谐波
+  'src/simulation/math/saturation.ts',
+  'src/simulation/math/ironLoss.ts',
+  'src/simulation/math/cogging.ts',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
