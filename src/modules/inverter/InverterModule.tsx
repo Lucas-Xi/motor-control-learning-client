@@ -14,6 +14,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { useI18n } from '../../i18n/useI18n';
 import { DeadTimeCompensationCard } from './DeadTimeCompensationCard';
 import { SwitchingLossCompareCard } from './SwitchingLossCompareCard';
+import { PwmTransientCard } from './PwmTransientCard';
 
 function createVoltageSamples(uDc: number, dutyA: number, dutyB: number, dutyC: number, deadLoss: number) {
   return Array.from({ length: 160 }, (_, i) => {
@@ -96,6 +97,8 @@ function Probe() {
       <DeadTimeCompensationCard />
       {/* round-11 物理真实化：IGBT/MOSFET/SiC 器件损耗 + 结温对比 */}
       <SwitchingLossCompareCard />
+      {/* round-14 物理真实化：PWM 开关瞬态 + 死区可视化 + 频谱 */}
+      <PwmTransientCard />
     </>
   );
 }
