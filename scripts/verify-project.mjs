@@ -114,6 +114,9 @@ const requiredFiles = [
   // round-11 Tier 3 + B + C：传感器噪声 + vaporCycle HD + focLoop HD
   'src/simulation/math/sensorNoise.ts',
   'src/modules/sensorless-foc/SensorNoiseCard.tsx',
+  // round-13 工业最后一公里：ε-NTU 换热器
+  'src/simulation/math/heatExchanger.ts',
+  'src/modules/refrigeration-bench/HeatExchangerSizingCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

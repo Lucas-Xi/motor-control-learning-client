@@ -38,6 +38,9 @@ const SerialCompareRefrigerationCard = lazy(() =>
 const WagnerVsAntoineCard = lazy(() =>
   import('./WagnerVsAntoineCard').then((m) => ({ default: m.WagnerVsAntoineCard })),
 );
+const HeatExchangerSizingCard = lazy(() =>
+  import('./HeatExchangerSizingCard').then((m) => ({ default: m.HeatExchangerSizingCard })),
+);
 
 function ProbeCardFallback({ label }: { label: string }) {
   return (
@@ -299,6 +302,10 @@ export function RefrigerationBenchModule() {
         {/* round-11 物理真实化：Wagner vs Antoine + 容积效率 3D */}
         <Suspense fallback={<ProbeCardFallback label="Wagner / η_v" />}>
           <WagnerVsAntoineCard />
+        </Suspense>
+        {/* round-13 物理真实化：ε-NTU 换热器选型 */}
+        <Suspense fallback={<ProbeCardFallback label="ε-NTU HX" />}>
+          <HeatExchangerSizingCard />
         </Suspense>
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}
