@@ -3,6 +3,7 @@ import type { FOCParams } from '../engine/types';
 import { saturatedInductances, sampleSaturationParams } from './saturation';
 import { coggingTorque, sampleCoggingParams } from './cogging';
 import { compensateForTemperature } from './thermalRsFlux';
+import { adcMeasurement, defaultAdcParams } from './sensorNoise';
 
 /**
  * 单点的 FOC 电流环时域响应。
@@ -46,6 +47,14 @@ export interface FocLoopOptions {
 export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOptions = {}): FocLoopSample[] {
   const hd = options.highFidelity === true;
   const windingTempC = options.windingTempC ?? 25;
+
+  // HD 模式专用：确定性 LCG 种子，让 ADC 噪声可复现（避免每次刷新图随机抖动）
+  // 教学目的：让学员看到"控制环读到的 id/iq 不是真值，含 ±LSB 抖 + INL + offset"
+  let rngState = 0.5731;
+  const seededRng = (): number => {
+    rngState = (rngState * 9301 + 49297) % 233280;
+    return rngState / 233280;
+  };
   // HD 模式：拿温度补偿后的 Rs / ψf，但电感后续走饱和模型；简版用常量
   const baseRs = R;
   const baseFlux = PSI_F;
@@ -78,8 +87,15 @@ export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOption
     //    控制器读到的 id/iq 还要旋转一个角度误差
     const idMeasReal = idBuf[bufHead];
     const iqMeasReal = iqBuf[bufHead];
-    const idMeas = idMeasReal * cosE + iqMeasReal * sinE;
-    const iqMeas = -idMeasReal * sinE + iqMeasReal * cosE;
+    let idMeas = idMeasReal * cosE + iqMeasReal * sinE;
+    let iqMeas = -idMeasReal * sinE + iqMeasReal * cosE;
+
+    // HD 模式：把 ADC 量化 + INL + 高斯噪声 + offset 叠到测量值上
+    // 真实硬件里 id/iq 是用 ADC 采 ia/ib/ic 算出来的，永远含 ±半 LSB 抖动 + INL 偏差
+    if (hd) {
+      idMeas = adcMeasurement(idMeas, defaultAdcParams, seededRng).measured;
+      iqMeas = adcMeasurement(iqMeas, defaultAdcParams, seededRng).measured;
+    }
 
     // 2) PI 控制（在控制器视角的 dq）
     const ed = params.idRef - idMeas;
