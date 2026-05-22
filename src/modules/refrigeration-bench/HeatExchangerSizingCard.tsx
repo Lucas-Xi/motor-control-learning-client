@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useBenchHxStore } from '../../store/benchHxStore';
 import { useI18n } from '../../i18n/useI18n';
 import {
   heatExchangerExchange,
@@ -29,6 +30,9 @@ export function HeatExchangerSizingCard() {
   const [uaKWperK, setUa] = useState(sample.uaKWperK);
   const [airFlow, setAirFlow] = useState(sample.airFlowM3perS);
   const [qRequired, setQRequired] = useState(kind === 'condenser' ? 4 : 3);
+  // 接入主台架：开关 + 自动写到 store
+  const hxStore = useBenchHxStore();
+  const hxEnabled = hxStore.enabled;
 
   const TairIn = kind === 'condenser' ? (refrig.ambientOutdoorC ?? 35) : (refrig.ambientIndoorC ?? 27);
   const Tref = kind === 'condenser' ? (refrig.Tc ?? 45) : (refrig.Te ?? 7);
@@ -86,20 +90,46 @@ export function HeatExchangerSizingCard() {
       eyebrow={isEn ? 'why Tc actually drifts' : 'Tc/Te 为啥总跑'}
       density="compact"
       action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Effectiveness-NTU method for fin-and-tube HX; ε = 1 − exp(−NTU) for phase-change side. Forces Tc/Te to honor real area + airflow.'
-              : '翅片管 ε-NTU 方法；相变侧 ε = 1 − exp(−NTU)。让 Tc/Te 真正受换热面积 + 风量约束。'
-          }
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={hxEnabled}
+            onClick={() => {
+              hxStore.setEnabled(!hxEnabled);
+              // 开启时把当前卡片本地参数同步给主台架
+              if (!hxEnabled) {
+                if (kind === 'condenser') {
+                  hxStore.setUaCond(uaKWperK);
+                  hxStore.setAirFlowCond(airFlow);
+                } else {
+                  hxStore.setUaEvap(uaKWperK);
+                  hxStore.setAirFlowEvap(airFlow);
+                }
+              }
+            }}
+            className={`rounded-full border px-3 py-1 text-caption transition-colors ${
+              hxEnabled
+                ? 'border-accent-measure/60 bg-accent-measure/10 text-accent-measure'
+                : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
+            }`}
+          >
+            {hxEnabled ? (isEn ? 'Applied to bench' : '已应用到主台架') : (isEn ? 'Apply to bench' : '应用到主台架')}
+          </button>
+          <FidelityBadge
+            level="physical"
+            hint={
+              isEn
+                ? 'Effectiveness-NTU method for fin-and-tube HX; ε = 1 − exp(−NTU) for phase-change side. Forces Tc/Te to honor real area + airflow.'
+                : '翅片管 ε-NTU 方法；相变侧 ε = 1 − exp(−NTU)。让 Tc/Te 真正受换热面积 + 风量约束。'
+            }
+          />
+        </div>
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
         {isEn
-          ? 'vaporCycle assumes the heat exchanger can hit any Tc/Te. Reality: limited UA × airflow caps the heat throughput. Drag UA, airflow, and required Q to see how the design point drifts under summer/winter conditions.'
-          : 'vaporCycle 默认换热器能"任意"达到 Tc/Te。真实：UA × 风量限定了热量传输。拖 UA / 风量 / 所需 Q，看夏季高温 / 冬季工况下设计点怎么漂。'}
+          ? 'vaporCycle assumes the heat exchanger can hit any Tc/Te. Reality: limited UA × airflow caps the heat throughput. Drag UA, airflow, and required Q to see how the design point drifts under summer/winter conditions. Click "Apply to bench" to make the main KPIs honor these constraints.'
+          : 'vaporCycle 默认换热器能"任意"达到 Tc/Te。真实：UA × 风量限定了热量传输。拖 UA / 风量 / 所需 Q，看夏季高温 / 冬季工况下设计点怎么漂。点"应用到主台架"让主 KPI 端到端尊重换热器约束。'}
       </p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -127,7 +157,14 @@ export function HeatExchangerSizingCard() {
             <span className="formula text-ink-primary">{formatNumber(uaKWperK, 2)}</span>
           </span>
           <input type="range" value={uaKWperK} min={0.2} max={4} step={0.05}
-            onChange={(e) => setUa(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setUa(v);
+              if (hxEnabled) {
+                if (kind === 'condenser') hxStore.setUaCond(v);
+                else hxStore.setUaEvap(v);
+              }
+            }}
             className="simulation-slider w-full"
             aria-label="UA"
             aria-valuemin={0.2} aria-valuemax={4} aria-valuenow={uaKWperK} aria-valuetext={`${uaKWperK} kW/K`}
@@ -139,7 +176,14 @@ export function HeatExchangerSizingCard() {
             <span className="formula text-ink-primary">{formatNumber(airFlow, 2)} m³/s</span>
           </span>
           <input type="range" value={airFlow} min={0.05} max={1.5} step={0.02}
-            onChange={(e) => setAirFlow(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setAirFlow(v);
+              if (hxEnabled) {
+                if (kind === 'condenser') hxStore.setAirFlowCond(v);
+                else hxStore.setAirFlowEvap(v);
+              }
+            }}
             className="simulation-slider w-full"
             aria-label="airflow"
             aria-valuemin={0.05} aria-valuemax={1.5} aria-valuenow={airFlow} aria-valuetext={`${airFlow} m³/s`}

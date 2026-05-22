@@ -126,6 +126,8 @@ const requiredFiles = [
   // round-16 接入 UI：机械共振 + 两级压缩对比卡
   'src/modules/control-loops/MechanicalResonanceCard.tsx',
   'src/modules/refrigeration-bench/TwoStageCycleCard.tsx',
+  // round-17 HX 端到端接入：useBenchCycle 真用 HX 约束推 Tc/Te
+  'src/store/benchHxStore.ts',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

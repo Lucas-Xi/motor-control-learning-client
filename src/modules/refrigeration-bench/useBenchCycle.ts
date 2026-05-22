@@ -1,4 +1,5 @@
 import { useSimulationStore } from '../../store/simulationStore';
+import { useBenchHxStore, type BenchHxState } from '../../store/benchHxStore';
 import { simulateCycle, type CycleResult, type CycleInput } from '../../simulation/math/vaporCycle';
 import type { RefrigerationParams } from '../../simulation/engine/types';
 
@@ -18,8 +19,12 @@ let cachedFp = '';
 let cachedResult: CycleResult | null = null;
 
 /** export 给单测；UI 不应直接用，请走 useBenchCycle / runBenchCycle */
-export function _buildCycleInput(refrig: RefrigerationParams, rpm: number): CycleInput {
-  return {
+export function _buildCycleInput(
+  refrig: RefrigerationParams,
+  rpm: number,
+  hx?: BenchHxState | null,
+): CycleInput {
+  const base: CycleInput = {
     refrigerant: refrig.refrigerant,
     Te: refrig.Te,
     Tc: refrig.Tc,
@@ -32,32 +37,57 @@ export function _buildCycleInput(refrig: RefrigerationParams, rpm: number): Cycl
     isentropicEff: refrig.isentropicEff,
     eevOpening: refrig.eevOpening,
   };
+  if (hx?.enabled) {
+    base.useHeatExchanger = {
+      evap: { kind: 'evaporator', uaKWperK: hx.uaEvapKWperK, airFlowM3perS: hx.airFlowEvapM3perS },
+      cond: { kind: 'condenser', uaKWperK: hx.uaCondKWperK, airFlowM3perS: hx.airFlowCondM3perS },
+      TindoorC: hx.indoorC,
+      ToutdoorC: hx.outdoorC,
+    };
+  }
+  return base;
 }
 
 /** export 给单测；fingerprint 用 | 分隔避免 (1,23) 与 (12,3) 撞 */
-export function _cycleFingerprint(refrig: RefrigerationParams, rpm: number): string {
-  return [
+export function _cycleFingerprint(
+  refrig: RefrigerationParams,
+  rpm: number,
+  hx?: BenchHxState | null,
+): string {
+  const baseFp = [
     refrig.refrigerant, refrig.Te, refrig.Tc,
     refrig.superheatK, refrig.subcoolK,
     refrig.displacementCc, refrig.clearanceRatio,
     refrig.isentropicEff, refrig.eevOpening,
     rpm,
   ].join('|');
+  if (!hx?.enabled) return baseFp + '|noHX';
+  return [
+    baseFp, 'hx',
+    hx.uaEvapKWperK, hx.airFlowEvapM3perS,
+    hx.uaCondKWperK, hx.airFlowCondM3perS,
+    hx.indoorC, hx.outdoorC,
+  ].join('|');
 }
 
-/** Hook：订阅 refrigeration + motor.rpm，返回当前帧的 Bench 循环结果。 */
+/** Hook：订阅 refrigeration + motor.rpm（+ HX 耦合状态如启用），返回当前帧的 Bench 循环结果。 */
 export function useBenchCycle(): CycleResult {
   const refrig = useSimulationStore((s) => s.refrigeration);
   const rpm = useSimulationStore((s) => s.motorBasics.rpm);
-  const fp = _cycleFingerprint(refrig, rpm);
+  const hx = useBenchHxStore();
+  const fp = _cycleFingerprint(refrig, rpm, hx);
   if (fp === cachedFp && cachedResult) return cachedResult;
-  const result = simulateCycle(_buildCycleInput(refrig, rpm));
+  const result = simulateCycle(_buildCycleInput(refrig, rpm, hx));
   cachedFp = fp;
   cachedResult = result;
   return result;
 }
 
 /** 一次性运行（不进缓存，给 SnapshotComparePanel 等点击-触发场景用） */
-export function runBenchCycle(refrig: RefrigerationParams, rpm: number): CycleResult {
-  return simulateCycle(_buildCycleInput(refrig, rpm));
+export function runBenchCycle(
+  refrig: RefrigerationParams,
+  rpm: number,
+  hx?: BenchHxState | null,
+): CycleResult {
+  return simulateCycle(_buildCycleInput(refrig, rpm, hx));
 }
