@@ -107,6 +107,10 @@ const requiredFiles = [
   'src/simulation/math/switchingLoss.ts',
   'src/simulation/math/wagnerEq.ts',
   'src/simulation/math/motorModelHd.ts',
+  // round-11 接入 UI 的可视化卡片
+  'src/modules/motor-basics/ModelComparisonCard.tsx',
+  'src/modules/inverter/SwitchingLossCompareCard.tsx',
+  'src/modules/refrigeration-bench/WagnerVsAntoineCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

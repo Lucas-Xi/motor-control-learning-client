@@ -14,6 +14,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { useI18n } from '../../i18n/useI18n';
 import { SaturationMapCard } from './SaturationMapCard';
 import { CoggingTorqueCard } from './CoggingTorqueCard';
+import { ModelComparisonCard } from './ModelComparisonCard';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -171,6 +172,8 @@ export function MotorBasicsModule() {
           {/* round-10 物理真实化：饱和电感 + 齿槽/BEMF 谐波 */}
           <SaturationMapCard />
           <CoggingTorqueCard />
+          {/* round-11 高保真 A/B 对比 */}
+          <ModelComparisonCard />
         </>
       }
       concept={<ConceptNotes moduleId="motor-basics" />}

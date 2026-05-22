@@ -35,6 +35,9 @@ const FourQuadrantCard = lazy(() =>
 const SerialCompareRefrigerationCard = lazy(() =>
   import('./SerialCompareRefrigerationCard').then((m) => ({ default: m.SerialCompareRefrigerationCard })),
 );
+const WagnerVsAntoineCard = lazy(() =>
+  import('./WagnerVsAntoineCard').then((m) => ({ default: m.WagnerVsAntoineCard })),
+);
 
 function ProbeCardFallback({ label }: { label: string }) {
   return (
@@ -292,6 +295,10 @@ export function RefrigerationBenchModule() {
         </Suspense>
         <Suspense fallback={<ProbeCardFallback label="实测对照" />}>
           <SerialCompareRefrigerationCard />
+        </Suspense>
+        {/* round-11 物理真实化：Wagner vs Antoine + 容积效率 3D */}
+        <Suspense fallback={<ProbeCardFallback label="Wagner / η_v" />}>
+          <WagnerVsAntoineCard />
         </Suspense>
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}

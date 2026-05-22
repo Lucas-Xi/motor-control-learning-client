@@ -13,6 +13,7 @@ import { formatNumber, formatPercent } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
 import { DeadTimeCompensationCard } from './DeadTimeCompensationCard';
+import { SwitchingLossCompareCard } from './SwitchingLossCompareCard';
 
 function createVoltageSamples(uDc: number, dutyA: number, dutyB: number, dutyC: number, deadLoss: number) {
   return Array.from({ length: 160 }, (_, i) => {
@@ -93,6 +94,8 @@ function Probe() {
         </ul>
       </Card>
       <DeadTimeCompensationCard />
+      {/* round-11 物理真实化：IGBT/MOSFET/SiC 器件损耗 + 结温对比 */}
+      <SwitchingLossCompareCard />
     </>
   );
 }
