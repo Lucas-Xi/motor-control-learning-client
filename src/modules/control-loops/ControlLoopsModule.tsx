@@ -13,6 +13,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
 import { IronLossBreakdownCard } from './IronLossBreakdownCard';
+import { MechanicalResonanceCard } from './MechanicalResonanceCard';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -124,6 +125,8 @@ function Probe() {
       <SerialCompareSpeedLoopCard />
       {/* round-10 物理真实化：铁损分解 Bertotti 三项 */}
       <IronLossBreakdownCard />
+      {/* round-15 接入 UI：双质量传动共振 + Kp 上限 */}
+      <MechanicalResonanceCard />
     </>
   );
 }

@@ -41,6 +41,9 @@ const WagnerVsAntoineCard = lazy(() =>
 const HeatExchangerSizingCard = lazy(() =>
   import('./HeatExchangerSizingCard').then((m) => ({ default: m.HeatExchangerSizingCard })),
 );
+const TwoStageCycleCard = lazy(() =>
+  import('./TwoStageCycleCard').then((m) => ({ default: m.TwoStageCycleCard })),
+);
 
 function ProbeCardFallback({ label }: { label: string }) {
   return (
@@ -306,6 +309,10 @@ export function RefrigerationBenchModule() {
         {/* round-13 物理真实化：ε-NTU 换热器选型 */}
         <Suspense fallback={<ProbeCardFallback label="ε-NTU HX" />}>
           <HeatExchangerSizingCard />
+        </Suspense>
+        {/* round-15 接入 UI：单级 vs 两级压缩 + 闪发分离 */}
+        <Suspense fallback={<ProbeCardFallback label="两级压缩" />}>
+          <TwoStageCycleCard />
         </Suspense>
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}
