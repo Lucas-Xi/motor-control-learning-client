@@ -97,6 +97,10 @@ const requiredFiles = [
   'src/simulation/math/saturation.ts',
   'src/simulation/math/ironLoss.ts',
   'src/simulation/math/cogging.ts',
+  // round-10 接入 UI 的可视化卡片
+  'src/modules/motor-basics/SaturationMapCard.tsx',
+  'src/modules/motor-basics/CoggingTorqueCard.tsx',
+  'src/modules/control-loops/IronLossBreakdownCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

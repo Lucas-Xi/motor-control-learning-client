@@ -12,6 +12,7 @@ import type { ControlLoopParams } from '../../simulation/engine/types';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
+import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -121,6 +122,8 @@ function Probe() {
         </Card>
       )}
       <SerialCompareSpeedLoopCard />
+      {/* round-10 物理真实化：铁损分解 Bertotti 三项 */}
+      <IronLossBreakdownCard />
     </>
   );
 }

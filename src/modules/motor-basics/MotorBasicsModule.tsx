@@ -12,6 +12,8 @@ import { electricalAngle } from '../../simulation/math/transforms';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
+import { SaturationMapCard } from './SaturationMapCard';
+import { CoggingTorqueCard } from './CoggingTorqueCard';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -163,7 +165,14 @@ export function MotorBasicsModule() {
           <Primary />
         </div>
       }
-      probe={<Probe />}
+      probe={
+        <>
+          <Probe />
+          {/* round-10 物理真实化：饱和电感 + 齿槽/BEMF 谐波 */}
+          <SaturationMapCard />
+          <CoggingTorqueCard />
+        </>
+      }
       concept={<ConceptNotes moduleId="motor-basics" />}
     />
   );
