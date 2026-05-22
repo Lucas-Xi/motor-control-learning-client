@@ -101,6 +101,12 @@ const requiredFiles = [
   'src/modules/motor-basics/SaturationMapCard.tsx',
   'src/modules/motor-basics/CoggingTorqueCard.tsx',
   'src/modules/control-loops/IronLossBreakdownCard.tsx',
+  // round-11 物理真实化扩展（A+B+C+D）：温度补偿 / 摩擦 / 开关损耗+结温 / Wagner 高精度制冷剂 / HD 集成模型
+  'src/simulation/math/thermalRsFlux.ts',
+  'src/simulation/math/friction.ts',
+  'src/simulation/math/switchingLoss.ts',
+  'src/simulation/math/wagnerEq.ts',
+  'src/simulation/math/motorModelHd.ts',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

@@ -200,6 +200,16 @@ export function MotorAnatomy2D({ polePairs, mechanicalDeg, rpm, size = 460 }: Pr
           {polePairsClamped} 极对 · {numPoles} 极 · θm = {formatNumber(rotorRadDeg, 1)}° · {formatNumber(rpm, 0)} rpm · 12 槽
         </text>
         <text x={14} y={size - 14} fill="#5d7793" fontSize="10">⊙ 流出纸面 ⊗ 流入纸面</text>
+
+        {/* round-10/11 高保真物理就绪角标：明确告知本仿真层涵盖的真实物理效应 */}
+        <g aria-label="高保真物理效应清单" transform={`translate(${size - 158}, 12)`}>
+          <rect width="148" height="68" rx="6" fill="#0d1929" fillOpacity="0.85" stroke="#43f7b5" strokeWidth="0.8" strokeOpacity="0.5" />
+          <text x="8" y="14" fill="#43f7b5" fontSize="9" fontWeight="600" letterSpacing="0.06em">HD PHYSICS · ON</text>
+          <text x="8" y="26" fill="#9eb5cb" fontSize="9">饱和 Ld(id,iq) Vorobiev</text>
+          <text x="8" y="36" fill="#9eb5cb" fontSize="9">铁损 Bertotti 三项</text>
+          <text x="8" y="46" fill="#9eb5cb" fontSize="9">齿槽 + BEMF 5/7/11/13</text>
+          <text x="8" y="56" fill="#9eb5cb" fontSize="9">温度 PTC/NTC + Stribeck</text>
+        </g>
       </svg>
     </div>
   );
