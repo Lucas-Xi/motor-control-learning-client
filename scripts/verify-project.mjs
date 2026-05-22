@@ -120,6 +120,9 @@ const requiredFiles = [
   // round-14 工业最后一公里：PWM 开关瞬态 + 死区可视化
   'src/simulation/math/pwmTransient.ts',
   'src/modules/inverter/PwmTransientCard.tsx',
+  // round-15 工业最后一公里：机械刚性+共振+backlash / NTU 接入 vaporCycle / 两级压缩+闪发分离
+  'src/simulation/math/mechanicalCompliance.ts',
+  'src/simulation/math/twoStageCycle.ts',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
