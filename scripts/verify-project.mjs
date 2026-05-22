@@ -111,6 +111,9 @@ const requiredFiles = [
   'src/modules/motor-basics/ModelComparisonCard.tsx',
   'src/modules/inverter/SwitchingLossCompareCard.tsx',
   'src/modules/refrigeration-bench/WagnerVsAntoineCard.tsx',
+  // round-11 Tier 3 + B + C：传感器噪声 + vaporCycle HD + focLoop HD
+  'src/simulation/math/sensorNoise.ts',
+  'src/modules/sensorless-foc/SensorNoiseCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

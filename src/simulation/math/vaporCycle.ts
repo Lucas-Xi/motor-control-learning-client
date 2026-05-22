@@ -3,6 +3,7 @@ import {
   hLiqSat, hSubcooled, hSuperheated, hVapSat,
   pSat, rhoVapSat, polytropicN, tSat,
 } from './refrigerantProps';
+import { volumetricEfficiency, wagnerSaturationPressure } from './wagnerEq';
 
 /**
  * 单级蒸气压缩制冷循环（理想 4 状态点 + 多变压缩）。
@@ -51,6 +52,14 @@ export interface CycleInput {
   isentropicEff: number;
   /** 膨胀阀开度 0..1，决定通过能力 m_dot_max；当流量超过此值 → 排气压力实际飙升 */
   eevOpening: number;
+  /**
+   * 高保真模式开关（round-11 接入）：
+   *   true (默认) → Wagner 方程（±1-2% 精度）+ 容积效率 3D 曲面（含转速/温度修正）
+   *   false → 老 Antoine + 简单余隙比公式（教学回看用）
+   * 不传字段时按 true 处理，保持工程级精度作为默认行为。
+   */
+  highFidelity?: boolean;
+
 }
 
 export interface CycleResult {
@@ -102,9 +111,11 @@ export function simulateCycle(input: CycleInput): CycleResult {
   if (input.Tc <= input.Te) warnings.push('冷凝温度必须高于蒸发温度');
   if (input.Tc > 75) warnings.push(`冷凝温度 ${input.Tc.toFixed(1)}°C 接近临界温度，模型外推`);
 
-  const Ps = pSat(input.Te, r);
-  const Pd = pSat(input.Tc, r);
-  const pressureRatio = Pd / Ps;
+  // 高保真模式（默认）→ Wagner ±1-2%；回退模式 → Antoine ±5%
+  const hd = input.highFidelity !== false;
+  const Ps = hd ? wagnerSaturationPressure(input.Te, r) : pSat(input.Te, r);
+  const Pd = hd ? wagnerSaturationPressure(input.Tc, r) : pSat(input.Tc, r);
+  const pressureRatio = Pd / Math.max(1e-6, Ps);
   const n = polytropicN(r);
 
   // 状态 1：吸气过热气
@@ -131,9 +142,18 @@ export function simulateCycle(input: CycleInput): CycleResult {
   const T4 = input.Te;       // 蒸发温度对应的两相区
   const h4 = h3;
 
-  // 容积效率
+  // 容积效率：高保真用 3D 曲面（基础 × 转速因子 × 温度因子）；简版只看余隙×压比
   const C = input.clearanceRatio;
-  const volumetricEff = Math.max(0.05, 1 - C * (Math.pow(pressureRatio, 1 / n) - 1));
+  const volumetricEff = hd
+    ? volumetricEfficiency({
+        clearanceRatio: C,
+        pressureRatio,
+        polytropicN: n,
+        rpm: input.rpm,
+        rpmRated: 3000,
+        TsucC: T1,
+      }).eta_v
+    : Math.max(0.05, 1 - C * (Math.pow(pressureRatio, 1 / n) - 1));
 
   // 入口气相密度（过热气，等压理想气体近似 PV = mRT → ρ ∝ 1/T）。
   // 过热度 ↑ → T1 > Te → 密度下降 → 质量流量下降。

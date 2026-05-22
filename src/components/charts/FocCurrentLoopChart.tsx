@@ -7,10 +7,16 @@ import { formatNumber } from '../../utils/format';
 
 interface Props {
   params: FOCParams;
+  /** round-11 接入：开 HD 后用 saturation/cogging/温度补偿；默认关 */
+  highFidelity?: boolean;
+  windingTempC?: number;
 }
 
-export function FocCurrentLoopChart({ params }: Props) {
-  const samples = useMemo(() => simulateFocCurrentLoop(params), [params]);
+export function FocCurrentLoopChart({ params, highFidelity, windingTempC }: Props) {
+  const samples = useMemo(
+    () => simulateFocCurrentLoop(params, { highFidelity, windingTempC }),
+    [params, highFidelity, windingTempC],
+  );
   const metrics = useMemo(() => evaluateFocLoop(samples, params.iqRef), [samples, params.iqRef]);
 
   const overshoot = metrics.iqOvershootPct;

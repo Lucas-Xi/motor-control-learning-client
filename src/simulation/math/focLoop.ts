@@ -1,5 +1,8 @@
 import { clamp } from '../../utils/clamp';
 import type { FOCParams } from '../engine/types';
+import { saturatedInductances, sampleSaturationParams } from './saturation';
+import { coggingTorque, sampleCoggingParams } from './cogging';
+import { compensateForTemperature } from './thermalRsFlux';
 
 /**
  * 单点的 FOC 电流环时域响应。
@@ -31,7 +34,27 @@ const PWM_FREQ = 16000;  // Hz PWM 频率，等同采样频率
 const DT = 1 / PWM_FREQ; // s 单步
 const TOTAL = 0.06;      // s 总仿真时长 60 ms（足以观察阶跃响应）
 
-export function simulateFocCurrentLoop(params: FOCParams): FocLoopSample[] {
+/**
+ * round-11 接入：高保真选项把饱和电感 / 齿槽转矩纹波 / 温度补偿打开。
+ * 学员可在 FOC flow 模块顶部 chip 切换简版 vs HD，看同样工况下电流环响应差异。
+ */
+export interface FocLoopOptions {
+  highFidelity?: boolean;
+  windingTempC?: number;
+}
+
+export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOptions = {}): FocLoopSample[] {
+  const hd = options.highFidelity === true;
+  const windingTempC = options.windingTempC ?? 25;
+  // HD 模式：拿温度补偿后的 Rs / ψf，但电感后续走饱和模型；简版用常量
+  const baseRs = R;
+  const baseFlux = PSI_F;
+  const thermal = hd
+    ? compensateForTemperature(windingTempC, { rs0: baseRs, flux0: baseFlux })
+    : { rs: baseRs, flux: baseFlux, rsRisePct: 0, fluxDropPct: 0, demagAlarm: false, demagMarginK: 100 };
+  const rs = thermal.rs;
+  const psiF = thermal.flux;
+
   const omega = 2 * Math.PI * params.electricalFreq;
   const dThetaErr = (params.thetaErrorDeg * Math.PI) / 180;
   // 测量旋转矩阵：[cos Δθ, sin Δθ; -sin Δθ, cos Δθ]
@@ -79,10 +102,37 @@ export function simulateFocCurrentLoop(params: FOCParams): FocLoopSample[] {
     // 4) PMSM dq 电流方程一阶离散
     //    vd = R id + L did/dt - ω L iq
     //    vq = R iq + L diq/dt + ω L id + ω ψf
-    const didDt = (vdReal - R * id + omega * L * iq) / L;
-    const diqDt = (vqReal - R * iq - omega * L * id - omega * PSI_F) / L;
+    // HD 模式：用饱和后的 Ld(id,iq) / Lq(id,iq)；简版恒定 L
+    let Ld = L;
+    let Lq = L;
+    if (hd) {
+      const sat = saturatedInductances(id, iq, {
+        ld0: L,
+        lq0: L * 1.5,                      // IPM 凸极假设
+        iRated: 12,
+        ad: sampleSaturationParams.hitachi15HP.ad,
+        bd: sampleSaturationParams.hitachi15HP.bd,
+        aq: sampleSaturationParams.hitachi15HP.aq,
+        bq: sampleSaturationParams.hitachi15HP.bq,
+        knee: sampleSaturationParams.hitachi15HP.knee,
+      });
+      Ld = sat.ld;
+      Lq = sat.lq;
+    }
+    const didDt = (vdReal - rs * id + omega * Lq * iq) / Ld;
+    const diqDt = (vqReal - rs * iq - omega * Ld * id - omega * psiF) / Lq;
     id += didDt * DT;
     iq += diqDt * DT;
+
+    // HD 模式：齿槽转矩通过角度积分对 iq 引入小幅扰动
+    // （齿槽 → 机械转速波动 → 反电动势波动 → 电流环看到的"假阶跃"）
+    if (hd && step % 8 === 0) {
+      const thetaMech = (step * DT * 2 * Math.PI * params.electricalFreq) / 4; // assume 4 极对
+      const tCog = coggingTorque(thetaMech, { ...sampleCoggingParams.hitachi15HP, polePairs: 4 }).torque;
+      // 把 mN·m 级别的齿槽折算成 iq 扰动（≈ T_cog / (1.5·p·ψf)）
+      const iqRipple = tCog / (1.5 * 4 * psiF);
+      iq += iqRipple * 0.05;     // 0.05 是耦合衰减系数（控制环抑制部分）
+    }
 
     // 5) 把"真实 dq"写入采样缓冲（下一步控制器读到，延迟 N 步）
     bufHead = (bufHead + 1) % (delayN + 1);

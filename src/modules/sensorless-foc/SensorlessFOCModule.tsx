@@ -12,6 +12,7 @@ import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSensorlessCard } from './SerialCompareSensorlessCard';
+import { SensorNoiseCard } from './SensorNoiseCard';
 
 function useSamples() {
   const params = useSimulationStore((s) => s.sensorless);
@@ -142,6 +143,8 @@ function Probe() {
       <ObserverDiagnostic />
       <SMOInternals />
       <SerialCompareSensorlessCard />
+      {/* round-11 Tier 3：传感器噪声三大源（编码器/Hall/ADC）*/}
+      <SensorNoiseCard />
     </>
   );
 }

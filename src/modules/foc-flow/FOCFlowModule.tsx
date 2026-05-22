@@ -135,16 +135,57 @@ function useSnapshot() {
 
 function CurrentLoopView() {
   const foc = useSimulationStore((s) => s.foc);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const isEn = locale === 'en-US';
+  const [hd, setHd] = useState(false);
+  const [tempC, setTempC] = useState(25);
   return (
     <Card
       title={t('focFlow.loopTitle')}
       eyebrow={t('focFlow.loopEyebrow')}
       density="compact"
-      action={<FidelityBadge level="physical" hint="完整 PMSM dq 微分方程 + PI + 限幅 + 角度误差 + 采样延迟，是工程级仿真" />}
+      action={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={hd}
+            onClick={() => setHd((v) => !v)}
+            className={`rounded-full border px-3 py-1 text-caption transition-colors ${
+              hd
+                ? 'border-accent-measure/60 bg-accent-measure/10 text-accent-measure'
+                : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong'
+            }`}
+          >
+            {hd ? (isEn ? 'HD physics ON' : '高保真物理 ON') : (isEn ? 'Simple model' : '简版模型')}
+          </button>
+          <FidelityBadge level="physical" hint="完整 PMSM dq 微分方程 + PI + 限幅 + 角度误差 + 采样延迟，是工程级仿真" />
+        </div>
+      }
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('focFlow.loopHint')}</p>
-      <FocCurrentLoopChart params={foc} />
+      <p className="mb-2 text-caption leading-relaxed text-ink-secondary">{t('focFlow.loopHint')}</p>
+      {hd && (
+        <label className="mb-3 block">
+          <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
+            <span>{isEn ? 'Winding T (°C)' : '绕组温度 (°C)'}</span>
+            <span className="formula text-ink-primary">{tempC}</span>
+          </span>
+          <input
+            type="range"
+            value={tempC}
+            min={-20}
+            max={130}
+            step={5}
+            onChange={(e) => setTempC(Number(e.target.value))}
+            className="simulation-slider w-full"
+            aria-label={isEn ? 'winding temperature' : '绕组温度'}
+            aria-valuemin={-20}
+            aria-valuemax={130}
+            aria-valuenow={tempC}
+            aria-valuetext={`${tempC} °C`}
+          />
+        </label>
+      )}
+      <FocCurrentLoopChart params={foc} highFidelity={hd} windingTempC={tempC} />
     </Card>
   );
 }
