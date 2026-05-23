@@ -3,11 +3,21 @@ import { saturationCurve, type Refrigerant } from '../../simulation/math/refrige
 import type { CycleState } from '../../simulation/math/vaporCycle';
 import { useRafThrottle } from '../../utils/useRafThrottle';
 
+/** 两级循环覆盖点：仅展示用，不含 CycleState 完整字段（无质量比焓导数等）。 */
+export interface TwoStageOverlayPoint {
+  index: number;
+  P: number;
+  h: number;
+  label: string;
+}
+
 interface Props {
   refrigerant: Refrigerant;
   states: readonly [CycleState, CycleState, CycleState, CycleState];
   /** 拖动状态点 [1] 或 [3]：返回 (h, P) — 父组件根据点编号反推 (Te,SH) 或 (Tc,SC) */
   onPointDrag?: (pointIndex: 1 | 3, h: number, P: number) => void;
+  /** 可选两级覆盖点（来自 simulateTwoStageCycle），用紫色三角叠到原 4 状态点上。 */
+  twoStageStates?: readonly TwoStageOverlayPoint[];
 }
 
 const W = 640;
@@ -34,7 +44,7 @@ function POf(y: number): number {
   return Math.pow(10, P_MIN_LOG + frac * (P_MAX_LOG - P_MIN_LOG));
 }
 
-export function PhDiagram({ refrigerant, states, onPointDrag }: Props) {
+export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: Props) {
   const draggingRef = useRef<1 | 3 | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const commit = useRafThrottle((idx: 1 | 3, h: number, P: number) => {
@@ -181,6 +191,59 @@ export function PhDiagram({ refrigerant, states, onPointDrag }: Props) {
       <text x={p3.x - 8} y={(p3.y + p4.y) / 2} textAnchor="end" fontSize="10" fill="#43f7b5">节流</text>
       <text x={(p4.x + p1.x) / 2} y={p4.y + 16} textAnchor="middle" fontSize="10" fill="#43f7b5">蒸发吸热</text>
 
+      {/* 两级压缩 + 闪发覆盖（紫色三角 + 闪发对角虚线）
+          覆盖在单级循环线之上、状态点之下，让学员同时看见两组循环路径。 */}
+      {twoStageStates && twoStageStates.length > 0 && (() => {
+        const tsPts = twoStageStates
+          .filter((s) => s.h >= H_MIN && s.h <= H_MAX && s.P >= 0.1 && s.P <= 5)
+          .map((s) => ({
+            ...s,
+            x: clip(xOf(s.h), PADDING.left + 4, W - PADDING.right - 4),
+            y: clip(yOf(s.P), PADDING.top + 4, H - PADDING.bottom - 4),
+          }));
+        const flashGas = tsPts.find((p) => p.index === 7);
+        const flashLiq = tsPts.find((p) => p.index === 8);
+        return (
+          <g>
+            {flashGas && flashLiq && (
+              <line
+                x1={flashGas.x}
+                y1={flashGas.y}
+                x2={flashLiq.x}
+                y2={flashLiq.y}
+                stroke="#c4b5fd"
+                strokeWidth="1.5"
+                strokeDasharray="4 4"
+                opacity="0.75"
+              />
+            )}
+            {tsPts.map((p) => (
+              <g key={`ts-${p.index}`}>
+                <polygon
+                  points={`${p.x},${p.y - 6} ${p.x - 5.2},${p.y + 4} ${p.x + 5.2},${p.y + 4}`}
+                  fill="#c4b5fd"
+                  stroke="#0d1929"
+                  strokeWidth="1.4"
+                />
+                <text
+                  x={p.x + 7}
+                  y={p.y + 3}
+                  fontSize="9"
+                  fontWeight="600"
+                  fill="#c4b5fd"
+                  paintOrder="stroke"
+                  stroke="#0d1929"
+                  strokeWidth="1"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {p.index}
+                </text>
+              </g>
+            ))}
+          </g>
+        );
+      })()}
+
       {/* 4 状态点：发光环 + 实心点 + 编号文字（带描边以保证在任何背景上可读）
           点 [1] 和 [3] 可拖动以调整工况 */}
       {pts.map((p) => {
@@ -251,6 +314,12 @@ export function PhDiagram({ refrigerant, states, onPointDrag }: Props) {
         <text x="76" y="9" fontSize="10" fill="#9eb5cb">饱和气</text>
         <line x1="116" y1="6" x2="130" y2="6" stroke="#43f7b5" strokeWidth="2" />
         <text x="134" y="9" fontSize="10" fill="#9eb5cb">循环</text>
+        {twoStageStates && twoStageStates.length > 0 && (
+          <g transform="translate(164, 0)">
+            <polygon points="7,1 1,11 13,11" fill="#c4b5fd" stroke="#0d1929" strokeWidth="1" />
+            <text x="18" y="9" fontSize="10" fill="#9eb5cb">两级 + 闪发</text>
+          </g>
+        )}
       </g>
     </svg>
   );

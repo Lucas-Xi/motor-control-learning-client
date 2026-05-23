@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useBenchTwoStageStore } from '../../store/benchTwoStageStore';
 import { useI18n } from '../../i18n/useI18n';
 import { simulateTwoStageCycle } from '../../simulation/math/twoStageCycle';
 import { simulateCycle } from '../../simulation/math/vaporCycle';
@@ -15,6 +16,8 @@ import { formatNumber } from '../../utils/format';
  */
 export function TwoStageCycleCard() {
   const refrig = useSimulationStore((s) => s.refrigeration);
+  const overlayEnabled = useBenchTwoStageStore((s) => s.enabled);
+  const toggleOverlay = useBenchTwoStageStore((s) => s.toggleEnabled);
   const { locale } = useI18n();
   const isEn = locale === 'en-US';
 
@@ -86,14 +89,30 @@ export function TwoStageCycleCard() {
       eyebrow={isEn ? 'high-efficiency topology' : '高端能效拓扑'}
       density="compact"
       action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Two-stage compression with optimal P_i = sqrt(Ps·Pd) + flash separator; lowers discharge temp + raises COP at large pressure ratios.'
-              : '两级压缩 + 最优中间压力 sqrt(Ps·Pd) + 闪发分离；大压比工况下降排气温度、升 COP。'
-          }
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleOverlay}
+            className={`rounded border px-1.5 py-[1px] text-[10px] transition-colors ${
+              overlayEnabled
+                ? 'border-[#c4b5fd]/60 bg-[#c4b5fd]/15 text-[#c4b5fd]'
+                : 'border-line bg-bg-elev text-ink-muted hover:text-ink'
+            }`}
+            title={isEn
+              ? 'Overlay 9 two-stage state points (incl. flash gas 7v / flash liquid 8l) onto the main P-h diagram in purple triangles.'
+              : '把 9 个两级状态点（含闪发气 7v / 闪发液 8l）以紫色三角覆盖到主 P-h 图上'}
+          >
+            {isEn ? `Overlay on main P-h${overlayEnabled ? ' · on' : ''}` : `叠到主 P-h 图${overlayEnabled ? ' · 开' : ''}`}
+          </button>
+          <FidelityBadge
+            level="physical"
+            hint={
+              isEn
+                ? 'Two-stage compression with optimal P_i = sqrt(Ps·Pd) + flash separator; lowers discharge temp + raises COP at large pressure ratios.'
+                : '两级压缩 + 最优中间压力 sqrt(Ps·Pd) + 闪发分离；大压比工况下降排气温度、升 COP。'
+            }
+          />
+        </div>
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">

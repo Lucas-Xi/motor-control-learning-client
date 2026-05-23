@@ -9,6 +9,8 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { PhDiagram } from '../../components/charts/PhDiagram';
 import { SystemSchematic } from '../../components/charts/SystemSchematic';
 import { simulateCycle, torqueToIq } from '../../simulation/math/vaporCycle';
+import { simulateTwoStageCycle } from '../../simulation/math/twoStageCycle';
+import { useBenchTwoStageStore } from '../../store/benchTwoStageStore';
 import { hLiqSat, hVapSat, tSat } from '../../simulation/math/refrigerantProps';
 import { formatNumber } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
@@ -94,16 +96,61 @@ function PhPanel() {
     eevOpening: refrig.eevOpening,
   }), [refrig, motor.rpm]);
 
+  const twoStageEnabled = useBenchTwoStageStore((s) => s.enabled);
+  const twoStageManualPi = useBenchTwoStageStore((s) => s.manualPiMPa);
+  const toggleTwoStage = useBenchTwoStageStore((s) => s.toggleEnabled);
+
+  // 两级覆盖：用同一 refrig 参数跑 simulateTwoStageCycle，把 9 状态点送给 PhDiagram。
+  // 高压级排量按低压 65% 取（典型双缸涡旋设计），中间压力默认 sqrt(Ps·Pd) 最优。
+  const twoStageOverlay = useMemo(() => {
+    if (!twoStageEnabled) return undefined;
+    const ts = simulateTwoStageCycle({
+      refrigerant: refrig.refrigerant,
+      Te: refrig.Te,
+      Tc: refrig.Tc,
+      superheatK: refrig.superheatK,
+      subcoolK: refrig.subcoolK,
+      isentropicEff: refrig.isentropicEff,
+      displacementLowCc: refrig.displacementCc,
+      displacementHighCc: refrig.displacementCc * 0.65,
+      rpm: motor.rpm > 100 ? motor.rpm : 3000,
+      clearanceRatio: refrig.clearanceRatio,
+      intermediatePressureMPa: twoStageManualPi ?? undefined,
+    });
+    return ts.states.map((s) => ({ index: s.index, P: s.P, h: s.h, label: s.label }));
+  }, [twoStageEnabled, twoStageManualPi, refrig, motor.rpm]);
+
   return (
     <Card
       title={t('refrigerationBench.phTitle')}
       eyebrow={t('refrigerationBench.phEyebrow')}
       density="compact"
-      action={<FidelityBadge level="physical" hint="基于 Antoine + 多变压缩 + 容积效率的简化物性模型，趋势与真实制冷剂一致；精度 ±5% 左右，不替代 CoolProp/REFPROP" />}
+      action={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTwoStage}
+            className={`rounded border px-1.5 py-[1px] text-[10px] transition-colors ${
+              twoStageEnabled
+                ? 'border-[#c4b5fd]/60 bg-[#c4b5fd]/15 text-[#c4b5fd]'
+                : 'border-line bg-bg-elev text-ink-muted hover:text-ink'
+            }`}
+            title="叠加 simulateTwoStageCycle 的 9 状态点（含闪发气 7v / 闪发液 8l），用紫色三角覆盖在原 4 状态点上"
+          >
+            两级覆盖{twoStageEnabled ? ' · 开' : ''}
+          </button>
+          <FidelityBadge level="physical" hint="基于 Antoine + 多变压缩 + 容积效率的简化物性模型，趋势与真实制冷剂一致；精度 ±5% 左右，不替代 CoolProp/REFPROP" />
+        </div>
+      }
     >
       <div className="relative w-full overflow-hidden" style={{ paddingTop: `${(380 / 640) * 100}%` }}>
         <div className="absolute inset-0">
-          <PhDiagram refrigerant={refrig.refrigerant} states={result.states} onPointDrag={handleDrag} />
+          <PhDiagram
+            refrigerant={refrig.refrigerant}
+            states={result.states}
+            onPointDrag={handleDrag}
+            twoStageStates={twoStageOverlay}
+          />
         </div>
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 text-caption text-ink-muted sm:grid-cols-4">
