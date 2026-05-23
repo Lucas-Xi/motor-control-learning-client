@@ -1,6 +1,13 @@
 import { useSimulationStore } from '../../store/simulationStore';
 import { useBenchHxStore, type BenchHxState } from '../../store/benchHxStore';
+import { useBenchComplianceStore, type ComplianceKey } from '../../store/benchComplianceStore';
 import { simulateCycle, type CycleResult, type CycleInput } from '../../simulation/math/vaporCycle';
+import {
+  createComplianceState,
+  stepCompliance,
+  resonanceFrequencies,
+  sampleComplianceParams,
+} from '../../simulation/math/mechanicalCompliance';
 import type { RefrigerationParams } from '../../simulation/engine/types';
 
 /**
@@ -15,8 +22,53 @@ import type { RefrigerationParams } from '../../simulation/engine/types';
  * 单元测试与一次性快照请用 `runBenchCycle(refrig, rpm)`（无缓存的纯函数版本）。
  */
 
+/** useBenchCycle 扩展字段：开启传动柔性后附带的瞬态扭矩峰值 + 共振频率。 */
+export interface BenchMechCompliance {
+  /** 反液击瞬态轴扭簧 Tspring 峰值 (N·m) */
+  peakTorqueNm: number;
+  /** 共振频率 (Hz) */
+  resonanceHz: number;
+  /** 反共振频率 (Hz)；速度环带宽上限约为此值 / 5 */
+  antiResonanceHz: number;
+  /** 当前选用的传动预设 key */
+  preset: ComplianceKey;
+}
+
+/**
+ * useBenchCycle 实际返回的复合结果：CycleResult + 可选 mechCompliance。
+ * mechCompliance 仅在 benchComplianceStore.enabled = true 时存在，
+ * 调用方读时务必 narrow（result.mechCompliance && ...）。
+ */
+export type BenchCycleResult = CycleResult & { mechCompliance?: BenchMechCompliance };
+
+/**
+ * 反液击瞬态仿真：稳态在 torqueLoad，t=50ms 阶跃到 2× torqueLoad（5 ms 持续）→ 观察 Tspring。
+ * 学员目的：同一稳态 KPI 在直驱 / 皮带 / 谐波减速器下，反液击瞬态扭矩峰值差异巨大。
+ */
+function computeMechCompliance(torqueLoadNm: number, preset: ComplianceKey): BenchMechCompliance {
+  const params = sampleComplianceParams[preset];
+  // 起步：把双质量预扭到稳态（Tspring ≈ torqueLoad）以避免 0→Tload 自身的冲击
+  let state = createComplianceState();
+  state = { ...state, thetaMotor: torqueLoadNm / Math.max(1, params.Ks) };
+
+  let peak = 0;
+  const dt = 1e-4; // 100 μs 子步上限，stepCompliance 内部按共振再细分
+  const N = 1000;  // 共 100 ms
+  for (let i = 0; i < N; i += 1) {
+    // 50 ms 后做一个 5 ms 的 2× 扭矩反液击脉冲
+    const inPulse = i >= 500 && i < 550;
+    const TloadExt = inPulse ? 2 * torqueLoadNm : torqueLoadNm;
+    state = stepCompliance({ Tem: torqueLoadNm, TloadExt, dt, params, state });
+    const mag = Math.abs(state.Tspring);
+    if (mag > peak) peak = mag;
+  }
+
+  const { resonanceHz, antiResonanceHz } = resonanceFrequencies(params);
+  return { peakTorqueNm: peak, resonanceHz, antiResonanceHz, preset };
+}
+
 let cachedFp = '';
-let cachedResult: CycleResult | null = null;
+let cachedResult: BenchCycleResult | null = null;
 
 /** export 给单测；UI 不应直接用，请走 useBenchCycle / runBenchCycle */
 export function _buildCycleInput(
@@ -53,6 +105,7 @@ export function _cycleFingerprint(
   refrig: RefrigerationParams,
   rpm: number,
   hx?: BenchHxState | null,
+  mech?: { enabled: boolean; preset: ComplianceKey } | null,
 ): string {
   const baseFp = [
     refrig.refrigerant, refrig.Te, refrig.Tc,
@@ -61,23 +114,32 @@ export function _cycleFingerprint(
     refrig.isentropicEff, refrig.eevOpening,
     rpm,
   ].join('|');
-  if (!hx?.enabled) return baseFp + '|noHX';
-  return [
-    baseFp, 'hx',
-    hx.uaEvapKWperK, hx.airFlowEvapM3perS,
-    hx.uaCondKWperK, hx.airFlowCondM3perS,
-    hx.indoorC, hx.outdoorC,
-  ].join('|');
+  const hxFp = !hx?.enabled
+    ? '|noHX'
+    : '|' + [
+        'hx',
+        hx.uaEvapKWperK, hx.airFlowEvapM3perS,
+        hx.uaCondKWperK, hx.airFlowCondM3perS,
+        hx.indoorC, hx.outdoorC,
+      ].join('|');
+  const mechFp = !mech?.enabled ? '|noMech' : `|mech|${mech.preset}`;
+  return baseFp + hxFp + mechFp;
 }
 
-/** Hook：订阅 refrigeration + motor.rpm（+ HX 耦合状态如启用），返回当前帧的 Bench 循环结果。 */
-export function useBenchCycle(): CycleResult {
+/** Hook：订阅 refrigeration + motor.rpm（+ HX / 机械柔性状态如启用），返回当前帧的 Bench 循环结果。 */
+export function useBenchCycle(): BenchCycleResult {
   const refrig = useSimulationStore((s) => s.refrigeration);
   const rpm = useSimulationStore((s) => s.motorBasics.rpm);
   const hx = useBenchHxStore();
-  const fp = _cycleFingerprint(refrig, rpm, hx);
+  const mechEnabled = useBenchComplianceStore((s) => s.enabled);
+  const mechPreset = useBenchComplianceStore((s) => s.preset);
+  const mech = { enabled: mechEnabled, preset: mechPreset };
+  const fp = _cycleFingerprint(refrig, rpm, hx, mech);
   if (fp === cachedFp && cachedResult) return cachedResult;
-  const result = simulateCycle(_buildCycleInput(refrig, rpm, hx));
+  const cycle = simulateCycle(_buildCycleInput(refrig, rpm, hx));
+  const result: BenchCycleResult = mechEnabled
+    ? { ...cycle, mechCompliance: computeMechCompliance(cycle.torqueLoad, mechPreset) }
+    : cycle;
   cachedFp = fp;
   cachedResult = result;
   return result;

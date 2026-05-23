@@ -1,11 +1,21 @@
-import { Snowflake, Thermometer, Zap, Activity, AlertTriangle, CheckCircle2, AlertOctagon, MinusCircle } from 'lucide-react';
+import { Snowflake, Thermometer, Zap, Activity, AlertTriangle, CheckCircle2, AlertOctagon, MinusCircle, Cog } from 'lucide-react';
 import { Sparkline } from '../../components/charts/Sparkline';
 import { torqueToIq } from '../../simulation/math/vaporCycle';
+import { sampleComplianceParams } from '../../simulation/math/mechanicalCompliance';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useBenchComplianceStore, type ComplianceKey } from '../../store/benchComplianceStore';
 import { formatNumber } from '../../utils/format';
 import { useBenchCycle } from './useBenchCycle';
 import { useCycleHistory } from './useCycleHistory';
 import { useI18n } from '../../i18n/useI18n';
+
+// 4 个传动预设的简短中文显示名（key 与 sampleComplianceParams 一致）
+const COMPLIANCE_PRESET_LABELS: Record<ComplianceKey, string> = {
+  directDriveCompressor: '直驱压缩机',
+  industrialFanBelt: '工业风机皮带',
+  roboticJoint: '谐波减速器',
+  agedDrive: '老化传动',
+};
 
 /**
  * 台架顶部常显的 KPI 条：4 个核心指标（COP / 排气温度 / 制冷量 / 所需 Iq）
@@ -14,6 +24,10 @@ import { useI18n } from '../../i18n/useI18n';
 export function BenchKpiStrip() {
   const motor = useSimulationStore((s) => s.motorBasics);
   const result = useBenchCycle();
+  const mechEnabled = useBenchComplianceStore((s) => s.enabled);
+  const mechPreset = useBenchComplianceStore((s) => s.preset);
+  const setMechPreset = useBenchComplianceStore((s) => s.setPreset);
+  const toggleMech = useBenchComplianceStore((s) => s.toggleEnabled);
   const { t } = useI18n();
 
   const cop = result.cop;
@@ -29,7 +43,21 @@ export function BenchKpiStrip() {
   const IqStatus = Math.abs(Iq) <= motor.ratedCurrent ? 'good' : 'bad';
   const QcStatus = Qc >= 1 ? 'good' : Qc >= 0.3 ? 'warn' : 'bad';
 
+  // 瞬态扭矩超调比：peak / 稳态。> 1.5 警告，> 2.0 危险（典型反液击工况下的振铃峰值）
+  const mech = result.mechCompliance;
+  const overshootRatio = mech && result.torqueLoad > 1e-3
+    ? mech.peakTorqueNm / result.torqueLoad
+    : 0;
+  const mechStatus = !mech ? 'good' : overshootRatio < 1.5 ? 'good' : overshootRatio < 2.0 ? 'warn' : 'bad';
+  const mechToneClass =
+    mechStatus === 'good'
+      ? 'border-accent-measure/40 bg-accent-measure/[0.04] text-accent-measure'
+      : mechStatus === 'warn'
+      ? 'border-accent-warn/40 bg-accent-warn/[0.04] text-accent-warn'
+      : 'border-accent-fault/40 bg-accent-fault/[0.04] text-accent-fault';
+
   return (
+    <div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <KpiTile
         icon={<CheckCircle2 className="h-3.5 w-3.5" />}
@@ -71,6 +99,60 @@ export function BenchKpiStrip() {
         history={h.Iq}
         hint={Math.abs(Iq) > motor.ratedCurrent ? t('refrigerationBench.hintIqOver') : `${((Math.abs(Iq) / motor.ratedCurrent) * 100).toFixed(0)}% ${t('refrigerationBench.hintIqRatedSuffix')}`}
       />
+    </div>
+
+    {/* 机械传动柔性条：开关 + 4 预设 + 反液击瞬态扭矩峰值 + 共振频率。
+        关闭态保持最简（仅开关 + 提示），让既有 4 KPI 视觉重心不被夺。 */}
+    <div className={`mt-2 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5 text-caption ${
+      mechEnabled ? mechToneClass : 'border-line-subtle bg-bg-surface text-ink-muted'
+    }`}>
+      <span className="flex items-center gap-1.5">
+        <Cog className={`h-3.5 w-3.5 ${mechEnabled ? '' : 'text-ink-muted'}`} aria-hidden="true" />
+        机械柔性
+      </span>
+      <button
+        type="button"
+        onClick={toggleMech}
+        className={`rounded border px-1.5 py-[1px] text-[10px] transition-colors ${
+          mechEnabled
+            ? 'border-current/60 bg-current/10'
+            : 'border-line bg-bg-elev hover:text-ink'
+        }`}
+        title="开启后用 stepCompliance 仿真反液击瞬态：稳态扭矩 → 5ms 翻倍脉冲 → 看轴扭簧峰值"
+      >
+        {mechEnabled ? '已启用' : '关闭'}
+      </button>
+      {mechEnabled && (
+        <>
+          <label className="flex items-center gap-1.5">
+            <span>传动</span>
+            <select
+              value={mechPreset}
+              onChange={(e) => setMechPreset(e.target.value as ComplianceKey)}
+              className="rounded border border-line bg-bg-elev px-1.5 py-[1px] text-[11px] text-ink-primary focus:border-accent-primary focus:outline-none"
+              aria-label="选择传动预设"
+            >
+              {(Object.keys(sampleComplianceParams) as ComplianceKey[]).map((k) => (
+                <option key={k} value={k}>{COMPLIANCE_PRESET_LABELS[k]}</option>
+              ))}
+            </select>
+          </label>
+          {mech && (
+            <>
+              <span className="font-mono">
+                瞬态峰值 <span className="font-bold">{formatNumber(mech.peakTorqueNm, 2)}</span> N·m
+                <span className="ml-1 text-[10px] opacity-75">
+                  （×{formatNumber(overshootRatio, 2)} 稳态）
+                </span>
+              </span>
+              <span className="font-mono text-[10px] opacity-75">
+                共振 {formatNumber(mech.resonanceHz, 0)} Hz · 反共振 {formatNumber(mech.antiResonanceHz, 0)} Hz
+              </span>
+            </>
+          )}
+        </>
+      )}
+    </div>
     </div>
   );
 }
