@@ -15,6 +15,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { SaturationMapCard } from './SaturationMapCard';
 import { CoggingTorqueCard } from './CoggingTorqueCard';
 import { ModelComparisonCard } from './ModelComparisonCard';
+import { ThermalDeratingCard } from './ThermalDeratingCard';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -172,6 +173,8 @@ export function MotorBasicsModule() {
           {/* round-10 物理真实化：饱和电感 + 齿槽/BEMF 谐波 */}
           <SaturationMapCard />
           <CoggingTorqueCard />
+          {/* round-21 温度对 Rs / ψf 影响 + 退磁告警 + 一阶热爬升 */}
+          <ThermalDeratingCard />
           {/* round-11 高保真 A/B 对比 */}
           <ModelComparisonCard />
         </>
