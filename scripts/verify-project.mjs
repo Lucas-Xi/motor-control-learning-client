@@ -138,6 +138,9 @@ const requiredFiles = [
   // round-22 齿槽前馈补偿（CT-FFC）：从扰动到对策
   'src/simulation/math/coggingCompensation.ts',
   'src/modules/control-loops/CoggingFeedforwardCard.tsx',
+  // round-23 反共振陷波抑制：biquad notch × mechanicalCompliance 闭环
+  'src/simulation/math/resonanceSuppression.ts',
+  'src/modules/control-loops/ResonanceNotchCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

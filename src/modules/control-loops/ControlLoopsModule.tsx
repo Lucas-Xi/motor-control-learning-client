@@ -15,6 +15,7 @@ import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
 import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 import { MechanicalResonanceCard } from './MechanicalResonanceCard';
 import { CoggingFeedforwardCard } from './CoggingFeedforwardCard';
+import { ResonanceNotchCard } from './ResonanceNotchCard';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -130,6 +131,8 @@ function Probe() {
       <MechanicalResonanceCard />
       {/* round-22 齿槽前馈补偿（CT-FFC）：现象 → 对策 */}
       <CoggingFeedforwardCard />
+      {/* round-23 反共振陷波抑制：与 MechanicalResonanceCard 形成扰动→对策闭环 */}
+      <ResonanceNotchCard />
     </>
   );
 }
