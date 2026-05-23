@@ -128,6 +128,11 @@ const requiredFiles = [
   'src/modules/refrigeration-bench/TwoStageCycleCard.tsx',
   // round-17 HX 端到端接入：useBenchCycle 真用 HX 约束推 Tc/Te
   'src/store/benchHxStore.ts',
+  // round-19 物理集成收尾：TwoStage P-h 覆盖 + 机械柔性瞬态
+  'src/store/benchTwoStageStore.ts',
+  'src/store/benchComplianceStore.ts',
+  // round-20 friction.ts 接入：Stribeck 摩擦谷可视化
+  'src/modules/startup-statemachine/FrictionCurveCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

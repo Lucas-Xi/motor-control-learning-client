@@ -10,6 +10,7 @@ import type { StartupState } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { SerialCompareStartupCard } from './SerialCompareStartupCard';
+import { FrictionCurveCard } from './FrictionCurveCard';
 
 const STATES: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak'];
 
@@ -160,6 +161,7 @@ export function StartupStateMachineModule() {
         <div className="space-y-3">
           <StateMachineDiagram />
           <SpeedChart />
+          <FrictionCurveCard />
         </div>
       }
       probe={<Probe />}
