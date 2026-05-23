@@ -19,6 +19,8 @@ export interface BenchHxState {
   airFlowCondM3perS: number;
   indoorC: number;
   outdoorC: number;
+  /** HD 模式：BenchScope 实测通道叠 ADC 量化 + INL + 高斯噪声 + 偏置，模拟真实采样链 */
+  sensorNoise: boolean;
   setEnabled: (v: boolean) => void;
   setUaEvap: (v: number) => void;
   setAirFlowEvap: (v: number) => void;
@@ -26,6 +28,7 @@ export interface BenchHxState {
   setAirFlowCond: (v: number) => void;
   setIndoor: (v: number) => void;
   setOutdoor: (v: number) => void;
+  setSensorNoise: (v: boolean) => void;
 }
 
 export const useBenchHxStore = create<BenchHxState>()(
@@ -38,6 +41,7 @@ export const useBenchHxStore = create<BenchHxState>()(
       airFlowCondM3perS: sampleHeatExchangers.homeCond15HP.airFlowM3perS,
       indoorC: 27,
       outdoorC: 35,
+      sensorNoise: false,
       setEnabled: (enabled) => set({ enabled }),
       setUaEvap: (uaEvapKWperK) => set({ uaEvapKWperK }),
       setAirFlowEvap: (airFlowEvapM3perS) => set({ airFlowEvapM3perS }),
@@ -45,6 +49,7 @@ export const useBenchHxStore = create<BenchHxState>()(
       setAirFlowCond: (airFlowCondM3perS) => set({ airFlowCondM3perS }),
       setIndoor: (indoorC) => set({ indoorC }),
       setOutdoor: (outdoorC) => set({ outdoorC }),
+      setSensorNoise: (sensorNoise) => set({ sensorNoise }),
     }),
     { name: 'compressor-bench-hx' },
   ),
