@@ -14,6 +14,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
 import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 import { MechanicalResonanceCard } from './MechanicalResonanceCard';
+import { CoggingFeedforwardCard } from './CoggingFeedforwardCard';
 
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
@@ -127,6 +128,8 @@ function Probe() {
       <IronLossBreakdownCard />
       {/* round-15 接入 UI：双质量传动共振 + Kp 上限 */}
       <MechanicalResonanceCard />
+      {/* round-22 齿槽前馈补偿（CT-FFC）：现象 → 对策 */}
+      <CoggingFeedforwardCard />
     </>
   );
 }

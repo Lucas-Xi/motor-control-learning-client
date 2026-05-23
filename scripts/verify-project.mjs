@@ -135,6 +135,9 @@ const requiredFiles = [
   'src/modules/startup-statemachine/FrictionCurveCard.tsx',
   // round-21 thermalRsFlux.ts 接入：温度退磁 + Rs(T) PTC + ψf(T) NTC + 一阶热爬升
   'src/modules/motor-basics/ThermalDeratingCard.tsx',
+  // round-22 齿槽前馈补偿（CT-FFC）：从扰动到对策
+  'src/simulation/math/coggingCompensation.ts',
+  'src/modules/control-loops/CoggingFeedforwardCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
