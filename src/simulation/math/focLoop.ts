@@ -1,7 +1,7 @@
 import { clamp } from '../../utils/clamp';
 import type { FOCParams } from '../engine/types';
 import { saturatedInductances, sampleSaturationParams } from './saturation';
-import { coggingTorque, sampleCoggingParams } from './cogging';
+import { coggingTorque, sampleCoggingParams, defaultBemfHarmonics } from './cogging';
 import { compensateForTemperature } from './thermalRsFlux';
 import { adcMeasurement, defaultAdcParams } from './sensorNoise';
 
@@ -135,8 +135,23 @@ export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOption
       Ld = sat.ld;
       Lq = sat.lq;
     }
+    // HD 模式：反电动势含 5/7/11/13 次空间谐波（cogging.ts::defaultBemfHarmonics）。
+    // 非基波分量被 Park 投影后变成 dq 上的 6 倍频 / 12 倍频纹波 → 学员一切 HD 立刻看到
+    // Iq 阶跃响应上叠了 ~6×电频率 的纹波，与真实电机实测一致。
+    // 数学上：基波 sin(θ_e) 在 dq 旋转坐标下退化为 DC；5/7 次变成 6 倍频；11/13 变 12 倍频。
+    // 本仿真把谐波幅值（相对基波）按 defaultBemfHarmonics 累加到反电动势耦合项上。
+    let bemfTerm = omega * psiF;
+    if (hd) {
+      const thetaElec = omega * step * DT;
+      let harmonicSum = 0;
+      for (const h of defaultBemfHarmonics) {
+        if (h.order === 1) continue;
+        harmonicSum += h.coef * Math.cos(h.order * thetaElec);
+      }
+      bemfTerm = omega * psiF * (1 + harmonicSum);
+    }
     const didDt = (vdReal - rs * id + omega * Lq * iq) / Ld;
-    const diqDt = (vqReal - rs * iq - omega * Ld * id - omega * psiF) / Lq;
+    const diqDt = (vqReal - rs * iq - omega * Ld * id - bemfTerm) / Lq;
     id += didDt * DT;
     iq += diqDt * DT;
 
