@@ -36,10 +36,7 @@ jobs:
           path: |
             ~/.npm
             node_modules
-          key: ${{ runner.os }}-a11y-node22-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-a11y-node22-
-            ${{ runner.os }}-node22-
+          key: ${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
 
       - name: Install deps / 安装依赖
         run: npm ci

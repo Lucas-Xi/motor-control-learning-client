@@ -11,8 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用命令
 
 ```bash
-npm run dev              # Vite 开发服务器（http://localhost:5173，host 0.0.0.0）
-npm run build            # tsc -b 后跑 vite build；CI / 发布前必须通过
+npm run dev              # Vite 开发服务器（http://127.0.0.1:5173）
+npm run build            # vite build（CI / 发布前必跑）
+npm run typecheck        # tsc -b --noEmit 独立类型检查
+npm run test             # vitest run（全部 73 个文件 748 个测试）
+npm run test:watch       # vitest watch 模式
+npm run coverage         # vitest run --coverage（含 v8 覆盖率报告）
 npm run verify           # node 脚本，检查必须文件齐全 + 关键 import 存在
 npm run e2e              # Playwright 冒烟测试（自动起 dev server，复用已有实例）
 npm run e2e:optional     # Playwright 未装时安全跳过的兜底入口

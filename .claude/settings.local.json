@@ -33,7 +33,16 @@
       "Bash(git init *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(grep -v \"^?? \\\\\\\\.playwright-mcp\")",
+      "Bash(grep -v \"^?? \\\\\\\\.claude\")",
+      "Bash(npx vitest *)",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(git reset *)"
     ]
   }
 }
