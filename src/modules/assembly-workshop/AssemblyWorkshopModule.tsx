@@ -7,6 +7,9 @@ import { CalibrationDocExporter } from '../../components/workshop/CalibrationDoc
 import { SerialBenchPanel } from '../../components/lab/SerialBenchPanel';
 import { ShareSnapshotPanel } from '../../components/share/ShareSnapshotPanel';
 import { Tabs } from '../../components/ui/Tabs';
+import { MotorAssembly3D } from '../../components/three/MotorAssembly3D';
+import { RotorEccentricityCard } from './RotorEccentricityCard';
+import { WindingDiagramCard } from './WindingDiagramCard';
 
 type WorkshopTab = 'workshop' | 'serial';
 
@@ -39,7 +42,12 @@ export function AssemblyWorkshopModule() {
       />
       {tab === 'workshop' ? (
         <>
+          <MotorAssembly3D />
           <AssemblyWorkshop embedded />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <RotorEccentricityCard />
+            <WindingDiagramCard />
+          </div>
           <SolutionReplay />
           <SnapshotDiffPanel />
           <ShareSnapshotPanel />

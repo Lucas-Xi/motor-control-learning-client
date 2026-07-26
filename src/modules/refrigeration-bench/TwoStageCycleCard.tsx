@@ -24,7 +24,7 @@ export function TwoStageCycleCard() {
   const [Te, setTe] = useState(refrig.Te ?? -10);
   const [Tc, setTc] = useState(refrig.Tc ?? 50);
   const [autoPi, setAutoPi] = useState(true);
-  const [Pi, setPi] = useState<number | null>(null);
+  const [Pi, _setPi] = useState<number | null>(null);
 
   // 跑两次：单级（用 vaporCycle）vs 两级
   const single = useMemo(

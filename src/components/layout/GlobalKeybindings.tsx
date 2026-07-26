@@ -161,6 +161,17 @@ export function GlobalKeybindings() {
         description: '打开 / 关闭本地教学助手',
         handler: () => useAssistantStore.getState().toggleOpen(),
       },
+      // —— 报告 ——
+      {
+        key: 'p',
+        category: '运行控制',
+        description: '打印当前模块（Ctrl+P）',
+        meta: ['ctrl'],
+        handler: (e) => {
+          e.preventDefault();
+          window.print();
+        },
+      },
     ];
     return list;
   }, [setActiveModule, setRunning, step, resetTime, toggleFullScreen, setMode, cycleTheme]);

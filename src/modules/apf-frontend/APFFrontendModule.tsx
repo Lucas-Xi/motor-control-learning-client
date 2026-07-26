@@ -6,6 +6,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { DualLoopBlockDiagram } from './DualLoopBlockDiagram';
 import { PfcWaveformCard } from './PfcWaveformCard';
 import { PfcSpectrumCard } from './PfcSpectrumCard';
+import { PfcCompareSummaryCard } from './PfcCompareSummaryCard';
 import { PfcControlTuningCard } from './PfcControlTuningCard';
 import { SerialComparePFCCard } from './SerialComparePFCCard';
 
@@ -53,6 +54,7 @@ export function APFFrontendModule() {
       }
       probe={
         <>
+          <PfcCompareSummaryCard result={result} />
           <PfcSpectrumCard result={result} />
           <PfcControlTuningCard />
           <SerialComparePFCCard />

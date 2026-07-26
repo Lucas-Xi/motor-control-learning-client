@@ -3,6 +3,7 @@ import { AlertTriangle, BatteryCharging, Zap } from 'lucide-react';
 import { useCallback, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react';
 import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
+import { CurrentLimitSpace3D } from '../../components/three/CurrentLimitSpace3D';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
@@ -179,14 +180,23 @@ function Primary() {
       density="compact"
       action={<FidelityBadge level="simplified" hint={t('weakField.fidelityHint')} />}
     >
-      <LimitMap
-        id={params.id}
-        iq={params.iq}
-        currentLimit={params.currentLimit}
-        voltageRatio={voltageRatio}
-        saturated={voltage.saturated}
-        onPointChange={handlePointChange}
-      />
+      <div className="grid gap-3 xl:grid-cols-[0.95fr_1.05fr]">
+        <CurrentLimitSpace3D
+          id={params.id}
+          iq={params.iq}
+          currentLimit={params.currentLimit}
+          voltageRatio={voltageRatio}
+          saturated={voltage.saturated}
+        />
+        <LimitMap
+          id={params.id}
+          iq={params.iq}
+          currentLimit={params.currentLimit}
+          voltageRatio={voltageRatio}
+          saturated={voltage.saturated}
+          onPointChange={handlePointChange}
+        />
+      </div>
     </Card>
   );
 }

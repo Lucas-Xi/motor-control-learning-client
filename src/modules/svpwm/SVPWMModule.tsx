@@ -1,5 +1,6 @@
 import { PWMChart } from '../../components/charts/PWMChart';
 import { SpaceVectorHexagon } from '../../components/charts/SpaceVectorHexagon';
+import { SvpwmHexagon3D } from '../../components/three/SvpwmHexagon3D';
 import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
@@ -41,17 +42,26 @@ function Primary() {
       <div className="flex justify-end">
         <FidelityBadge level="exact" hint={t('svpwm.fidelityHint')} />
       </div>
-      <SpaceVectorHexagon
-        uAlpha={svpwm.uAlpha}
-        uBeta={svpwm.uBeta}
-        uDc={svpwm.uDc}
-        result={result}
-        onVectorChange={(uAlpha, uBeta) => {
-          const electricalDeg = ((Math.atan2(uBeta, uAlpha) * 180) / Math.PI + 360) % 360;
-          const modulation = (Math.sqrt(3) * Math.hypot(uAlpha, uBeta)) / Math.max(1, svpwm.uDc);
-          updateSvpwm({ uAlpha, uBeta, electricalDeg, modulation });
-        }}
-      />
+      <div className="grid gap-3 xl:grid-cols-[0.95fr_1.05fr]">
+        <SvpwmHexagon3D
+          uAlpha={svpwm.uAlpha}
+          uBeta={svpwm.uBeta}
+          uDc={svpwm.uDc}
+          sector={result.sector}
+          saturated={result.saturated}
+        />
+        <SpaceVectorHexagon
+          uAlpha={svpwm.uAlpha}
+          uBeta={svpwm.uBeta}
+          uDc={svpwm.uDc}
+          result={result}
+          onVectorChange={(uAlpha, uBeta) => {
+            const electricalDeg = ((Math.atan2(uBeta, uAlpha) * 180) / Math.PI + 360) % 360;
+            const modulation = (Math.sqrt(3) * Math.hypot(uAlpha, uBeta)) / Math.max(1, svpwm.uDc);
+            updateSvpwm({ uAlpha, uBeta, electricalDeg, modulation });
+          }}
+        />
+      </div>
     </div>
   );
 }

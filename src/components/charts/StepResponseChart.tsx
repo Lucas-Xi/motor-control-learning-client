@@ -10,10 +10,10 @@ interface Props {
   options?: PIDSimulationOptions;
 }
 
-export function StepResponseChart({ gains, target, sampleMs = 2, options }: Props) {
+export function StepResponseChart({ gains, target, sampleMs = 2 }: Props) {
   const data = useMemo(
-    () => simulatePidStepResponse(gains, target, sampleMs / 1000, 1.2, options),
-    [gains.kp, gains.ki, gains.kd, target, sampleMs, options?.limit, options?.antiWindup, options?.loadDisturbance],
+    () => simulatePidStepResponse(gains, target, sampleMs / 1000, 1.2),
+    [gains.kp, gains.ki, gains.kd, target, sampleMs],
   );
   return (
     <div className="h-52">

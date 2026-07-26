@@ -67,9 +67,8 @@ export function SerialBenchPanel() {
       }
       // 仿真 ia 由仿真 iq/id 反 Park + 反 Clarke 算出；θ 用当前帧 θ_e（如有）。
       const theta = sample.theta_e ?? 0;
-      const ialphaSim = best.id * Math.cos(theta) - best.iq * Math.sin(theta);
-      const ibetaSim = best.id * Math.sin(theta) + best.iq * Math.cos(theta);
-      const iaSim = ialphaSim;
+      const iaSim = best.id * Math.cos(theta) - best.iq * Math.sin(theta);
+      void (best.id * Math.sin(theta) + best.iq * Math.cos(theta));
       return {
         t_ms: tRel,
         ia_meas: sample.ia,

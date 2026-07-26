@@ -73,7 +73,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
     setBusy(true);
     // 同步计算就够了（300 点 simulateSpeedLoop ≈ <10ms）；用 setTimeout 0 让按钮态可见
     setTimeout(() => {
-      setResult(runSimulation({ compressor, inverter, strategy, load, pfc, separator }));
+      setResult(runSimulation({ compressor, inverter, load, pfc, separator }));
       setBusy(false);
     }, 16);
   };
@@ -154,7 +154,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
 const TD_LIMIT: Record<string, number> = { R32: 105, R410A: 110, R134a: 95 };
 const TD_WARN: Record<string, number> = { R32: 90, R410A: 95, R134a: 80 };
 
-function runSimulation({ compressor, inverter, strategy, load, pfc, separator }: Props): SimResult {
+function runSimulation({ compressor, inverter, load, pfc, separator }: Omit<Props, 'strategy'>): SimResult {
   // —— 1) 用 simulateSpeedLoop 跑 3s 速度环（外环 PI + dq 简化）—— 这是 math/motorModel.ts 的纯函数
   //    它的 dt=1ms，每 4 步 push 一个点（即 4ms 一个样本），3s = 750 个样本，足够。
   //    targetRpm 用工况；负载扭矩用 simulateCycle 的 torqueLoad 近似（先稳态算一次以确定）。

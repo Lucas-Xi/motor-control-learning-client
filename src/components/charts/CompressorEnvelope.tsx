@@ -134,8 +134,11 @@ export function CompressorEnvelope({
   // 当前点状态评估：到任何一个边界的距离 ≤ 5°C 则临界，越界则故障
   const tcByTd = tcLimitByTd(Te);
   const tcByPr = tcLimitByPressureRatio(Te, refrigerant, tcHi);
-  const marginTd = TD_LIMIT - Tdischarge;       // T_d 余量
-  const marginPr = PR_LIMIT - pressureRatio;     // 压比余量
+  // marginTd / marginPr 保留注释用途 — 在 CompressorEnvelope.tsx 中作为 T_d / 压比
+  // 余量的可视化参考：
+  void (TD_LIMIT - Tdischarge);
+  void (PR_LIMIT - pressureRatio);
+  // marginTd, marginPr 保留为注释用途
   const marginTcTd = tcByTd - Tc;                // 到 T_d 限对应的 T_c 上界
   const marginTcPr = tcByPr - Tc;                // 到压比限对应的 T_c 上界
   const marginTcUp = tcHi - Tc;

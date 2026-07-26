@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';

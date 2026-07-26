@@ -389,7 +389,6 @@ function simulateAssembly(
   // 用 ref-style wrapper 防止 TS 把 state 收窄为字面量 'align'（advanceState 外部赋值不会被 TS 看到）
   const stateRef = { current: 'align' as AssemblyState };
   let stateIdx = 0;
-  let stateStart = 0;
   let rpm = 0;
   let hadFault = false;
   let rise50PctS = Infinity;
@@ -398,7 +397,6 @@ function simulateAssembly(
 
   const advanceState = (t: number, nextState: AssemblyState) => {
     stateRef.current = nextState;
-    stateStart = t;
     transitions.push({ t, state: nextState, label: STATE_LABEL[nextState] });
   };
 

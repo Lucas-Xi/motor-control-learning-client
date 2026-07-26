@@ -4,7 +4,6 @@ import {
   type ChallengeComparator,
   type ChallengeDefinition,
   type EvaluatorContext,
-  checkComparator,
   formatTarget,
   getChallengesFor,
 } from '../../content/challenges';

@@ -15,7 +15,7 @@
  */
 
 import { calculateSvpwm } from '../../simulation/math/svpwm';
-import { MCU_TEMPLATES, guessMcuFamily } from './mcuTemplate';
+import { MCU_TEMPLATES } from './mcuTemplate';
 import {
   FAULT_ENUM_LIST,
   STARTUP_STATE_LIST,

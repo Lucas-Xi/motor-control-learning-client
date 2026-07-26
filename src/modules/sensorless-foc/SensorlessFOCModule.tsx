@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
+import { SensorlessAngleScene3D } from '../../components/three/SensorlessAngleScene3D';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { simulateSMO } from '../../simulation/math/smo';
@@ -46,6 +47,7 @@ function Primary() {
   const toneClass = tone === 'fault' ? 'text-accent-fault' : tone === 'measure' ? 'text-accent-measure' : 'text-accent-warn';
   const toneBgClass = tone === 'fault' ? 'bg-accent-fault/10 border-accent-fault/40' : tone === 'measure' ? 'bg-accent-measure/10 border-accent-measure/40' : 'bg-accent-warn/10 border-accent-warn/40';
   const status = failing ? t('sensorlessFoc.statusLost') : healthy ? t('sensorlessFoc.statusLocked') : t('sensorlessFoc.statusMargin');
+  const last = samples[samples.length - 1] ?? samples[0];
   return (
     <Card
       title={t('sensorlessFoc.primaryTitle')}
@@ -60,7 +62,14 @@ function Primary() {
         </div>
       }
     >
-      <div className="h-72">
+      {last && (
+        <SensorlessAngleScene3D
+          trueDeg={last.thetaTrue}
+          estimatedDeg={last.thetaEst}
+          errorDeg={last.errorDeg}
+        />
+      )}
+      <div className="mt-3 h-72">
         <SafeResponsiveContainer>
           <LineChart data={samples} margin={{ top: 8, right: 12, bottom: 0, left: -10 }}>
             <CartesianGrid stroke="rgba(231,243,255,0.06)" strokeDasharray="3 6" />

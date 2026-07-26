@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { calculateSvpwm } from '../../simulation/math/svpwm';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
 import { BenchScope } from '../../modules/refrigeration-bench/BenchScope';
+import { usePersistentState } from '../../utils/usePersistentState';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useI18n } from '../../i18n/useI18n';
 import { Card } from '../ui/Card';
@@ -91,7 +92,6 @@ function PIDBranch() {
       gains={{ kp: pid.kp, ki: pid.ki, kd: pid.kd }}
       target={pid.target}
       sampleMs={pid.sampleMs}
-      options={{ limit: pid.limit, antiWindup: pid.antiWindup, loadDisturbance: pid.loadDisturbance }}
     />
   );
 }
@@ -156,7 +156,7 @@ export function WaveformPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
   const { t } = useI18n();
   // 默认折叠：节约移动端首屏空间。用户主动点开后保持展开。
-  const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = usePersistentState('waveform.mobileExpanded', false);
   // 模块切换时回到折叠态，避免上一个模块用户展开后挤压新模块
   useEffect(() => {
     setMobileExpanded(false);

@@ -7,9 +7,6 @@ import {
   type CurriculumTrack,
 } from '../../content/curriculum';
 import {
-  getCompletionRatio,
-  getNextCheckpoint,
-  getProgress,
   useCurriculumStore,
 } from '../../store/curriculumStore';
 import { useSimulationStore } from '../../store/simulationStore';

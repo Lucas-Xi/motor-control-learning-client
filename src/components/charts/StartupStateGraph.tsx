@@ -39,7 +39,7 @@ const VB_W = 720;
 const VB_H = 360;
 const ROW_Y = 130;        // 主行节点中心 y
 
-const ORDER: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak'];
+const ORDER: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak', 'fault'];
 
 /** 节点中心点坐标 */
 function nodeCenter(state: StartupState): { x: number; y: number } {
@@ -60,6 +60,7 @@ const NODE_NAME: Record<StartupState, string> = {
   hfi: 'HFI',
   bemf: 'BEMF',
   fieldweak: '弱磁',
+  fault: '故障',
 };
 
 /** 节点关键动作（旁注信息块用） */
@@ -71,6 +72,7 @@ const NODE_ACTION: Record<StartupState, string> = {
   hfi: '高频注入解调出转子角度',
   bemf: '反电动势观测器接管角度',
   fieldweak: '注入负 Id 削弱磁链突破电压限',
+  fault: 'PWM 关断 / 停机保护',
 };
 
 /** 主路径转移条件（每相邻一对一条），label 中的占位符在 render 时替换 */

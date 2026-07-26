@@ -126,6 +126,7 @@ export function EnergyFlowSankey({
   const pfcOutKw = gridPowerKw * pfcEfficiency;
   const mechPowerKw = pfcOutKw * focEfficiency;
   const compressorWorkKw = mechPowerKw * volumetricEff;
+  void isentropicEff; // 保留用于注释/未来扩展
 
   // 损耗
   const pfcLossKw = Math.max(0, gridPowerKw - pfcOutKw);

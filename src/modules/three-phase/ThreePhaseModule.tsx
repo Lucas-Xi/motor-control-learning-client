@@ -3,7 +3,8 @@ import { SimulationEngine } from '../../simulation/engine/SimulationEngine';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { VectorPlane } from '../../components/charts/VectorPlane';
-import { StatorField2D } from '../../components/charts/StatorField2D';
+import { MagneticField3D } from '../../components/three/MagneticField3D';
+import { ThreePhaseSpectrumCard } from '../../components/charts/ThreePhaseSpectrumCard';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -28,13 +29,10 @@ function Primary() {
       density="compact"
       action={<FidelityBadge level="exact" hint={t('threePhase.fidelityHint')} />}
     >
-      <StatorField2D
-        ia={snapshot.abc.ia}
-        ib={snapshot.abc.ib}
-        ic={snapshot.abc.ic}
+      <MagneticField3D
+        angle={Math.atan2(snapshot.alphaBeta.beta, snapshot.alphaBeta.alpha)}
         amplitude={threePhase.amplitude}
-        alpha={snapshot.alphaBeta.alpha}
-        beta={snapshot.alphaBeta.beta}
+        phaseCurrents={snapshot.abc}
       />
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{t('threePhase.primaryNote')}</p>
     </Card>
@@ -54,6 +52,7 @@ function Probe() {
   }, [threePhase.frequency, time, updateThreePhase]);
   return (
     <>
+      <ThreePhaseSpectrumCard />
       <Card title={t('threePhase.alphaBetaTitle')} eyebrow={t('threePhase.alphaBetaEyebrow')} density="compact">
         <VectorPlane alpha={snapshot.alphaBeta.alpha} beta={snapshot.alphaBeta.beta} title={t('threePhase.vectorPlaneHint')} onVectorChange={handleVectorChange} />
         <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{t('threePhase.alphaBetaNote')}</p>

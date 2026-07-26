@@ -115,7 +115,7 @@ export function SystemSchematic({
         )}
       </div>
 
-      <svg viewBox="0 0 720 420" className="w-full" role="img" aria-label="整机系统原理图">
+      <svg viewBox="0 0 720 420" className="w-full" aria-label="整机系统原理图">
         <defs>
           {/* 箭头 marker */}
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">

@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Line, LineChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { simulatePfcCycle } from '../../simulation/math/boostPfc';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
+import { usePersistentState } from '../../utils/usePersistentState';
 
 /**
  * 双环整定卡：
@@ -59,7 +60,7 @@ function SliderRow({ label, value, min, max, step, unit = '', hint, onChange }: 
 export function PfcControlTuningCard() {
   const apf = useSimulationStore((s) => s.apf);
   const updateApf = useSimulationStore((s) => s.updateApf);
-  const [showStep, setShowStep] = useState(true);
+  const [showStep, setShowStep] = usePersistentState('apf.showStep', true);
 
   // 跑一次"带阶跃"的仿真专门给本卡看
   const stepResp = useMemo(

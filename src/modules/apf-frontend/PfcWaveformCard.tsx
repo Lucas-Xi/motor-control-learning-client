@@ -3,7 +3,7 @@ import { Line, LineChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis, L
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
-import { simulatePfcCycle, type BoostPfcResult } from '../../simulation/math/boostPfc';
+import { type BoostPfcResult } from '../../simulation/math/boostPfc';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 

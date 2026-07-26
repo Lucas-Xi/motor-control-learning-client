@@ -10,7 +10,8 @@ interface Props {
 
 const SLOTS = 12;          // 教学用 12 槽固定（典型 12 槽 8 极 PMSM 配置）
 const PHASE_COLOR = ['#34d6ff', '#43f7b5', '#ffb84d'] as const;
-const PHASE_NAME = ['A', 'B', 'C'] as const;
+// PHASE_NAME 保留供未来扩展使用
+// const PHASE_NAME = ['A', 'B', 'C'] as const;
 
 /**
  * 电机径向剖面 2D 解剖图：

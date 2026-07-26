@@ -2,7 +2,8 @@ import { SimulationEngine } from '../../simulation/engine/SimulationEngine';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { VectorPlane } from '../../components/charts/VectorPlane';
-import { RotorFrame2D } from '../../components/charts/RotorFrame2D';
+import { RotorFluxScene } from '../../components/three/RotorFluxScene';
+import { DQWaveform } from '../../components/charts/DQWaveform';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -12,6 +13,8 @@ import { SerialCompareParkCard } from './SerialCompareParkCard';
 
 function Primary() {
   const park = useSimulationStore((s) => s.park);
+  const threePhase = useSimulationStore((s) => s.threePhase);
+  const cursorMs = useSimulationStore((s) => s.time);
   const snapshot = SimulationEngine.parkSnapshot(park);
   const { t } = useI18n();
   return (
@@ -19,13 +22,16 @@ function Primary() {
       <div className="flex justify-end px-1">
         <FidelityBadge level="exact" hint={t('parkTransform.fidelityHint')} />
       </div>
-      <RotorFrame2D
-        alpha={snapshot.alphaBeta.alpha}
-        beta={snapshot.alphaBeta.beta}
-        thetaRad={snapshot.theta}
+      <RotorFluxScene
+        theta={snapshot.theta}
         id={snapshot.dq.d}
         iq={snapshot.dq.q}
+        iAlpha={snapshot.alphaBeta.alpha}
+        iBeta={snapshot.alphaBeta.beta}
       />
+      <div className="h-44">
+        <DQWaveform params={threePhase} cursorMs={cursorMs} />
+      </div>
       <p className="px-1 text-caption leading-relaxed text-ink-secondary">{t('parkTransform.primaryNote')}</p>
     </div>
   );

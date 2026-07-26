@@ -403,7 +403,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
             type="button"
             onClick={() => {
               setReplyTo(node.entry.id);
-              setDraft((d) => ({
+              setDraft((_d) => ({
                 parameterPath: node.entry.parameterPath,
                 body: '',
                 suggestion: { enabled: false, newValue: '', reason: '' },

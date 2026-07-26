@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { exportAssemblyAsC, getMcuVendor } from '../assemblyExport';
 import {
   controlStrategies,
-  inverterPlatforms,
   liquidSeparators,
   loadConditions,
   pfcPlatforms,

@@ -9,6 +9,7 @@ import { simulateStartup, STATE_DESCRIPTIONS } from '../../simulation/math/start
 import type { StartupState } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
+import { ObserverTransitionCard } from '../../components/charts/ObserverTransitionCard';
 import { SerialCompareStartupCard } from './SerialCompareStartupCard';
 import { FrictionCurveCard } from './FrictionCurveCard';
 
@@ -149,6 +150,7 @@ function Probe() {
           <li><span className="text-accent-primary">fieldweak</span>：转速 &gt; 5000 rpm 时介入弱磁</li>
         </ul>
       </Card>
+      <ObserverTransitionCard />
       <SerialCompareStartupCard />
     </>
   );

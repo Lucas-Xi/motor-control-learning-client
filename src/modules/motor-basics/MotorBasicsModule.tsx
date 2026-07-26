@@ -14,6 +14,8 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { useI18n } from '../../i18n/useI18n';
 import { SaturationMapCard } from './SaturationMapCard';
 import { CoggingTorqueCard } from './CoggingTorqueCard';
+import { WindingConnectionCard } from './WindingConnectionCard';
+import { DemagnetizationCurveCard } from './DemagnetizationCurveCard';
 import { ModelComparisonCard } from './ModelComparisonCard';
 import { ThermalDeratingCard } from './ThermalDeratingCard';
 
@@ -171,10 +173,12 @@ export function MotorBasicsModule() {
         <>
           <Probe />
           {/* round-10 物理真实化：饱和电感 + 齿槽/BEMF 谐波 */}
+          <WindingConnectionCard />
           <SaturationMapCard />
           <CoggingTorqueCard />
           {/* round-21 温度对 Rs / ψf 影响 + 退磁告警 + 一阶热爬升 */}
           <ThermalDeratingCard />
+          <DemagnetizationCurveCard />
           {/* round-11 高保真 A/B 对比 */}
           <ModelComparisonCard />
         </>

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ModuleRenderer } from '../../modules/ModuleRenderer';
 import { moduleMetas } from '../../simulation/engine/presets';
+import type { ModuleMeta } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
 import { GuidedExperimentBar } from './GuidedExperimentBar';
@@ -8,12 +9,25 @@ import { moduleSwap } from '../../utils/motion';
 import { CurriculumPanel } from '../curriculum/CurriculumPanel';
 import { InsightsView } from '../insights/InsightsView';
 
+const ASSEMBLY_MODULE_META: ModuleMeta = {
+  id: 'assembly-workshop',
+  title: '整机搭建工作台',
+  shortTitle: '搭建台',
+  subtitle: '把电机、逆变器、PFC、控制策略与制冷台架串成完整系统',
+  stage: '17',
+  accent: '#43f7b5',
+};
+
+function getPanelMeta(moduleId: ModuleMeta['id']) {
+  return moduleMetas.find((item) => item.id === moduleId) ?? ASSEMBLY_MODULE_META;
+}
+
 export function SimulationPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
   const mode = useSimulationStore((state) => state.mode);
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
-  const meta = moduleMetas.find((item) => item.id === activeModule)!;
+  const meta = getPanelMeta(activeModule);
   // currentView: 'module' | 'curriculum' | 'insights'
   // 三种顶层视图互斥；仅顶层 if 决定渲染哪一支，不破坏现有 16+1 模块渲染。
   if (simPanelView === 'curriculum') {

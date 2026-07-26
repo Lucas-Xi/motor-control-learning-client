@@ -2,6 +2,8 @@ import { SimulationEngine } from '../../simulation/engine/SimulationEngine';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { VectorPlane } from '../../components/charts/VectorPlane';
+import { AlphaBetaProjection3D } from '../../components/three/AlphaBetaProjection3D';
+import { ClarkeAlphaBetaWaveform } from '../../components/charts/ClarkeAlphaBetaWaveform';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -29,19 +31,31 @@ function Primary() {
       density="compact"
       action={<FidelityBadge level="exact" hint={t('clarkeTransform.fidelityHint')} />}
     >
-      <VectorPlane
-        alpha={snapshot.alphaBeta.alpha}
-        beta={snapshot.alphaBeta.beta}
-        title={t('clarkeTransform.vectorPlaneHint')}
-        max={8}
-        onVectorChange={handleVectorChange}
-      />
+      <div className="space-y-3">
+        <AlphaBetaProjection3D
+          ia={snapshot.abc.ia}
+          ib={snapshot.abc.ib}
+          ic={snapshot.abc.ic}
+          alpha={snapshot.alphaBeta.alpha}
+          beta={snapshot.alphaBeta.beta}
+          amplitude={clarke.amplitude}
+        />
+        <VectorPlane
+          alpha={snapshot.alphaBeta.alpha}
+          beta={snapshot.alphaBeta.beta}
+          title={t('clarkeTransform.vectorPlaneHint')}
+          max={8}
+          onVectorChange={handleVectorChange}
+        />
+      </div>
     </Card>
   );
 }
 
 function Probe() {
   const clarke = useSimulationStore((s) => s.clarke);
+  const threePhase = useSimulationStore((s) => s.threePhase);
+  const cursorMs = useSimulationStore((s) => s.time);
   const snapshot = SimulationEngine.clarkeSnapshot(clarke);
   const { t } = useI18n();
   return (
@@ -60,6 +74,9 @@ function Probe() {
             </div>
           ))}
         </div>
+      </Card>
+      <Card title="αβ 波形叠加" eyebrow="虚线=abc · 实线=αβ" density="compact">
+        <ClarkeAlphaBetaWaveform clarke={clarke} threePhase={threePhase} cursorMs={cursorMs} />
       </Card>
       <Card title={t('clarkeTransform.matrixTitle')} eyebrow={t('clarkeTransform.matrixEyebrow')} density="compact">
         <pre className="formula whitespace-pre rounded-lg border border-line-subtle bg-bg-base p-3 text-caption leading-relaxed text-accent-primary">{`[ Iα ]   [ 1     0      0 ] [ Ia ]

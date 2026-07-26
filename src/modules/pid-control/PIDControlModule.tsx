@@ -9,6 +9,7 @@ import { calculateStepMetrics, simulatePidStepResponse } from '../../simulation/
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
+import { PidBodeChart } from '../../components/charts/PidBodeChart';
 import { AntiWindupCompareCard } from './AntiWindupCompareCard';
 import { SerialComparePIDCard } from './SerialComparePIDCard';
 
@@ -34,11 +35,10 @@ function usePidResult() {
   return useMemo(() => {
     const data = simulatePidStepResponse(
       { kp: pid.kp, ki: pid.ki, kd: pid.kd },
-      pid.target,
-      pid.sampleMs / 1000,
-      1.2,
-      { limit: pid.limit, antiWindup: pid.antiWindup, loadDisturbance: pid.loadDisturbance },
-    );
+        pid.target,
+        pid.sampleMs / 1000,
+        1.2,
+      );
     const metrics = calculateStepMetrics(data, pid.target);
     return { pid, data, metrics, final: data[data.length - 1] };
   }, [pid]);
@@ -58,7 +58,6 @@ function Primary() {
         gains={{ kp: pid.kp, ki: pid.ki, kd: pid.kd }}
         target={pid.target}
         sampleMs={pid.sampleMs}
-        options={{ limit: pid.limit, antiWindup: pid.antiWindup, loadDisturbance: pid.loadDisturbance }}
       />
     </Card>
   );
@@ -86,6 +85,7 @@ function Probe() {
           {risk && <div className="flex gap-2 rounded-lg border border-accent-fault/30 bg-accent-fault/10 p-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-fault" /><span className="text-accent-fault">{t('pidControl.tuningRiskHint')}</span></div>}
         </div>
       </Card>
+      <PidBodeChart gains={{ kp: pid.kp, ki: pid.ki, kd: pid.kd }} />
       <AntiWindupCompareCard />
       <SerialComparePIDCard />
     </>

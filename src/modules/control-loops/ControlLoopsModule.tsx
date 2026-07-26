@@ -16,31 +16,63 @@ import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 import { MechanicalResonanceCard } from './MechanicalResonanceCard';
 import { CoggingFeedforwardCard } from './CoggingFeedforwardCard';
 import { ResonanceNotchCard } from './ResonanceNotchCard';
+import { ServoPositionCard } from './ServoPositionCard';
+import { makeAntiWindupPI } from '../../simulation/math/antiwindup';
 
+/**
+ * 使用带反计算抗饱和（back-calculation anti-windup）的 PI 控制器模拟三环级联。
+ *
+ * 相比于简单的积分钳位，反计算抗饱和在控制器饱和时把饱和量按 ka/ki 比例
+ * 反馈到积分器，避免积分饱和导致的超调和振荡。
+ *
+ * 位置环：PID（带微分前馈）
+ * 速度环：PI
+ * 电流环：PI
+ */
 function simulateTripleLoop(params: ControlLoopParams) {
   const dt = 0.002;
   const duration = 2.2;
+
+  // 位置环 PI（反计算抗饱和）
+  const posPI = makeAntiWindupPI(
+    params.positionKp, params.positionKi, 0.5,
+    -800, 800,
+  );
+  // 速度环 PI
+  const speedPI = makeAntiWindupPI(
+    params.speedKp, params.speedKi, 0.5,
+    -1200, 1200,
+  );
+  // 电流环 PI
+  const currentPI = makeAntiWindupPI(
+    params.currentKp, params.currentKi, 0.5,
+    -20, 20,
+  );
+
   let position = 0;
   let speedRpm = 0;
   let iq = 0;
-  let posIntegral = 0;
   let lastPosError = 0;
-  let speedIntegral = 0;
-  let currentIntegral = 0;
   const data = [];
+
   for (let t = 0; t <= duration; t += dt) {
+    // 位置环（PID：PI 抗饱和输出 + 微分项）
     const posError = params.targetPosition - position;
-    posIntegral = clamp(posIntegral + posError * dt, -800, 800);
     const posDerivative = (posError - lastPosError) / dt;
     lastPosError = posError;
-    const speedRefFromPosition = params.positionKp * posError + params.positionKi * posIntegral + params.positionKd * posDerivative;
+    const piOut = posPI.step(posError, dt);
+    const speedRefFromPosition = piOut + params.positionKd * posDerivative;
     const speedRef = clamp(speedRefFromPosition, -Math.abs(params.targetSpeed), Math.abs(params.targetSpeed));
+
+    // 速度环
     const speedError = speedRef - speedRpm;
-    speedIntegral = clamp(speedIntegral + speedError * dt, -1200, 1200);
-    const iqRef = clamp(params.speedKp * speedError + params.speedKi * speedIntegral, -10, 10);
+    const iqRef = clamp(speedPI.step(speedError, dt), -10, 10);
+
+    // 电流环
     const currentError = iqRef - iq;
-    currentIntegral = clamp(currentIntegral + currentError * dt, -20, 20);
-    const voltageCmd = clamp(params.currentKp * currentError + params.currentKi * currentIntegral, -24, 24);
+    const voltageCmd = clamp(currentPI.step(currentError, dt), -24, 24);
+
+    // 机电模型
     iq += (voltageCmd * 0.32 - iq) * dt * 80;
     const torque = 0.095 * iq;
     const omega = speedRpm * 2 * Math.PI / 60;
@@ -133,6 +165,8 @@ function Probe() {
       <CoggingFeedforwardCard />
       {/* round-23 反共振陷波抑制：与 MechanicalResonanceCard 形成扰动→对策闭环 */}
       <ResonanceNotchCard />
+      {/* 伺服 S 曲线加减速规划 */}
+      <ServoPositionCard />
     </>
   );
 }

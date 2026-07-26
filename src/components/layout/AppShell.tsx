@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { Sliders, X } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -15,14 +15,6 @@ import { useSimulationStore } from '../../store/simulationStore';
 const WaveformPanel = lazy(() =>
   import('./WaveformPanel').then((m) => ({ default: m.WaveformPanel })),
 );
-
-function WaveformFallback() {
-  return (
-    <div className="mt-4 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-6 text-center text-caption text-ink-muted">
-      波形面板加载中…
-    </div>
-  );
-}
 
 export function AppShell() {
   const fullScreen = useSimulationStore((state) => state.fullScreen);
