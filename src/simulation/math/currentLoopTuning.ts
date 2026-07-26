@@ -137,6 +137,118 @@ export function currentLoopStepResponse(alpha: number): {
   };
 }
 
+export interface CurrentLoopStepSample {
+  /** 时间（µs） */
+  tUs: number;
+  /** 实际电流（A） */
+  current: number;
+  /** PI 输出电压（V，已限幅） */
+  voltage: number;
+}
+
+export interface CurrentLoopStepSimInput {
+  /** 相电阻 Rs（Ω） */
+  rs: number;
+  /** 轴电感（mH），d 轴用 Ld、q 轴用 Lq */
+  lMh: number;
+  /** PWM / 采样频率（Hz），控制周期 Ts = 1/fs */
+  fs: number;
+  /** PI 比例增益（V/A） */
+  kp: number;
+  /** PI 积分增益（V/(A·s)） */
+  ki: number;
+  /** 电流阶跃目标（A） */
+  targetA: number;
+  /** 母线可用电压限幅（V），典型 Vdc/√3 */
+  vLimit: number;
+  /** 仿真时长（µs） */
+  durationUs: number;
+}
+
+export interface CurrentLoopStepSimResult {
+  samples: CurrentLoopStepSample[];
+  /** 超调（%），无超调为 0 */
+  overshootPct: number;
+  /** 10%→90% 上升时间（µs），未达到返回 null */
+  riseTimeUs: number | null;
+  /** 进入 ±2% 带并保持的时间（µs），未稳定返回 null */
+  settleTimeUs: number | null;
+  /** 是否触发过电压限幅（说明带宽受母线电压约束） */
+  saturated: boolean;
+}
+
+/**
+ * 离散域电流环阶跃仿真：数字 PI + 一拍计算延时 + 电压限幅 + RL 负载。
+ *
+ * 与 currentLoopStepResponse 的一阶解析近似不同，这里包含数字控制的
+ * 两个非理想因素，学员能看到"理论带宽"与"实际响应"的差距：
+ *   1. 一拍延时：本拍算出的电压下一拍才作用（PWM 比较寄存器影子加载）
+ *   2. 电压限幅：|v| ≤ vLimit，大阶跃时 PI 饱和 → 条件积分抗饱和
+ *
+ * 负载离散化用精确 ZOH（RL 一阶系统有闭式解）：
+ *   i[k+1] = a·i[k] + (1-a)/Rs · v[k]，a = exp(-Rs·Ts/L)
+ *
+ * STM32 对应：ADC 注入组采样 → FOC 中断算 PI → 写 CCR，下一 PWM 周期生效。
+ */
+export function simulateCurrentLoopStep(input: CurrentLoopStepSimInput): CurrentLoopStepSimResult {
+  const { rs, lMh, fs, kp, ki, targetA, vLimit, durationUs } = input;
+  const L = lMh / 1000;
+  const ts = 1 / fs;
+  const steps = Math.max(2, Math.round(durationUs / (ts * 1e6)));
+
+  // ZOH 精确离散化系数
+  const a = Math.exp((-rs * ts) / L);
+  const b = (1 - a) / rs;
+
+  let current = 0;
+  let integrator = 0;
+  let vDelayed = 0; // 一拍延时寄存器
+  let saturated = false;
+  const samples: CurrentLoopStepSample[] = [{ tUs: 0, current: 0, voltage: 0 }];
+
+  for (let k = 0; k < steps; k += 1) {
+    // 1) 负载用上一拍算出的电压推进（一拍计算延时）
+    current = a * current + b * vDelayed;
+
+    // 2) 数字 PI（后向欧拉积分 + 条件积分抗饱和）
+    const err = targetA - current;
+    const vUnsat = kp * err + integrator;
+    const v = clamp(vUnsat, -vLimit, vLimit);
+    if (v !== vUnsat) {
+      saturated = true;
+    } else {
+      integrator += ki * err * ts;
+    }
+    vDelayed = v;
+
+    samples.push({
+      tUs: (k + 1) * ts * 1e6,
+      current,
+      voltage: v,
+    });
+  }
+
+  // 指标提取
+  let peak = -Infinity;
+  for (const s of samples) peak = Math.max(peak, s.current);
+  const overshootPct = targetA > 0 ? Math.max(0, ((peak - targetA) / targetA) * 100) : 0;
+
+  const t10 = samples.find((s) => s.current >= 0.1 * targetA)?.tUs ?? null;
+  const t90 = samples.find((s) => s.current >= 0.9 * targetA)?.tUs ?? null;
+  const riseTimeUs = t10 !== null && t90 !== null ? t90 - t10 : null;
+
+  let settleTimeUs: number | null = null;
+  for (let i = samples.length - 1; i >= 0; i -= 1) {
+    if (Math.abs(samples[i].current - targetA) > 0.02 * targetA) {
+      settleTimeUs = i + 1 < samples.length ? samples[i + 1].tUs : null;
+      break;
+    }
+    if (i === 0) settleTimeUs = samples[0].tUs;
+  }
+
+  return { samples, overshootPct, riseTimeUs, settleTimeUs, saturated };
+}
+
 /**
  * 检查整定参数的稳定性。
  *

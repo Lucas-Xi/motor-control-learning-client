@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { tuneCurrentLoop, currentLoopStepResponse, validateTuning } from './currentLoopTuning';
+import {
+  tuneCurrentLoop,
+  currentLoopStepResponse,
+  simulateCurrentLoopStep,
+  validateTuning,
+} from './currentLoopTuning';
 
 describe('currentLoopTuning', () => {
   const motor = {
@@ -86,6 +91,62 @@ describe('currentLoopTuning', () => {
       const v = validateTuning(badResult, 10000);
       expect(v.valid).toBe(false);
       expect(v.warnings.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('simulateCurrentLoopStep', () => {
+    // 模最优整定 + 充足电压余量的基准场景
+    const base = () => {
+      const tuned = tuneCurrentLoop({ ...motor, bandwidthFactor: 15 });
+      return {
+        rs: motor.rs,
+        lMh: motor.ldMh,
+        fs: motor.fs,
+        kp: tuned.kpD,
+        ki: tuned.kiD,
+        targetA: 1,
+        vLimit: 100,
+        durationUs: 5000,
+      };
+    };
+
+    it('收敛到目标电流（±2%）且数值全有限', () => {
+      const r = simulateCurrentLoopStep(base());
+      const last = r.samples[r.samples.length - 1];
+      expect(Math.abs(last.current - 1)).toBeLessThan(0.02);
+      for (const s of r.samples) {
+        expect(Number.isFinite(s.current)).toBe(true);
+        expect(Number.isFinite(s.voltage)).toBe(true);
+      }
+    });
+
+    it('模最优整定的超调接近理论 4.3%（一拍延时下 < 20%）', () => {
+      const r = simulateCurrentLoopStep(base());
+      expect(r.overshootPct).toBeLessThan(20);
+    });
+
+    it('上升时间与一阶解析近似同数量级', () => {
+      const tuned = tuneCurrentLoop({ ...motor, bandwidthFactor: 15 });
+      const analytic = currentLoopStepResponse(2 * Math.PI * tuned.bandwidthDHz);
+      const r = simulateCurrentLoopStep(base());
+      expect(r.riseTimeUs).not.toBeNull();
+      // 一拍延时让实际略慢；容差 3 倍
+      expect(r.riseTimeUs!).toBeGreaterThan(analytic.riseTimeUs * 0.3);
+      expect(r.riseTimeUs!).toBeLessThan(analytic.riseTimeUs * 3);
+    });
+
+    it('电压限幅过低时 saturated=true 且响应变慢', () => {
+      const free = simulateCurrentLoopStep(base());
+      const limited = simulateCurrentLoopStep({ ...base(), vLimit: 0.12 });
+      expect(limited.saturated).toBe(true);
+      expect(free.saturated).toBe(false);
+      expect(limited.riseTimeUs!).toBeGreaterThan(free.riseTimeUs!);
+    });
+
+    it('Kp 过大（带宽逼近 fs）出现振荡：超调显著增大', () => {
+      const good = simulateCurrentLoopStep(base());
+      const aggressive = simulateCurrentLoopStep({ ...base(), kp: base().kp * 20 });
+      expect(aggressive.overshootPct).toBeGreaterThan(good.overshootPct + 10);
     });
   });
 });

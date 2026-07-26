@@ -11,6 +11,7 @@ import { formatNumber } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
 import { PidBodeChart } from '../../components/charts/PidBodeChart';
 import { AntiWindupCompareCard } from './AntiWindupCompareCard';
+import { CurrentLoopTuningCard } from './CurrentLoopTuningCard';
 import { SerialComparePIDCard } from './SerialComparePIDCard';
 
 type Tone = 'primary' | 'measure' | 'warn' | 'fault';
@@ -86,6 +87,7 @@ function Probe() {
         </div>
       </Card>
       <PidBodeChart gains={{ kp: pid.kp, ki: pid.ki, kd: pid.kd }} />
+      <CurrentLoopTuningCard />
       <AntiWindupCompareCard />
       <SerialComparePIDCard />
     </>

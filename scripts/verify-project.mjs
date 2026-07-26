@@ -154,6 +154,9 @@ const requiredFiles = [
   // round-24 扫频辨识 × 自适应陷波：chirp 找峰 → 陷波中心重对准
   'src/simulation/math/autoNotch.ts',
   'src/modules/control-loops/AutoNotchCard.tsx',
+  // round-25 电流环 PI 自整定：模最优法 + 一拍延时离散验证仿真
+  'src/simulation/math/currentLoopTuning.ts',
+  'src/modules/pid-control/CurrentLoopTuningCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
