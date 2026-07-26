@@ -151,6 +151,9 @@ const requiredFiles = [
   // round-23 反共振陷波抑制：biquad notch × mechanicalCompliance 闭环
   'src/simulation/math/resonanceSuppression.ts',
   'src/modules/control-loops/ResonanceNotchCard.tsx',
+  // round-24 扫频辨识 × 自适应陷波：chirp 找峰 → 陷波中心重对准
+  'src/simulation/math/autoNotch.ts',
+  'src/modules/control-loops/AutoNotchCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

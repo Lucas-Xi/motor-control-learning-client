@@ -62,12 +62,18 @@ export function autoNotchSearch(input: NotchSearchInput): NotchSearchResult {
   // 两质量模型状态
   const state: ComplianceState = { thetaMotor: 0, thetaLoad: 0, omegaMotor: 0, omegaLoad: 0, Tspring: 0 };
 
+  // Chirp 相位必须积分累加：φ(t) = 2π ∫ f(τ)dτ。
+  // 若写成 sin(2π·f(t)·t)，瞬时频率 dφ/dt = f + t·df/dt 会以两倍速率扫过频段，
+  // 峰值定位系统性偏移（这正是旧实现在低共振预设上抓错峰的根因）。
+  let chirpPhase = 0;
+
   for (let i = 0; i < numSteps; i++) {
     const t = i * dt;
 
     // Chirp 信号直接作为转矩激励注入（跳过 PI 控制器，避免积分饱和淹没 AC 分量）
     const fInstant = freqMin + (t / scanDurationSec) * (freqMax - freqMin);
-    const torqueCmd = chirpAmplitude * Math.sin(2 * Math.PI * fInstant * t);
+    chirpPhase += 2 * Math.PI * fInstant * dt;
+    const torqueCmd = chirpAmplitude * Math.sin(chirpPhase);
 
     // 两质量模型步进
     const mech = stepCompliance({

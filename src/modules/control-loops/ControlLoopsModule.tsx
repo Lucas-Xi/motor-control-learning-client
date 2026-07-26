@@ -16,6 +16,7 @@ import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 import { MechanicalResonanceCard } from './MechanicalResonanceCard';
 import { CoggingFeedforwardCard } from './CoggingFeedforwardCard';
 import { ResonanceNotchCard } from './ResonanceNotchCard';
+import { AutoNotchCard } from './AutoNotchCard';
 import { ServoPositionCard } from './ServoPositionCard';
 import { makeAntiWindupPI } from '../../simulation/math/antiwindup';
 
@@ -165,6 +166,8 @@ function Probe() {
       <CoggingFeedforwardCard />
       {/* round-23 反共振陷波抑制：与 MechanicalResonanceCard 形成扰动→对策闭环 */}
       <ResonanceNotchCard />
+      {/* round-24 扫频辨识 × 自适应陷波：刚度漂移让固定陷波失准 → chirp 找峰重对准 */}
+      <AutoNotchCard />
       {/* 伺服 S 曲线加减速规划 */}
       <ServoPositionCard />
     </>

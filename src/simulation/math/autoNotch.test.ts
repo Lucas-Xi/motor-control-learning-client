@@ -43,6 +43,34 @@ describe('autoNotch', () => {
       }
     });
 
+    it('identifies drifted resonance within 10% across engaged presets (round-24 chirp phase regression)', () => {
+      // 回归：chirp 相位必须积分累加（∫f dτ），写成 sin(2π·f(t)·t) 会以
+      // 双倍速率扫频，谱峰系统性偏移——agedDrive 曾抓到 177 Hz（真值 139 Hz）。
+      // backlash=0 模拟产线预紧后扫频（AutoNotchCard 的用法）。
+      const presets = [
+        { Jmotor: 5e-3, Jload: 2e-2, Ks: 14000, Ds: 2, backlashRad: 0 },      // industrialFanBelt
+        { Jmotor: 1.2e-3, Jload: 8e-3, Ks: 1500, Ds: 0.15, backlashRad: 0 },  // roboticJoint（预紧）
+        { Jmotor: 1.2e-3, Jload: 8e-3, Ks: 800, Ds: 0.04, backlashRad: 0 },   // agedDrive（预紧）
+      ];
+      for (const nominal of presets) {
+        for (const drift of [-0.3, 0, 0.3]) {
+          const compliance = { ...nominal, Ks: nominal.Ks * (1 + drift) };
+          const expectedFr = Math.sqrt(compliance.Ks * (compliance.Jmotor + compliance.Jload)
+            / (compliance.Jmotor * compliance.Jload)) / (2 * Math.PI);
+          const r = autoNotchSearch({
+            compliance,
+            fs: 2000,
+            freqMin: 10,
+            freqMax: 600,
+            scanDurationSec: 1.0,
+            chirpAmplitude: 0.5,
+          });
+          expect(r.resonanceHz).not.toBeNull();
+          expect(Math.abs(r.resonanceHz! - expectedFr) / expectedFr).toBeLessThan(0.1);
+        }
+      }
+    });
+
     it('returns spectrum with data points', () => {
       const result = autoNotchSearch({
         compliance: sampleCompliance,
