@@ -8,5 +8,17 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', 'tests/**'],
     environment: 'node',  // 数学纯函数无需 jsdom
     reporters: ['default'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      include: ['src/simulation/math/**', 'src/store/**', 'src/utils/**'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        'src/**/__tests__/**',
+        'src/simulation/math/biquad.test.ts', // 测试本身不应计入覆盖率
+      ],
+      reportsDirectory: './coverage',
+    },
   },
 });

@@ -1,6 +1,6 @@
 import {
   type Refrigerant,
-  hLiqSat, hSubcooled, hSuperheated, hVapSat,
+  hSubcooled, hSuperheated, hVapSat,
   pSat, rhoVapSat, polytropicN, tSat,
 } from './refrigerantProps';
 import { volumetricEfficiency, wagnerSaturationPressure } from './wagnerEq';

@@ -59,14 +59,14 @@ function makeNoise(seed: number): () => number {
   };
 }
 
-/** 反 Park：dq → αβ（电角度 theta 单位 rad）。 */
+/* 反 Park：dq → αβ（电角度 theta 单位 rad）。
 function inverseParkInline(id: number, iq: number, theta: number): { alpha: number; beta: number } {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
   return { alpha: id * c - iq * s, beta: id * s + iq * c };
-}
+} */
 
-/** 反 Clarke（amplitude-invariant）：αβ → abc。 */
+/* 反 Clarke（amplitude-invariant）：αβ → abc。
 function inverseClarkeInline(
   alpha: number,
   beta: number,
@@ -75,7 +75,7 @@ function inverseClarkeInline(
   const ib = -0.5 * alpha + (Math.sqrt(3) / 2) * beta;
   const ic = -0.5 * alpha - (Math.sqrt(3) / 2) * beta;
   return { ia, ib, ic };
-}
+} */
 
 // ---------- 1. FOC 电流环：iq/id ref vs sim vs real ----------
 
@@ -976,7 +976,6 @@ function getPidSeries(pid: PIDParams): ReturnType<typeof simulatePidStepResponse
     pid.target,
     pid.sampleMs / 1000,
     1.2,
-    { limit: pid.limit, antiWindup: pid.antiWindup, loadDisturbance: pid.loadDisturbance },
   );
   if (pidCache.size > 32) pidCache.clear();
   pidCache.set(key, series);

@@ -58,6 +58,12 @@
  *     留作离线/教学用，运行期用 LUT 查 id_ref(speed, torque)。
  */
 
+/** 安全数值检查：NaN/Inf → fallback（默认 0），再 clamp 到 [lo, hi]。所有公共 step 函数入口处使用。 */
+export function clampError(v: number, lo: number, hi: number, fallback = 0): number {
+  if (!Number.isFinite(v)) return fallback;
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
 export type LimitConstraint = 'none' | 'current' | 'voltage' | 'both';
 
 export interface LimitInput {

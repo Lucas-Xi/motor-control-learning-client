@@ -1,5 +1,13 @@
 import { createPIDState, piStep, type PIDGains, type PIDState } from './pid';
 
+/**
+ * 根据退磁比例计算有效磁链（额定的 (1 - ratio) 倍）。
+ * 退磁 10% → flux 下降到 90%，转矩能力同比例下降。
+ */
+export function effectiveFlux(nominalFlux: number, demagnetizationRatio: number): number {
+  return nominalFlux * Math.max(0, 1 - Math.min(1, demagnetizationRatio));
+}
+
 export interface PMSMParameters {
   rs: number;
   ld: number;

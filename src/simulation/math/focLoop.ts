@@ -1,4 +1,5 @@
 import { clamp } from '../../utils/clamp';
+import { clampError } from './limits';
 import type { FOCParams } from '../engine/types';
 import { saturatedInductances, sampleSaturationParams } from './saturation';
 import { coggingTorque, sampleCoggingParams, defaultBemfHarmonics } from './cogging';
@@ -83,12 +84,11 @@ export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOption
 
   const totalSteps = Math.round(TOTAL / DT);
   for (let step = 0; step <= totalSteps; step++) {
-    // 1) 写入测量缓冲（采样发生在控制器看见之前的 N 个周期）
-    //    控制器读到的 id/iq 还要旋转一个角度误差
+    // 1) 写入测量缓冲
     const idMeasReal = idBuf[bufHead];
     const iqMeasReal = iqBuf[bufHead];
-    let idMeas = idMeasReal * cosE + iqMeasReal * sinE;
-    let iqMeas = -idMeasReal * sinE + iqMeasReal * cosE;
+    let idMeas = clampError(idMeasReal * cosE + iqMeasReal * sinE, -1e4, 1e4);
+    let iqMeas = clampError(-idMeasReal * sinE + iqMeasReal * cosE, -1e4, 1e4);
 
     // HD 模式：把 ADC 量化 + INL + 高斯噪声 + offset 叠到测量值上
     // 真实硬件里 id/iq 是用 ADC 采 ia/ib/ic 算出来的，永远含 ±半 LSB 抖动 + INL 偏差
@@ -97,28 +97,19 @@ export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOption
       iqMeas = adcMeasurement(iqMeas, defaultAdcParams, seededRng).measured;
     }
 
-    // 2) PI 控制（在控制器视角的 dq）
-    const ed = params.idRef - idMeas;
-    const eq = params.iqRef - iqMeas;
-    intD = clamp(intD + ed * DT, -200, 200);
-    intQ = clamp(intQ + eq * DT, -200, 200);
-    let vdCmd = params.kp * ed + params.ki * intD;
-    let vqCmd = params.kp * eq + params.ki * intQ;
-    // 限幅（圆形限幅，更接近 SVPWM 线性区）
-    const vMag = Math.hypot(vdCmd, vqCmd);
-    if (vMag > params.voltageLimit) {
-      vdCmd = (vdCmd / vMag) * params.voltageLimit;
-      vqCmd = (vqCmd / vMag) * params.voltageLimit;
+    // 初始化 bemfTerm（含 HD 模式的谐波叠加），前馈解耦需要此值
+    let bemfTerm = omega * psiF;
+    if (hd) {
+      const thetaElec = omega * step * DT;
+      let harmonicSum = 0;
+      for (const h of defaultBemfHarmonics) {
+        if (h.order === 1) continue;
+        harmonicSum += h.coef * Math.cos(h.order * thetaElec);
+      }
+      bemfTerm = omega * psiF * (1 + harmonicSum);
     }
 
-    // 3) 把控制器命令变换回真实 dq（反向旋转角度误差）
-    const vdReal = vdCmd * cosE - vqCmd * sinE;
-    const vqReal = vdCmd * sinE + vqCmd * cosE;
-
-    // 4) PMSM dq 电流方程一阶离散
-    //    vd = R id + L did/dt - ω L iq
-    //    vq = R iq + L diq/dt + ω L id + ω ψf
-    // HD 模式：用饱和后的 Ld(id,iq) / Lq(id,iq)；简版恒定 L
+    // 计算 Ld/Lq（HD 模式用饱和电感）
     let Ld = L;
     let Lq = L;
     if (hd) {
@@ -135,21 +126,43 @@ export function simulateFocCurrentLoop(params: FOCParams, options: FocLoopOption
       Ld = sat.ld;
       Lq = sat.lq;
     }
+
+    // 2) PI 控制（在控制器视角的 dq）
+    const ed = params.idRef - idMeas;
+    const eq = params.iqRef - iqMeas;
+    intD = clamp(intD + ed * DT, -200, 200);
+    intQ = clamp(intQ + eq * DT, -200, 200);
+    let vdCmd = params.kp * ed + params.ki * intD;
+    let vqCmd = params.kp * eq + params.ki * intQ;
+
+    // dq 解耦前馈：补偿交叉耦合项 + 反电动势
+    // vd_ff = -ω·Lq·iq, vq_ff = ω·Ld·id + ω·ψf
+    if (params.decoupleEnabled) {
+      vdCmd += -omega * Lq * iq;
+      vqCmd += omega * Ld * id + bemfTerm;
+    }
+
+    // 限幅（圆形限幅，更接近 SVPWM 线性区）
+    const vMag = Math.hypot(vdCmd, vqCmd);
+    if (vMag > params.voltageLimit) {
+      vdCmd = (vdCmd / vMag) * params.voltageLimit;
+      vqCmd = (vqCmd / vMag) * params.voltageLimit;
+    }
+
+    // 3) 把控制器命令变换回真实 dq（反向旋转角度误差）
+    const vdReal = vdCmd * cosE - vqCmd * sinE;
+    const vqReal = vdCmd * sinE + vqCmd * cosE;
+
+    // 4) PMSM dq 电流方程一阶离散
+    //    vd = R id + L did/dt - ω L iq
+    //    vq = R iq + L diq/dt + ω L id + ω ψf
+    // HD 模式：用饱和后的 Ld(id,iq) / Lq(id,iq)；简版恒定 L
+    // （已在步骤 2 前计算了 Ld/Lq）
     // HD 模式：反电动势含 5/7/11/13 次空间谐波（cogging.ts::defaultBemfHarmonics）。
     // 非基波分量被 Park 投影后变成 dq 上的 6 倍频 / 12 倍频纹波 → 学员一切 HD 立刻看到
     // Iq 阶跃响应上叠了 ~6×电频率 的纹波，与真实电机实测一致。
     // 数学上：基波 sin(θ_e) 在 dq 旋转坐标下退化为 DC；5/7 次变成 6 倍频；11/13 变 12 倍频。
     // 本仿真把谐波幅值（相对基波）按 defaultBemfHarmonics 累加到反电动势耦合项上。
-    let bemfTerm = omega * psiF;
-    if (hd) {
-      const thetaElec = omega * step * DT;
-      let harmonicSum = 0;
-      for (const h of defaultBemfHarmonics) {
-        if (h.order === 1) continue;
-        harmonicSum += h.coef * Math.cos(h.order * thetaElec);
-      }
-      bemfTerm = omega * psiF * (1 + harmonicSum);
-    }
     const didDt = (vdReal - rs * id + omega * Lq * iq) / Ld;
     const diqDt = (vqReal - rs * iq - omega * Ld * id - bemfTerm) / Lq;
     id += didDt * DT;

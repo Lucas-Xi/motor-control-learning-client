@@ -79,6 +79,8 @@ export const motorBasicsDefault: MotorBasicsParams = {
   flux: 0.052,
   inertiaUm: 320,
   dampingUm: 120,
+  windingType: 'Y',
+  demagnetizationRatio: 0,
 };
 
 export const pidDefault: PIDParams = {
@@ -206,6 +208,7 @@ export const focDefault: FOCParams = {
   samplingDelaySamples: 1,
   voltageLimit: 180,    // ≈ 310/√3 = 179V SVPWM 线性区
   electricalFreq: 100,  // 1500rpm × 4 极对 / 60 = 100 Hz 典型工作点
+  decoupleEnabled: false, // 默认关闭前馈，让学员看到耦合效应后手动开启对比
 };
 
 export const controlLoopDefault: ControlLoopParams = {

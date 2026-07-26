@@ -6,6 +6,8 @@ describe('compensateDeadTime', () => {
     t_dead_us: 2,
     t_sw_us: 62.5, // 16 kHz
     Vdc: 310,
+    i_hys: 0,
+    prevSign: { a: 0, b: 0, c: 0 },
   };
 
   it('零电流（无滞环）应返回零补偿', () => {

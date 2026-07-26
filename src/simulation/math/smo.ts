@@ -1,4 +1,5 @@
 import { wrapAngleRad } from '../../utils/clamp';
+import { clampError } from './limits';
 
 /**
  * 滑模观测器（Sliding Mode Observer, SMO）
@@ -21,38 +22,34 @@ import { wrapAngleRad } from '../../utils/clamp';
  *   再用 PLL 锁相得到平滑的 θ_est：
  *     θ_meas = atan2(-z_α_lpf, z_β_lpf)
  *     PLL 跟踪 θ_meas 输出 θ_est, ω_est
- *
- * === 工程要点 ===
- *   - 开关增益 K：足够大才能强制收敛，但太大放大抖振
- *   - 边界层 (boundary layer)：把 sign() 换成 sat(error/δ)，δ 是边界层宽度，平滑切换
- *   - LPF 截止频率：低频残留 BEMF 信息；过高 → 抖振；过低 → 相位滞后
- *   - 角度通过 atan2 提取后用 PLL 修正延迟
  */
 
 export interface SMOState {
-  /** 估算电流（αβ） */
   iAlphaEst: number;
   iBetaEst: number;
-  /** 等效控制（开关函数原始输出） */
   zAlpha: number;
   zBeta: number;
-  /** LPF 平滑后的等效控制 = BEMF 估算 */
   zAlphaLpf: number;
   zBetaLpf: number;
-  /** PLL 状态 */
   pllAngle: number;
   pllOmega: number;
   pllIntegral: number;
 }
 
 export interface SMOConfig {
-  rs: number;            // Ω
-  ls: number;            // H（dq 等效电感平均值）
-  smoGain: number;       // 开关函数增益 K（典型 30-200）
-  boundaryLayer: number; // sat 边界层宽度 δ（A，典型 0.2-1.0）
-  lpfCutoffHz: number;   // BEMF 低通截止（Hz，典型 50-200）
+  rs: number;
+  ls: number;
+  smoGain: number;
+  boundaryLayer: number;
+  lpfCutoffHz: number;
   pllKp: number;
   pllKi: number;
+}
+
+export interface SMOConfigPrecomputed extends SMOConfig {
+  _lpfA: number;
+  _invLs: number;
+  _rsOverLs: number;
 }
 
 export function createSMO(): SMOState {
@@ -70,50 +67,76 @@ function sat(x: number): number {
 }
 
 /**
- * SMO 单步更新。每个 PWM 周期调用一次。
+ * 预计算 SMO 配置中不随时间变化的系数（lpfA, invLs, rsOverLs）。
+ * 当 cfg 或 dt 不变时只需调用一次，避免每步重算。
+ */
+export function precomputeSmoConfig(cfg: SMOConfig, dt: number): SMOConfigPrecomputed {
+  const dtSafe = Math.max(dt, 1e-9);
+  const fc = Math.max(cfg.lpfCutoffHz, 1);
+  const twopiFcDt = 2 * Math.PI * fc * dtSafe;
+  const _lpfA = twopiFcDt / (1 + twopiFcDt);
+  const ls = Math.max(cfg.ls, 1e-12);
+  return {
+    ...cfg,
+    _lpfA,
+    _invLs: 1 / ls,
+    _rsOverLs: cfg.rs,
+  };
+}
+
+/**
+ * SMO 单步更新。
  *
  * @param state    上一步 SMO 状态（会被原地更新返回新对象）
  * @param vAlpha   αβ 系电压指令（V）
  * @param vBeta
  * @param iAlphaMeas 实测 αβ 电流（A）
  * @param iBetaMeas
- * @param cfg      算法配置
+ * @param cfg      算法配置（含预计算字段）
  * @param dt       采样周期（s）
  */
 export function smoStep(
   state: SMOState,
   vAlpha: number, vBeta: number,
   iAlphaMeas: number, iBetaMeas: number,
-  cfg: SMOConfig,
+  cfg: SMOConfigPrecomputed,
   dt: number,
 ): SMOState {
+  const dtSafe = Math.max(dt, 1e-9);
+
+  // NaN/Inf 安全防护
+  const vA = clampError(vAlpha, -1e6, 1e6);
+  const vB = clampError(vBeta, -1e6, 1e6);
+  const iMeasA = clampError(iAlphaMeas, -1e6, 1e6);
+  const iMeasB = clampError(iBetaMeas, -1e6, 1e6);
+
   // 1. 电流估算误差（开关面）
-  const errA = state.iAlphaEst - iAlphaMeas;
-  const errB = state.iBetaEst - iBetaMeas;
+  const errA = state.iAlphaEst - iMeasA;
+  const errB = state.iBetaEst - iMeasB;
 
-  // 2. 开关函数 + 边界层 → 等效控制
-  const zA = -cfg.smoGain * sat(errA / cfg.boundaryLayer);
-  const zB = -cfg.smoGain * sat(errB / cfg.boundaryLayer);
+  // 2. 边界层安全下限，防止除以零
+  const bl = Math.max(cfg.boundaryLayer, 1e-6);
+  const zA = -cfg.smoGain * sat(errA / bl);
+  const zB = -cfg.smoGain * sat(errB / bl);
 
-  // 3. 电流模型推进：L·di/dt = -R·i + v + z
-  const iAlphaEst = state.iAlphaEst + ((-cfg.rs * state.iAlphaEst + vAlpha + zA) / cfg.ls) * dt;
-  const iBetaEst  = state.iBetaEst  + ((-cfg.rs * state.iBetaEst  + vBeta  + zB) / cfg.ls) * dt;
+  // 3. 电流模型推进（使用预计算 invLs 和 rsOverLs 减少除法）
+  const diAlpha = (-cfg._rsOverLs * state.iAlphaEst + vA + zA) * cfg._invLs * dtSafe;
+  const diBeta  = (-cfg._rsOverLs * state.iBetaEst  + vB + zB) * cfg._invLs * dtSafe;
+  const iAlphaEst = state.iAlphaEst + diAlpha;
+  const iBetaEst  = state.iBetaEst  + diBeta;
 
-  // 4. 把等效控制低通滤波 → BEMF 估算
-  const lpfA = (2 * Math.PI * cfg.lpfCutoffHz * dt) / (1 + 2 * Math.PI * cfg.lpfCutoffHz * dt);
-  const zAlphaLpf = state.zAlphaLpf + lpfA * (zA - state.zAlphaLpf);
-  const zBetaLpf  = state.zBetaLpf  + lpfA * (zB  - state.zBetaLpf);
+  // 4. LPF → BEMF 估算（使用预计算 lpfA）
+  const zAlphaLpf = state.zAlphaLpf + cfg._lpfA * (zA - state.zAlphaLpf);
+  const zBetaLpf  = state.zBetaLpf  + cfg._lpfA * (zB - state.zBetaLpf);
 
-  // 5. 用 atan2 反推角度
-  // BEMF 与角度关系：e_α = -ω·ψf·sin θ, e_β = ω·ψf·cos θ
-  // → θ = atan2(-e_α, e_β)
+  // 5. atan2 反推角度
   const thetaMeas = Math.atan2(-zAlphaLpf, zBetaLpf);
 
-  // 6. PLL 跟踪平滑 θ_meas
+  // 6. PLL 跟踪平滑
   const pllErr = Math.atan2(Math.sin(thetaMeas - state.pllAngle), Math.cos(thetaMeas - state.pllAngle));
-  const pllIntegral = state.pllIntegral + pllErr * dt;
+  const pllIntegral = state.pllIntegral + clampError(pllErr, -100, 100) * dtSafe;
   const pllOmega = cfg.pllKp * pllErr + cfg.pllKi * pllIntegral;
-  const pllAngle = wrapAngleRad(state.pllAngle + pllOmega * dt);
+  const pllAngle = wrapAngleRad(state.pllAngle + pllOmega * dtSafe);
 
   return {
     iAlphaEst, iBetaEst,
@@ -125,19 +148,16 @@ export function smoStep(
 
 /**
  * 批量仿真：给定一段时间窗，输出 SMO 各阶段中间量便于教学可视化。
- *
- * 输入是简化的"理想电机"——已知真实角度 / 真实电流 / 真实 BEMF——
- * 喂给 SMO 让它"反推"一遍，对比真实值检验观测器质量。
  */
 export interface SMOSimSample {
-  t: number;             // ms
+  t: number;
   iAlphaTrue: number;
   iAlphaEst: number;
-  zAlphaLpf: number;     // 估算 BEMF α
-  thetaTrue: number;     // 真实角度（°）
-  thetaEst: number;      // PLL 估算角度（°）
+  zAlphaLpf: number;
+  thetaTrue: number;
+  thetaEst: number;
   errorDeg: number;
-  switchSurfaceA: number;  // 开关面 |i_est - i_meas|
+  switchSurfaceA: number;
 }
 
 export interface SMOSimParams {
@@ -156,9 +176,9 @@ export interface SMOSimParams {
 
 export function simulateSMO(p: SMOSimParams): SMOSimSample[] {
   const dt = 1 / 16000;
-  const totalSteps = 16000 * 0.06;     // 60ms
+  const totalSteps = 16000 * 0.06;
   const omega = (p.speedRpm * 2 * Math.PI / 60) * p.polePairs;
-  const cfg: SMOConfig = {
+  const cfg = precomputeSmoConfig({
     rs: p.rs,
     ls: p.lsMh / 1000,
     smoGain: p.smoGain,
@@ -166,7 +186,7 @@ export function simulateSMO(p: SMOSimParams): SMOSimSample[] {
     lpfCutoffHz: p.lpfCutoffHz,
     pllKp: p.pllKp,
     pllKi: p.pllKi,
-  };
+  }, dt);
   let smo = createSMO();
   const samples: SMOSimSample[] = [];
   let outputCounter = 0;
@@ -174,16 +194,13 @@ export function simulateSMO(p: SMOSimParams): SMOSimSample[] {
   for (let step = 0; step < totalSteps; step++) {
     const t = step * dt;
     const thetaTrue = omega * t;
-    // 假定一个稳态电流（教学简化：真实电流 = 反电动势除以阻抗）
     const eAlphaTrue = -omega * p.fluxLinkage * Math.sin(thetaTrue);
     const eBetaTrue  =  omega * p.fluxLinkage * Math.cos(thetaTrue);
-    // 假设输入端电压 = 反电动势 +  R·i + L·di/dt（简化为稳态）
-    const iAlphaTrue = (eAlphaTrue * 0) + 0.5 * Math.cos(thetaTrue);   // 演示电流
-    const iBetaTrue  = (eBetaTrue  * 0) + 0.5 * Math.sin(thetaTrue);
-    const vAlpha = p.rs * iAlphaTrue + eAlphaTrue;     // 稳态电压
+    const iAlphaTrue = 0.5 * Math.cos(thetaTrue);
+    const iBetaTrue  = 0.5 * Math.sin(thetaTrue);
+    const vAlpha = p.rs * iAlphaTrue + eAlphaTrue;
     const vBeta  = p.rs * iBetaTrue  + eBetaTrue;
 
-    // 加测量噪声
     const noiseA = (Math.random() - 0.5) * 2 * p.noise;
     const noiseB = (Math.random() - 0.5) * 2 * p.noise;
 

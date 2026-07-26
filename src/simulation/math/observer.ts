@@ -52,3 +52,35 @@ export function pllTrack(measuredAngle: number, state: PLLState, gains: PLLGains
   const angle = wrapAngleRad(state.angle + omega * dt);
   return { angle, omega, integral };
 }
+
+/**
+ * HFI → BEMF 混合观测器。
+ *
+ * 在极低速（< 300 rpm）使用 HFI 角度（高频注入）；
+ * 在中高速（> 600 rpm）使用 BEMF 角度（反电动势观测）；
+ * 中间 300-600 rpm 线性融合，实现无感切换过渡。
+ *
+ * @param hfiAngle  高频注入估算角度（rad）
+ * @param bemfAngle 反电动势估算角度（rad）
+ * @param rpm       当前机械转速
+ * @param transitionLow  融合起始转速（rpm），默认 300
+ * @param transitionHigh 融合完成转速（rpm），默认 600
+ * @returns 融合后的角度
+ */
+export function blendObserverAngle(
+  hfiAngle: number,
+  bemfAngle: number,
+  rpm: number,
+  transitionLow = 300,
+  transitionHigh = 600,
+): { angle: number; blendRatio: number } {
+  if (rpm <= transitionLow) return { angle: hfiAngle, blendRatio: 0 };
+  if (rpm >= transitionHigh) return { angle: bemfAngle, blendRatio: 1 };
+
+  const t = (rpm - transitionLow) / (transitionHigh - transitionLow);
+  // 从两个角度中选择最短路径的加权平均
+  const diff = bemfAngle - hfiAngle;
+  const wrappedDiff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  const angle = wrapAngleRad(hfiAngle + t * wrappedDiff);
+  return { angle, blendRatio: t };
+}

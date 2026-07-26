@@ -58,6 +58,10 @@ export interface MotorBasicsParams {
   inertiaUm: number;
   /** 黏性摩擦 B（N·m·s/rad ×1e-6）—— 同步给三闭环 */
   dampingUm: number;
+  /** 绕组接法：Y 星形 / Δ 三角形 */
+  windingType?: 'Y' | 'Δ';
+  /** 退磁程度（0-1），0=无退磁，1=完全退磁 */
+  demagnetizationRatio?: number;
 }
 
 export interface ClarkeParams {
@@ -212,7 +216,7 @@ export interface HFIParams {
   trueThetaRad: number;
 }
 
-export type StartupState = 'idle' | 'precharge' | 'align' | 'open-loop' | 'hfi' | 'bemf' | 'fieldweak';
+export type StartupState = 'idle' | 'precharge' | 'align' | 'open-loop' | 'hfi' | 'bemf' | 'fieldweak' | 'fault';
 
 export interface StartupParams {
   /** 当前状态 */
@@ -225,6 +229,8 @@ export interface StartupParams {
   accelRampRpmS: number;
   /** 对齐持续时间（ms） */
   alignDurationMs: number;
+  /** 负载转矩（N·m，影响 Iq 输出） */
+  loadTorque?: number;
   /** 开环 V/f 切到 HFI 的阈值（rpm） */
   hfiHandoffRpm: number;
   /** HFI 切到 BEMF 的阈值（rpm） */
@@ -278,6 +284,8 @@ export interface FOCParams {
   voltageLimit: number;
   /** 电频率（Hz）—— 用于在仿真中提供 ω 项以观察 BackEMF 抗扰能力 */
   electricalFreq: number;
+  /** 启用 dq 解耦前馈：vd += -ω·Lq·iq, vq += ω·Ld·id + ω·ψf */
+  decoupleEnabled?: boolean;
 }
 
 export interface SimulationSnapshot {
