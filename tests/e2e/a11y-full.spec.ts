@@ -112,27 +112,18 @@ async function openSidebarModule(page: Page, stage: string) {
 }
 
 async function openAssemblyWorkshopViaCurriculum(page: Page) {
-  // 1) 点 sidebar 顶部 "课程主线" 入口
   await page.getByRole('button', { name: /课程主线|学习路径|课程/ }).first().click();
-  await page.waitForTimeout(400);
-  // 2) 在课程页里找"整机搭建工作台"那条 checkpoint → 点"进入模块/开始/Go"按钮
-  // CurriculumPanel 里每条 checkpoint 通过 cp.title 列出，go 按钮文本通常含"进入"。
-  // 这里改用更宽松的策略：先找到 checkpoint 文字所在的容器，点容器里的按钮。
-  const item = page.locator(`text=${ASSEMBLY_LABEL}`).first();
-  await item.waitFor({ state: 'visible', timeout: 10_000 });
-  // 找其后第一个可点击按钮（"进入"/"go"/"开始"）
-  const goBtn = item
-    .locator('xpath=ancestor::*[self::li or self::div][1]')
-    .getByRole('button')
-    .first();
-  await goBtn.click();
+  await page.getByRole('button', { name: /B\. 压缩机变频器一条龙/ }).click();
+
+  const row = page.getByRole('listitem').filter({ hasText: ASSEMBLY_LABEL }).first();
+  await row.scrollIntoViewIfNeeded();
+  await row.getByRole('button', { name: /assembly-workshop/ }).click();
   await page
     .locator('text=模块加载中')
     .first()
     .waitFor({ state: 'detached', timeout: 20_000 })
     .catch(() => {});
   await page.waitForTimeout(800);
-  // 校验 17 号模块顶部 Tab 出现
   await expect(page.getByRole('tab', { name: /虚拟搭建/ }).or(page.getByText(/虚拟搭建/))).toBeVisible({
     timeout: 10_000,
   });
@@ -183,27 +174,11 @@ test('17 模块 axe-core 全量扫描（WCAG 2.2 AA + best-practice）', async (
     allResults[`${stage}-${title}`] = { summary, full: results };
   }
 
-  // 17 号：assembly-workshop，走 curriculum 入口
-  try {
-    await openAssemblyWorkshopViaCurriculum(page);
-    const results = await runAxe(page);
-    const summary = summarize(results);
-    allResults['17-assembly-workshop'] = { summary, full: results };
-  } catch (err) {
-    // 找不到 curriculum 入口或 checkpoint 时记一条 stub，让 axe-clean 断言仍然能跑完前 16 个
-    allResults['17-assembly-workshop'] = {
-      summary: {
-        critical: 0,
-        serious: 0,
-        moderate: 0,
-        minor: 0,
-        totalViolations: 0,
-        passes: 0,
-      },
-      full: { violations: [], passes: [], incomplete: [] },
-    };
-    console.warn('[a11y-full] 17 号 assembly-workshop 入口未找到，跳过：', (err as Error).message);
-  }
+  // 17 号：assembly-workshop，走 curriculum 入口。入口失效时必须直接失败，避免覆盖空洞。
+  await openAssemblyWorkshopViaCurriculum(page);
+  const assemblyResults = await runAxe(page);
+  const assemblySummary = summarize(assemblyResults);
+  allResults['17-assembly-workshop'] = { summary: assemblySummary, full: assemblyResults };
 
   // 写出完整 JSON 给 docs/A11Y_AUDIT_R2.md 生成器用
   const outDir = resolve(__dirname, '..', '..', 'tmp');
@@ -212,8 +187,7 @@ test('17 模块 axe-core 全量扫描（WCAG 2.2 AA + best-practice）', async (
 
   // 单测断言：每个模块 critical = 0（强制门）；serious 由 KNOWN_SERIOUS_ALLOWLIST 列出
   // 已知 serious（在 docs/A11Y_AUDIT_R2.md 已记录、不在本轮 R2 scope 内修复）：
-  //   - color-contrast：sidebar 内 text-ink-muted (#5d7793) 对部分 bg 的 contrast = 3.1-3.8（<4.5）
-  //     → 治理路径见 docs/A11Y_AUDIT_R2.md "已知 serious" 段；本轮不动 palette token（CLAUDE.md 约束）。
+  //   - color-contrast：保留给非默认主题或局部组合的已知对比度残留；默认 dark 的 muted token 已提高。
   //   - target-size：ScopeToolbar 时基 chip 按钮高度 ~ 24px（WCAG 2.2 SC 2.5.8 要求 24x24，但 chip
   //     设计就是窄条；提到 24px 需重排 toolbar）→ 后续轮单独治理
   // moderate / minor 仅做信息记录，不阻塞 CI。

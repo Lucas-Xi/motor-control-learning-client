@@ -12,9 +12,10 @@ pnpm-debug.log*
 
 # Build output
 release/
-tmp/
-output/
-# 截图基线要留在版本库里：scripts/qa-diff-screenshots.mjs 用 git ls-files 读取
+# 目录本身不能整体忽略，否则 ! 例外无法穿透——用 /* 忽略内容再放行子目录
+tmp/*
+output/*
+# 截图基线要留在版本库里：scripts/qa-diff-screenshots.mjs 用 git ls-files 读基线
 !output/screenshots/
 # 素材管线的提示词清单要入库：docs/ASSET_PIPELINE.md 引用
 !tmp/imagegen/

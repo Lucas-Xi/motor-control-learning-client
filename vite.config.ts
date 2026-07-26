@@ -27,7 +27,7 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
+    host: '127.0.0.1',  // 只绑定本地回环，避免暴露到局域网
     port: 5173,
   },
 });

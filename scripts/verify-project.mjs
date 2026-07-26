@@ -54,6 +54,16 @@ const requiredFiles = [
   'src/components/three/MagneticField3D.tsx',
   'src/components/three/Inverter3D.tsx',
   'src/components/three/RotorFluxScene.tsx',
+  'src/components/three/SceneFrame.tsx',
+  'src/components/three/CameraLight.tsx',
+  'src/components/three/VectorArrow.tsx',
+  'src/components/three/AlphaBetaProjection3D.tsx',
+  'src/components/three/SvpwmHexagon3D.tsx',
+  'src/components/three/CurrentLimitSpace3D.tsx',
+  'src/components/three/SensorlessAngleScene3D.tsx',
+  'src/components/three/MotorAssembly3D.tsx',
+  'src/components/three/colors.ts',
+  'src/components/three/rotation.ts',
   'src/simulation/math/transforms.ts',
   'src/simulation/math/pid.ts',
   'src/simulation/math/svpwm.ts',
@@ -360,7 +370,7 @@ const weakField = requireFile('src/simulation/math/weakField.ts');
 requireIncludes('weakField.ts', weakField, ['checkVoltageLimit', 'estimateTorque', 'suggestWeakeningId']);
 
 const packageJson = JSON.parse(requireFile('package.json'));
-for (const script of ['dev', 'build', 'verify', 'preview', 'e2e', 'e2e:optional', 'qa:screenshots', 'release:audit', 'desktop:pack', 'desktop:dist', 'ci:local']) {
+for (const script of ['dev', 'build', 'typecheck', 'verify', 'preview', 'e2e', 'e2e:optional', 'qa:screenshots', 'release:audit', 'desktop:pack', 'desktop:dist', 'ci:local']) {
   if (!packageJson.scripts?.[script]) failures.push(`package.json missing script: ${script}`);
 }
 for (const dep of ['react', 'typescript', 'vite', 'tailwindcss', 'zustand', 'recharts', 'three', '@react-three/fiber', '@react-three/drei', 'framer-motion', 'electron', 'electron-builder', 'electron-updater']) {

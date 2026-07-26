@@ -21,6 +21,10 @@ const modules = [
 
 const APP_TITLE = '压缩机变频器控制';
 
+function isBrowserDriverWarning(message: string) {
+  return message.includes('GL Driver Message') && message.includes('GPU stall due to ReadPixels');
+}
+
 async function openModule(page: Page, stage: string) {
   await page.locator('nav button').filter({ hasText: `${stage} ·` }).click();
   // 让 Vite dev 完成按需 transform + lazy chunk 下载
@@ -52,7 +56,9 @@ test('module sliders update their displayed values without console errors', asyn
   const consoleWarnings: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());
-    if (message.type() === 'warning') consoleWarnings.push(message.text());
+    if (message.type() === 'warning' && !isBrowserDriverWarning(message.text())) {
+      consoleWarnings.push(message.text());
+    }
   });
 
   await page.goto('/');

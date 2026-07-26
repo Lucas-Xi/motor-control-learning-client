@@ -2,6 +2,7 @@ import { chromium } from '@playwright/test';
 import { createServer } from 'node:http';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { inflateSync } from 'node:zlib';
 
 const root = process.cwd();
 const baseUrl = process.env.QA_BASE_URL || 'http://127.0.0.1:4173';
@@ -25,6 +26,7 @@ const modules = [
   ['15', 'apf-frontend', 'APF 前级 PFC'],
   ['16', 'refrigeration-bench', '制冷系统台架'],
 ];
+const assemblyModule = ['17', 'assembly-workshop', '整机搭建工作台'];
 const viewports = [
   ['desktop', { width: 1440, height: 960 }],
   ['mobile', { width: 390, height: 844 }],
@@ -132,6 +134,198 @@ async function openModule(page, stage) {
   await page.waitForTimeout(450);
 }
 
+async function openAssemblyWorkshop(page) {
+  await page.getByRole('button', { name: /课程主线|学习路径|课程/ }).first().click();
+  await page.getByRole('button', { name: /B\. 压缩机变频器一条龙/ }).click();
+
+  const row = page.getByRole('listitem').filter({ hasText: '整机搭建工作台' }).first();
+  await row.scrollIntoViewIfNeeded();
+  await row.getByRole('button', { name: /assembly-workshop/ }).click();
+  await page.locator('text=模块加载中').first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+  await page.getByRole('button', { name: /虚拟搭建/ }).waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('img', { name: /三维电机装配视图/ }).waitFor({ state: 'visible', timeout: 10000 });
+  await page.waitForTimeout(650);
+}
+
+function paethPredictor(a, b, c) {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  if (pb <= pc) return b;
+  return c;
+}
+
+function decodePngRgba(buffer) {
+  const signature = '89504e470d0a1a0a';
+  if (buffer.subarray(0, 8).toString('hex') !== signature) {
+    throw new Error('Invalid PNG signature');
+  }
+
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let colorType = 0;
+  let bitDepth = 0;
+  const idatChunks = [];
+
+  while (offset < buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.subarray(offset + 4, offset + 8).toString('ascii');
+    const data = buffer.subarray(offset + 8, offset + 8 + length);
+    offset += 12 + length;
+
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      bitDepth = data[8];
+      colorType = data[9];
+    } else if (type === 'IDAT') {
+      idatChunks.push(data);
+    } else if (type === 'IEND') {
+      break;
+    }
+  }
+
+  if (bitDepth !== 8) throw new Error(`Unsupported PNG bit depth: ${bitDepth}`);
+  const channelsByColorType = { 0: 1, 2: 3, 4: 2, 6: 4 };
+  const channels = channelsByColorType[colorType];
+  if (!channels) throw new Error(`Unsupported PNG color type: ${colorType}`);
+
+  const raw = inflateSync(Buffer.concat(idatChunks));
+  const stride = width * channels;
+  const rgba = new Uint8Array(width * height * 4);
+  const previous = new Uint8Array(stride);
+  const current = new Uint8Array(stride);
+  let rawOffset = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[rawOffset];
+    rawOffset += 1;
+    current.set(raw.subarray(rawOffset, rawOffset + stride));
+    rawOffset += stride;
+
+    for (let x = 0; x < stride; x += 1) {
+      const left = x >= channels ? current[x - channels] : 0;
+      const up = previous[x] || 0;
+      const upLeft = x >= channels ? previous[x - channels] : 0;
+      if (filter === 1) current[x] = (current[x] + left) & 0xff;
+      else if (filter === 2) current[x] = (current[x] + up) & 0xff;
+      else if (filter === 3) current[x] = (current[x] + Math.floor((left + up) / 2)) & 0xff;
+      else if (filter === 4) current[x] = (current[x] + paethPredictor(left, up, upLeft)) & 0xff;
+      else if (filter !== 0) throw new Error(`Unsupported PNG filter: ${filter}`);
+    }
+
+    for (let x = 0; x < width; x += 1) {
+      const src = x * channels;
+      const dst = (y * width + x) * 4;
+      if (colorType === 0) {
+        rgba[dst] = current[src];
+        rgba[dst + 1] = current[src];
+        rgba[dst + 2] = current[src];
+        rgba[dst + 3] = 255;
+      } else if (colorType === 2) {
+        rgba[dst] = current[src];
+        rgba[dst + 1] = current[src + 1];
+        rgba[dst + 2] = current[src + 2];
+        rgba[dst + 3] = 255;
+      } else if (colorType === 4) {
+        rgba[dst] = current[src];
+        rgba[dst + 1] = current[src];
+        rgba[dst + 2] = current[src];
+        rgba[dst + 3] = current[src + 1];
+      } else {
+        rgba[dst] = current[src];
+        rgba[dst + 1] = current[src + 1];
+        rgba[dst + 2] = current[src + 2];
+        rgba[dst + 3] = current[src + 3];
+      }
+    }
+    previous.set(current);
+  }
+
+  return { width, height, rgba };
+}
+
+function summarizePngPixels(buffer, viewportName, moduleSlug, canvas) {
+  const { width, height, rgba } = decodePngRgba(buffer);
+  const totalPixels = width * height;
+  const stride = Math.max(1, Math.floor(totalPixels / 12000));
+  const histogram = new Map();
+  let sampledPixels = 0;
+  let visiblePixels = 0;
+
+  for (let pixel = 0; pixel < totalPixels; pixel += stride) {
+    const offset = pixel * 4;
+    const a = rgba[offset + 3];
+    if (a === 0) continue;
+    sampledPixels += 1;
+    visiblePixels += 1;
+    const r = rgba[offset] >> 4;
+    const g = rgba[offset + 1] >> 4;
+    const b = rgba[offset + 2] >> 4;
+    const key = `${r},${g},${b}`;
+    histogram.set(key, (histogram.get(key) || 0) + 1);
+  }
+
+  const counts = Array.from(histogram.values()).sort((a, b) => b - a);
+  const dominant = counts[0] || 0;
+  const dominantRatio = sampledPixels ? dominant / sampledPixels : 1;
+  const uniqueColors = histogram.size;
+  const ok = visiblePixels > 0 && uniqueColors >= 6 && dominantRatio < 0.985;
+
+  return {
+    viewport: viewportName,
+    module: moduleSlug,
+    canvas,
+    ok,
+    reason: ok ? 'ok' : 'low-pixel-variance',
+    width,
+    height,
+    sampledPixels,
+    uniqueColors,
+    dominantRatio: Number(dominantRatio.toFixed(4)),
+  };
+}
+
+async function collectCanvasChecks(page, viewportName, moduleSlug) {
+  const canvases = await page.locator('canvas').all();
+  const checks = [];
+  for (let index = 0; index < canvases.length; index += 1) {
+    const canvas = canvases[index];
+    const box = await canvas.boundingBox();
+    if (!box || box.width < 32 || box.height < 32) {
+      checks.push({
+        viewport: viewportName,
+        module: moduleSlug,
+        canvas: index,
+        ok: false,
+        reason: 'canvas-too-small',
+        width: Math.round(box?.width ?? 0),
+        height: Math.round(box?.height ?? 0),
+        sampledPixels: 0,
+        uniqueColors: 0,
+        dominantRatio: 1,
+      });
+      continue;
+    }
+    const buffer = await canvas.screenshot({ animations: 'disabled' });
+    checks.push(summarizePngPixels(buffer, viewportName, moduleSlug, index));
+  }
+  return checks;
+}
+
+async function captureModule(page, viewportName, stage, slug, title) {
+  const filename = `${viewportName}-${stage}-${slug}.png`;
+  const path = join(root, outDir, filename);
+  await page.screenshot({ path, fullPage: true, animations: 'disabled' });
+  const canvasChecks = await collectCanvasChecks(page, viewportName, slug);
+  manifest.screenshots.push({ viewport: viewportName, module: slug, title, path: `${outDir}/${filename}` });
+  manifest.canvasChecks.push(...canvasChecks);
+  console.log(`captured ${outDir}/${filename}`);
+}
+
 const server = await ensureServer();
 await mkdir(join(root, outDir), { recursive: true });
 const browser = await chromium.launch();
@@ -139,6 +333,7 @@ const manifest = {
   generatedAt: new Date().toISOString(),
   baseUrl,
   screenshots: [],
+  canvasChecks: [],
   consoleErrors: [],
   consoleWarnings: [],
   ignoredConsoleWarnings: [],
@@ -164,17 +359,29 @@ try {
     for (const [stage, slug, title] of modules) {
       await openModule(page, stage);
       await page.getByRole('heading', { name: title }).first().waitFor({ state: 'visible' });
-      const filename = `${viewportName}-${stage}-${slug}.png`;
-      const path = join(root, outDir, filename);
-      await page.screenshot({ path, fullPage: true, animations: 'disabled' });
-      manifest.screenshots.push({ viewport: viewportName, module: slug, title, path: `${outDir}/${filename}` });
-      console.log(`captured ${outDir}/${filename}`);
+      await captureModule(page, viewportName, stage, slug, title);
     }
+
+    const [assemblyStage, assemblySlug, assemblyTitle] = assemblyModule;
+    await openAssemblyWorkshop(page);
+    await captureModule(page, viewportName, assemblyStage, assemblySlug, assemblyTitle);
     await page.close();
   }
 
   await writeFile(join(root, outDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
   console.log(`Screenshot manifest written to ${outDir}/manifest.json`);
+
+  const failedCanvasChecks = manifest.canvasChecks.filter((check) => !check.ok);
+  if (failedCanvasChecks.length) {
+    console.log('Canvas diagnostics:');
+    for (const check of failedCanvasChecks) {
+      console.log(
+        `  ${check.viewport}/${check.module} canvas ${check.canvas}: ${check.reason}, ${check.width}x${check.height}, `
+        + `uniqueColors=${check.uniqueColors}, dominantRatio=${check.dominantRatio}`,
+      );
+    }
+    throw new Error(`Canvas was blank or low variance: ${failedCanvasChecks.length} failed checks`);
+  }
 
   if (manifest.consoleErrors.length || manifest.consoleWarnings.length) {
     console.log('Console diagnostics:');
