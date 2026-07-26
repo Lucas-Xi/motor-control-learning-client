@@ -3,6 +3,8 @@ import { allChallenges, challengesByModule, checkComparator, formatTarget, getCh
 import {
   pidDefault, focDefault, svpwmDefault, sensorlessDefault, weakFieldDefault,
   startupDefault, refrigerationDefault, motorBasicsDefault,
+  threePhaseDefault, clarkeDefault, parkDefault, inverterDefault,
+  controlLoopDefault, faultDefault, hfiDefault, apfDefault,
 } from '../../../simulation/engine/presets';
 import type { ModuleId } from '../../../simulation/engine/types';
 
@@ -14,14 +16,24 @@ const SLICE_BY_MODULE: Record<string, Record<string, unknown>> = {
   'field-weakening': weakFieldDefault as unknown as Record<string, unknown>,
   'startup-statemachine': startupDefault as unknown as Record<string, unknown>,
   'refrigeration-bench': refrigerationDefault as unknown as Record<string, unknown>,
+  'motor-basics': motorBasicsDefault as unknown as Record<string, unknown>,
+  'three-phase': threePhaseDefault as unknown as Record<string, unknown>,
+  'clarke-transform': clarkeDefault as unknown as Record<string, unknown>,
+  'park-transform': parkDefault as unknown as Record<string, unknown>,
+  'inverter': inverterDefault as unknown as Record<string, unknown>,
+  'control-loops': controlLoopDefault as unknown as Record<string, unknown>,
+  'faults-debugging': faultDefault as unknown as Record<string, unknown>,
+  'hfi-sensorless': hfiDefault as unknown as Record<string, unknown>,
+  'apf-frontend': apfDefault as unknown as Record<string, unknown>,
 };
 
 describe('challenges schema', () => {
   it('exports at least 8 challenges spread across the required modules', () => {
-    expect(allChallenges.length).toBeGreaterThanOrEqual(8);
+    expect(allChallenges.length).toBeGreaterThanOrEqual(16);
     const requiredModules: ModuleId[] = [
       'pid-control', 'foc-flow', 'svpwm', 'sensorless-foc',
       'field-weakening', 'startup-statemachine', 'refrigeration-bench',
+      'motor-basics',
     ];
     for (const m of requiredModules) {
       expect(challengesByModule[m]?.length ?? 0).toBeGreaterThan(0);
@@ -106,8 +118,8 @@ describe('formatTarget', () => {
 
 describe('getChallengesFor', () => {
   it('returns a stable empty array for modules without challenges', () => {
-    const a = getChallengesFor('motor-basics');
-    const b = getChallengesFor('motor-basics');
+    const a = getChallengesFor('assembly-workshop' as ModuleId);
+    const b = getChallengesFor('assembly-workshop' as ModuleId);
     expect(a).toBe(b); // 同一冻结引用
     expect(a.length).toBe(0);
   });

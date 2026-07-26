@@ -6,6 +6,15 @@ import { sensorlessChallenges } from './sensorless-foc';
 import { fieldWeakeningChallenges } from './field-weakening';
 import { startupChallenges } from './startup-statemachine';
 import { refrigerationChallenges } from './refrigeration-bench';
+import { motorBasicsChallenges } from './motor-basics';
+import { threePhaseChallenges } from './three-phase';
+import { clarkeChallenges } from './clarke-transform';
+import { parkChallenges } from './park-transform';
+import { inverterChallenges } from './inverter';
+import { controlLoopsChallenges } from './control-loops';
+import { faultsChallenges } from './faults-debugging';
+import { hfiChallenges } from './hfi-sensorless';
+import { apfChallenges } from './apf-frontend';
 
 /**
  * 实验挑战（Lab Challenge）系统
@@ -73,6 +82,15 @@ export const allChallenges: ChallengeDefinition[] = [
   ...fieldWeakeningChallenges,
   ...startupChallenges,
   ...refrigerationChallenges,
+  ...motorBasicsChallenges,
+  ...threePhaseChallenges,
+  ...clarkeChallenges,
+  ...parkChallenges,
+  ...inverterChallenges,
+  ...controlLoopsChallenges,
+  ...faultsChallenges,
+  ...hfiChallenges,
+  ...apfChallenges,
 ];
 
 /** 按 module 索引（一个模块可能多道题） */

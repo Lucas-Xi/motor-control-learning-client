@@ -13,7 +13,6 @@ function runPid(pid: PIDParams) {
     pid.target,
     pid.sampleMs / 1000,
     1.2,
-    { limit: pid.limit, antiWindup: pid.antiWindup, loadDisturbance: pid.loadDisturbance },
   );
   return calculateStepMetrics(data, pid.target);
 }
