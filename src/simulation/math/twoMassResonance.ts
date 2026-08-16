@@ -260,3 +260,60 @@ export function sweepFrequencyResponse(
 
   return data;
 }
+
+export interface TwoMassStepTrace {
+  t: number;
+  omega1: number;
+  omega2: number;
+  shaftTorque: number;
+}
+
+/** 恒定电磁转矩阶跃，返回电机/负载转速与轴转矩轨迹。 */
+export function simulateTwoMassTorqueStep(
+  params: TwoMassParams,
+  te: number,
+  duration = 0.08,
+  dt = 0.0002,
+): TwoMassStepTrace[] {
+  let state: TwoMassState = {
+    omega1: 0,
+    theta1: 0,
+    omega2: 0,
+    theta2: 0,
+    shaftTorque: 0,
+  };
+  const traces: TwoMassStepTrace[] = [{
+    t: 0,
+    omega1: 0,
+    omega2: 0,
+    shaftTorque: 0,
+  }];
+  const steps = Math.max(1, Math.round(duration / Math.max(dt, 1e-9)));
+  for (let i = 1; i <= steps; i++) {
+    const r = stepTwoMass(state, params, { te, loadTorque: 0, dt });
+    state = r.state;
+    traces.push({
+      t: i * dt,
+      omega1: state.omega1,
+      omega2: state.omega2,
+      shaftTorque: state.shaftTorque,
+    });
+  }
+  return traces;
+}
+
+/** 在扫频数据里找幅值峰值对应的频率（用于测试/标注）。 */
+export function findSweepPeakFreq(
+  sweep: Array<{ freqHz: number; mag: number }>,
+): number {
+  if (sweep.length === 0) return 0;
+  let bestFreq = sweep[0].freqHz;
+  let bestMag = sweep[0].mag;
+  for (let i = 1; i < sweep.length; i++) {
+    if (sweep[i].mag > bestMag) {
+      bestMag = sweep[i].mag;
+      bestFreq = sweep[i].freqHz;
+    }
+  }
+  return bestFreq;
+}

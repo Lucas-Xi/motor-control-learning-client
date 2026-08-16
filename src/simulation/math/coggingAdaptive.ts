@@ -20,7 +20,8 @@
  *   friction observer", IEEE Trans. Ind. Electron. 2008.
  */
 
-import { type FfcLut } from './coggingCompensation';
+import { type FfcLut, buildFfcLut } from './coggingCompensation';
+import { coggingTorque, sampleCoggingParams } from './cogging';
 import { wrapAngleRad } from '../../utils/clamp';
 
 export interface AdaptiveLutConfig {
@@ -197,5 +198,108 @@ export function diagnoseAdaptiveLut(
     avgObservations: trained > 0 ? sumObs / trained : 0,
     cumulativeEnergy: state.cumulativeResidual,
     maxDelta,
+  };
+}
+
+export interface AdaptiveLearnSample {
+  rev: number;
+  residualRmsNm: number;
+  coveragePct: number;
+  maxDelta: number;
+  isLearning: boolean;
+}
+
+export interface AdaptiveLearnResult {
+  samples: AdaptiveLearnSample[];
+  finalCoveragePct: number;
+  finalResidualRmsNm: number;
+  suppressed: boolean; // residual dropped vs first sample
+}
+
+const LEARN_POLE_PAIRS = 4;
+const LEARN_FLUX = 0.045;
+const LEARN_KT = 1.5 * LEARN_POLE_PAIRS * LEARN_FLUX;
+
+/** 线性插值查 LUT（与 lookupFfc / evaluateFfc 同一套 wrap + 邻 bin）。 */
+function interpolateLut(lut: FfcLut, thetaRad: number): number {
+  const wrapped = wrapAngleRad(thetaRad);
+  const positive = wrapped < 0 ? wrapped + 2 * Math.PI : wrapped;
+  const idxF = positive / lut.stepRad;
+  const i0 = Math.floor(idxF) % lut.size;
+  const i1 = (i0 + 1) % lut.size;
+  const frac = idxF - Math.floor(idxF);
+  return lut.values[i0] * (1 - frac) + lut.values[i1] * frac;
+}
+
+/**
+ * 用“失配的真实齿槽”当植物，静态 LUT 当模型，跑若干转 LMS。
+ * plantScale：真实 Tcog 相对建表工况的倍率（温度退磁 <1，饱和/装配偏差可 >1）。
+ * speedRipple：整段共用；> threshold 时应几乎不学习。
+ */
+export function simulateAdaptiveLearning(opts: {
+  lutSize?: number;
+  revolutions?: number;
+  stepsPerRev?: number;
+  plantScale?: number;
+  speedRipple?: number;
+  learningRate?: number;
+  forgetFactor?: number;
+  dt?: number;
+} = {}): AdaptiveLearnResult {
+  const lutSize = opts.lutSize ?? 256;
+  const revolutions = opts.revolutions ?? 80;
+  const stepsPerRev = opts.stepsPerRev ?? 256;
+  const plantScale = opts.plantScale ?? 1.3;
+  const speedRipple = opts.speedRipple ?? 0.01;
+  const learningRate = opts.learningRate ?? 0.02;
+  const forgetFactor = opts.forgetFactor ?? 0.02;
+  const dt = opts.dt ?? 0.001;
+
+  const params = sampleCoggingParams.hitachi15HP;
+  const baseLut = buildFfcLut(lutSize, params, LEARN_KT);
+  const state = createAdaptiveLut(baseLut, {
+    torqueConstant: LEARN_KT,
+    learningRate,
+    forgetFactor,
+  });
+
+  const samples: AdaptiveLearnSample[] = [];
+  for (let rev = 0; rev < revolutions; rev += 1) {
+    let sumSq = 0;
+    for (let step = 0; step < stepsPerRev; step += 1) {
+      const theta = (2 * Math.PI * step) / stepsPerRev;
+      const TcogTrue = coggingTorque(theta, params).torque * plantScale;
+      const iqFfc = interpolateLut(state.lut, theta);
+      // iq_ffc = −Tcog/Kt → T_comp = iq_ffc·Kt；残差 = T_true + T_comp
+      const residual = TcogTrue + iqFfc * LEARN_KT;
+      sumSq += residual * residual;
+      adaptiveLutStep(state, theta, residual, speedRipple, dt);
+    }
+    const diag = diagnoseAdaptiveLut(state, baseLut);
+    samples.push({
+      rev: rev + 1,
+      residualRmsNm: Math.sqrt(sumSq / stepsPerRev),
+      coveragePct: diag.coveragePct,
+      maxDelta: diag.maxDelta,
+      isLearning: state.isLearning,
+    });
+  }
+
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const speedRippleLow = speedRipple < state.speedRippleThreshold;
+  const suppressed = (
+    plantScale !== 1
+    && speedRippleLow
+    && last !== undefined
+    && first !== undefined
+    && last.residualRmsNm < 0.6 * first.residualRmsNm
+  );
+
+  return {
+    samples,
+    finalCoveragePct: last?.coveragePct ?? 0,
+    finalResidualRmsNm: last?.residualRmsNm ?? 0,
+    suppressed,
   };
 }

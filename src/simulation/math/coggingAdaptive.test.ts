@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createAdaptiveLut, adaptiveLutStep, resetAdaptiveLut, diagnoseAdaptiveLut,
+  simulateAdaptiveLearning,
 } from './coggingAdaptive';
 import { buildFfcLut } from './coggingCompensation';
 import { sampleCoggingParams } from './cogging';
@@ -79,6 +80,29 @@ describe('coggingAdaptive', () => {
       resetAdaptiveLut(state, baseLut);
       expect(state.lut.values[0]).toBe(baseLut.values[0]);
       expect(state.cumulativeResidual).toBeCloseTo(0);
+    });
+  });
+
+  describe('simulateAdaptiveLearning', () => {
+    it('默认失配（plantScale 1.3、低纹波）覆盖率高且残差被压住', () => {
+      const r = simulateAdaptiveLearning();
+      expect(r.finalCoveragePct).toBeGreaterThan(90);
+      expect(r.samples.length).toBeGreaterThan(1);
+      const first = r.samples[0];
+      const last = r.samples[r.samples.length - 1];
+      expect(last.residualRmsNm).toBeLessThan(first.residualRmsNm);
+      expect(r.suppressed).toBe(true);
+      expect(last.isLearning).toBe(true);
+    });
+
+    it('高转速波动 0.2 时几乎不学习', () => {
+      const r = simulateAdaptiveLearning({ speedRipple: 0.2 });
+      expect(r.samples.every((s) => s.isLearning === false)).toBe(true);
+      expect(r.finalCoveragePct).toBeLessThan(5);
+      const first = r.samples[0].residualRmsNm;
+      const last = r.samples[r.samples.length - 1].residualRmsNm;
+      expect(Math.abs(last - first)).toBeLessThan(1e-9);
+      expect(r.suppressed).toBe(false);
     });
   });
 });

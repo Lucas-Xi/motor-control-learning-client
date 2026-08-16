@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simulateThermal } from './thermalSim';
+import { downsampleThermalPoints, simulateThermal } from './thermalSim';
 import { defaultPmsmParameters } from './motorModel';
 
 describe('thermalSim', () => {
@@ -54,5 +54,21 @@ describe('thermalSim', () => {
     const low = simulateThermal({ ...defaultInput, vq: 3 });
     const high = simulateThermal({ ...defaultInput, vq: 10 });
     expect(high.steadyTempC).toBeGreaterThan(low.steadyTempC);
+  });
+
+  it('更高负载转矩导致更高稳态温度', () => {
+    const low = simulateThermal({ ...defaultInput, loadTorque: 0.1 });
+    const high = simulateThermal({ ...defaultInput, loadTorque: 0.4 });
+    expect(high.steadyTempC).toBeGreaterThan(low.steadyTempC);
+  });
+
+  it('downsampleThermalPoints 限制长度并保留首尾', () => {
+    const pts = Array.from({ length: 1000 }, (_, i) => i);
+    const ds = downsampleThermalPoints(pts, 50);
+    expect(ds.length).toBeLessThanOrEqual(50);
+    expect(ds.length).toBe(50);
+    expect(ds[0]).toBe(0);
+    expect(ds[ds.length - 1]).toBe(999);
+    expect(downsampleThermalPoints(pts, 2000).length).toBe(1000);
   });
 });

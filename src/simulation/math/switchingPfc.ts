@@ -278,3 +278,69 @@ export function simulateSwitchingPfc(input: SwitchingPfcInput): SwitchingPfcResu
     switchingRippleRatio: iLRipple / (iLRms + 1e-12),
   };
 }
+
+/** 在交流峰值附近取 1 个 PWM 周期，算开关纹波峰峰值（不含 50Hz 包络）。 */
+export function switchingRippleNearPeak(result: SwitchingPfcResult, pwmFs: number): number {
+  const pts = result.points;
+  if (pts.length < 2 || !(pwmFs > 0)) return 0;
+
+  const Ts = 1 / pwmFs;
+  const tFirst = pts[0].t;
+  const tLast = pts[pts.length - 1].t;
+  const tHalf = tFirst + 0.5 * (tLast - tFirst);
+
+  let peakIdx = -1;
+  let peakV = -Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    if (p.t < tHalf) continue;
+    if (p.t + Ts > tLast) break;
+    if (p.vRect > peakV) {
+      peakV = p.vRect;
+      peakIdx = i;
+    }
+  }
+
+  if (peakIdx < 0) {
+    const t0 = tLast - Ts;
+    peakIdx = 0;
+    for (let i = pts.length - 1; i >= 0; i--) {
+      if (pts[i].t <= t0) {
+        peakIdx = i;
+        break;
+      }
+    }
+  }
+
+  const t0 = pts[peakIdx].t;
+  const t1 = t0 + Ts;
+  let iMin = Infinity;
+  let iMax = -Infinity;
+  for (let i = peakIdx; i < pts.length; i++) {
+    const p = pts[i];
+    if (p.t > t1 + 1e-12) break;
+    if (p.iL < iMin) iMin = p.iL;
+    if (p.iL > iMax) iMax = p.iL;
+  }
+
+  if (!Number.isFinite(iMin) || !Number.isFinite(iMax)) return 0;
+  return iMax - iMin;
+}
+
+/** 是否出现断续：稳态后半段 iL 触及 0。 */
+export function detectDcm(result: SwitchingPfcResult): boolean {
+  const pts = result.points;
+  if (pts.length === 0) return false;
+
+  const start = Math.floor(pts.length / 2);
+  let vPeak = 0;
+  for (let i = start; i < pts.length; i++) {
+    if (pts[i].vRect > vPeak) vPeak = pts[i].vRect;
+  }
+  const vThresh = Math.max(20, 0.15 * vPeak);
+
+  for (let i = start; i < pts.length; i++) {
+    if (pts[i].iL <= 1e-3 && pts[i].vRect > vThresh) return true;
+  }
+  return false;
+}

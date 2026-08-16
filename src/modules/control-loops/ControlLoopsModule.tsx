@@ -15,9 +15,11 @@ import { SerialCompareSpeedLoopCard } from './SerialCompareSpeedLoopCard';
 import { IronLossBreakdownCard } from './IronLossBreakdownCard';
 import { MechanicalResonanceCard } from './MechanicalResonanceCard';
 import { CoggingFeedforwardCard } from './CoggingFeedforwardCard';
+import { CoggingAdaptiveCard } from './CoggingAdaptiveCard';
 import { ResonanceNotchCard } from './ResonanceNotchCard';
 import { AutoNotchCard } from './AutoNotchCard';
 import { ServoPositionCard } from './ServoPositionCard';
+import { TwoMassBodeCard } from './TwoMassBodeCard';
 import { makeAntiWindupPI } from '../../simulation/math/antiwindup';
 
 /**
@@ -162,8 +164,12 @@ function Probe() {
       <IronLossBreakdownCard />
       {/* round-15 接入 UI：双质量传动共振 + Kp 上限 */}
       <MechanicalResonanceCard />
+      {/* round-27 双质量 Bode：ARF/NRF × 速度环带宽上限 */}
+      <TwoMassBodeCard />
       {/* round-22 齿槽前馈补偿（CT-FFC）：现象 → 对策 */}
       <CoggingFeedforwardCard />
+      {/* round-28 自适应齿槽：失配植物 × LMS 残差学习 */}
+      <CoggingAdaptiveCard />
       {/* round-23 反共振陷波抑制：与 MechanicalResonanceCard 形成扰动→对策闭环 */}
       <ResonanceNotchCard />
       {/* round-24 扫频辨识 × 自适应陷波：刚度漂移让固定陷波失准 → chirp 找峰重对准 */}

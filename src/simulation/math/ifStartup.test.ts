@@ -31,32 +31,41 @@ describe('simulateIFStartup', () => {
 
   it('电流幅值随频率升高而降低', () => {
     const r = simulateIFStartup(defaultInput);
-    const early = r.trajectory[10];  // ~20ms, 低频
-    const late = r.trajectory[Math.floor(r.trajectory.length * 0.8)]; // 后期, 高频
+    const early = r.trajectory[10];
+    const late = r.trajectory[Math.floor(r.trajectory.length * 0.8)];
     expect(late.iRef).toBeLessThanOrEqual(early.iRef);
   });
 
-  it('高惯量负载需要更长时间启动', () => {
-    const light = simulateIFStartup(defaultInput);
-    const heavy = simulateIFStartup({ ...defaultInput, inertia: 0.02 });
-    if (light.handoffTime !== null && heavy.handoffTime !== null) {
-      expect(heavy.handoffTime).toBeGreaterThanOrEqual(light.handoffTime - 0.5);
-    }
-  });
-
-  it('切换条件可在 10s 内达到', () => {
+  it('默认工况成功切换且 handoffTime < 6 s', () => {
     const r = simulateIFStartup(defaultInput);
-    // 如果成功了, handoffTime 应 < 10
-    if (r.success) {
-      expect(r.handoffTime).toBeLessThan(10);
-    }
+    expect(r.success).toBe(true);
+    expect(r.handoffTime).not.toBeNull();
+    expect(r.handoffTime as number).toBeLessThan(6);
   });
 
-  it('大负载可能导致启动失败', () => {
+  it('rpmRef ≈ freqRef × 60 / polePairs', () => {
+    const r = simulateIFStartup(defaultInput);
+    const last = r.trajectory[r.trajectory.length - 1];
+    expect(last.rpmRef).toBeCloseTo(last.freqRef * 60 / defaultInput.polePairs, 5);
+  });
+
+  it('大负载拉出：loadTorque=2.0 不得成功切换', () => {
     const r = simulateIFStartup({ ...defaultInput, loadTorque: 2.0 });
-    // 大负载下可能无法启动
-    // succeed 或 fail 都算合理, 只检查不崩溃
-    expect(r.trajectory.length).toBeGreaterThan(0);
+    expect(r.success).toBe(false);
+    expect(r.pullOut || !r.success).toBe(true);
+  });
+
+  it('过快斜坡更容易失步或负载角更大', () => {
+    const slow = simulateIFStartup(defaultInput);
+    const fast = simulateIFStartup({ ...defaultInput, rampRateHzPerSec: 80 });
+    expect(fast.lostSync || fast.maxLoadAngleDeg > slow.maxLoadAngleDeg).toBe(true);
+  });
+
+  it('成功工况负载角有限且 |maxLoadAngleDeg| < 180', () => {
+    const r = simulateIFStartup(defaultInput);
+    expect(r.success).toBe(true);
+    expect(Number.isFinite(r.maxLoadAngleDeg)).toBe(true);
+    expect(Math.abs(r.maxLoadAngleDeg)).toBeLessThan(180);
   });
 });
 

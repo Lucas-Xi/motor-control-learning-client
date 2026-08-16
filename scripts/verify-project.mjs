@@ -157,6 +157,21 @@ const requiredFiles = [
   // round-25 电流环 PI 自整定：模最优法 + 一拍延时离散验证仿真
   'src/simulation/math/currentLoopTuning.ts',
   'src/modules/pid-control/CurrentLoopTuningCard.tsx',
+  // round-26 I/F 启动：负载角同步模型 × 开环电流-频率斜坡
+  'src/simulation/math/ifStartup.ts',
+  'src/modules/startup-statemachine/IFStartupCard.tsx',
+  // round-27 双质量 Bode：ARF/NRF × 速度环带宽上限
+  'src/simulation/math/twoMassResonance.ts',
+  'src/modules/control-loops/TwoMassBodeCard.tsx',
+  // round-28 自适应齿槽：失配植物 × LMS 残差学习
+  'src/simulation/math/coggingAdaptive.ts',
+  'src/modules/control-loops/CoggingAdaptiveCard.tsx',
+  // round-29 开关级 PFC：载波比较 × 电感纹波 / DCM
+  'src/simulation/math/switchingPfc.ts',
+  'src/modules/apf-frontend/SwitchingPfcCard.tsx',
+  // round-30 热闭环：损耗随温度正反馈 × 热失控
+  'src/simulation/math/thermalSim.ts',
+  'src/modules/motor-basics/ThermalRunawayCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',

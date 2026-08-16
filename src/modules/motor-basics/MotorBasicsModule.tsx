@@ -18,6 +18,7 @@ import { WindingConnectionCard } from './WindingConnectionCard';
 import { DemagnetizationCurveCard } from './DemagnetizationCurveCard';
 import { ModelComparisonCard } from './ModelComparisonCard';
 import { ThermalDeratingCard } from './ThermalDeratingCard';
+import { ThermalRunawayCard } from './ThermalRunawayCard';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -178,6 +179,8 @@ export function MotorBasicsModule() {
           <CoggingTorqueCard />
           {/* round-21 温度对 Rs / ψf 影响 + 退磁告警 + 一阶热爬升 */}
           <ThermalDeratingCard />
+          {/* round-30 热闭环：损耗随温度正反馈 × 热失控 */}
+          <ThermalRunawayCard />
           <DemagnetizationCurveCard />
           {/* round-11 高保真 A/B 对比 */}
           <ModelComparisonCard />

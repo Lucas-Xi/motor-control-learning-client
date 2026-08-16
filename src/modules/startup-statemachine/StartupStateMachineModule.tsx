@@ -12,6 +12,7 @@ import { formatNumber } from '../../utils/format';
 import { ObserverTransitionCard } from '../../components/charts/ObserverTransitionCard';
 import { SerialCompareStartupCard } from './SerialCompareStartupCard';
 import { FrictionCurveCard } from './FrictionCurveCard';
+import { IFStartupCard } from './IFStartupCard';
 
 const STATES: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak'];
 
@@ -164,6 +165,7 @@ export function StartupStateMachineModule() {
           <StateMachineDiagram />
           <SpeedChart />
           <FrictionCurveCard />
+          <IFStartupCard />
         </div>
       }
       probe={<Probe />}

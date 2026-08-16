@@ -187,3 +187,17 @@ export function simulateThermal(input: ThermalSimInput): ThermalSimResult {
     demagAlarmCount,
   };
 }
+
+/** 从轨迹抽稀，给 UI 用。 */
+export function downsampleThermalPoints<T>(points: T[], maxPoints: number): T[] {
+  if (maxPoints <= 0) return [];
+  if (points.length <= maxPoints) return points;
+  const lastIdx = points.length - 1;
+  const out: T[] = [];
+  for (let k = 0; k < maxPoints - 1; k++) {
+    const i = Math.round((k * lastIdx) / (maxPoints - 1));
+    out.push(points[i]);
+  }
+  out.push(points[lastIdx]);
+  return out;
+}

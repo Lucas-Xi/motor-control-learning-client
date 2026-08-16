@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simulateSwitchingPfc } from './switchingPfc';
+import { detectDcm, simulateSwitchingPfc, switchingRippleNearPeak } from './switchingPfc';
 
 describe('switchingPfc', () => {
   const defaultInput = {
@@ -52,5 +52,31 @@ describe('switchingPfc', () => {
     const lowFreq = simulateSwitchingPfc({ ...defaultInput, pwmFs: 10000 });
     const highFreq = simulateSwitchingPfc({ ...defaultInput, pwmFs: 40000 });
     expect(highFreq.iLRipple).toBeLessThan(lowFreq.iLRipple * 1.2);
+  });
+
+  it('开关纹波 > 0 且小于整周波包络 iLRipple', () => {
+    const r = simulateSwitchingPfc(defaultInput);
+    const sw = switchingRippleNearPeak(r, defaultInput.pwmFs);
+    expect(sw).toBeGreaterThan(0);
+    expect(sw).toBeLessThan(r.iLRipple);
+  });
+
+  it('大电感减小开关纹波', () => {
+    const smallL = simulateSwitchingPfc({ ...defaultInput, lUh: 200 });
+    const largeL = simulateSwitchingPfc({ ...defaultInput, lUh: 2000 });
+    expect(switchingRippleNearPeak(largeL, defaultInput.pwmFs))
+      .toBeLessThan(switchingRippleNearPeak(smallL, defaultInput.pwmFs));
+  });
+
+  it('detectDcm 返回布尔且不抛', () => {
+    const r = simulateSwitchingPfc(defaultInput);
+    expect(typeof detectDcm(r)).toBe('boolean');
+    const light = simulateSwitchingPfc({
+      ...defaultInput,
+      lUh: 80,
+      loadCurrent: 0.5,
+      cycles: 2,
+    });
+    expect(typeof detectDcm(light)).toBe('boolean');
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   stepTwoMass, analyzeResonance, frequencyResponse, sweepFrequencyResponse,
+  simulateTwoMassTorqueStep, findSweepPeakFreq,
   type TwoMassParams,
 } from './twoMassResonance';
 
@@ -92,5 +93,57 @@ describe('sweepFrequencyResponse', () => {
     const peakIdx = mags.indexOf(Math.max(...mags));
     // 峰值应该出现在数据中部附近（共振频率处）
     expect(peakIdx).toBeGreaterThan(0);
+  });
+});
+
+describe('analyzeResonance formulas', () => {
+  it('antiResonanceFreq ≈ sqrt(K/J2)/(2π)', () => {
+    const a = analyzeResonance(defaultParams);
+    const expected = Math.sqrt(defaultParams.shaftStiffness / defaultParams.j2) / (2 * Math.PI);
+    expect(Math.abs(a.antiResonanceFreq - expected) / expected).toBeLessThan(1e-6);
+  });
+
+  it('resonanceFreq / antiResonanceFreq ≈ sqrt(1 + J2/J1)', () => {
+    const a = analyzeResonance(defaultParams);
+    const ratio = a.resonanceFreq / a.antiResonanceFreq;
+    const expected = Math.sqrt(1 + defaultParams.j2 / defaultParams.j1);
+    expect(ratio).toBeCloseTo(expected, 6);
+  });
+});
+
+describe('simulateTwoMassTorqueStep', () => {
+  it('末态 omega1 > 0 且轴转矩变为非零', () => {
+    const trace = simulateTwoMassTorqueStep(defaultParams, 1);
+    expect(trace.length).toBeGreaterThan(10);
+    const last = trace[trace.length - 1];
+    expect(last.omega1).toBeGreaterThan(0);
+    expect(trace.some((p) => Math.abs(p.shaftTorque) > 0)).toBe(true);
+  });
+});
+
+describe('findSweepPeakFreq', () => {
+  it('空扫频返回 0', () => {
+    expect(findSweepPeakFreq([])).toBe(0);
+  });
+
+  it('共振附近扫频峰值频率在 resonanceFreq 的 15% 内', () => {
+    const a = analyzeResonance(defaultParams);
+    const sweep = sweepFrequencyResponse(
+      defaultParams,
+      a.resonanceFreq * 0.5,
+      a.resonanceFreq * 2,
+      40,
+    );
+    const peak = findSweepPeakFreq(sweep);
+    expect(Math.abs(peak - a.resonanceFreq) / a.resonanceFreq).toBeLessThan(0.15);
+  });
+});
+
+describe('frequencyResponse anti-resonance dip', () => {
+  it('反共振处幅值低于 antiResonanceFreq × 0.5（陷波）', () => {
+    const a = analyzeResonance(defaultParams);
+    const atAr = frequencyResponse(a.antiResonanceFreq, defaultParams);
+    const before = frequencyResponse(a.antiResonanceFreq * 0.5, defaultParams);
+    expect(atAr.mag).toBeLessThan(before.mag);
   });
 });
