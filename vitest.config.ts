@@ -7,6 +7,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: ['node_modules', 'dist', 'tests/**'],
     environment: 'node',  // 数学纯函数无需 jsdom
+    // 钉住 i18n locale = zh-CN：CI runner（en-US）与本地（zh-CN）的
+    // navigator.language 不同，断言中文文案的测试会环境相关地失败。
+    setupFiles: ['src/test/setup-i18n.ts'],
     reporters: ['default'],
     coverage: {
       provider: 'v8',
