@@ -75,5 +75,5 @@ jobs:
 #     workflow 会自动找到匹配 release 并上传产物，用户桌面端 30s 内收到更新事件。
 #   - 若仓库 Settings → Secrets 里没配置代码签名证书，Windows SmartScreen
 #     首次安装会弹"未识别的发布者"，用户点"更多信息 → 仍要运行"即可继续。
-#   - 真正发版前必须把 package.json 的 build.publish.owner/repo 从 <OWNER>/<REPO>
-#     替换成真实 GitHub 仓库标识，否则 electron-builder 不知道往哪上传。
+#   - electron-builder 上传目标由 package.json 的 build.publish 决定
+#     （当前指向 Lucas-Xi/motor-control-learning-client）。

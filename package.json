@@ -113,8 +113,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "<OWNER>",
-        "repo": "<REPO>",
+        "owner": "Lucas-Xi",
+        "repo": "motor-control-learning-client",
         "releaseType": "release"
       }
     ]
