@@ -36,6 +36,10 @@ jobs:
       - name: Install deps / 安装依赖 (npm ci)
         run: npm ci
 
+      # electron ≥42 不再用 postinstall 自动下载二进制，必须显式跑 install-electron
+      - name: Download Electron binary / 下载 Electron 二进制
+        run: npx install-electron
+
       - name: Type check / TypeScript 类型检查
         run: npx tsc -b --noEmit
 
