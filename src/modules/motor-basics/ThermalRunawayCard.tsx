@@ -50,9 +50,9 @@ interface ChartSample {
  */
 export function ThermalRunawayCard() {
   const [presetKey, setPresetKey] = useState<PresetKey>('roomLoad');
-  const [ambientC, setAmbientC] = useState(LOOP_PRESETS.roomLoad.ambientC);
-  const [vq, setVq] = useState(LOOP_PRESETS.roomLoad.vq);
-  const [loadTorque, setLoadTorque] = useState(LOOP_PRESETS.roomLoad.loadTorque);
+  const [ambientC, setAmbientC] = useState<number>(LOOP_PRESETS.roomLoad.ambientC);
+  const [vq, setVq] = useState<number>(LOOP_PRESETS.roomLoad.vq);
+  const [loadTorque, setLoadTorque] = useState<number>(LOOP_PRESETS.roomLoad.loadTorque);
 
   const selectPreset = (k: PresetKey) => {
     setPresetKey(k);

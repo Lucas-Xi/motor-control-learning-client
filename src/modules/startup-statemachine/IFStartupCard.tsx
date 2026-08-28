@@ -67,9 +67,9 @@ interface ChartSample {
  */
 export function IFStartupCard() {
   const [presetKey, setPresetKey] = useState<PresetKey>('compressorPmsm');
-  const [rampRateHzPerSec, setRampRateHzPerSec] = useState(MOTOR_PRESETS.compressorPmsm.rampRateHzPerSec);
-  const [leadAngleDeg, setLeadAngleDeg] = useState(MOTOR_PRESETS.compressorPmsm.leadAngleDeg);
-  const [loadTorque, setLoadTorque] = useState(MOTOR_PRESETS.compressorPmsm.loadTorque);
+  const [rampRateHzPerSec, setRampRateHzPerSec] = useState<number>(MOTOR_PRESETS.compressorPmsm.rampRateHzPerSec);
+  const [leadAngleDeg, setLeadAngleDeg] = useState<number>(MOTOR_PRESETS.compressorPmsm.leadAngleDeg);
+  const [loadTorque, setLoadTorque] = useState<number>(MOTOR_PRESETS.compressorPmsm.loadTorque);
 
   const selectPreset = (k: PresetKey) => {
     setPresetKey(k);

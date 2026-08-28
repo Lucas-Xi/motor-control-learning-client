@@ -63,9 +63,9 @@ function downsampleBode(data: BodeSample[], maxPoints: number): BodeSample[] {
  */
 export function TwoMassBodeCard() {
   const [presetKey, setPresetKey] = useState<PresetKey>('servoCoupling');
-  const [shaftStiffness, setShaftStiffness] = useState(COUPLING_PRESETS.servoCoupling.shaftStiffness);
-  const [shaftDamping, setShaftDamping] = useState(COUPLING_PRESETS.servoCoupling.shaftDamping);
-  const [j2, setJ2] = useState(COUPLING_PRESETS.servoCoupling.j2);
+  const [shaftStiffness, setShaftStiffness] = useState<number>(COUPLING_PRESETS.servoCoupling.shaftStiffness);
+  const [shaftDamping, setShaftDamping] = useState<number>(COUPLING_PRESETS.servoCoupling.shaftDamping);
+  const [j2, setJ2] = useState<number>(COUPLING_PRESETS.servoCoupling.j2);
 
   const selectPreset = (k: PresetKey) => {
     setPresetKey(k);

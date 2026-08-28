@@ -60,9 +60,9 @@ function downsample<T>(data: T[], maxPoints: number): T[] {
  */
 export function SwitchingPfcCard() {
   const [presetKey, setPresetKey] = useState<PresetKey>('appliance');
-  const [lUh, setLUh] = useState(PFC_PRESETS.appliance.lUh);
-  const [pwmFs, setPwmFs] = useState(PFC_PRESETS.appliance.pwmFs);
-  const [loadCurrent, setLoadCurrent] = useState(PFC_PRESETS.appliance.loadCurrent);
+  const [lUh, setLUh] = useState<number>(PFC_PRESETS.appliance.lUh);
+  const [pwmFs, setPwmFs] = useState<number>(PFC_PRESETS.appliance.pwmFs);
+  const [loadCurrent, setLoadCurrent] = useState<number>(PFC_PRESETS.appliance.loadCurrent);
 
   const selectPreset = (k: PresetKey) => {
     setPresetKey(k);
