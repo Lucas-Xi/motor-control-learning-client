@@ -1,0 +1,67 @@
+name: Docs Site / 文档站点
+
+# 教学内容或站点脚本变更时，重建离线文档站点并发布到 GitHub Pages。
+# Rebuilds the offline doc site and deploys it to GitHub Pages whenever
+# lesson content or the site generator changes.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/content/**'
+      - 'scripts/build-docsite.mjs'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build docsite / 构建文档站点
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo / 检出仓库
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22 / 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install deps / 安装依赖
+        run: npm ci
+
+      - name: Build docsite / 生成站点
+        run: npm run docsite
+
+      - name: Verify docsite / 校验站点完整性
+        run: node scripts/verify-docsite.mjs
+
+      - name: Configure Pages / 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact / 上传站点工件
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+
+  deploy:
+    name: Deploy to Pages / 发布
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy / 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
