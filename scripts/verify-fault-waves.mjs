@@ -1,29 +1,36 @@
 // Verifies KCL and key shape invariants for createFaultWaveform across all 14 fault types.
 // Run: node scripts/verify-fault-waves.mjs
 //
-// NOTE: 该脚本需要先执行 npm run build（把 src/ 编译到 dist/），然后通过动态
-// import() 加载编译后的 createFaultWaveform 函数。这消除了内联副本与源文件不同步的风险。
+// 用 esbuild（vite 的自带依赖）把 TS 源码即时打包成 ESM 临时文件再动态 import。
+// 直接 import dist/ 产物不可行：Rollup 共享 chunk 的导出名会被混淆。
 
-import { createRequire } from 'node:module';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
- * 从 dist 动态导入 createFaultWaveform。
- * @returns {import('../src/simulation/math/faultWaveforms.mjs')['createFaultWaveform']}
+ * 从 src/simulation/math/faultWaveforms.ts 加载 createFaultWaveform。
+ * @returns {Promise<import('../src/simulation/math/faultWaveforms.mjs')['createFaultWaveform']>}
  */
 async function loadFaultWaveform() {
-  // 优先尝试从 dist 加载（编译产物）
-  const require = createRequire(import.meta.url);
+  const entry = fileURLToPath(new URL('../src/simulation/math/faultWaveforms.ts', import.meta.url));
+  const outDir = mkdtempSync(join(tmpdir(), 'faultwaves-'));
+  const outFile = join(outDir, 'faultWaveforms.mjs');
   try {
-    const distPath = require.resolve('../dist/assets/faultWaveforms.js');
-    const mod = await import(distPath);
+    const esbuild = await import('esbuild');
+    await esbuild.build({
+      entryPoints: [entry],
+      outfile: outFile,
+      bundle: true,
+      format: 'esm',
+      platform: 'neutral',
+      logLevel: 'silent',
+    });
+    const mod = await import(pathToFileURL(outFile).href);
     return mod.createFaultWaveform;
-  } catch {
-    // fallback: 直接从源文件通过 ts-node 或 esbuild 加载
-    // 但为了简单，这里提示用户先 build
-    throw new Error(
-      '无法从 dist/ 加载 createFaultWaveform。请确保先执行 npm run build 编译项目。\n' +
-      '或者手动运行: node --experimental-vm-modules --loader ts-node/esm scripts/verify-fault-waves.mjs',
-    );
+  } finally {
+    rmSync(outDir, { recursive: true, force: true });
   }
 }
 
