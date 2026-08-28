@@ -14,13 +14,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev              # Vite 开发服务器（http://127.0.0.1:5173）
 npm run build            # vite build（CI / 发布前必跑）
 npm run typecheck        # tsc -b --noEmit 独立类型检查
-npm run test             # vitest run（全部 73 个文件 748 个测试）
+npm run test             # vitest run（全部 82 个文件 842 个测试）
 npm run test:watch       # vitest watch 模式
 npm run coverage         # vitest run --coverage（含 v8 覆盖率报告）
 npm run verify           # node 脚本，检查必须文件齐全 + 关键 import 存在
 npm run e2e              # Playwright 冒烟测试（自动起 dev server，复用已有实例）
 npm run e2e:optional     # Playwright 未装时安全跳过的兜底入口
-npm run qa:screenshots   # 12 个模块的桌面/移动双端截图，输出到 output/screenshots/
+npm run qa:screenshots   # 16 个模块的桌面/移动双端截图，输出到 output/screenshots/
 npm run release:audit    # 顺序跑 verify → build → e2e → screenshots，发布前必跑
 npm run desktop:pack     # build 后调用 scripts/package-electron-dir.mjs，产出 win-unpacked 目录
 npm run desktop:dist     # 当前等价于 desktop:pack（稳定的免安装目录形式）
