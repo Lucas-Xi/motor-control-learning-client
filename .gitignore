@@ -31,3 +31,7 @@ coverage/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# 本地工具状态（mimosa 安全钩子 / video agent）
+.mimosa/
+.video_agent/

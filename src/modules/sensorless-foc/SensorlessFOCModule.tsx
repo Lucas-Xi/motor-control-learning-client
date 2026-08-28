@@ -14,6 +14,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSensorlessCard } from './SerialCompareSensorlessCard';
 import { SensorNoiseCard } from './SensorNoiseCard';
+import { SmoTuningCard } from './SmoTuningCard';
 
 function useSamples() {
   const params = useSimulationStore((s) => s.sensorless);
@@ -154,6 +155,8 @@ function Probe() {
       <SerialCompareSensorlessCard />
       {/* round-11 Tier 3：传感器噪声三大源（编码器/Hall/ADC）*/}
       <SensorNoiseCard />
+      {/* round-31 SMO 整定：增益 / 边界层 / LPF × 锁定与抖振 */}
+      <SmoTuningCard />
     </>
   );
 }

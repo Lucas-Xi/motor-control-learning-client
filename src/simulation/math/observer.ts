@@ -84,3 +84,89 @@ export function blendObserverAngle(
   const angle = wrapAngleRad(hfiAngle + t * wrappedDiff);
   return { angle, blendRatio: t };
 }
+
+
+/**
+ * 硬切：低于 switchRpm 用 HFI，到达或超过则瞬间换成 BEMF。
+ * 交接瞬间 θ 跳 Δθ = wrap(bemf − hfi)，电流环会吃一拳。
+ * 工业压缩机无感启动必须用融合带，不能在一个转速点换人。
+ */
+export function hardCutObserverAngle(
+  hfiAngle: number,
+  bemfAngle: number,
+  rpm: number,
+  switchRpm = 450,
+): { angle: number; source: 'hfi' | 'bemf' } {
+  if (rpm < switchRpm) return { angle: hfiAngle, source: 'hfi' };
+  return { angle: bemfAngle, source: 'bemf' };
+}
+
+export interface ObserverBlendSample {
+  rpm: number;
+  hfiDeg: number;
+  bemfDeg: number;
+  blendDeg: number;
+  hardCutDeg: number;
+  jumpDeg: number; // |hfi − bemf| 最短路径，硬切会在 switchRpm 一次性吃掉
+  blendRatio: number; // 0=HFI, 1=BEMF
+}
+
+/** Wrap degrees to (−180, 180]. */
+function wrapDeg(deg: number): number {
+  const period = 360;
+  let x = deg % period;
+  if (x <= -180) x += period;
+  if (x > 180) x -= period;
+  return x;
+}
+
+/**
+ * 扫转速：HFI 角带固定偏置+低速噪声，BEMF 角低速误差大、高速收敛。
+ * 每点同时给出融合角与硬切角，对照“摊在转速上”和“一次跳完”。
+ */
+export function sweepObserverBlend(opts: {
+  transitionLow?: number;
+  transitionHigh?: number;
+  hfiBiasDeg?: number;
+  rpmMin?: number;
+  rpmMax?: number;
+  points?: number;
+}): ObserverBlendSample[] {
+  const transitionLow = opts.transitionLow ?? 300;
+  const transitionHigh = Math.max(opts.transitionHigh ?? 600, transitionLow + 1);
+  const hfiBiasDeg = opts.hfiBiasDeg ?? 0;
+  const rpmMin = opts.rpmMin ?? 0;
+  const rpmMax = opts.rpmMax ?? 1500;
+  const points = Math.max(2, Math.round(opts.points ?? 41));
+  const switchRpm = (transitionLow + transitionHigh) / 2;
+
+  const samples: ObserverBlendSample[] = [];
+  for (let i = 0; i < points; i++) {
+    const frac = i / (points - 1);
+    const rpm = rpmMin + frac * (rpmMax - rpmMin);
+    // HFI 零速可用：误差几乎平坦（偏置 + 4°）
+    const hfiDeg = wrapDeg(hfiBiasDeg + 4);
+    // BEMF 零速淹死：~40°，1500 rpm 收敛到 ~2°
+    const bemfDeg = wrapDeg(40 * Math.exp(-rpm / 220));
+    const hfiRad = (hfiDeg * Math.PI) / 180;
+    const bemfRad = (bemfDeg * Math.PI) / 180;
+    const blended = blendObserverAngle(
+      hfiRad,
+      bemfRad,
+      rpm,
+      transitionLow,
+      transitionHigh,
+    );
+    const hardCut = hardCutObserverAngle(hfiRad, bemfRad, rpm, switchRpm);
+    samples.push({
+      rpm,
+      hfiDeg,
+      bemfDeg,
+      blendDeg: wrapDeg((blended.angle * 180) / Math.PI),
+      hardCutDeg: wrapDeg((hardCut.angle * 180) / Math.PI),
+      jumpDeg: Math.abs(wrapDeg(bemfDeg - hfiDeg)),
+      blendRatio: blended.blendRatio,
+    });
+  }
+  return samples;
+}

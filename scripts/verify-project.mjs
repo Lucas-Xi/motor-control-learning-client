@@ -172,6 +172,12 @@ const requiredFiles = [
   // round-30 热闭环：损耗随温度正反馈 × 热失控
   'src/simulation/math/thermalSim.ts',
   'src/modules/motor-basics/ThermalRunawayCard.tsx',
+  // round-31 SMO 整定：增益 / 边界层 / LPF × 锁定与抖振
+  'src/simulation/math/smo.ts',
+  'src/modules/sensorless-foc/SmoTuningCard.tsx',
+  // round-32 HFI 信号链接入 + HFI/BEMF 最短路径融合
+  'src/modules/hfi-sensorless/HfiSignalChainCard.tsx',
+  'src/modules/hfi-sensorless/ObserverBlendCard.tsx',
   // 轻量 i18n 框架（shell + 3 个核心模块双语；自研无新依赖）
   'src/i18n/types.ts',
   'src/i18n/translations.ts',
@@ -385,8 +391,10 @@ const svpwm = requireFile('src/simulation/math/svpwm.ts');
 requireIncludes('svpwm.ts', svpwm, ['determineSvpwmSector', 'calculateSvpwm', 'dutyA', 'dutyB', 'dutyC']);
 const motorModel = requireFile('src/simulation/math/motorModel.ts');
 requireIncludes('motorModel.ts', motorModel, ['stepPmsmModel', 'simulateCurrentLoop', 'simulateSpeedLoop']);
+const smo = requireFile('src/simulation/math/smo.ts');
+requireIncludes('smo.ts', smo, ['simulateSMO', 'scoreSMO']);
 const observer = requireFile('src/simulation/math/observer.ts');
-requireIncludes('observer.ts', observer, ['estimateBackEmf', 'pllTrack']);
+requireIncludes('observer.ts', observer, ['estimateBackEmf', 'pllTrack', 'blendObserverAngle', 'sweepObserverBlend', 'hardCutObserverAngle']);
 const weakField = requireFile('src/simulation/math/weakField.ts');
 requireIncludes('weakField.ts', weakField, ['checkVoltageLimit', 'estimateTorque', 'suggestWeakeningId']);
 

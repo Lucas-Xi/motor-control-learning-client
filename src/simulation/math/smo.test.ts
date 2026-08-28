@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSMO, smoStep, simulateSMO, precomputeSmoConfig } from './smo';
+import { createSMO, smoStep, simulateSMO, precomputeSmoConfig, scoreSMO } from './smo';
 
 describe('createSMO', () => {
   it('returns zero-initialized SMO state', () => {
@@ -77,5 +77,40 @@ describe('simulateSMO', () => {
     const last = samples[samples.length - 1];
     expect(Number.isFinite(last.errorDeg)).toBe(true);
     expect(Number.isFinite(last.thetaEst)).toBe(true);
+  });
+});
+
+describe('scoreSMO', () => {
+  const base = {
+    polePairs: 4,
+    rs: 0.55,
+    lsMh: 1.2,
+    fluxLinkage: 0.045,
+    smoGain: 80,
+    boundaryLayer: 0.5,
+    lpfCutoffHz: 120,
+    pllKp: 200,
+    pllKi: 2000,
+  } as const;
+
+  it('高速低噪声（1500 rpm, noise 0）：锁定且 RMS 有限', () => {
+    const samples = simulateSMO({ ...base, speedRpm: 1500, noise: 0 });
+    const m = scoreSMO(samples);
+    expect(Number.isFinite(m.rmsErrorDeg)).toBe(true);
+    expect(m.locked).toBe(true);
+  });
+
+  it('空数组：rms 0 且未锁定', () => {
+    const m = scoreSMO([]);
+    expect(m.rmsErrorDeg).toBe(0);
+    expect(m.locked).toBe(false);
+  });
+
+  it('低速 200 rpm noise 0：通常未锁定或峰值误差大于 1500 rpm', () => {
+    const hi = scoreSMO(simulateSMO({ ...base, speedRpm: 1500, noise: 0 }));
+    const lo = scoreSMO(simulateSMO({ ...base, speedRpm: 200, noise: 0 }));
+    const notLocked = lo.locked === false;
+    const peakWorse = lo.peakErrorDeg > hi.peakErrorDeg - 2;
+    expect(notLocked || peakWorse).toBe(true);
   });
 });

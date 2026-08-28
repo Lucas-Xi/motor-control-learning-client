@@ -9,6 +9,8 @@ import { simulateHFI, evaluateHFI } from '../../simulation/math/hfi';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { SerialCompareHFICard } from './SerialCompareHFICard';
+import { HfiSignalChainCard } from './HfiSignalChainCard';
+import { ObserverBlendCard } from './ObserverBlendCard';
 
 function useHfiSamples() {
   const params = useSimulationStore((s) => s.hfi);
@@ -107,6 +109,7 @@ function Probe() {
     <>
       <ErrorChart />
       <InjectionChart />
+      <HfiSignalChainCard />
       <Card title="HFI 关键指标" eyebrow="key metrics" density="compact">
         <div className="grid grid-cols-2 gap-2 text-caption">
           <div className="rounded border border-line-subtle bg-bg-base p-2">
@@ -136,6 +139,7 @@ function Probe() {
           <li>· <span className="text-ink-primary">高速时切到 BEMF</span>：HFI 的高频注入会增加铁损和噪声</li>
         </ul>
       </Card>
+      <ObserverBlendCard />
       <SerialCompareHFICard />
     </>
   );

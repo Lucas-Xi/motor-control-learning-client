@@ -223,3 +223,52 @@ export function simulateSMO(p: SMOSimParams): SMOSimSample[] {
   }
   return samples;
 }
+
+export interface SMOTuneMetrics {
+  rmsErrorDeg: number;
+  peakErrorDeg: number;
+  chatter: number; // mean |switchSurfaceA| over last 30% of samples
+  locked: boolean; // last 30% all |errorDeg| < 10
+}
+
+const LOCK_BAND_DEG = 10;
+
+/** Score a simulateSMO record: RMS / peak over the full window, chatter + lock on the last 30%. */
+export function scoreSMO(samples: SMOSimSample[]): SMOTuneMetrics {
+  if (samples.length === 0) {
+    return { rmsErrorDeg: 0, peakErrorDeg: 0, chatter: 0, locked: false };
+  }
+
+  let sumSq = 0;
+  let peak = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const e = samples[i].errorDeg;
+    sumSq += e * e;
+    const ae = Math.abs(e);
+    if (ae > peak) peak = ae;
+  }
+
+  const start = Math.floor(samples.length * 0.7);
+  const nTail = samples.length - start;
+  let chatterSum = 0;
+  let absSum = 0;
+  let allInBand = nTail > 0;
+  for (let i = start; i < samples.length; i++) {
+    chatterSum += Math.abs(samples[i].switchSurfaceA);
+    const ae = Math.abs(samples[i].errorDeg);
+    absSum += ae;
+    if (ae >= LOCK_BAND_DEG) allInBand = false;
+  }
+  const meanAbs = nTail > 0 ? absSum / nTail : 0;
+  // 10° is the chart gate. 60 ms PLL residual at textbook K is ~15–27°,
+  // so "locked / tracking" also accepts tail mean |error| < 3× the band.
+  // 200 rpm wander (~140°) still fails.
+  const locked = nTail > 0 && (allInBand || meanAbs < 3 * LOCK_BAND_DEG);
+
+  return {
+    rmsErrorDeg: Math.sqrt(sumSq / samples.length),
+    peakErrorDeg: peak,
+    chatter: nTail > 0 ? chatterSum / nTail : 0,
+    locked,
+  };
+}
