@@ -140,7 +140,7 @@ release/win-unpacked/电机控制学习客户端.exe
 | [docs/PRIVACY.md](docs/PRIVACY.md) | 隐私与数据采集说明（本地运行、无遥测） |
 | [docs/SECTION_508_COMPLIANCE.md](docs/SECTION_508_COMPLIANCE.md) / [A11Y_AUDIT_R2.md](docs/A11Y_AUDIT_R2.md) | 可访问性审计 |
 | [docs/PERFORMANCE_AUDIT_R2.md](docs/PERFORMANCE_AUDIT_R2.md) | 性能审计 |
-| [docs/site/](docs/site/index.html) | 离线文档站点（`npm run docsite` 重新生成） |
+| [docs/site/](https://lucas-xi.github.io/motor-control-learning-client/) | 在线文档站点（`npm run docsite` 重新生成，内容变更自动部署） |
 
 ## STM32 / C 迁移
 

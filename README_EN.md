@@ -142,7 +142,7 @@ To replay CI locally: `npm run ci:local`.
 | [docs/PRIVACY.md](docs/PRIVACY.md) | privacy statement: local-only, no telemetry (Chinese) |
 | [docs/SECTION_508_COMPLIANCE.md](docs/SECTION_508_COMPLIANCE.md) / [A11Y_AUDIT_R2.md](docs/A11Y_AUDIT_R2.md) | accessibility audits (Chinese) |
 | [docs/PERFORMANCE_AUDIT_R2.md](docs/PERFORMANCE_AUDIT_R2.md) | performance audit (Chinese) |
-| [docs/site/](docs/site/index.html) | offline doc site (regenerate with `npm run docsite`) |
+| [docs/site/](https://lucas-xi.github.io/motor-control-learning-client/) | live doc site (regenerate with `npm run docsite`; auto-deployed on content changes) |
 
 Deep-dive docs are written in Chinese to match the in-app teaching language; they are code-heavy and followable without fluent Chinese.
 
