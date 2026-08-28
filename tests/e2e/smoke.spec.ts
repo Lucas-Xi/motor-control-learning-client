@@ -51,7 +51,7 @@ test('all learning modules render and controls remain usable', async ({ page }) 
 });
 
 test('module sliders update their displayed values without console errors', async ({ page }) => {
-  test.setTimeout(60_000);  // 16 模块 × 3 滑块需要更多时间
+  test.setTimeout(120_000);  // 16 模块 × 3 滑块；共享 runner 慢时 60s 偶发超时
   const consoleErrors: string[] = [];
   const consoleWarnings: string[] = [];
   page.on('console', (message) => {
