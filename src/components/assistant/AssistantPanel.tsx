@@ -3,7 +3,7 @@ import { Send, Settings, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAssistantStore, type AssistantCitation, type AssistantMessage } from '../../store/assistantStore';
 import { useFocusTrap } from '../../utils/useFocusTrap';
-import { useI18n } from '../../i18n/useI18n';
+import { translate, useI18n } from '../../i18n/useI18n';
 import {
   buildLLMSystemPrompt,
   buildRagIndex,
@@ -158,9 +158,9 @@ export function AssistantPanel() {
           walkthroughStepId: tgt.walkthroughStepId,
         };
       });
-      pushAssistant(`[本地启发式回答]\n${composed.answer}`, citations);
+      pushAssistant(`${t('assistant.localAnswerMarker')}\n${composed.answer}`, citations);
     },
-    [locale, pushAssistant],
+    [locale, pushAssistant, t],
   );
 
   /** 真 LLM 路径：流式 delta 拼到 streamingText buffer */
@@ -169,7 +169,7 @@ export function AssistantPanel() {
       const providerName = llmProvider as LLMProviderName;
       const apiKey = llmApiKeys[providerName];
       if (!apiKey) {
-        throw new LLMError('unauthorized', '尚未配置该 provider 的 API key');
+        throw new LLMError('unauthorized', t('assistant.missingApiKeyError'));
       }
       // 1) 检索 top-5 chunks（RAG 注入策略决定是否真喂给 system）
       const results = search(text, 5, idx);
@@ -222,11 +222,14 @@ export function AssistantPanel() {
       if (ctrl.signal.aborted) {
         // 被取消（关闭面板 / 用户中止）：把已生成的内容入库以免完全丢失
         if (assembled.trim()) {
-          pushAssistant(`[由 ${prettyProviderName(providerName)} 回答 · 已中止]\n${assembled}`, citations);
+          pushAssistant(
+            `${t('assistant.llmAnswerLead')}${prettyProviderName(providerName)}${t('assistant.llmAbortedTail')}\n${assembled}`,
+            citations,
+          );
         }
       } else {
         // 4) 落库：把流式结果作为完整 assistant 消息
-        const finalText = `[由 ${prettyProviderName(providerName)} · ${prettyModelName(llmModel)} 回答]\n${assembled}`;
+        const finalText = `${t('assistant.llmAnswerLead')}${prettyProviderName(providerName)} · ${prettyModelName(llmModel)}${t('assistant.llmAnswerTail')}\n${assembled}`;
         pushAssistant(finalText, citations);
         // 5) 记录用量（粗估 input + 实际 assembled tokens）
         const model = lookupModel(providerName, llmModel);
@@ -253,6 +256,7 @@ export function AssistantPanel() {
       messages,
       pushAssistant,
       llmRecordSpend,
+      t,
     ],
   );
 
@@ -415,8 +419,8 @@ export function AssistantPanel() {
                   <div className="max-w-[92%] space-y-2 rounded-2xl rounded-bl-sm border border-accent-primary/30 bg-bg-base px-3 py-2 text-body text-ink-secondary">
                     <span className="inline-flex items-center gap-1 rounded-full bg-accent-primary/15 px-2 py-0.5 text-[10px] font-medium text-accent-primary">
                       {streamingProvider
-                        ? `由 ${prettyProviderName(streamingProvider)} · ${prettyModelName(llmModel)} 流式生成…`
-                        : '生成中…'}
+                        ? `${t('assistant.streamingByLead')}${prettyProviderName(streamingProvider)} · ${prettyModelName(llmModel)}${t('assistant.streamingByTail')}`
+                        : t('assistant.generating')}
                     </span>
                     <p className="whitespace-pre-wrap leading-relaxed">{streamingText}</p>
                     {streamingCitations.length > 0 && (
@@ -495,6 +499,27 @@ export function AssistantPanel() {
 // 子组件 & 工具函数
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * 消息首行来源标记的双 locale 形态。
+ * 生成侧按当前 locale 写入（runLocalAnswer / runLLMAnswer），解析侧需同时识别两种形态：
+ * 兼容 localStorage 里的历史消息与语言切换后残留的旧标记。
+ */
+const MARKER_LOCALES = ['zh-CN', 'en-US'] as const;
+const LOCAL_ANSWER_MARKERS = MARKER_LOCALES.map((loc) => translate(loc, 'assistant.localAnswerMarker'));
+const LLM_ANSWER_LEADS = MARKER_LOCALES.map((loc) => translate(loc, 'assistant.llmAnswerLead').trimEnd());
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** 首行是否为来源标记行（要求整行以 "]" 收尾，与旧版整行正则语义一致） */
+function isOriginMarkerLine(line: string): boolean {
+  return (
+    line.endsWith(']') &&
+    (LOCAL_ANSWER_MARKERS.some((m) => line.startsWith(m)) || LLM_ANSWER_LEADS.some((p) => line.startsWith(p)))
+  );
+}
+
 /** 顶部小 chip：本地 / 云端 + 模型名 */
 function ProviderChip({
   provider,
@@ -528,9 +553,9 @@ function AssistantOriginChip({
   t: ReturnType<typeof useI18n>['t'];
 }) {
   const text = message.content;
-  // 通过文本前缀提取来源；这套约定与 runLocalAnswer / runLLMAnswer 写入格式一致
-  const localMatch = text.startsWith('[本地启发式回答]');
-  const llmMatch = text.match(/^\[由\s+([^\s·\]]+)/);
+  // 通过文本前缀提取来源；这套约定与 runLocalAnswer / runLLMAnswer 写入格式一致（两种 locale 形态都识别）
+  const localMatch = LOCAL_ANSWER_MARKERS.some((m) => text.startsWith(m));
+  const llmMatch = text.match(new RegExp(`^(${LLM_ANSWER_LEADS.map(escapeRegExp).join('|')})\\s+([^\\s·\\]]+)`));
   if (localMatch) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-line-subtle bg-bg-surface px-1.5 py-0.5 text-[10px] text-ink-muted">
@@ -560,11 +585,11 @@ export function messagesToChatTurns(messages: AssistantMessage[]): ChatMessage[]
 }
 
 function stripOriginPrefix(text: string): string {
-  // 把首行的 "[本地启发式回答]" 或 "[由 X · Y 回答]" 这类 meta 去掉，只送真正问答内容
+  // 把首行的来源标记（"[本地启发式回答]" / "[由 X · Y 回答]" 及其英文形态）去掉，只送真正问答内容
   const lines = text.split('\n');
   if (lines.length === 0) return text;
   const first = lines[0]?.trim() ?? '';
-  if (/^\[(本地启发式回答|由[\s\S]+回答[^\]]*)\]$/.test(first)) {
+  if (isOriginMarkerLine(first)) {
     return lines.slice(1).join('\n').trim();
   }
   return text;

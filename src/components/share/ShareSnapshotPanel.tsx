@@ -6,6 +6,7 @@ import { useChallengeStore } from '../../store/challengeStore';
 import { useSnapshotsStore } from '../../store/snapshotsStore';
 import { useCloudShareStore } from '../../store/cloudShareStore';
 import { createSnapshot, GistError } from '../../utils/gistCloud';
+import { useI18n } from '../../i18n/useI18n';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import {
@@ -88,6 +89,7 @@ interface ShareSnapshotPanelProps {
 }
 
 export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps = {}) {
+  const { t } = useI18n();
   const remoteSnapshots = useSnapshotsStore((s) => s.remoteSnapshots);
   const addRemote = useSnapshotsStore((s) => s.addRemote);
   const removeRemote = useSnapshotsStore((s) => s.removeRemote);
@@ -119,21 +121,21 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
   const handleGenerate = useCallback(() => {
     try {
       const input = pickCurrentState();
-      const t = encodeSnapshot(input);
-      setToken(t);
-      setShareUrl(buildShareUrl(t));
-      showFeedback(`已生成 token（${t.length} 字符）`);
+      const tokenStr = encodeSnapshot(input);
+      setToken(tokenStr);
+      setShareUrl(buildShareUrl(tokenStr));
+      showFeedback(`${t('share.v1TokenGeneratedPrefix')}${tokenStr.length}${t('share.v1TokenGeneratedSuffix')}`);
     } catch (err) {
-      showFeedback(`生成失败：${(err as Error).message}`);
+      showFeedback(`${t('share.v1GenFailPrefix')}${(err as Error).message}`);
     }
-  }, [showFeedback]);
+  }, [showFeedback, t]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl);
-        showFeedback('链接已复制到剪贴板');
+        showFeedback(t('share.linkCopied'));
       } else {
         // 旧浏览器兜底
         const ta = document.createElement('textarea');
@@ -142,71 +144,71 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        showFeedback('链接已复制（兜底路径）');
+        showFeedback(t('share.v1CopiedFallback'));
       }
     } catch {
-      showFeedback('复制失败，请手动选中文本');
+      showFeedback(t('share.v1CopyFail'));
     }
-  }, [shareUrl, showFeedback]);
+  }, [shareUrl, showFeedback, t]);
 
   const handleNativeShare = useCallback(async () => {
     if (!shareUrl) return;
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
       try {
         await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({
-          title: '电机控制学习客户端 · 数字孪生分享',
-          text: '我的当前调参 snapshot，点击链接在客户端里预览：',
+          title: t('share.v1NativeShareTitle'),
+          text: t('share.v1NativeShareText'),
           url: shareUrl,
         });
-        showFeedback('已调起系统分享');
+        showFeedback(t('share.v1NativeShared'));
       } catch {
-        showFeedback('已取消系统分享');
+        showFeedback(t('share.v1NativeShareCancelled'));
       }
     } else {
-      showFeedback('当前环境不支持系统分享，请手动复制');
+      showFeedback(t('share.v1NoNativeShare'));
     }
-  }, [shareUrl, showFeedback]);
+  }, [shareUrl, showFeedback, t]);
 
   const handleUploadGist = useCallback(async () => {
     if (!token) {
-      showFeedback('请先点【生成分享链接】');
+      showFeedback(t('share.v1GenerateFirst'));
       return;
     }
     if (!pat) {
-      showFeedback('请先在「云协作」面板绑定 GitHub PAT');
+      showFeedback(t('share.v1BindPatFirst'));
       return;
     }
     setUploading(true);
     try {
       const result = await createSnapshot(pat, token, {
-        description: '电机控制学习客户端 · 数字孪生 snapshot',
+        description: t('share.uploadFallbackDesc'),
         public: false,
       });
-      showFeedback(`已上传到 Gist：${result.gistId.slice(0, 8)}…`);
+      showFeedback(`${t('share.uploadedToGistPrefix')}${result.gistId.slice(0, 8)}…`);
     } catch (err) {
       const msg = err instanceof GistError ? err.message : (err as Error).message;
-      showFeedback(`上传失败：${msg}`);
+      showFeedback(`${t('share.v1UploadFailPrefix')}${msg}`);
     } finally {
       setUploading(false);
     }
-  }, [token, pat, showFeedback]);
+  }, [token, pat, showFeedback, t]);
 
   const handleAddRemote = useCallback(() => {
-    const t = extractToken(pasteText);
-    if (!t) {
-      setPasteError('请粘贴完整链接或 token');
+    const tok = extractToken(pasteText);
+    if (!tok) {
+      setPasteError(t('share.v1PasteFullLink'));
       return;
     }
-    const result = decodeSnapshot(t);
+    const result = decodeSnapshot(tok);
     if (!result.ok) {
-      setPasteError(result.error ?? '解码失败');
+      setPasteError(result.error ?? t('share.v1DecodeFail'));
       return;
     }
-    addRemote({ token: t, decoded: result.state });
+    addRemote({ token: tok, decoded: result.state });
     setPasteText('');
     setPasteError('');
-    showFeedback('已添加到远端快照列表');
-  }, [pasteText, addRemote, showFeedback]);
+    showFeedback(t('share.v1AddedToList'));
+  }, [pasteText, addRemote, showFeedback, t]);
 
   const supportsNativeShare = useMemo(
     () => typeof navigator !== 'undefined' && 'share' in navigator,
@@ -217,8 +219,8 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
     <Card
       density="default"
       tone="measure"
-      eyebrow="LAB · 数字孪生分享"
-      title="分享当前参数 / 接收远端 snapshot"
+      eyebrow={t('share.v1Eyebrow')}
+      title={t('share.v1Title')}
       action={
         feedback ? (
           <span
@@ -238,42 +240,42 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
             id="share-gen-heading"
             className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted"
           >
-            1. 生成分享链接
+            {t('share.v1GenHeading')}
           </h3>
           <div className="flex flex-wrap gap-2">
-            <Button variant="primary" onClick={handleGenerate} aria-label="把当前 store 参数生成分享 token">
+            <Button variant="primary" onClick={handleGenerate} aria-label={t('share.v1GenAria')}>
               <Share2 className="h-4 w-4" aria-hidden="true" />
-              生成分享链接
+              {t('share.v1GenBtn')}
             </Button>
             {shareUrl && (
               <>
-                <Button variant="ghost" onClick={handleCopy} aria-label="复制分享链接到剪贴板">
+                <Button variant="ghost" onClick={handleCopy} aria-label={t('share.v1CopyAria')}>
                   <Copy className="h-4 w-4" aria-hidden="true" />
-                  复制链接
+                  {t('share.v1CopyBtn')}
                 </Button>
                 {supportsNativeShare && (
                   <Button
                     variant="ghost"
                     onClick={handleNativeShare}
-                    aria-label="调用系统原生分享"
+                    aria-label={t('share.v1NativeAria')}
                   >
                     <Link2 className="h-4 w-4" aria-hidden="true" />
-                    系统分享
+                    {t('share.v1NativeBtn')}
                   </Button>
                 )}
                 <Button
                   variant="outline"
                   onClick={handleUploadGist}
                   disabled={uploading || !pat}
-                  aria-label={pat ? '把当前 token 上传到 GitHub Gist' : '需要先在云协作面板绑定 PAT'}
-                  title={pat ? '上传到 GitHub Gist' : '需要先在云协作面板绑定 PAT'}
+                  aria-label={pat ? t('share.v1UploadAriaPat') : t('share.v1UploadAriaNeedPat')}
+                  title={pat ? t('share.v1UploadTitlePat') : t('share.v1UploadAriaNeedPat')}
                 >
                   {uploading ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : (
                     <Cloud className="h-4 w-4" aria-hidden="true" />
                   )}
-                  上传到 Gist
+                  {t('share.uploadToGistBtn')}
                 </Button>
               </>
             )}
@@ -281,28 +283,27 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
           {shareUrl && (
             <div className="mt-2 space-y-1.5">
               <p className="text-caption text-ink-muted">
-                token 长度 <span className="font-mono text-accent-measure">{token.length}</span>{' '}
-                字符 · 目标 ≤ 1200 ·{' '}
+                {t('share.v1TokenLenPrefix')}
+                <span className="font-mono text-accent-measure">{token.length}</span>
+                {t('share.v1TokenLenMid')}
                 {token.length > 1200 ? (
-                  <span className="text-accent-warn">超过浏览器/聊天软件常见上限</span>
+                  <span className="text-accent-warn">{t('share.v1OverLimit')}</span>
                 ) : (
-                  <span className="text-accent-measure">URL 安全</span>
+                  <span className="text-accent-measure">{t('share.v1UrlSafe')}</span>
                 )}
               </p>
               <label className="block">
-                <span className="sr-only">分享链接</span>
+                <span className="sr-only">{t('share.v1ShareUrlSr')}</span>
                 <textarea
                   readOnly
                   value={shareUrl}
                   className="w-full resize-none rounded-lg border border-line-subtle bg-bg-base px-2 py-1.5 font-mono text-caption text-ink-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
                   rows={3}
-                  aria-label="生成的分享链接（只读）"
+                  aria-label={t('share.v1UrlAria')}
                   onFocus={(e) => e.currentTarget.select()}
                 />
               </label>
-              <p className="text-caption text-ink-muted">
-                把链接发给同事，对方在客户端打开后会弹"接收对比"窗口；也可以让对方粘贴到下面【2. 接收】里。
-              </p>
+              <p className="text-caption text-ink-muted">{t('share.v1ShareHint')}</p>
             </div>
           )}
         </section>
@@ -313,11 +314,11 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
             id="share-paste-heading"
             className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted"
           >
-            2. 粘贴远端 token（不立即应用，仅入栈对比）
+            {t('share.v1PasteHeading')}
           </h3>
           <div className="flex flex-col gap-2 sm:flex-row">
             <label className="flex-1">
-              <span className="sr-only">远端链接或 token</span>
+              <span className="sr-only">{t('share.v1RemoteSr')}</span>
               <input
                 type="text"
                 value={pasteText}
@@ -331,21 +332,21 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
                     handleAddRemote();
                   }
                 }}
-                placeholder="贴入 https://.../#snapshot=... 或纯 token 字符串"
-                aria-label="远端分享链接或 token 输入"
+                placeholder={t('share.v1PastePlaceholder')}
+                aria-label={t('share.v1PasteAria')}
                 aria-invalid={!!pasteError}
                 aria-describedby={pasteError ? 'paste-err' : undefined}
                 className="w-full rounded-lg border border-line-subtle bg-bg-base px-2 py-1.5 font-mono text-caption text-ink-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
             </label>
-            <Button variant="primary" onClick={handleAddRemote} aria-label="添加远端快照到对比列表">
+            <Button variant="primary" onClick={handleAddRemote} aria-label={t('share.v1AddAria')}>
               <Plus className="h-4 w-4" aria-hidden="true" />
-              添加
+              {t('share.addBtn')}
             </Button>
           </div>
           {pasteError && (
             <p id="paste-err" role="alert" className="mt-1 text-caption text-accent-fault">
-              <span className="sr-only">错误：</span>
+              <span className="sr-only">{t('share.srError')}</span>
               {pasteError}
             </p>
           )}
@@ -358,24 +359,26 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
               id="share-list-heading"
               className="text-caption uppercase tracking-[0.18em] text-ink-muted"
             >
-              3. 远端快照（{remoteSnapshots.length} / 10）
+              {t('share.v1ListHeadingPrefix')}
+              {remoteSnapshots.length}
+              {t('share.v1ListHeadingSuffix')}
             </h3>
             {remoteSnapshots.length > 0 && (
               <Button
                 variant="ghost"
                 onClick={clearRemote}
-                aria-label="清空所有远端快照"
+                aria-label={t('share.v1ClearAria')}
                 className="px-2 py-1 text-caption"
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                清空
+                {t('share.clearBtn')}
               </Button>
             )}
           </div>
           {remoteSnapshots.length === 0 ? (
             <div className="rounded-lg border border-dashed border-line-subtle bg-bg-base p-3 text-caption text-ink-muted">
               <ClipboardPaste className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-              尚未接收任何远端快照。粘贴同事发来的链接后，会显示在这里。最多保留 10 条；超过自动挤掉最旧。
+              {t('share.v1EmptyList')}
             </div>
           ) : (
             <ul className="space-y-1.5">
@@ -394,36 +397,37 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
                       aria-hidden="true"
                     />
                     <label className="flex-1 min-w-0">
-                      <span className="sr-only">远端快照名称</span>
+                      <span className="sr-only">{t('share.v1NameSr')}</span>
                       <input
                         type="text"
                         value={r.label}
                         onChange={(e) => renameRemote(r.id, e.target.value)}
                         className="w-full bg-transparent text-body text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
-                        aria-label={`重命名 ${r.label}`}
+                        aria-label={`${t('share.v1RenameAriaPrefix')}${r.label}`}
                       />
                     </label>
                     <span className="text-caption text-ink-muted">
-                      {sliceCount} slice · {hasAsm ? '含装配' : '无装配'} · {challengeCount} 通关
+                      {sliceCount} slice · {hasAsm ? t('share.v1WithAsm') : t('share.v1NoAsm')} · {challengeCount}
+                      {t('share.v1ChallengesSuffix')}
                     </span>
                     {onCompareRequest && (
                       <Button
                         variant="ghost"
                         onClick={() => onCompareRequest(r.id)}
-                        aria-label={`选 ${r.label} 与当前状态对比`}
+                        aria-label={`${t('share.v1CompareAriaPrefix')}${r.label}${t('share.v1CompareAriaMid')}`}
                         className="px-2 py-0.5 text-caption"
                       >
                         <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                        对比
+                        {t('share.v1CompareBtn')}
                       </Button>
                     )}
                     <Button
                       variant="ghost"
                       onClick={() => {
                         navigator.clipboard?.writeText(buildShareUrl(r.token));
-                        showFeedback(`已复制 ${r.label} 的链接`);
+                        showFeedback(`${t('share.v1CopiedLinkFlashPrefix')}${r.label}${t('share.v1CopiedLinkFlashMid')}`);
                       }}
-                      aria-label={`复制 ${r.label} 的分享链接`}
+                      aria-label={`${t('share.v1CopyShareAriaPrefix')}${r.label}${t('share.v1CopyShareAriaMid')}`}
                       className="px-2 py-0.5 text-caption"
                     >
                       <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -431,7 +435,7 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
                     <Button
                       variant="danger"
                       onClick={() => removeRemote(r.id)}
-                      aria-label={`删除 ${r.label}`}
+                      aria-label={`${t('share.deleteAriaPrefix')}${r.label}`}
                       className="px-2 py-0.5 text-caption"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -444,9 +448,13 @@ export function ShareSnapshotPanel({ onCompareRequest }: ShareSnapshotPanelProps
         </section>
 
         <p className="border-t border-line-subtle pt-3 text-caption text-ink-muted">
-          token 里仅包含 17 段工程参数 + 装配选型 + 通关摘要（best value）；
-          <span className="text-accent-measure">不含 attempts / IP / 时间戳等隐私信息</span>。
-          支持的字段一共 {Object.keys(SLICE_LABELS).length} 个 slice：{Object.values(SLICE_LABELS).join(' · ')}。
+          {t('share.v1FootnoteA')}
+          <span className="text-accent-measure">{t('share.v1FootnoteNoPrivacy')}</span>
+          {t('share.v1FootnoteB')}
+          {Object.keys(SLICE_LABELS).length}
+          {t('share.v1FootnoteC')}
+          {Object.values(SLICE_LABELS).join(' · ')}
+          {t('share.period')}
         </p>
       </div>
     </Card>

@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import {
   tuneCurrentLoop,
   simulateCurrentLoopStep,
@@ -14,18 +15,18 @@ import { formatNumber } from '../../utils/format';
 /** 典型电机预设：覆盖低压无人机 → 工业伺服 → 压缩机三档阻抗量级 */
 const MOTOR_PRESETS = {
   droneOutrunner: {
-    label: '无人机外转子（低阻低感）',
+    label: 'pidControl.presetDrone',
     rs: 0.05, ldMh: 0.02, lqMh: 0.02, fs: 24000, vdc: 24,
   },
   industrialServo: {
-    label: '工业伺服 IPM（凸极）',
+    label: 'pidControl.presetServo',
     rs: 0.35, ldMh: 1.8, lqMh: 3.2, fs: 10000, vdc: 310,
   },
   compressorPmsm: {
-    label: '压缩机 PMSM（高感）',
+    label: 'pidControl.presetCompressor',
     rs: 0.9, ldMh: 6.5, lqMh: 8.0, fs: 8000, vdc: 310,
   },
-} as const;
+} as const satisfies Record<string, { label: TKey; rs: number; ldMh: number; lqMh: number; fs: number; vdc: number }>;
 
 type PresetKey = keyof typeof MOTOR_PRESETS;
 
@@ -42,6 +43,7 @@ interface MergedSample {
  * "参数到底怎么算"——对应 ST Motor Profiler / TI InstaSPIN 的自整定流程。
  */
 export function CurrentLoopTuningCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('industrialServo');
   const [bandwidthFactor, setBandwidthFactor] = useState(15);
 
@@ -95,27 +97,29 @@ export function CurrentLoopTuningCard() {
 
   return (
     <Card
-      title="电流环 PI 自整定：从铭牌参数到 Kp/Ki"
+      title={t('pidControl.currentLoopTuningTitle')}
       eyebrow="magnitude optimum · auto tuning"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="模最优法 Kp=α·L、Ki=α·Rs（α=2π·fs/factor）；验证仿真含一拍计算延时 + SVPWM 电压限幅 + ZOH 精确离散化。"
+          hint={t('pidControl.currentLoopFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        PI 参数不是试出来的：已知 <span className="formula">Rs / L / fs</span>，
-        模最优法直接给出 <span className="formula text-accent-primary">Kp = α·L</span>、
-        <span className="formula text-accent-primary">Ki = α·Rs</span>（α 为目标带宽 rad/s）。
-        凸极电机 <span className="formula">Lq &gt; Ld</span> 所以 q 轴 Kp 更大——两轴分开整定。
-        下图用<span className="text-accent-warn">含一拍延时的离散仿真</span>验证：带宽拉太高时
-        延时相位损失会让实际响应偏离理论。
+        {t('pidControl.currentLoopIntroLead')} <span className="formula">Rs / L / fs</span>
+        {t('pidControl.currentLoopIntroGive')} <span className="formula text-accent-primary">Kp = α·L</span>、
+        <span className="formula text-accent-primary">Ki = α·Rs</span>{t('pidControl.currentLoopIntroAlpha')}
+        {t('pidControl.currentLoopIntroSalient')} <span className="formula">Lq &gt; Ld</span>
+        {t('pidControl.currentLoopIntroSalientTail')}
+        {t('pidControl.currentLoopIntroVerifyLead')}
+        <span className="text-accent-warn">{t('pidControl.currentLoopIntroVerifySim')}</span>
+        {t('pidControl.currentLoopIntroVerifyTail')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">电机预设：</span>
+        <span className="text-caption text-ink-muted">{t('pidControl.currentLoopPresetLabel')}</span>
         {(Object.keys(MOTOR_PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -127,7 +131,7 @@ export function CurrentLoopTuningCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {MOTOR_PRESETS[k].label}
+            {t(MOTOR_PRESETS[k].label)}
           </button>
         ))}
       </div>
@@ -136,12 +140,12 @@ export function CurrentLoopTuningCard() {
         Ld <span className="formula">{formatNumber(preset.ldMh, 2)} mH</span> ·
         Lq <span className="formula">{formatNumber(preset.lqMh, 2)} mH</span> ·
         fs <span className="formula">{formatNumber(preset.fs / 1000, 0)} kHz</span> ·
-        电压限幅 <span className="formula">{formatNumber(vLimit, 0)} V</span>（Vdc/√3）
+        {t('pidControl.currentLoopVoltageLimit')} <span className="formula">{formatNumber(vLimit, 0)} V</span>（Vdc/√3）
       </p>
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>带宽因子 fs / factor（越小带宽越高）</span>
+          <span>{t('pidControl.currentLoopBandwidthLabel')}</span>
           <span className="formula text-ink-primary">
             {formatNumber(bandwidthFactor, 0)} → f_BW = {formatNumber(tuned.bandwidthDHz, 0)} Hz
           </span>
@@ -157,24 +161,24 @@ export function CurrentLoopTuningCard() {
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">d 轴 Kp / Ki</p>
+          <p className="text-caption text-ink-muted">{t('pidControl.currentLoopDkpKi')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(tuned.kpD, 3)} / {formatNumber(tuned.kiD, 0)}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">q 轴 Kp / Ki</p>
+          <p className="text-caption text-ink-muted">{t('pidControl.currentLoopQkpKi')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(tuned.kpQ, 3)} / {formatNumber(tuned.kiQ, 0)}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">相位裕度</p>
+          <p className="text-caption text-ink-muted">{t('pidControl.currentLoopPhaseMargin')}</p>
           <p className={`formula text-body ${tuned.phaseMarginDeg < 30 ? 'text-accent-fault' : 'text-accent-measure'}`}>
             {formatNumber(tuned.phaseMarginDeg, 0)}°
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">q 轴超调（仿真）</p>
+          <p className="text-caption text-ink-muted">{t('pidControl.currentLoopQOvershoot')}</p>
           <p className={`formula text-body ${simQ.overshootPct > 20 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(simQ.overshootPct, 1)}%
-            {simQ.saturated && <span className="ml-1 text-[10px] text-accent-warn">限幅!</span>}
+            {simQ.saturated && <span className="ml-1 text-[10px] text-accent-warn">{t('pidControl.currentLoopSaturated')}</span>}
           </p>
         </div>
       </div>
@@ -201,8 +205,8 @@ export function CurrentLoopTuningCard() {
             <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
             <ReferenceLine y={1} stroke="#5d7793" strokeDasharray="2 3"
               label={{ value: 'target 1 A', fill: '#9eb5cb', fontSize: 9, position: 'insideTopRight' }} />
-            <Line type="monotone" dataKey="id" stroke="#4cc2ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name="id（Ld 轴）" />
-            <Line type="monotone" dataKey="iq" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name="iq（Lq 轴）" />
+            <Line type="monotone" dataKey="id" stroke="#4cc2ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('pidControl.currentLoopIdName')} />
+            <Line type="monotone" dataKey="iq" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('pidControl.currentLoopIqName')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
@@ -220,21 +224,36 @@ export function CurrentLoopTuningCard() {
         )}
         <div className="text-caption leading-snug">
           {check.valid ? (
-            <span className="text-accent-measure">整定通过：{tuned.method}</span>
+            <span className="text-accent-measure">
+              {t('pidControl.currentLoopTuningPass')}
+              {t('pidControl.currentLoopMethodMagnitudeOptimum')
+                .replace('{bw}', formatNumber(tuned.targetBandwidthHz, 0))
+                .replace('{factor}', formatNumber(bandwidthFactor, 0))}
+            </span>
           ) : (
             <ul className="list-disc space-y-0.5 pl-4 text-accent-warn">
-              {check.warnings.map((w) => <li key={w}>{w}</li>)}
+              {check.warningCodes.map((w) => (
+                <li key={w.code}>
+                  {t(`pidControl.currentLoopWarn_${w.code}` as TKey)
+                    .replace('{value}', formatNumber(w.value, w.code.startsWith('pm') ? 1 : 0))
+                    .replace('{limit}', formatNumber(w.limit, w.code.startsWith('pm') ? 0 : 0))}
+                </li>
+              ))}
             </ul>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：Rs / L 用
-        <span className="formula"> V=IR 注入</span> 与 <span className="formula">di/dt 斜率法</span>
-        在启动前自测（对应 ST Motor Profiler 的 profiling 阶段）；Kp/Ki 换标幺后转 q15。
-        带宽经验值：<span className="formula">f_BW ≈ fs/15</span> 起步，高感电机可到 fs/10，
-        低感无人机电机受一拍延时限制建议 fs/20 以下。
+        <span className="text-accent-warn">{t('pidControl.currentLoopPortingTitle')}</span>
+        {t('pidControl.currentLoopPortingLead')}{' '}
+        <span className="formula">{t('pidControl.currentLoopVirInjection')}</span>{' '}
+        {t('pidControl.currentLoopPortingJoin')}{' '}
+        <span className="formula">{t('pidControl.currentLoopSlopeMethod')}</span>{' '}
+        {t('pidControl.currentLoopPortingMid')}
+        {t('pidControl.currentLoopBandwidthRule')}
+        <span className="formula">f_BW ≈ fs/15</span>
+        {t('pidControl.currentLoopBandwidthTail')}
       </p>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { Line } from '@react-three/drei';
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 import { VectorArrow } from './VectorArrow';
@@ -47,7 +48,12 @@ function Hexagon({ uAlpha, uBeta, uDc, sector, saturated }: Required<Props>) {
 }
 
 export function SvpwmHexagon3D({ uAlpha, uBeta, uDc, sector, saturated = false, ariaLabel }: Props) {
-  const label = ariaLabel ?? `三维 SVPWM 六边形：当前扇区 ${sector}，Uα=${uAlpha.toFixed(1)} V，Uβ=${uBeta.toFixed(1)} V。`;
+  const { t } = useI18n();
+  const label =
+    ariaLabel ??
+    `${t('three.svpwmAriaLead')}${sector}` +
+      `${t('three.svpwmAriaUalpha')}${uAlpha.toFixed(1)} V` +
+      `${t('three.svpwmAriaUbeta')}${uBeta.toFixed(1)} V${t('three.ariaPeriod')}`;
   return (
     <SceneFrame
       ariaLabel={label}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { planSCurve, computeSCurveMetrics, type SCurveResult } from '../../simulation/math/motionProfile';
+import { useI18n } from '../../i18n/useI18n';
 import { formatNumber } from '../../utils/format';
 
 /**
@@ -11,6 +12,7 @@ import { formatNumber } from '../../utils/format';
  * 实时计算轨迹指标：总时间、峰值速度/加速度/加加速度、梯形时间比。
  */
 export function ServoPositionCard() {
+  const { t } = useI18n();
   const [p1, setP1] = useState(10);
   const [vMax, setVMax] = useState(2);
   const [aMax, setAMax] = useState(5);
@@ -31,13 +33,13 @@ export function ServoPositionCard() {
   }, [profile]);
 
   return (
-    <Card title="S 曲线加减速" eyebrow="加加速度限制 · 7 段轨迹规划" density="compact">
+    <Card title={t('controlLoops.servoTitle')} eyebrow={t('controlLoops.servoEyebrow')} density="compact">
       {/* 参数滑块 */}
       <div className="mb-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
-        <Slider label="目标位置" value={p1} min={1} max={100} step={0.5} onChange={setP1} unit="m" />
-        <Slider label="最大速度" value={vMax} min={0.1} max={20} step={0.1} onChange={setVMax} unit="m/s" />
-        <Slider label="最大加速度" value={aMax} min={0.5} max={50} step={0.5} onChange={setAMax} unit="m/s²" />
-        <Slider label="最大加加速度" value={jMax} min={5} max={500} step={5} onChange={setJMax} unit="m/s³" />
+        <Slider label={t('controlLoops.servoTargetPos')} value={p1} min={1} max={100} step={0.5} onChange={setP1} unit="m" />
+        <Slider label={t('controlLoops.servoMaxVel')} value={vMax} min={0.1} max={20} step={0.1} onChange={setVMax} unit="m/s" />
+        <Slider label={t('controlLoops.servoMaxAccel')} value={aMax} min={0.5} max={50} step={0.5} onChange={setAMax} unit="m/s²" />
+        <Slider label={t('controlLoops.servoMaxJerk')} value={jMax} min={5} max={500} step={5} onChange={setJMax} unit="m/s³" />
       </div>
 
       {/* 轨迹图 */}
@@ -47,10 +49,10 @@ export function ServoPositionCard() {
 
       {/* 指标 */}
       <div className="mt-1 grid grid-cols-4 gap-1 text-caption">
-        <Metric label="总时间" value={formatNumber(metrics.totalTime, 3)} unit="s" />
-        <Metric label="峰值速度" value={formatNumber(metrics.peakVelocity, 2)} unit="m/s" />
-        <Metric label="峰值加速度" value={formatNumber(metrics.peakAccel, 1)} unit="m/s²" />
-        <Metric label="梯形时间比" value={formatNumber(metrics.timeRatioToTrapezoid * 100, 0)} unit="%" />
+        <Metric label={t('controlLoops.servoTotalTime')} value={formatNumber(metrics.totalTime, 3)} unit="s" />
+        <Metric label={t('controlLoops.servoPeakVel')} value={formatNumber(metrics.peakVelocity, 2)} unit="m/s" />
+        <Metric label={t('controlLoops.servoPeakAccel')} value={formatNumber(metrics.peakAccel, 1)} unit="m/s²" />
+        <Metric label={t('controlLoops.servoTimeRatio')} value={formatNumber(metrics.timeRatioToTrapezoid * 100, 0)} unit="%" />
       </div>
 
       {/* 7 段标注 */}
@@ -68,7 +70,7 @@ export function ServoPositionCard() {
 
       {profile.feasible === false && (
         <p className="mt-1 rounded border border-accent-warn/20 bg-accent-warn/8 px-2 py-1 text-caption text-accent-warn">
-          ⚠ 距离过短，已自动降低速度
+          {t('controlLoops.servoShortWarn')}
         </p>
       )}
     </Card>
@@ -110,6 +112,7 @@ function Metric({ label, value, unit }: { label: string; value: string; unit: st
 }
 
 function ResponsiveChart({ data }: { data: Array<{ t: number; p: number; v: number; a: number; j: number }> }) {
+  const { t } = useI18n();
   // 归一化到 0-1 范围便于同图显示
   const maxP = Math.max(...data.map((d) => Math.abs(d.p)), 1);
   const maxV = Math.max(...data.map((d) => Math.abs(d.v)), 1);
@@ -135,7 +138,12 @@ function ResponsiveChart({ data }: { data: Array<{ t: number; p: number; v: numb
       {/* 轨迹线 */}
       {(['p', 'v', 'a', 'j'] as const).map((key, ki) => {
         const colors = ['#34d6ff', '#43f7b5', '#f5a623', '#ff5c7a'];
-        const labels = ['位置', '速度', '加速度', '加加速度'];
+        const labels = [
+          t('controlLoops.servoTracePos'),
+          t('controlLoops.servoTraceVel'),
+          t('controlLoops.servoTraceAccel'),
+          t('controlLoops.servoTraceJerk'),
+        ];
         const xScale = 480 / Math.max(...normData.map((d) => d.t), 0.001);
 
         const pathD = normData.map((d, i) => {

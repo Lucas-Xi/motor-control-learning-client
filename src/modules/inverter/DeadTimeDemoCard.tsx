@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
 import { DeadTimeWaveform } from '../../components/charts/DeadTimeWaveform';
+import { useI18n } from '../../i18n/useI18n';
 import {
   deadTimeVoltageError,
   simulateDeadTime,
@@ -74,6 +75,7 @@ function SignSelector({ label, value, onChange }: SignBtnProps) {
  * 学员可以加大 td 或降低 fpwm（实际硬件「更安全的死区」），观察误差线性增长。
  */
 export function DeadTimeDemoCard() {
+  const { t } = useI18n();
   const [deadTimeUs, setDeadTimeUs] = useState(DEFAULTS.deadTimeUs);
   const [pwmFreqHz, setPwmFreqHz] = useState(DEFAULTS.pwmFreqHz);
   const [iaSign, setIaSign] = useState<Sign>(1);
@@ -108,18 +110,17 @@ export function DeadTimeDemoCard() {
   const insight = useMemo(() => {
     const tdLabel = formatNumber(deadTimeUs, 1);
     const fLabel = pwmFreqHz >= 1000 ? `${formatNumber(pwmFreqHz / 1000, 1)}kHz` : `${pwmFreqHz}Hz`;
-    return `死区 ${tdLabel}μs / PWM ${fLabel} / Udc ${DEFAULTS.uDc}V → 误差电压 ΔV=${formatNumber(
-      Math.abs(avgErrorV),
-      2,
-    )}V (≈${formatNumber(Math.abs(errorPercent), 2)}%)`;
-  }, [deadTimeUs, pwmFreqHz, avgErrorV, errorPercent]);
+    return `${t('inverter.deadTimeInsightDead')} ${tdLabel}μs / PWM ${fLabel} / Udc ${DEFAULTS.uDc}V → ${t(
+      'inverter.deadTimeInsightErr',
+    )}${formatNumber(Math.abs(avgErrorV), 2)}V (≈${formatNumber(Math.abs(errorPercent), 2)}%)`;
+  }, [deadTimeUs, pwmFreqHz, avgErrorV, errorPercent, t]);
 
   return (
-    <Card title="死区扭曲对比" eyebrow="dead-time distortion" density="compact">
+    <Card title={t('inverter.deadTimeDemoTitle')} eyebrow="dead-time distortion" density="compact">
       {/* 参数滑块 */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Slider
-          label="死区时间 td"
+          label={t('inverter.deadTimeTdLabel')}
           value={deadTimeUs}
           min={0}
           max={5}
@@ -128,7 +129,7 @@ export function DeadTimeDemoCard() {
           onChange={setDeadTimeUs}
         />
         <Slider
-          label="PWM 频率"
+          label={t('inverter.deadTimePwmFreqLabel')}
           value={pwmFreqHz}
           min={2000}
           max={16000}
@@ -140,9 +141,9 @@ export function DeadTimeDemoCard() {
 
       {/* 三相电流方向 */}
       <div className="mb-3 grid grid-cols-3 gap-2 rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
-        <SignSelector label="ia 方向" value={iaSign} onChange={setIaSign} />
-        <SignSelector label="ib 方向" value={ibSign} onChange={setIbSign} />
-        <SignSelector label="ic 方向" value={icSign} onChange={setIcSign} />
+        <SignSelector label={t('inverter.deadTimeIaDir')} value={iaSign} onChange={setIaSign} />
+        <SignSelector label={t('inverter.deadTimeIbDir')} value={ibSign} onChange={setIbSign} />
+        <SignSelector label={t('inverter.deadTimeIcDir')} value={icSign} onChange={setIcSign} />
       </div>
 
       {/* 波形对比 */}
@@ -151,8 +152,7 @@ export function DeadTimeDemoCard() {
       {/* 一句话洞察 */}
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">{insight}</p>
       <p className="mt-1.5 text-caption leading-relaxed text-ink-muted">
-        死区窗口期内电压由相电流方向「夹住」：i&gt;0 续流到下管 → V=−Udc/2，i&lt;0 续流到上管 → V=+Udc/2。
-        低速时 ΔV 是基波幅值的可观比例，必须做死区补偿，否则电流过零畸变 + 啸叫。
+        {t('inverter.deadTimeDemoExplain')}
       </p>
     </Card>
   );

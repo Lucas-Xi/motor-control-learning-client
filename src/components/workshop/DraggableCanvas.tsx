@@ -13,6 +13,7 @@ import {
   type NodePosition,
 } from '../../store/assemblyProgressStore';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 /**
  * Phase B · 可视化拖拽画布。
@@ -35,13 +36,13 @@ const VB_H = 520;
 const NODE_W = 170;
 const NODE_H = 78;
 
-const NODE_LABEL: Record<WorkshopNodeId, string> = {
-  load: '工况',
-  separator: '液气分离器',
-  compressor: '压缩机',
-  pfc: 'PFC 前级',
-  inverter: '变频器',
-  strategy: '控制策略',
+const NODE_LABEL: Record<WorkshopNodeId, TKey> = {
+  load: 'assemblyWorkshop.slotLoad',
+  separator: 'assemblyWorkshop.slotSeparatorFull',
+  compressor: 'assemblyWorkshop.slotCompressor',
+  pfc: 'assemblyWorkshop.slotPfcFull',
+  inverter: 'assemblyWorkshop.slotInverter',
+  strategy: 'assemblyWorkshop.slotStrategy',
 };
 
 type ConnectionKind = 'mech' | 'power' | 'signal';
@@ -50,17 +51,19 @@ const CONN_COLOR: Record<ConnectionKind, string> = {
   power: 'rgb(255 184 77)',   // accent.warn — 电力（PFC→Vdc→变频器→压缩机三相）
   signal: 'rgb(52 214 255)',  // accent.primary — 控制 / 反馈
 };
-const CONN_LABEL: Record<ConnectionKind, string> = {
-  mech: '管路',
-  power: '电路',
-  signal: '信号',
+const CONN_LABEL: Record<ConnectionKind, TKey> = {
+  mech: 'assemblyWorkshop.connMech',
+  power: 'assemblyWorkshop.connPower',
+  signal: 'assemblyWorkshop.connSignal',
 };
 
 interface Connection {
   from: WorkshopNodeId;
   to: WorkshopNodeId;
   kind: ConnectionKind;
-  label: string;
+  /** 中性术语标签（Vdc / duty 等），需要翻译的用 labelKey */
+  label?: string;
+  labelKey?: TKey;
 }
 
 /**
@@ -69,8 +72,8 @@ interface Connection {
  */
 const CONNECTIONS: Connection[] = [
   // 制冷链路（机械）
-  { from: 'load', to: 'separator', kind: 'mech', label: 'τ 负载' },
-  { from: 'separator', to: 'compressor', kind: 'mech', label: '吸气' },
+  { from: 'load', to: 'separator', kind: 'mech', labelKey: 'assemblyWorkshop.connTorque' },
+  { from: 'separator', to: 'compressor', kind: 'mech', labelKey: 'assemblyWorkshop.connSuction' },
   // 电气链路
   { from: 'pfc', to: 'inverter', kind: 'power', label: 'Vdc' },
   { from: 'inverter', to: 'compressor', kind: 'power', label: 'Iabc' },
@@ -95,12 +98,16 @@ interface Props {
 }
 
 export function DraggableCanvas(props: Props) {
+  const { t } = useI18n();
   const positions = useAssemblyProgressStore((s) => s.nodePositions);
   const setNodePosition = useAssemblyProgressStore((s) => s.setNodePosition);
   const resetNodePositions = useAssemblyProgressStore((s) => s.resetNodePositions);
 
   // 选中节点（键盘聚焦也算选中）。删除连接需要先选一条连接；这里实现"连接选中"用 hover/keyboard
   const [selectedConn, setSelectedConn] = useState<number | null>(null);
+
+  // 连接标签：中文走 labelKey，中性术语直接用 label
+  const connLabel = useCallback((c: Connection) => (c.labelKey ? t(c.labelKey) : c.label ?? ''), [t]);
 
   const swapHandlers = useMemo<Record<WorkshopNodeId, (idx: number) => void>>(() => ({
     compressor: props.onSwapCompressor,
@@ -135,22 +142,22 @@ export function DraggableCanvas(props: Props) {
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <GripVertical className="h-3.5 w-3.5 text-accent-primary" />
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">可视化画布 · 拖动节点排版 / 拖入 chip 切槽位 / 键盘 ←→↑↓</p>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.canvasTitle')}</p>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
           {(['mech', 'power', 'signal'] as ConnectionKind[]).map((k) => (
             <span key={k} className="flex items-center gap-1 text-ink-muted">
               <span className="inline-block h-2 w-4" style={{ backgroundColor: CONN_COLOR[k] }} />
-              {CONN_LABEL[k]}
+              {t(CONN_LABEL[k])}
             </span>
           ))}
           <button
             type="button"
             onClick={() => { resetNodePositions(); setSelectedConn(null); }}
             className="flex items-center gap-1 rounded border border-line-subtle bg-bg-surface px-1.5 py-0.5 text-ink-muted hover:text-ink-primary"
-            title="把 6 个节点恢复到默认位置"
+            title={t('assemblyWorkshop.canvasResetTitle')}
           >
-            <RotateCcw className="h-3 w-3" /> 重置布局
+            <RotateCcw className="h-3 w-3" /> {t('assemblyWorkshop.canvasReset')}
           </button>
         </div>
       </div>
@@ -160,7 +167,7 @@ export function DraggableCanvas(props: Props) {
         className="w-full select-none touch-none"
         style={{ aspectRatio: `${VB_W} / ${VB_H}`, maxHeight: 380 }}
         role="img"
-        aria-label="整机搭建拖拽画布：6 个节点，可拖动 / 键盘 ←→↑↓ 移动"
+        aria-label={t('assemblyWorkshop.canvasAria')}
       >
         <defs>
           {(['mech', 'power', 'signal'] as ConnectionKind[]).map((k) => (
@@ -201,7 +208,7 @@ export function DraggableCanvas(props: Props) {
               bx={b.cx}
               by={b.cy}
               kind={conn.kind}
-              label={conn.label}
+              label={connLabel(conn)}
               selected={selected}
               onSelect={() => setSelectedConn(selected ? null : i)}
             />
@@ -226,9 +233,9 @@ export function DraggableCanvas(props: Props) {
       </svg>
 
       <p className="mt-2 text-caption text-ink-muted">
-        Tab 聚焦节点后 ←/→/↑/↓ 微调 1%、Shift+方向 5% 大步、Home 回到默认；拖右侧 chip 至节点可换型号。
+        {t('assemblyWorkshop.canvasHint')}
         {selectedConn !== null && (
-          <span className="ml-2 text-accent-primary">已选中"{CONNECTIONS[selectedConn].label}"连接（{CONN_LABEL[CONNECTIONS[selectedConn].kind]}） · Esc 取消</span>
+          <span className="ml-2 text-accent-primary">{t('assemblyWorkshop.canvasConnSelected').replace('{label}', connLabel(CONNECTIONS[selectedConn])).replace('{kind}', t(CONN_LABEL[CONNECTIONS[selectedConn].kind]))}</span>
         )}
       </p>
     </div>
@@ -247,6 +254,7 @@ interface NodeProps {
 }
 
 function CanvasNode({ id, position, setPosition, title, sub, onSwap }: NodeProps) {
+  const { t } = useI18n();
   const [dragOver, setDragOver] = useState(false);
   const draggingRef = useRef(false);
   const dragOffsetRef = useRef<{ ox: number; oy: number } | null>(null);
@@ -356,7 +364,11 @@ function CanvasNode({ id, position, setPosition, title, sub, onSwap }: NodeProps
       ref={groupRef}
       role="application"
       tabIndex={0}
-      aria-label={`节点 ${NODE_LABEL[id]} ${title}，当前位置 ${position.x.toFixed(0)}%, ${position.y.toFixed(0)}%；按方向键移动、Shift 大步、Home 复位`}
+      aria-label={t('assemblyWorkshop.canvasNodeAria')
+        .replace('{label}', t(NODE_LABEL[id]))
+        .replace('{title}', title)
+        .replace('{x}', position.x.toFixed(0))
+        .replace('{y}', position.y.toFixed(0))}
       transform={`translate(${x}, ${y})`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -369,7 +381,7 @@ function CanvasNode({ id, position, setPosition, title, sub, onSwap }: NodeProps
       onDrop={onDrop}
       style={{ cursor: draggingRef.current ? 'grabbing' : 'grab', outline: 'none' }}
     >
-      <title>{`${NODE_LABEL[id]}：${title}`}</title>
+      <title>{`${t(NODE_LABEL[id])}：${title}`}</title>
       <rect
         width={NODE_W}
         height={NODE_H}
@@ -381,7 +393,7 @@ function CanvasNode({ id, position, setPosition, title, sub, onSwap }: NodeProps
       {/* 类别标签条（上沿色块） */}
       <rect width={NODE_W} height={6} y={0} rx={3} fill={CATEGORY_COLOR[id]} opacity={0.85} />
       <text x={10} y={26} fontSize={10} fill="rgb(158 181 203)" fontFamily="ui-monospace, monospace" style={{ textTransform: 'uppercase', letterSpacing: 1.5 }}>
-        {NODE_LABEL[id]}
+        {t(NODE_LABEL[id])}
       </text>
       <text x={10} y={46} fontSize={13} fill="rgb(231 243 255)" fontWeight={500}>
         {truncate(title, 18)}

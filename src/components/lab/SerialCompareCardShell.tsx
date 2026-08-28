@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, Download, Pause, Play, Plug, PlugZap, Radio } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { useSerialStore } from '../../store/serialStore';
+import { useI18n } from '../../i18n/useI18n';
 import { downloadText, timestamp } from '../../utils/download';
 import { formatNumber } from '../../utils/format';
 
@@ -61,6 +62,7 @@ export function SerialCompareCardShell({
   extraAction,
   children,
 }: SerialCompareCardShellProps) {
+  const { t } = useI18n();
   const connected = useSerialStore((s) => s.connected);
   const source = useSerialStore((s) => s.source);
   const portLabel = useSerialStore((s) => s.portLabel);
@@ -106,8 +108,8 @@ export function SerialCompareCardShell({
     source === 'web-serial'
       ? `Web Serial · ${portLabel ?? ''}`
       : source === 'mock'
-        ? 'Mock 数据源（仿真合成）'
-        : '未连接';
+        ? t('lab.sourceMock')
+        : t('lab.sourceNone');
   const sourceTone =
     source === 'web-serial' ? 'text-accent-measure' : source === 'mock' ? 'text-accent-primary' : 'text-ink-secondary';
 
@@ -117,7 +119,7 @@ export function SerialCompareCardShell({
       {!webSerialSupported && (
         <p className="mb-2 rounded-lg border border-accent-warn/40 bg-accent-warn/10 px-3 py-1.5 text-caption text-accent-warn">
           <AlertTriangle className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-          当前浏览器不支持 Web Serial · 自动 fallback 到 Mock 数据源
+          {t('lab.cardWebSerialFallback')}
         </p>
       )}
       {lastError && (
@@ -125,7 +127,7 @@ export function SerialCompareCardShell({
           className="mb-2 rounded-lg border border-accent-fault/40 bg-accent-fault/10 px-3 py-1.5 text-caption text-accent-fault"
           role="alert"
         >
-          串口错误：{lastError}
+          {t('lab.serialErrorPrefix')}{lastError}
         </p>
       )}
 
@@ -135,7 +137,7 @@ export function SerialCompareCardShell({
           type="button"
           onClick={onToggleConnect}
           disabled={pending}
-          aria-label={connected ? '断开串口连接' : '连接串口设备'}
+          aria-label={connected ? t('lab.disconnectAria') : t('lab.connectAria')}
           aria-pressed={connected}
           className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-caption font-medium transition-colors disabled:opacity-50 ${
             connected
@@ -144,7 +146,9 @@ export function SerialCompareCardShell({
           }`}
         >
           {connected ? <PlugZap className="h-4 w-4" /> : <Plug className="h-4 w-4" />}
-          <span>{connected ? '已连接' : webSerialSupported ? '连接' : '启动 Mock'}</span>
+          <span>
+            {connected ? t('lab.connected') : webSerialSupported ? t('lab.cardConnect') : t('lab.startMock')}
+          </span>
         </button>
 
         <span className={`flex items-center gap-1.5 truncate text-caption ${sourceTone}`} title={sourceLabel}>
@@ -153,14 +157,14 @@ export function SerialCompareCardShell({
         </span>
 
         <span className="text-caption text-ink-muted">
-          {formatNumber(sampleRateHz, 1)} Hz · {bufferLen} 帧
+          {formatNumber(sampleRateHz, 1)} Hz · {bufferLen} {t('lab.cardFramesUnit')}
         </span>
 
         <div className="ml-auto flex items-center gap-1.5">
           {/* 时基切换 radiogroup */}
           <div
             role="radiogroup"
-            aria-label="时基切换"
+            aria-label={t('lab.cardTimebaseGroupAria')}
             className="inline-flex overflow-hidden rounded-md border border-line-subtle"
           >
             {TIMEBASE_OPTIONS.map((opt) => (
@@ -169,7 +173,7 @@ export function SerialCompareCardShell({
                 type="button"
                 role="radio"
                 aria-checked={timebase === opt.value}
-                aria-label={`时基 ${opt.label}`}
+                aria-label={`${t('lab.cardTimebaseLabel')} ${opt.label}`}
                 onClick={() => onTimebaseChange(opt.value)}
                 className={`px-2 py-1 text-caption transition ${
                   timebase === opt.value
@@ -185,7 +189,7 @@ export function SerialCompareCardShell({
           <button
             type="button"
             onClick={() => onPausedChange(!paused)}
-            aria-label={paused ? '继续 UI 渲染' : '暂停 UI 渲染'}
+            aria-label={paused ? t('lab.cardResumeAria') : t('lab.cardPauseAria')}
             aria-pressed={paused}
             className={`flex items-center gap-1 rounded-md border px-2 py-1 text-caption transition ${
               paused
@@ -194,7 +198,7 @@ export function SerialCompareCardShell({
             }`}
           >
             {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-            {paused ? '继续' : '暂停'}
+            {paused ? t('lab.cardResume') : t('lab.cardPause')}
           </button>
 
           {onExportCsv && (
@@ -202,7 +206,7 @@ export function SerialCompareCardShell({
               type="button"
               onClick={onExport}
               disabled={bufferLen === 0}
-              aria-label="导出当前数据为 CSV"
+              aria-label={t('lab.cardExportCsvAria')}
               className="flex items-center gap-1 rounded-md border border-accent-primary/60 bg-accent-primary/10 px-2 py-1 text-caption text-accent-primary hover:bg-accent-primary/20 disabled:opacity-50"
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
@@ -217,8 +221,12 @@ export function SerialCompareCardShell({
       {/* 业务主体 / 或 fallback */}
       {bufferLen === 0 ? (
         <div className="flex h-32 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-subtle bg-bg-base text-center text-caption text-ink-muted">
-          <p>暂无实测数据</p>
-          <p>点击左上"{webSerialSupported ? '连接' : '启动 Mock'}"开始采样</p>
+          <p>{t('lab.cardNoData')}</p>
+          <p>
+            {t('lab.cardNoDataHintPrefix')}
+            {webSerialSupported ? t('lab.cardConnect') : t('lab.startMock')}
+            {t('lab.cardNoDataHintSuffix')}
+          </p>
         </div>
       ) : (
         children

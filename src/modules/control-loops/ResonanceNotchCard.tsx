@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import {
   sampleComplianceParams,
   resonanceFrequencies,
@@ -16,11 +17,11 @@ const KT = 1.5 * 4 * 0.045;   // 与其他卡片一致：p=4, ψf=0.045 → 0.27
 
 type PresetKey = keyof typeof sampleComplianceParams;
 
-const PRESET_LABELS: Record<PresetKey, string> = {
-  directDriveCompressor: '直驱压缩机（共振 > 1 kHz）',
-  industrialFanBelt: '工业风机皮带（~200-400 Hz）',
-  roboticJoint: '机器人关节谐波减速器（~150-200 Hz）',
-  agedDrive: '老化传动（共振谷加深）',
+const PRESET_LABELS: Record<PresetKey, TKey> = {
+  directDriveCompressor: 'controlLoops.resonanceNotchPresetCompressor',
+  industrialFanBelt: 'controlLoops.resonanceNotchPresetBelt',
+  roboticJoint: 'controlLoops.resonanceNotchPresetRobot',
+  agedDrive: 'controlLoops.resonanceNotchPresetAged',
 };
 
 interface MergedSample {
@@ -38,6 +39,7 @@ interface MergedSample {
  * "震荡 → 平顺"的差异；附 Q 与失配 Δf 滑块，演示工程权衡。
  */
 export function ResonanceNotchCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('industrialFanBelt');
   const [Kp, setKp] = useState(0.6);
   const [Ki, setKi] = useState(8);
@@ -90,10 +92,10 @@ export function ResonanceNotchCard() {
     ? Math.max(0, (1 - on.rmsErrorRadS / off.rmsErrorRadS) * 100)
     : 0;
   const status = rmsReductionPct >= 60
-    ? { tone: 'good', Icon: CheckCircle2, label: '抑制有效', hint: '陷波对齐共振峰，速度环可放大带宽。' }
+    ? { tone: 'good', Icon: CheckCircle2, label: 'controlLoops.resonanceNotchStatusGoodLabel' as const, hint: 'controlLoops.resonanceNotchStatusGoodHint' as const }
     : rmsReductionPct >= 20
-    ? { tone: 'warn', Icon: AlertTriangle, label: '部分抑制', hint: '检查 Δf 失配或 Q 取值；过宽损失带宽、过窄漏掉共振。' }
-    : { tone: 'bad', Icon: AlertOctagon, label: '抑制失效', hint: '常见原因：Δf 漂出陷波带 / Kp 过小未激发共振 / 陷波 Q 过窄。' };
+    ? { tone: 'warn', Icon: AlertTriangle, label: 'controlLoops.resonanceNotchStatusWarnLabel' as const, hint: 'controlLoops.resonanceNotchStatusWarnHint' as const }
+    : { tone: 'bad', Icon: AlertOctagon, label: 'controlLoops.resonanceNotchStatusBadLabel' as const, hint: 'controlLoops.resonanceNotchStatusBadHint' as const };
 
   const toneClass = (t: string) =>
     t === 'good'
@@ -104,25 +106,26 @@ export function ResonanceNotchCard() {
 
   return (
     <Card
-      title="反共振陷波（Anti-Resonance Notch）：现象 → 对策"
+      title={t('controlLoops.resonanceNotchTitle')}
       eyebrow="biquad notch · resonance suppression"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="RBJ Audio EQ Cookbook 二阶陷波 + DF-II-T；中心频率 = mechanicalCompliance.resonanceFrequencies。Q / 失配 Δf 是 STM32 上两大权衡。"
+          hint={t('controlLoops.resonanceNotchFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        双质量传动的<span className="text-accent-fault"> 共振峰</span>把速度环 PI 输出
-        放大成持续振铃。STM32 最便宜的对策：在 PI 输出（iq_cmd）后串一个二阶 biquad 陷波，
-        中心 = 共振 Hz、Q ≈ 5-15。但<span className="text-accent-warn"> 温度漂移 / 负载切换</span>
-        让真实共振点偏离陷波带宽（Δf 失配）→ 抑制失效；Q 太大又把控制带宽内的信号也滤掉。
+        {t('controlLoops.resonanceNotchIntroA')}
+        <span className="text-accent-fault">{t('controlLoops.resonanceNotchIntroB')}</span>
+        {t('controlLoops.resonanceNotchIntroC')}
+        <span className="text-accent-warn">{t('controlLoops.resonanceNotchIntroD')}</span>
+        {t('controlLoops.resonanceNotchIntroE')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">传动预设：</span>
+        <span className="text-caption text-ink-muted">{t('controlLoops.resonanceNotchPresetLabel')}</span>
         {(Object.keys(sampleComplianceParams) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -134,61 +137,61 @@ export function ResonanceNotchCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {PRESET_LABELS[k]}
+            {t(PRESET_LABELS[k])}
           </button>
         ))}
       </div>
       <p className="mb-3 text-[11px] text-ink-muted">
-        共振 <span className="formula text-accent-fault">{formatNumber(resonanceHz, 0)} Hz</span> ·
-        反共振 <span className="formula text-accent-warn">{formatNumber(antiResonanceHz, 0)} Hz</span> ·
-        速度环带宽工程上限约 <span className="formula">{formatNumber(antiResonanceHz / 5, 0)} Hz</span>
+        {t('controlLoops.resonanceNotchResonance')} <span className="formula text-accent-fault">{formatNumber(resonanceHz, 0)} Hz</span> ·
+        {t('controlLoops.resonanceNotchAntiResonance')} <span className="formula text-accent-warn">{formatNumber(antiResonanceHz, 0)} Hz</span> ·
+        {t('controlLoops.resonanceNotchBwCeiling')} <span className="formula">{formatNumber(antiResonanceHz / 5, 0)} Hz</span>
       </p>
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>速度 Kp</span>
+            <span>{t('controlLoops.resonanceNotchSpeedKp')}</span>
             <span className="formula text-ink-primary">{formatNumber(Kp, 2)}</span>
           </span>
           <input type="range" value={Kp} min={0.1} max={3} step={0.05}
             onChange={(e) => setKp(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="speed Kp" aria-valuemin={0.1} aria-valuemax={3} aria-valuenow={Kp} />
+            aria-label={t('controlLoops.resonanceNotchSpeedKp')} aria-valuemin={0.1} aria-valuemax={3} aria-valuenow={Kp} />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>速度 Ki</span>
+            <span>{t('controlLoops.resonanceNotchSpeedKi')}</span>
             <span className="formula text-ink-primary">{formatNumber(Ki, 1)}</span>
           </span>
           <input type="range" value={Ki} min={0} max={50} step={0.5}
             onChange={(e) => setKi(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="speed Ki" aria-valuemin={0} aria-valuemax={50} aria-valuenow={Ki} />
+            aria-label={t('controlLoops.resonanceNotchSpeedKi')} aria-valuemin={0} aria-valuemax={50} aria-valuenow={Ki} />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>陷波 Q</span>
+            <span>{t('controlLoops.resonanceNotchQ')}</span>
             <span className="formula text-ink-primary">{formatNumber(Q, 1)}</span>
           </span>
           <input type="range" value={Q} min={1} max={30} step={0.5}
             onChange={(e) => setQ(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="notch Q" aria-valuemin={1} aria-valuemax={30} aria-valuenow={Q} />
+            aria-label={t('controlLoops.resonanceNotchQ')} aria-valuemin={1} aria-valuemax={30} aria-valuenow={Q} />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>陷波失配 Δf/f0</span>
+            <span>{t('controlLoops.resonanceNotchDetune')}</span>
             <span className="formula text-ink-primary">{formatNumber(detunePct, 1)}%</span>
           </span>
           <input type="range" value={detunePct} min={-30} max={30} step={1}
             onChange={(e) => setDetunePct(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="notch detune" aria-valuemin={-30} aria-valuemax={30} aria-valuenow={detunePct} />
+            aria-label={t('controlLoops.resonanceNotchDetune')} aria-valuemin={-30} aria-valuemax={30} aria-valuenow={detunePct} />
         </label>
       </div>
 
       <div className="mb-2 flex items-baseline justify-between text-caption text-ink-muted">
-        <span>速度阶跃 ω_ref = <span className="formula text-ink-primary">{formatNumber(omegaRef, 0)} rad/s</span></span>
+        <span>{t('controlLoops.resonanceNotchOmegaRef')} <span className="formula text-ink-primary">{formatNumber(omegaRef, 0)} rad/s</span></span>
         <input type="range" value={omegaRef} min={20} max={200} step={10}
           onChange={(e) => setOmegaRef(Number(e.target.value))}
           className="simulation-slider w-32"
@@ -219,38 +222,40 @@ export function ResonanceNotchCard() {
             <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
             <ReferenceLine y={omegaRef} stroke="#5d7793" strokeDasharray="2 3"
               label={{ value: `ref ${omegaRef}`, fill: '#9eb5cb', fontSize: 9, position: 'insideTopRight' }} />
-            <Line type="monotone" dataKey="omegaOff" stroke="#fb7185" strokeWidth={1.4} dot={false} isAnimationActive={false} name="ω 无陷波（裸 PI 振铃）" />
-            <Line type="monotone" dataKey="omegaOn" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name="ω 启陷波" />
+            <Line type="monotone" dataKey="omegaOff" stroke="#fb7185" strokeWidth={1.4} dot={false} isAnimationActive={false} name={t('controlLoops.resonanceNotchLineOff')} />
+            <Line type="monotone" dataKey="omegaOn" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('controlLoops.resonanceNotchLineOn')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">无陷波 RMS</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.resonanceNotchRmsOff')}</p>
           <p className="formula text-body text-accent-fault">{formatNumber(off.rmsErrorRadS, 2)} rad/s</p>
-          <p className="text-[10px] opacity-75">超调 {formatNumber(off.overshootFrac * 100, 0)}%</p>
+          <p className="text-[10px] opacity-75">{t('controlLoops.resonanceNotchOvershootPrefix')}{formatNumber(off.overshootFrac * 100, 0)}{t('controlLoops.resonanceNotchOvershootSuffix')}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">启陷波 RMS</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.resonanceNotchRmsOn')}</p>
           <p className="formula text-body text-accent-measure">{formatNumber(on.rmsErrorRadS, 2)} rad/s</p>
-          <p className="text-[10px] opacity-75">超调 {formatNumber(on.overshootFrac * 100, 0)}% · 陷波中心 {formatNumber(on.notchCenterHz, 0)} Hz</p>
+          <p className="text-[10px] opacity-75">{t('controlLoops.resonanceNotchOvershootPrefix')}{formatNumber(on.overshootFrac * 100, 0)}{t('controlLoops.resonanceNotchOvershootSuffix')} {t('controlLoops.resonanceNotchCenterLabel')}{formatNumber(on.notchCenterHz, 0)} Hz</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(status.tone)}`}>
           <div className="flex items-center gap-1.5 text-caption">
             <status.Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{status.label}</span>
+            <span>{t(status.label)}</span>
           </div>
           <p className="formula text-body">RMS −{formatNumber(rmsReductionPct, 0)}%</p>
-          <p className="text-[10px] leading-snug opacity-90">{status.hint}</p>
+          <p className="text-[10px] leading-snug opacity-90">{t(status.hint)}</p>
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：把 <span className="formula">makeNotch(fc, fs, Q)</span>
-        换成 ARM CMSIS-DSP <span className="formula">arm_biquad_cascade_df1_q15</span>；系数初始化时算一次缓存
-        别每拍重算。生产代码典型加一层 <span className="text-accent-fault">在线共振辨识</span>（FFT / Goertzel
-        在 omegaMotor 上）→ 自适应陷波中心，避免温度 / 负载漂移让陷波"对不准"。
+        <span className="text-accent-warn">{t('controlLoops.resonanceNotchPortingTitle')}</span>
+        {t('controlLoops.resonanceNotchPortingA')}<span className="formula">makeNotch(fc, fs, Q)</span>
+        {t('controlLoops.resonanceNotchPortingB')}<span className="formula">arm_biquad_cascade_df1_q15</span>
+        {t('controlLoops.resonanceNotchPortingC')}
+        <span className="text-accent-fault">{t('controlLoops.resonanceNotchPortingD')}</span>
+        {t('controlLoops.resonanceNotchPortingE')}
       </p>
     </Card>
   );

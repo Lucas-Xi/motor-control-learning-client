@@ -1,5 +1,6 @@
 import { formatNumber } from '../../utils/format';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   polePairs: number;
@@ -26,6 +27,7 @@ const PHASE_COLOR = ['#34d6ff', '#43f7b5', '#ffb84d'] as const;
  * 这个图是 STATIC 几何描述，不依赖时间——polePairs 和 mechanicalDeg 改变能立即看到"槽数没变、磁极数变了""转子转过去了"。
  */
 export function MotorAnatomy2D({ polePairs, mechanicalDeg, rpm, size = 460 }: Props) {
+  const { t } = useI18n();
   const cx = size / 2;
   const cy = size / 2;
   const statorOuterR = size * 0.45;
@@ -171,45 +173,45 @@ export function MotorAnatomy2D({ polePairs, mechanicalDeg, rpm, size = 460 }: Pr
         <Annotation
           fromX={cx + statorOuterR * 0.92} fromY={cy - statorOuterR * 0.4}
           toX={cx + statorOuterR + 14} toY={size * 0.22}
-          label="定子铁芯" sub="iron stator yoke" color="#9eb5cb"
+          label={t('charts.anStatorYoke')} sub="iron stator yoke" color="#9eb5cb"
         />
         <Annotation
           fromX={cx + slotR * 0.95} fromY={cy + slotR * 0.05}
           toX={cx + statorOuterR + 14} toY={size * 0.42}
-          label="定子绕组" sub="3-phase windings A/B/C" color="#43f7b5"
+          label={t('charts.anStatorWinding')} sub="3-phase windings A/B/C" color="#43f7b5"
         />
         <Annotation
           fromX={cx + airGapR} fromY={cy + 2}
           toX={cx + statorOuterR + 14} toY={size * 0.55}
-          label="气隙" sub="air gap" color="#5d7793"
+          label={t('charts.anAirGap')} sub="air gap" color="#5d7793"
         />
         <Annotation
           fromX={cx - rotorOuterR * 0.7} fromY={cy + rotorOuterR * 0.2}
           toX={size * 0.06} toY={size * 0.42}
-          label="转子" sub="rotor" color="#9eb5cb"
+          label={t('charts.anRotor')} sub="rotor" color="#9eb5cb"
         />
         <Annotation
           fromX={cx - rotorOuterR * 0.4} fromY={cy - rotorOuterR * 0.55}
           toX={size * 0.06} toY={size * 0.18}
-          label="永磁极 N/S" sub={`${polePairsClamped} 对，共 ${numPoles} 块`}
+          label={t('charts.anMagnet')} sub={`${polePairsClamped}${t('charts.anMagnetPairs')}${numPoles}${t('charts.anMagnetBlocks')}`}
           color="#ff5c7a"
         />
 
         {/* 7. 底部状态条 */}
         <text x={size / 2} y={size - 14} textAnchor="middle" fill="#9eb5cb" fontSize="11"
           fontFamily="Cascadia Code, Consolas, monospace">
-          {polePairsClamped} 极对 · {numPoles} 极 · θm = {formatNumber(rotorRadDeg, 1)}° · {formatNumber(rpm, 0)} rpm · 12 槽
+          {polePairsClamped}{t('charts.anPolePairs')}{numPoles}{t('charts.anPoles')}θm = {formatNumber(rotorRadDeg, 1)}° · {formatNumber(rpm, 0)} rpm · 12{t('charts.anSlots')}
         </text>
-        <text x={14} y={size - 14} fill="#5d7793" fontSize="10">⊙ 流出纸面 ⊗ 流入纸面</text>
+        <text x={14} y={size - 14} fill="#5d7793" fontSize="10">{t('charts.anCurrentDir')}</text>
 
         {/* round-10/11 高保真物理就绪角标：明确告知本仿真层涵盖的真实物理效应 */}
-        <g aria-label="高保真物理效应清单" transform={`translate(${size - 158}, 12)`}>
+        <g aria-label={t('charts.anHdAria')} transform={`translate(${size - 158}, 12)`}>
           <rect width="148" height="68" rx="6" fill="#0d1929" fillOpacity="0.85" stroke="#43f7b5" strokeWidth="0.8" strokeOpacity="0.5" />
           <text x="8" y="14" fill="#43f7b5" fontSize="9" fontWeight="600" letterSpacing="0.06em">HD PHYSICS · ON</text>
-          <text x="8" y="26" fill="#9eb5cb" fontSize="9">饱和 Ld(id,iq) Vorobiev</text>
-          <text x="8" y="36" fill="#9eb5cb" fontSize="9">铁损 Bertotti 三项</text>
-          <text x="8" y="46" fill="#9eb5cb" fontSize="9">齿槽 + BEMF 5/7/11/13</text>
-          <text x="8" y="56" fill="#9eb5cb" fontSize="9">温度 PTC/NTC + Stribeck</text>
+          <text x="8" y="26" fill="#9eb5cb" fontSize="9">{t('charts.anHdSaturation')}</text>
+          <text x="8" y="36" fill="#9eb5cb" fontSize="9">{t('charts.anHdIronLoss')}</text>
+          <text x="8" y="46" fill="#9eb5cb" fontSize="9">{t('charts.anHdCogging')}</text>
+          <text x="8" y="56" fill="#9eb5cb" fontSize="9">{t('charts.anHdTemp')}</text>
         </g>
       </svg>
     </div>

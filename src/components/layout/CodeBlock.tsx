@@ -1,5 +1,6 @@
 import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   code: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function CodeBlock({ code, language = 'C', title }: Props) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
@@ -41,7 +43,7 @@ export function CodeBlock({ code, language = 'C', title }: Props) {
           className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-caption text-ink-muted transition-colors hover:bg-bg-raised hover:text-ink-primary"
         >
           {copied ? <Check className="h-3 w-3 text-accent-measure" /> : <Copy className="h-3 w-3" />}
-          {copied ? '已复制' : '复制'}
+          {copied ? t('shell.codeCopied') : t('shell.codeCopy')}
         </button>
       </div>
       <pre className="formula overflow-auto p-3 text-caption leading-relaxed text-accent-measure">{code}</pre>

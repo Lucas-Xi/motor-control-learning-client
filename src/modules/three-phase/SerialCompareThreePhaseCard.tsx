@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockThreePhaseSample } from '../../utils/serialMockGenerators';
@@ -48,6 +49,7 @@ const KCL_WARN = 0.3;
 const KCL_FAULT = 0.8;
 
 export function SerialCompareThreePhaseCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const threePhase = useSimulationStore((s) => s.threePhase);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -143,8 +145,8 @@ export function SerialCompareThreePhaseCard() {
 
   return (
     <SerialCompareCardShell
-      title="三相 ia/ib/ic 理论 vs 实测"
-      eyebrow="three-phase compare"
+      title={t('threePhase.serialTitle')}
+      eyebrow={t('threePhase.serialEyebrow')}
       timebase={timebase}
       onTimebaseChange={setTimebase}
       paused={paused}
@@ -153,7 +155,7 @@ export function SerialCompareThreePhaseCard() {
     >
       <div className="mb-3 grid grid-cols-2 gap-2">
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">ic LEM 增益 {formatNumber(icGain, 2)} ×</span>
+          <span className="block text-caption text-ink-muted">{t('threePhase.serialIcGainPrefix')}{formatNumber(icGain, 2)} ×</span>
           <input
             type="range"
             min={0.7}
@@ -162,15 +164,15 @@ export function SerialCompareThreePhaseCard() {
             value={icGain}
             onChange={(e) => setIcGain(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="ic 通道 LEM 增益系数"
+            aria-label={t('threePhase.serialIcGainAria')}
             aria-valuemin={0.7}
             aria-valuemax={1.3}
             aria-valuenow={icGain}
-            aria-valuetext={`${formatNumber(icGain, 2)} 倍`}
+            aria-valuetext={`${formatNumber(icGain, 2)} ${t('threePhase.serialAriaTimes')}`}
           />
         </label>
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">ADC 偏置 {formatNumber(adcBias, 2)} A</span>
+          <span className="block text-caption text-ink-muted">{t('threePhase.serialAdcBiasPrefix')}{formatNumber(adcBias, 2)} A</span>
           <input
             type="range"
             min={-0.5}
@@ -179,30 +181,31 @@ export function SerialCompareThreePhaseCard() {
             value={adcBias}
             onChange={(e) => setAdcBias(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="ADC 直流偏置（A）"
+            aria-label={t('threePhase.serialAdcBiasAria')}
             aria-valuemin={-0.5}
             aria-valuemax={0.5}
             aria-valuenow={adcBias}
-            aria-valuetext={`${formatNumber(adcBias, 2)} 安培`}
+            aria-valuetext={`${formatNumber(adcBias, 2)} ${t('threePhase.serialAriaAmpere')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <ThreeChannelChart title="实测 ia/ib/ic（A）" rows={displayRows} suffix="Real" />
-        <KclChart title="KCL 残差 = ia+ib+ic（A）" rows={displayRows} />
+        <ThreeChannelChart title={t('threePhase.serialRealChartTitle')} rows={displayRows} suffix="Real" />
+        <KclChart title={t('threePhase.serialKclChartTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="KCL 残差 RMS" value={`${formatNumber(kpi.kclRms, 3)} A`} tone={kclTone} />
-        <KpiTile label="ic 增益估算" value={`${formatNumber(kpi.icGainEst, 3)} ×`} tone={icGainTone} />
-        <KpiTile label="αβ 模长波动" value={`${formatNumber(kpi.imbalancePct, 1)} %`} tone={imbalanceTone} />
-        <KpiTile label="窗口样本数" value={`${displayRows.length} 帧`} tone="primary" />
+        <KpiTile label={t('threePhase.serialKpiKcl')} value={`${formatNumber(kpi.kclRms, 3)} A`} tone={kclTone} />
+        <KpiTile label={t('threePhase.serialKpiIcGain')} value={`${formatNumber(kpi.icGainEst, 3)} ×`} tone={icGainTone} />
+        <KpiTile label={t('threePhase.serialKpiImbalance')} value={`${formatNumber(kpi.imbalancePct, 1)} %`} tone={imbalanceTone} />
+        <KpiTile label={t('threePhase.serialKpiSamples')} value={`${displayRows.length} ${t('threePhase.serialFrameUnit')}`} tone="primary" />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, <span className="text-accent-measure">ia, ib, ic</span> ·
-        滑块模拟 LEM 增益偏差 + ADC 直流偏置；KCL 残差非零 → ADC 校准 / 共模偏置问题
+        {t('threePhase.serialProtocolLead')}
+        <span className="text-accent-measure">ia, ib, ic</span>
+        {t('threePhase.serialProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -302,6 +305,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -311,7 +315,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重偏差' : tone === 'warn' ? '警告偏差' : tone === 'primary' ? '辅助值' : '正常';
+  const sr =
+    tone === 'fault'
+      ? t('threePhase.serialSrFault')
+      : tone === 'warn'
+        ? t('threePhase.serialSrWarn')
+        : tone === 'primary'
+          ? t('threePhase.serialSrAux')
+          : t('threePhase.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

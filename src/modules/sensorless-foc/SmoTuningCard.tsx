@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { scoreSMO, simulateSMO } from '../../simulation/math/smo';
 import { formatNumber } from '../../utils/format';
 
@@ -12,21 +13,21 @@ const CHATTER_WARN = 0.3;
 
 const TUNE_PRESETS = {
   textbook: {
-    label: '教材默认',
+    labelKey: 'sensorlessFoc.smoTuningPresetTextbook' as TKey,
     speedRpm: 1500,
     smoGain: 80,
     boundaryLayer: 0.5,
     lpfCutoffHz: 120,
   },
   aggressive: {
-    label: '高增益',
+    labelKey: 'sensorlessFoc.smoTuningPresetAggressive' as TKey,
     speedRpm: 1500,
     smoGain: 220,
     boundaryLayer: 0.15,
     lpfCutoffHz: 250,
   },
   lowSpeed: {
-    label: '低速',
+    labelKey: 'sensorlessFoc.smoTuningPresetLowSpeed' as TKey,
     speedRpm: 280,
     smoGain: 80,
     boundaryLayer: 0.5,
@@ -57,6 +58,7 @@ function downsampleTune(data: ChartSample[], maxPoints: number): ChartSample[] {
  * 主图只证明能锁；本卡看增益抖振、边界层拖尾、低速失锁。
  */
 export function SmoTuningCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('textbook');
   const [speedRpm, setSpeedRpm] = useState<number>(TUNE_PRESETS.textbook.speedRpm);
   const [smoGain, setSmoGain] = useState<number>(TUNE_PRESETS.textbook.smoGain);
@@ -106,23 +108,22 @@ export function SmoTuningCard() {
 
   return (
     <Card
-      title="SMO 整定：增益抖振，边界层拖尾"
+      title={t('sensorlessFoc.smoTuningTitle')}
       eyebrow="sliding mode · sat boundary"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="z=K·sat(S/φ)；K 大跟踪快但 z 方波抖；φ 大平滑但等效增益下降；LPF 压抖振也加相位。"
+          hint={t('sensorlessFoc.smoTuningFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        z = K · sat(S/φ)。K 大跟踪快，但 z 变成方波抖振；φ 大把开关面抹平，等效增益下降、拖尾变长；
-        LPF 压抖振也往 θ_est 里塞相位。三件事互相拆台。
+        {t('sensorlessFoc.smoTuningIntro')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-secondary">整定预设：</span>
+        <span className="text-caption text-ink-secondary">{t('sensorlessFoc.smoTuningPresetLabel')}</span>
         {(Object.keys(TUNE_PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -134,7 +135,7 @@ export function SmoTuningCard() {
                 : 'border-line-subtle bg-bg-base text-ink-secondary hover:text-ink'
             }`}
           >
-            {TUNE_PRESETS[k].label}
+            {t(TUNE_PRESETS[k].labelKey)}
           </button>
         ))}
       </div>
@@ -147,7 +148,7 @@ export function SmoTuningCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>转速（rpm）</span>
+          <span>{t('sensorlessFoc.smoTuningSpeed')}</span>
           <span className="formula text-ink-primary">{formatNumber(speedRpm, 0)} rpm</span>
         </span>
         <input
@@ -161,7 +162,7 @@ export function SmoTuningCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>滑模增益 K</span>
+          <span>{t('sensorlessFoc.smoTuningGainK')}</span>
           <span className="formula text-ink-primary">{formatNumber(smoGain, 0)}</span>
         </span>
         <input
@@ -175,7 +176,7 @@ export function SmoTuningCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>边界层 φ（A）</span>
+          <span>{t('sensorlessFoc.smoTuningBoundary')}</span>
           <span className="formula text-ink-primary">{formatNumber(boundaryLayer, 2)} A</span>
         </span>
         <input
@@ -189,7 +190,7 @@ export function SmoTuningCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>BEMF LPF 截止（Hz）</span>
+          <span>{t('sensorlessFoc.smoTuningLpf')}</span>
           <span className="formula text-ink-primary">{formatNumber(lpfCutoffHz, 0)} Hz</span>
         </span>
         <input
@@ -203,27 +204,27 @@ export function SmoTuningCard() {
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">RMS误差</p>
+          <p className="text-caption text-ink-secondary">{t('sensorlessFoc.smoTuningRmsError')}</p>
           <p className={`formula text-body ${metrics.rmsErrorDeg > 20 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(metrics.rmsErrorDeg, 1)}°
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">峰值误差</p>
+          <p className="text-caption text-ink-secondary">{t('sensorlessFoc.peakErrorPrefix')}</p>
           <p className={`formula text-body ${metrics.peakErrorDeg > 30 ? 'text-accent-warn' : 'text-accent-primary'}`}>
             {formatNumber(metrics.peakErrorDeg, 1)}°
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">抖振 |S|</p>
+          <p className="text-caption text-ink-secondary">{t('sensorlessFoc.smoTuningChatter')}</p>
           <p className={`formula text-body ${chatterHigh ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(metrics.chatter, 3)}
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">是否锁定</p>
+          <p className="text-caption text-ink-secondary">{t('sensorlessFoc.smoTuningLockedLabel')}</p>
           <p className={`formula text-body ${metrics.locked ? 'text-accent-measure' : 'text-accent-fault'}`}>
-            {metrics.locked ? '锁定' : '失锁'}
+            {metrics.locked ? t('sensorlessFoc.smoTuningLocked') : t('sensorlessFoc.smoTuningLost')}
           </p>
         </div>
       </div>
@@ -313,28 +314,29 @@ export function SmoTuningCard() {
         )}
         <div className="text-caption leading-snug">
           {!metrics.locked ? (
-            <span className="text-accent-warn">
-              未锁定：低速 BEMF 被噪声淹，θ_est 在 ±10° 门外晃。先把转速拉上去，再谈 K/φ。
-            </span>
+            <span className="text-accent-warn">{t('sensorlessFoc.smoTuningWarnUnlocked')}</span>
           ) : chatterHigh ? (
             <span className="text-accent-warn">
-              抖振 |S| = {formatNumber(metrics.chatter, 3)} &gt; 0.3：边界层太薄，EMI/ADC 受不了。加厚 φ 或降低 K。
+              {t('sensorlessFoc.smoTuningWarnChatter').replace('{v}', formatNumber(metrics.chatter, 3))}
             </span>
           ) : (
             <span className="text-accent-measure">
-              已锁定，抖振可接受。RMS {formatNumber(metrics.rmsErrorDeg, 1)}° · |S| {formatNumber(metrics.chatter, 3)}。
+              {t('sensorlessFoc.smoTuningOkNote')
+                .replace('{rms}', formatNumber(metrics.rmsErrorDeg, 1))
+                .replace('{chat}', formatNumber(metrics.chatter, 3))}
             </span>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        主图用死参数只证明 SMO 能锁。本卡让你把 K/φ/LPF 拧坏——工业上这三件事互相拆台。
+        {t('sensorlessFoc.smoTuningFootnote')}
       </p>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：sat 用 Q15；
-        K 太大电流环听到开关噪声；φ 按额定电流 5–10%；
-        LPF 截止约 <span className="formula">0.1~0.2× f_e</span>。
+        <span className="text-accent-warn">{t('sensorlessFoc.smoTuningStm32Label')}</span>
+        {t('sensorlessFoc.smoTuningStm32Body')}{' '}
+        <span className="formula">0.1~0.2× f_e</span>
+        {t('sensorlessFoc.smoTuningStm32End')}
       </p>
     </Card>
   );

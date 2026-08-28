@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Card } from '../../components/ui/Card';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 /**
  * 双环 Boost PFC 结构图：
@@ -18,6 +19,7 @@ interface NodeDef {
   y: number;
   w: number;
   h: number;
+  /** 纯文本节点（v_grid / L / PWM 等符号）直接存字面量；含中文的节点存 TKey，渲染处经 tr() 翻译。 */
   label: string;
   sub?: string;
   channel: 'current' | 'voltage' | 'power';
@@ -26,18 +28,18 @@ interface NodeDef {
 const NODES: NodeDef[] = [
   // 功率级（power channel = 灰色，恒态显示）
   { id: 'grid',    x: 16,  y: 100, w: 70, h: 38, label: 'v_grid', sub: '220 V / 50 Hz', channel: 'power' },
-  { id: 'bridge',  x: 100, y: 100, w: 56, h: 38, label: '整流桥', sub: '|sin|', channel: 'power' },
+  { id: 'bridge',  x: 100, y: 100, w: 56, h: 38, label: 'apfFrontend.diagramNodeBridge', sub: '|sin|', channel: 'power' },
   { id: 'L',       x: 170, y: 100, w: 54, h: 38, label: 'L', sub: '1.5 mH', channel: 'power' },
   { id: 'switch',  x: 238, y: 100, w: 54, h: 38, label: 'S (PWM)', sub: 'IGBT', channel: 'current' },
-  { id: 'diode',   x: 306, y: 100, w: 54, h: 38, label: 'D', sub: '快恢复', channel: 'power' },
+  { id: 'diode',   x: 306, y: 100, w: 54, h: 38, label: 'D', sub: 'apfFrontend.diagramNodeFastRecovery', channel: 'power' },
   { id: 'cap',     x: 374, y: 100, w: 54, h: 38, label: 'C', sub: '470 μF', channel: 'voltage' },
-  { id: 'load',    x: 442, y: 100, w: 54, h: 38, label: '负载', sub: '1.5 kW', channel: 'power' },
+  { id: 'load',    x: 442, y: 100, w: 54, h: 38, label: 'apfFrontend.diagramNodeLoad', sub: '1.5 kW', channel: 'power' },
   // 采样
-  { id: 'iSense',  x: 174, y: 180, w: 60, h: 30, label: 'i_L 采样', channel: 'current' },
-  { id: 'uSense',  x: 380, y: 180, w: 60, h: 30, label: 'Udc 采样', channel: 'voltage' },
+  { id: 'iSense',  x: 174, y: 180, w: 60, h: 30, label: 'apfFrontend.diagramNodeISense', channel: 'current' },
+  { id: 'uSense',  x: 380, y: 180, w: 60, h: 30, label: 'apfFrontend.diagramNodeUSense', channel: 'voltage' },
   // 控制器
-  { id: 'piV',     x: 376, y: 234, w: 80, h: 34, label: '电压 PI', sub: 'Kpv / Kiv', channel: 'voltage' },
-  { id: 'piI',     x: 170, y: 234, w: 80, h: 34, label: '电流 PI', sub: 'Kpi / Kii', channel: 'current' },
+  { id: 'piV',     x: 376, y: 234, w: 80, h: 34, label: 'apfFrontend.diagramNodeVoltagePi', sub: 'Kpv / Kiv', channel: 'voltage' },
+  { id: 'piI',     x: 170, y: 234, w: 80, h: 34, label: 'apfFrontend.diagramNodeCurrentPi', sub: 'Kpi / Kii', channel: 'current' },
   { id: 'mul',     x: 280, y: 234, w: 56, h: 34, label: '× |sin|', sub: 'i_ref', channel: 'current' },
   { id: 'pwm',     x: 60,  y: 234, w: 80, h: 34, label: 'PWM', sub: 'duty', channel: 'current' },
 ];
@@ -60,6 +62,9 @@ function nodeChannel(ch: NodeDef['channel']): Channel {
 
 export function DualLoopBlockDiagram() {
   const [hover, setHover] = useState<Channel>(null);
+  const { t } = useI18n();
+  // 非翻译字面量（v_grid / L / PWM…）传入 t() 时原样返回，等效直显
+  const tr = (s: string): string => t(s as TKey);
 
   // 连接线定义（from, to, channel）
   const lines: Array<{ id: string; d: string; ch: 'current' | 'voltage' | 'power'; arrow?: boolean }> = [
@@ -90,7 +95,7 @@ export function DualLoopBlockDiagram() {
 
   return (
     <Card
-      title="双环结构图"
+      title={t('apfFrontend.diagramTitle')}
       eyebrow="dual-loop topology"
       density="compact"
       action={
@@ -103,7 +108,7 @@ export function DualLoopBlockDiagram() {
             onBlur={() => setHover(null)}
             className="rounded-md border border-accent-primary/40 bg-accent-primary/10 px-2 py-0.5 text-accent-primary"
           >
-            电流环
+            {t('apfFrontend.diagramCurrentLoop')}
           </button>
           <button
             type="button"
@@ -113,7 +118,7 @@ export function DualLoopBlockDiagram() {
             onBlur={() => setHover(null)}
             className="rounded-md border border-accent-measure/40 bg-accent-measure/10 px-2 py-0.5 text-accent-measure"
           >
-            电压环
+            {t('apfFrontend.diagramVoltageLoop')}
           </button>
         </div>
       }
@@ -122,7 +127,7 @@ export function DualLoopBlockDiagram() {
         <svg
           viewBox="0 0 520 290"
           role="img"
-          aria-label="单相 Boost PFC 双环结构图：上层为整流桥-电感-开关-二极管-电容功率链；下层为电流环和电压环 PI 控制器，电压环输出乘以 |sin| 后作为电流环参考"
+          aria-label={t('apfFrontend.diagramAria')}
           className="h-auto w-full"
         >
           <defs>
@@ -191,11 +196,11 @@ export function DualLoopBlockDiagram() {
                   opacity={dim ? 0.45 : 1}
                 />
                 <text x={n.x + n.w / 2} y={n.y + (n.sub ? 16 : 22)} textAnchor="middle" fill="#e7f3ff" fontSize={11} opacity={dim ? 0.5 : 1}>
-                  {n.label}
+                  {tr(n.label)}
                 </text>
                 {n.sub && (
                   <text x={n.x + n.w / 2} y={n.y + 29} textAnchor="middle" fill={c} fontSize={9} opacity={dim ? 0.5 : 0.9}>
-                    {n.sub}
+                    {tr(n.sub)}
                   </text>
                 )}
               </g>
@@ -204,18 +209,20 @@ export function DualLoopBlockDiagram() {
 
           {/* 通道标签 */}
           <text x={8} y={16} fill={CYAN} fontSize={10} opacity={hover === 'voltage' ? 0.4 : 1}>
-            ━ 内环：电流 ~1 kHz
+            ━ {t('apfFrontend.diagramInnerLoopLabel')}
           </text>
           <text x={8} y={32} fill={MINT} fontSize={10} opacity={hover === 'current' ? 0.4 : 1}>
-            ━ 外环：电压 ~20 Hz
+            ━ {t('apfFrontend.diagramOuterLoopLabel')}
           </text>
           <text x={400} y={16} fill={POWER} fontSize={10}>
-            ━ 主功率链
+            ━ {t('apfFrontend.diagramPowerPathLabel')}
           </text>
         </svg>
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        悬停 <span className="text-accent-primary">电流环</span> 或 <span className="text-accent-measure">电压环</span> 高亮对应通道。两环带宽分离 10 倍以上（电流环 ~1 kHz、电压环 ~20 Hz）是工程红线 —— 否则电压环会"误把 100 Hz 母线纹波当负载变化"调电流参考，导致 i_grid 出现二次谐波。
+        {t('apfFrontend.diagramHoverPrefix')} <span className="text-accent-primary">{t('apfFrontend.diagramCurrentLoop')}</span>{' '}
+        {t('apfFrontend.diagramHoverOr')} <span className="text-accent-measure">{t('apfFrontend.diagramVoltageLoop')}</span>{' '}
+        {t('apfFrontend.diagramHoverHint')}
       </p>
     </Card>
   );

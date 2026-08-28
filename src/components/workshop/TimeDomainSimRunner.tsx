@@ -9,6 +9,7 @@ import type {
 } from '../../content/assemblyLibraries';
 import { simulateSpeedLoop } from '../../simulation/math/motorModel';
 import { simulateCycle } from '../../simulation/math/vaporCycle';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 /**
  * Phase B · 简化时域仿真。
@@ -58,7 +59,16 @@ interface SimResult {
 const SIM_DURATION_S = 3;
 const SAMPLE_HZ = 100;            // 0.01s 采样，3s = 300 点，sparkline 够细且不卡
 
+/** t 函数类型（runSimulation 等非组件上下文用） */
+type TFunc = (key: TKey) => string;
+
+/** 模板填参：fill('共 {n} 点', { n: 12 }) */
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
 export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc, separator }: Props) {
+  const { t } = useI18n();
   const [result, setResult] = useState<SimResult | null>(null);
   const [busy, setBusy] = useState(false);
   // 切槽位时把结果置空（旧结果不再对应新组合）
@@ -73,7 +83,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
     setBusy(true);
     // 同步计算就够了（300 点 simulateSpeedLoop ≈ <10ms）；用 setTimeout 0 让按钮态可见
     setTimeout(() => {
-      setResult(runSimulation({ compressor, inverter, load, pfc, separator }));
+      setResult(runSimulation({ compressor, inverter, load, pfc, separator, t }));
       setBusy(false);
     }, 16);
   };
@@ -83,7 +93,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Activity className="h-3.5 w-3.5 text-accent-primary" />
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">3 秒简化时域仿真 · 速度环 × 制冷循环</p>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.tdTitle')}</p>
         </div>
         <button
           type="button"
@@ -92,20 +102,20 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
           className="flex items-center gap-1.5 rounded-md border border-accent-primary/60 bg-accent-primary/15 px-2.5 py-1.5 text-body text-accent-primary transition-colors hover:bg-accent-primary/25 disabled:opacity-50"
         >
           <Play className="h-4 w-4" />
-          {busy ? '计算中…' : result ? '重新仿真' : '运行时域仿真'}
+          {busy ? t('assemblyWorkshop.tdComputing') : result ? t('assemblyWorkshop.tdRerun') : t('assemblyWorkshop.tdRun')}
         </button>
       </div>
 
       {!result ? (
         <p className="rounded-md border border-line-subtle bg-bg-surface px-3 py-4 text-center text-caption text-ink-muted">
-          点上方按钮跑 3 秒启动+稳态过程，输出 rpm / Iq / Vdc / 排气温度 4 条 sparkline 和 verdict。
+          {t('assemblyWorkshop.tdIdleHint')}
         </p>
       ) : (
         <>
           <VerdictBar result={result} />
           <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
             <Sparkline
-              label="转速 rpm"
+              label={t('assemblyWorkshop.tdSparkRpm')}
               unit="rpm"
               color="rgb(67 247 181)"
               samples={result.samples.map((s) => ({ t: s.t, v: s.rpm }))}
@@ -122,7 +132,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
               faultAt={compressor.ratedCurrentA * 1.5}
             />
             <Sparkline
-              label="母线 Vdc"
+              label={t('assemblyWorkshop.tdSparkVdc')}
               unit="V"
               color="rgb(255 184 77)"
               samples={result.samples.map((s) => ({ t: s.t, v: s.vdcV }))}
@@ -130,7 +140,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
               floor={pfc.vdcOutput * 0.85}
             />
             <Sparkline
-              label="排气温度"
+              label={t('assemblyWorkshop.tdSparkTd')}
               unit="°C"
               color="rgb(255 92 122)"
               samples={result.samples.map((s) => ({ t: s.t, v: s.tdC }))}
@@ -140,8 +150,8 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
             />
           </div>
           <p className="mt-2 text-caption text-ink-muted">
-            稳态 COP ≈ <span className="font-mono text-ink-primary">{result.cop.toFixed(2)}</span> ·
-            采样 {SAMPLE_HZ} Hz · {SIM_DURATION_S}s 共 {result.samples.length} 点（结果仅在内存中，不写入 history）。
+            {t('assemblyWorkshop.tdFooterCop')} <span className="font-mono text-ink-primary">{result.cop.toFixed(2)}</span> ·
+            {' '}{t('assemblyWorkshop.tdFooterSampling')} {SAMPLE_HZ} Hz · {SIM_DURATION_S}s {t('assemblyWorkshop.tdFooterPoints').replace('{n}', String(result.samples.length))}.
           </p>
         </>
       )}
@@ -154,7 +164,7 @@ export function TimeDomainSimRunner({ compressor, inverter, strategy, load, pfc,
 const TD_LIMIT: Record<string, number> = { R32: 105, R410A: 110, R134a: 95 };
 const TD_WARN: Record<string, number> = { R32: 90, R410A: 95, R134a: 80 };
 
-function runSimulation({ compressor, inverter, load, pfc, separator }: Omit<Props, 'strategy'>): SimResult {
+function runSimulation({ compressor, inverter, load, pfc, separator, t }: Omit<Props, 'strategy'> & { t: TFunc }): SimResult {
   // —— 1) 用 simulateSpeedLoop 跑 3s 速度环（外环 PI + dq 简化）—— 这是 math/motorModel.ts 的纯函数
   //    它的 dt=1ms，每 4 步 push 一个点（即 4ms 一个样本），3s = 750 个样本，足够。
   //    targetRpm 用工况；负载扭矩用 simulateCycle 的 torqueLoad 近似（先稳态算一次以确定）。
@@ -245,37 +255,37 @@ function runSimulation({ compressor, inverter, load, pfc, separator }: Omit<Prop
   const inverterOverCurrent = steadyIq > inverter.ratedCurrentA * 0.95;
 
   if (refrigerantMismatch) {
-    reasons.push(`冷媒不匹配（${compressor.refrigerant} vs ${load.refrigerant}）→ 复习 16 制冷台架`);
+    reasons.push(fill(t('assemblyWorkshop.reasonRefrigerantMismatch'), { a: compressor.refrigerant, b: load.refrigerant }));
     verdict = 'fail';
   }
   if (steadyIq > ratedI) {
-    reasons.push(`稳态 Iq ${steadyIq.toFixed(2)} A 超过压缩机额定 ${ratedI} A → 复习 11 弱磁 / 09 控制回路`);
+    reasons.push(fill(t('assemblyWorkshop.reasonIqOverRated'), { iq: steadyIq.toFixed(2), rated: ratedI }));
     verdict = 'fail';
   } else if (steadyIq > ratedI * 0.85) {
-    reasons.push(`稳态 Iq ${steadyIq.toFixed(2)} A 占额定 ${(steadyIq / ratedI * 100).toFixed(0)}% — 余量小`);
+    reasons.push(fill(t('assemblyWorkshop.reasonIqTight'), { iq: steadyIq.toFixed(2), pct: (steadyIq / ratedI * 100).toFixed(0) }));
     if (verdict === 'pass') verdict = 'pass-warn';
   }
   if (steadyTd > tdLimit) {
-    reasons.push(`排气温度 ${steadyTd.toFixed(1)}°C 超 ${load.refrigerant} 限值 ${tdLimit}°C → 复习 16 制冷台架 / 增加过冷度`);
+    reasons.push(fill(t('assemblyWorkshop.reasonTdOverLimit'), { td: steadyTd.toFixed(1), ref: load.refrigerant, limit: tdLimit }));
     verdict = 'fail';
   } else if (steadyTd > tdWarn) {
-    reasons.push(`排气温度 ${steadyTd.toFixed(1)}°C 接近限值 ${tdLimit}°C → 关注`);
+    reasons.push(fill(t('assemblyWorkshop.reasonTdNearLimit'), { td: steadyTd.toFixed(1), limit: tdLimit }));
     if (verdict === 'pass') verdict = 'pass-warn';
   }
   if (!reachedTarget) {
-    reasons.push(`3 s 内未达目标转速 ${load.targetRpm} rpm（实际 ${steadyRpm.toFixed(0)}） → 复习 14 启动状态机 / 09 控制回路`);
+    reasons.push(fill(t('assemblyWorkshop.reasonTargetMissed'), { target: load.targetRpm, actual: steadyRpm.toFixed(0) }));
     if (verdict === 'pass') verdict = 'pass-warn';
   }
   if (!rampOk) {
-    reasons.push(`工况斜坡 ${rampNeeded} rpm/s > 分离器上限 ${separator.maxRampRpmS} → 复习 14 启动状态机 / 换大分离器`);
+    reasons.push(fill(t('assemblyWorkshop.reasonRampOverLimit'), { ramp: rampNeeded, max: separator.maxRampRpmS }));
     verdict = 'fail';
   }
   if (inverterOverCurrent) {
-    reasons.push(`稳态 Iq ${steadyIq.toFixed(2)} A 接近变频器 ${inverter.ratedCurrentA} A 额定 → 复习 08 三相逆变器`);
+    reasons.push(fill(t('assemblyWorkshop.reasonInverterOcp'), { iq: steadyIq.toFixed(2), rated: inverter.ratedCurrentA }));
     if (verdict === 'pass') verdict = 'pass-warn';
   }
   if (reasons.length === 0) {
-    reasons.push(`稳态全绿：${steadyRpm.toFixed(0)} rpm · Iq ${steadyIq.toFixed(2)} A · 排气 ${steadyTd.toFixed(1)}°C · COP ${cachedCop.toFixed(2)}`);
+    reasons.push(fill(t('assemblyWorkshop.reasonAllGreen'), { rpm: steadyRpm.toFixed(0), iq: steadyIq.toFixed(2), td: steadyTd.toFixed(1), cop: cachedCop.toFixed(2) }));
   }
 
   return {
@@ -306,6 +316,7 @@ function Sparkline({
   /** Vdc 类指标的"地板"——低于此就该警告 */
   floor?: number;
 }) {
+  const { t } = useI18n();
   const W = 200;
   const H = 60;
   const minV = Math.min(...samples.map((s) => s.v), target ?? Infinity, floor ?? Infinity);
@@ -332,7 +343,7 @@ function Sparkline({
           {steady.toFixed(steady < 10 ? 2 : steady < 1000 ? 1 : 0)} <span className="text-caption text-ink-muted">{unit}</span>
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-1 h-12 w-full" role="img" aria-label={`${label} sparkline, 稳态 ${steady.toFixed(2)} ${unit}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-1 h-12 w-full" role="img" aria-label={`${label} sparkline, ${t('assemblyWorkshop.tdSteadyAria')} ${steady.toFixed(2)} ${unit}`}>
         {/* 目标 / warn / fault 参考线 */}
         {target !== undefined && (
           <line x1="0" x2={W} y1={y(target)} y2={y(target)} stroke="rgb(158 181 203)" strokeWidth="0.7" strokeDasharray="3 3" />
@@ -355,11 +366,12 @@ function Sparkline({
 // ———————————————————— VerdictBar ————————————————————
 
 function VerdictBar({ result }: { result: SimResult }) {
+  const { t } = useI18n();
   const tone = result.verdict === 'fail'
-    ? { cls: 'border-accent-fault/60 bg-accent-fault/10 text-accent-fault', label: '不通过', Icon: AlertTriangle }
+    ? { cls: 'border-accent-fault/60 bg-accent-fault/10 text-accent-fault', label: t('assemblyWorkshop.verdictFail'), Icon: AlertTriangle }
     : result.verdict === 'pass-warn'
-      ? { cls: 'border-accent-warn/60 bg-accent-warn/10 text-accent-warn', label: '通过 · 有告警', Icon: AlertCircle }
-      : { cls: 'border-accent-measure/60 bg-accent-measure/10 text-accent-measure', label: '通过', Icon: CheckCircle2 };
+      ? { cls: 'border-accent-warn/60 bg-accent-warn/10 text-accent-warn', label: t('assemblyWorkshop.verdictPassWarn'), Icon: AlertCircle }
+      : { cls: 'border-accent-measure/60 bg-accent-measure/10 text-accent-measure', label: t('assemblyWorkshop.verdictPass'), Icon: CheckCircle2 };
   const { Icon } = tone;
   return (
     <div className={`flex items-start gap-2 rounded-md border px-3 py-2 ${tone.cls}`} role="status" aria-live="polite">

@@ -15,6 +15,7 @@ import { Card } from '../ui/Card';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useCloudShareStore } from '../../store/cloudShareStore';
 import { useReviewersStore, colorForAuthor } from '../../store/reviewersStore';
+import { useI18n } from '../../i18n/useI18n';
 import {
   GistError,
   fetchReviewDoc,
@@ -79,6 +80,7 @@ function shortValue(v: unknown): string {
 }
 
 export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReviewPanelProps) {
+  const { t } = useI18n();
   const pat = useCloudShareStore((s) => s.pat);
   const ghLogin = useCloudShareStore((s) => s.ghLogin);
   const activeReviewer = useReviewersStore((s) => s.activeReviewer);
@@ -189,11 +191,11 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
       setDoc(parseReviewDoc(raw));
     } catch (e) {
       const msg = e instanceof GistError ? e.message : (e as Error).message;
-      flash('err', `加载 review 失败：${msg}`);
+      flash('err', `${t('share.reviewLoadFailPrefix')}${msg}`);
     } finally {
       setLoading(false);
     }
-  }, [gistId, pat, flash]);
+  }, [gistId, pat, flash, t]);
 
   useEffect(() => {
     if (gistId) void refresh();
@@ -206,7 +208,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
   const persist = useCallback(
     async (next: ReviewDocument) => {
       if (!pat) {
-        flash('err', '需要绑定 PAT 才能写入云端 review');
+        flash('err', t('share.reviewNeedPat'));
         return;
       }
       const bumped = bumpRevision(next);
@@ -214,29 +216,29 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
       try {
         await updateReviewDoc(pat, gistId, serializeReviewDoc(bumped));
         setDoc(bumped);
-        flash('ok', '已同步到云端 review');
+        flash('ok', t('share.reviewSynced'));
       } catch (e) {
         const msg = e instanceof GistError ? e.message : (e as Error).message;
-        flash('err', `保存失败：${msg}`);
+        flash('err', `${t('share.reviewSaveFailPrefix')}${msg}`);
       } finally {
         setLoading(false);
       }
     },
-    [pat, gistId, flash],
+    [pat, gistId, flash, t],
   );
 
   const submitComment = useCallback(
     async (parameterPath: string, parentId: string | null) => {
       const body = draft.body.trim();
       if (!body) {
-        flash('err', '评论正文为空');
+        flash('err', t('share.reviewEmptyBody'));
         return;
       }
       let suggestion: ReviewEntry['suggestion'];
       if (draft.suggestion.enabled) {
         const raw = draft.suggestion.newValue.trim();
         if (!raw) {
-          flash('err', '建议改动需要填入新值');
+          flash('err', t('share.reviewNeedNewValue'));
           return;
         }
         // 智能转换：true/false → boolean；可解析数字 → number；否则字符串
@@ -264,38 +266,38 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
         setDraft({ parameterPath: '', body: '', suggestion: { enabled: false, newValue: '', reason: '' } });
         setReplyTo('');
       } catch (e) {
-        flash('err', `发布失败：${(e as Error).message}`);
+        flash('err', `${t('share.reviewPublishFailPrefix')}${(e as Error).message}`);
       }
     },
-    [draft, doc, author, persist, flash],
+    [draft, doc, author, persist, flash, t],
   );
 
   const handleApply = useCallback(
     async (entry: ReviewEntry) => {
       const result = applySuggestion(doc, entry.id, author, updaters);
       if (!result.ok || !result.doc) {
-        flash('err', `应用失败：${result.reason ?? '未知错误'}`);
+        flash('err', `${t('share.reviewApplyFailPrefix')}${result.reason ?? t('share.reviewUnknownErr')}`);
         return;
       }
       await persist(result.doc);
-      flash('ok', `已应用建议 → ${entry.suggestion?.parameterPath}`);
+      flash('ok', `${t('share.reviewAppliedPrefix')}${entry.suggestion?.parameterPath}`);
     },
-    [doc, author, updaters, persist, flash],
+    [doc, author, updaters, persist, flash, t],
   );
 
   const handleDelete = useCallback(
     async (entryId: string) => {
-      if (!confirm('删除这条评论（及其所有回复）？')) return;
+      if (!window.confirm(t('share.reviewDeleteConfirm'))) return;
       const next = removeEntry(doc, entryId);
       await persist(next);
     },
-    [doc, persist],
+    [doc, persist, t],
   );
 
   const handleStatus = useCallback(
     async (to: ReviewStatus) => {
       if (!canTransition(doc.status, to)) {
-        flash('err', `非法状态迁移：${doc.status} → ${to}`);
+        flash('err', `${t('share.reviewBadTransitionPrefix')}${doc.status} → ${to}`);
         return;
       }
       try {
@@ -304,7 +306,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
         flash('err', (e as Error).message);
       }
     },
-    [doc, persist, flash],
+    [doc, persist, flash, t],
   );
 
   const handleParamJump = useCallback(
@@ -370,7 +372,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
               <button
                 type="button"
                 onClick={() => void handleApply(node.entry)}
-                aria-label={`应用 ${node.entry.author} 的建议改动到 ${node.entry.suggestion.parameterPath}`}
+                aria-label={`${t('share.reviewApplyAriaPrefix')}${node.entry.author}${t('share.reviewApplyAriaMid')}${node.entry.suggestion.parameterPath}`}
                 className="inline-flex items-center gap-1 rounded border border-accent-measure/50 bg-accent-measure/10 px-2 py-0.5 text-caption text-accent-measure hover:bg-accent-measure/20"
               >
                 <Sparkles className="h-3 w-3" aria-hidden="true" />
@@ -379,14 +381,14 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
             ) : node.entry.suggestionApplied ? (
               <span className="inline-flex items-center gap-1 rounded border border-accent-measure/40 bg-accent-measure/10 px-1.5 py-0.5 text-caption text-accent-measure">
                 <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-                已应用
+                {t('share.reviewAppliedBadge')}
               </span>
             ) : null
           }
           footer={
             node.entry.suggestion ? (
               <div className="mt-1.5 rounded-md border border-line-subtle bg-bg-surface px-2 py-1 text-caption">
-                <span className="text-ink-muted">建议改动：</span>
+                <span className="text-ink-muted">{t('share.reviewSuggestionLabel')}</span>
                 <code className="font-mono text-accent-primary">{node.entry.suggestion.parameterPath}</code>
                 <span className="mx-1 text-ink-muted">→</span>
                 <code className="font-mono text-accent-measure">{String(node.entry.suggestion.newValue)}</code>
@@ -409,11 +411,11 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                 suggestion: { enabled: false, newValue: '', reason: '' },
               }));
             }}
-            aria-label={`回复 ${node.entry.author}`}
+            aria-label={`${t('share.reviewReplyAriaPrefix')}${node.entry.author}`}
             className="inline-flex items-center gap-1 rounded border border-line-subtle px-1.5 py-0.5 text-caption text-ink-muted hover:border-accent-primary hover:text-accent-primary"
           >
             <CornerDownRight className="h-3 w-3" aria-hidden="true" />
-            回复
+            {t('share.reviewReplyBtn')}
           </button>
         </div>
         {/* 子回复 */}
@@ -424,18 +426,18 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
             <textarea
               value={draft.body}
               onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
-              placeholder={`回复 @${node.entry.author}：支持 **bold** *italic* \`code\` [text](url) {{${node.entry.parameterPath}}}`}
+              placeholder={`${t('share.reviewReplyPlaceholderPrefix')}${node.entry.author}${t('share.reviewReplyPlaceholderMid')}${node.entry.parameterPath}}}`}
               rows={2}
-              aria-label="回复内容"
+              aria-label={t('share.reviewReplyContentAria')}
               className="w-full resize-none rounded border border-line-subtle bg-bg-surface px-2 py-1 text-body focus:outline-none focus:ring-2 focus:ring-accent-primary"
             />
             <div className="flex items-center gap-2">
               <Button variant="primary" onClick={() => void submitComment(node.entry.parameterPath, node.entry.id)} disabled={loading || !draft.body.trim()}>
                 <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                发布回复
+                {t('share.reviewPublishReplyBtn')}
               </Button>
               <Button variant="ghost" onClick={() => { setReplyTo(''); setDraft({ parameterPath: '', body: '', suggestion: { enabled: false, newValue: '', reason: '' } }); }}>
-                取消
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -456,19 +458,20 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
           : 'border-ink-muted/40 bg-bg-base text-ink-muted'
       }`}
     >
-      状态：{doc.status} · 修订 #{doc.revision}
+      {t('share.reviewStatusPrefix')}
+      {doc.status}
+      {t('share.reviewRevSuffix')}
+      {doc.revision}
     </span>
   );
 
   if (!gistId) {
     return (
-      <Card density="default" tone="default" eyebrow="V3 · PR-style review" title="选择 snapshot 后开始评审">
-        <p className="text-caption text-ink-muted">
-          在【我的快照】或【团队时间线】里点【Review】按钮可打开本面板。
-        </p>
+      <Card density="default" tone="default" eyebrow="V3 · PR-style review" title={t('share.reviewEmptyTitle')}>
+        <p className="text-caption text-ink-muted">{t('share.reviewEmptyHint')}</p>
         {onClose && (
           <Button className="mt-2" variant="ghost" onClick={onClose}>
-            关闭
+            {t('common.close')}
           </Button>
         )}
       </Card>
@@ -484,17 +487,17 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
       action={
         <div className="flex flex-wrap items-center gap-1.5">
           {statusBadge}
-          <Button variant="ghost" onClick={() => void refresh()} disabled={loading} aria-label="刷新评论">
+          <Button variant="ghost" onClick={() => void refresh()} disabled={loading} aria-label={t('share.reviewRefreshAria')}>
             {loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
             ) : (
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
             )}
-            刷新评论
+            {t('share.reviewRefreshBtn')}
           </Button>
           {onClose && (
-            <Button variant="ghost" onClick={onClose} aria-label="关闭 review 面板">
-              关闭
+            <Button variant="ghost" onClick={onClose} aria-label={t('share.reviewClosePanelAria')}>
+              {t('common.close')}
             </Button>
           )}
         </div>
@@ -504,14 +507,19 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
         {/* 摘要 + 状态按钮 */}
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line-subtle bg-bg-base px-3 py-2 text-caption">
           <span className="text-ink-primary">
-            <strong className="text-accent-primary">{summary.openTopLevel}</strong> 条 open
+            <strong className="text-accent-primary">{summary.openTopLevel}</strong>
+            {t('share.reviewOpenSuffix')}
           </span>
           <span className="text-ink-secondary">
-            <strong className="text-accent-measure">{summary.resolvedTopLevel}</strong> 条 resolved
+            <strong className="text-accent-measure">{summary.resolvedTopLevel}</strong>
+            {t('share.reviewResolvedSuffix')}
           </span>
           <span className="text-ink-secondary">
-            <strong className="text-accent-warn">{summary.suggestions}</strong> 条 suggestions
-            （已应用 {summary.appliedSuggestions}）
+            <strong className="text-accent-warn">{summary.suggestions}</strong>
+            {t('share.reviewSuggestionSuffix')}
+            {t('share.reviewAppliedCountPrefix')}
+            {summary.appliedSuggestions}
+            {t('share.reviewAppliedCountSuffix')}
           </span>
           <span className="ml-auto inline-flex gap-1">
             {(['open', 'closed', 'merged'] as const).map((s) => {
@@ -522,7 +530,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                   type="button"
                   onClick={() => void handleStatus(s)}
                   disabled={!enabled || loading}
-                  aria-label={`切换 review 状态到 ${s}`}
+                  aria-label={`${t('share.reviewSwitchStatusAriaPrefix')}${s}`}
                   className={`rounded-full border px-2 py-0.5 text-caption ${
                     enabled
                       ? 'border-line-subtle text-ink-secondary hover:border-accent-primary hover:text-accent-primary'
@@ -555,7 +563,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                   onClick={() => setExpandedSlice(isOpen ? '' : sliceKey)}
                   className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
                   aria-expanded={isOpen}
-                  aria-label={`${isOpen ? '折叠' : '展开'} ${SLICE_LABELS[sliceKey as keyof typeof SLICE_LABELS]} 参数列表`}
+                  aria-label={`${isOpen ? t('share.reviewCollapseAriaPrefix') : t('share.reviewExpandAriaPrefix')}${SLICE_LABELS[sliceKey as keyof typeof SLICE_LABELS]}${t('share.reviewParamListSuffix')}`}
                 >
                   <span className="inline-flex items-center gap-2 text-body text-ink-primary">
                     {isOpen ? (
@@ -564,7 +572,10 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                       <ChevronRight className="h-4 w-4 text-ink-muted" aria-hidden="true" />
                     )}
                     <strong>{SLICE_LABELS[sliceKey as keyof typeof SLICE_LABELS]}</strong>
-                    <span className="text-caption text-ink-muted">{fields.length} 个参数</span>
+                    <span className="text-caption text-ink-muted">
+                      {fields.length}
+                      {t('share.reviewParamCountSuffix')}
+                    </span>
                   </span>
                   {sliceCount > 0 && (
                     <span className="rounded-full border border-accent-primary/40 bg-accent-primary/10 px-2 py-0.5 text-caption text-accent-primary">
@@ -591,7 +602,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                               onClick={() => setExpandedParam(isParamOpen ? '' : path)}
                               className="flex-1 text-left"
                               aria-expanded={isParamOpen}
-                              aria-label={`${isParamOpen ? '折叠' : '展开'} ${path} 评论`}
+                              aria-label={`${isParamOpen ? t('share.reviewCollapseAriaPrefix') : t('share.reviewExpandAriaPrefix')}${path}${t('share.reviewCommentsSuffix')}`}
                             >
                               <code className="font-mono text-caption text-accent-primary">{path}</code>
                               <span className="ml-2 text-caption text-ink-secondary">= {shortValue(value)}</span>
@@ -599,7 +610,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                             {cnt > 0 && (
                               <span
                                 className="rounded-full border border-accent-primary/40 bg-accent-primary/10 px-1.5 py-0.5 text-caption text-accent-primary"
-                                aria-label={`${cnt} 条评论`}
+                                aria-label={`${cnt}${t('share.reviewNCommentsSuffix')}`}
                               >
                                 💬 {cnt}
                               </span>
@@ -615,7 +626,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                 });
                                 setReplyTo('');
                               }}
-                              aria-label={`新增评论锚定到 ${path}`}
+                              aria-label={`${t('share.reviewAddCommentAriaPrefix')}${path}`}
                               className="rounded border border-line-subtle px-1.5 py-0.5 text-caption text-ink-muted hover:border-accent-primary hover:text-accent-primary"
                             >
                               <MessageSquarePlus className="h-3 w-3" aria-hidden="true" />
@@ -624,18 +635,18 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                           {isParamOpen && (
                             <div className="space-y-1.5 px-2 pb-2">
                               {threads.length === 0 && (
-                                <p className="text-caption text-ink-muted">尚无评论。</p>
+                                <p className="text-caption text-ink-muted">{t('share.noCommentsYet')}</p>
                               )}
-                              {threads.map((t) => renderThread(t, 0))}
+                              {threads.map((th) => renderThread(th, 0))}
                               {/* 新增顶层评论表单 */}
                               {draft.parameterPath === path && replyTo === '' && (
                                 <div className="space-y-1.5 rounded-md border border-accent-primary/30 bg-bg-surface p-2">
                                   <textarea
                                     value={draft.body}
                                     onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
-                                    placeholder={`留言锚定到 ${path}（支持 **bold** *italic* \`code\` [text](url) {{${path}}}）`}
+                                    placeholder={`${t('share.reviewCommentPlaceholderPrefix')}${path}${t('share.reviewCommentPlaceholderMid')}${path}${t('share.reviewCommentPlaceholderSuffix')}`}
                                     rows={3}
-                                    aria-label={`针对 ${path} 的新评论内容`}
+                                    aria-label={`${t('share.reviewNewCommentAriaPrefix')}${path}${t('share.reviewNewCommentAriaSuffix')}`}
                                     className="w-full resize-none rounded border border-line-subtle bg-bg-base px-2 py-1 text-body focus:outline-none focus:ring-2 focus:ring-accent-primary"
                                   />
                                   <label className="flex items-center gap-2 text-caption text-ink-secondary">
@@ -646,9 +657,9 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                         setDraft((d) => ({ ...d, suggestion: { ...d.suggestion, enabled: e.target.checked } }))
                                       }
                                       className="h-4 w-4 accent-accent-primary"
-                                      aria-label="附加建议改动"
+                                      aria-label={t('share.reviewAttachSuggestionAria')}
                                     />
-                                    附加建议改动（apply 后会调用 store 的 update 函数）
+                                    {t('share.reviewAttachSuggestionLabel')}
                                   </label>
                                   {draft.suggestion.enabled && (
                                     <div className="flex flex-wrap gap-1.5">
@@ -658,8 +669,8 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                         onChange={(e) =>
                                           setDraft((d) => ({ ...d, suggestion: { ...d.suggestion, newValue: e.target.value } }))
                                         }
-                                        placeholder="新值（数字 / true / false / 字符串）"
-                                        aria-label={`${path} 的建议新值`}
+                                        placeholder={t('share.reviewNewValuePlaceholder')}
+                                        aria-label={`${path}${t('share.reviewNewValueAriaSuffix')}`}
                                         className="min-w-[10rem] flex-1 rounded border border-line-subtle bg-bg-base px-2 py-1 font-mono text-caption focus:outline-none focus:ring-2 focus:ring-accent-primary"
                                       />
                                       <input
@@ -668,8 +679,8 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                         onChange={(e) =>
                                           setDraft((d) => ({ ...d, suggestion: { ...d.suggestion, reason: e.target.value } }))
                                         }
-                                        placeholder="理由（可空）"
-                                        aria-label={`${path} 建议改动的理由`}
+                                        placeholder={t('share.reviewReasonPlaceholder')}
+                                        aria-label={`${path}${t('share.reviewReasonAriaSuffix')}`}
                                         className="min-w-[10rem] flex-1 rounded border border-line-subtle bg-bg-base px-2 py-1 text-caption focus:outline-none focus:ring-2 focus:ring-accent-primary"
                                       />
                                     </div>
@@ -677,7 +688,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                   <div className="flex items-center gap-2">
                                     <Button variant="primary" onClick={() => void submitComment(path, null)} disabled={loading || !draft.body.trim()}>
                                       <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                                      发布评论
+                                      {t('share.publishComment')}
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -685,7 +696,7 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
                                         setDraft({ parameterPath: '', body: '', suggestion: { enabled: false, newValue: '', reason: '' } });
                                       }}
                                     >
-                                      取消
+                                      {t('common.cancel')}
                                     </Button>
                                   </div>
                                 </div>
@@ -703,12 +714,13 @@ export function SnapshotReviewPanel({ gistId, onClose, onFlash }: SnapshotReview
         </div>
 
         {!pat && (
-          <p className="text-caption text-accent-warn">绑定 PAT 后才能写入 / 应用建议。当前只可只读浏览。</p>
+          <p className="text-caption text-accent-warn">{t('share.reviewPatWarn')}</p>
         )}
         <p className="text-caption text-ink-muted">
-          作者：<strong className="text-ink-primary">@{author}</strong>
+          {t('share.reviewAuthorPrefix')}
+          <strong className="text-ink-primary">@{author}</strong>
           {activeReviewer && activeReviewer !== ghLogin && (
-            <span className="ml-1 text-ink-muted">（来自 reviewers store）</span>
+            <span className="ml-1 text-ink-muted">{t('share.reviewFromReviewersStore')}</span>
           )}
         </p>
       </div>

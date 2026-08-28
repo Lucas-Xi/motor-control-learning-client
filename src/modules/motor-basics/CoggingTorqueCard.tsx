@@ -19,8 +19,7 @@ import { formatNumber } from '../../utils/format';
  */
 export function CoggingTorqueCard() {
   const motor = useSimulationStore((s) => s.motorBasics);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   // 齿槽参数：用海立 1.5HP 样本 + 学员当前 polePairs（slots 仍取 12）
   const cogParams = useMemo(
@@ -71,33 +70,20 @@ export function CoggingTorqueCard() {
 
   return (
     <Card
-      title={isEn ? 'Cogging Torque + BEMF Harmonics' : '齿槽转矩 + BEMF 空间谐波'}
-      eyebrow={isEn ? 'low-speed ripple sources' : '低速纹波根源'}
+      title={t('motorBasics.coggingTitle')}
+      eyebrow={t('motorBasics.coggingEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'LCM(slots, poles) harmonic series + 5/7/11/13 BEMF spatial harmonics; explains low-speed jitter and 6× current ripple.'
-              : 'LCM(槽数, 极数) 谐波叠加 + BEMF 5/7/11/13 次空间谐波；解释低速抖动与电流环 6 倍频纹波。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('motorBasics.coggingFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Cogging torque comes from the periodic reluctance variation between stator slots and rotor magnets. Visible at low speed (jitter / "kakaka" noise), smoothed at high speed by inertia. BEMF is not pure sine — fractional-pitch winding + slotting bring 5/7/11/13-th harmonics.'
-          : '齿槽转矩来自定子槽与转子永磁体之间的磁阻周期性变化。低速时听得见"咯咯咯"声，高速被惯性平滑掉。BEMF 也不是纯正弦——分布绕组 + 齿槽带来 5/7/11/13 次空间谐波，被 Park 投影后变成 dq 上的 6 倍频纹波。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('motorBasics.coggingIntro')}</p>
 
       <div className="mb-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Periods/rev' : '每圈周期'}</p>
+          <p className="text-caption text-ink-muted">{t('motorBasics.coggingKpiPeriods')}</p>
           <p className="formula text-body text-accent-primary">{periodPerRev}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Peak T_cog' : '齿槽峰值'}</p>
+          <p className="text-caption text-ink-muted">{t('motorBasics.coggingKpiPeak')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(peak, 1)} mN·m</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(thdTone)}`}>
@@ -127,7 +113,7 @@ export function CoggingTorqueCard() {
 
       <div>
         <p className="mb-1 text-caption text-ink-muted">
-          {isEn ? 'BEMF spatial harmonics (relative to fundamental)' : 'BEMF 空间谐波（相对基波）'}
+          {t('motorBasics.coggingHarmonicsTitle')}
         </p>
         <div className="h-32">
           <SafeResponsiveContainer>

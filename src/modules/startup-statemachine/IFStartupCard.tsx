@@ -4,13 +4,14 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { simulateIFStartup } from '../../simulation/math/ifStartup';
 import { formatNumber } from '../../utils/format';
 
-/** 典型电机预设：压缩机大惯量 → 工业伺服 → 风机外转子 */
+/** 典型电机预设：压缩机大惯量 → 工业伺服 → 风机外转子（label 为 TKey，渲染处 t()） */
 const MOTOR_PRESETS = {
   compressorPmsm: {
-    label: '压缩机 PMSM（大惯量）',
+    labelKey: 'startupStateMachine.ifPresetCompressor' as TKey,
     iMin: 2.4,
     iMax: 6.4,
     switchFreqHz: 20,
@@ -23,7 +24,7 @@ const MOTOR_PRESETS = {
     fluxWb: 0.12,
   },
   industrialServo: {
-    label: '工业伺服',
+    labelKey: 'startupStateMachine.ifPresetServo' as TKey,
     iMin: 1.2,
     iMax: 4,
     switchFreqHz: 25,
@@ -36,7 +37,7 @@ const MOTOR_PRESETS = {
     fluxWb: 0.05,
   },
   fanOutrunner: {
-    label: '风机外转子',
+    labelKey: 'startupStateMachine.ifPresetFan' as TKey,
     iMin: 1.5,
     iMax: 5,
     switchFreqHz: 18,
@@ -66,6 +67,7 @@ interface ChartSample {
  * "开环电流-频率斜坡为什么会失步、什么时候才能交班"。
  */
 export function IFStartupCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('compressorPmsm');
   const [rampRateHzPerSec, setRampRateHzPerSec] = useState<number>(MOTOR_PRESETS.compressorPmsm.rampRateHzPerSec);
   const [leadAngleDeg, setLeadAngleDeg] = useState<number>(MOTOR_PRESETS.compressorPmsm.leadAngleDeg);
@@ -129,28 +131,29 @@ export function IFStartupCard() {
 
   return (
     <Card
-      title="I/F 开环启动：电流-频率斜坡与负载角"
+      title={t('startupStateMachine.ifTitle')}
       eyebrow="I/F current-frequency startup"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="负载角 SPM 转矩 T=1.5p[ψ iq+(Ld−Lq)id iq]，iq 由 δ+γ 决定；机械方程 ZOH 前向欧拉。失步判据 |δ|>120°。"
+          hint={t('startupStateMachine.ifFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        I/F = 开环电流矢量按频率斜坡拖动：虚拟电角度
-        <span className="formula"> θ* = ∫ 2π f_ref dt</span>，
-        负载角 <span className="formula">δ = θ* − p·θ_m</span>。
-        低速大电流克服静摩擦；斜坡太快或负载太大 → 负载角冲过
-        <span className="text-accent-warn"> 90°</span> 失步。
-        切闭环要等 BEMF 够大且
-        <span className="formula"> |ω_m − ω*/p|</span> 足够小。
+        {t('startupStateMachine.ifIntroLead')}
+        <span className="formula"> θ* = ∫ 2π f_ref dt</span>
+        {t('startupStateMachine.ifIntroMid1')} <span className="formula">δ = θ* − p·θ_m</span>
+        {t('startupStateMachine.ifIntroMid2')}
+        <span className="text-accent-warn"> 90°</span>
+        {t('startupStateMachine.ifIntroMid3')}
+        <span className="formula"> |ω_m − ω*/p|</span>
+        {t('startupStateMachine.ifIntroTail')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">电机预设：</span>
+        <span className="text-caption text-ink-muted">{t('startupStateMachine.ifPresetLabel')}</span>
         {(Object.keys(MOTOR_PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -162,7 +165,7 @@ export function IFStartupCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {MOTOR_PRESETS[k].label}
+            {t(MOTOR_PRESETS[k].labelKey)}
           </button>
         ))}
       </div>
@@ -177,7 +180,7 @@ export function IFStartupCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>频率斜坡率（Hz/s）</span>
+          <span>{t('startupStateMachine.ifRampRate')}</span>
           <span className="formula text-ink-primary">{formatNumber(rampRateHzPerSec, 0)} Hz/s</span>
         </span>
         <input
@@ -191,7 +194,7 @@ export function IFStartupCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>超前角 γ（°）</span>
+          <span>{t('startupStateMachine.ifLeadAngle')}</span>
           <span className="formula text-ink-primary">{formatNumber(leadAngleDeg, 0)}°</span>
         </span>
         <input
@@ -205,7 +208,7 @@ export function IFStartupCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>负载转矩（Nm）</span>
+          <span>{t('startupStateMachine.ifLoadTorque')}</span>
           <span className="formula text-ink-primary">{formatNumber(loadTorque, 2)} Nm</span>
         </span>
         <input
@@ -219,27 +222,29 @@ export function IFStartupCard() {
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">切换时刻</p>
+          <p className="text-caption text-ink-muted">{t('startupStateMachine.ifKpiHandoff')}</p>
           <p className={`formula text-body ${result.handoffTime === null ? 'text-accent-warn' : 'text-accent-primary'}`}>
             {result.handoffTime === null ? '—' : `${formatNumber(result.handoffTime, 2)} s`}
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">最大负载角</p>
+          <p className="text-caption text-ink-muted">{t('startupStateMachine.ifKpiMaxDelta')}</p>
           <p className={`formula text-body ${result.maxLoadAngleDeg > 70 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(result.maxLoadAngleDeg, 1)}°
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">终态转速</p>
+          <p className="text-caption text-ink-muted">{t('startupStateMachine.ifKpiFinalRpm')}</p>
           <p className="formula text-body text-accent-primary">
             {formatNumber(last?.rotorRpm ?? 0, 0)} rpm
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">是否失步</p>
+          <p className="text-caption text-ink-muted">{t('startupStateMachine.ifKpiLostSync')}</p>
           <p className={`formula text-body ${result.lostSync ? 'text-accent-fault' : 'text-accent-measure'}`}>
-            {result.lostSync ? '失步' : '同步'}
+            {result.lostSync
+              ? t('startupStateMachine.ifValueLostSync')
+              : t('startupStateMachine.ifValueInSync')}
           </p>
         </div>
       </div>
@@ -285,8 +290,8 @@ export function IFStartupCard() {
                 label={{ value: 'handoff', fill: '#9eb5cb', fontSize: 9, position: 'insideTopRight' }}
               />
             )}
-            <Line yAxisId="rpm" type="monotone" dataKey="rpmRef" stroke="#9eb5cb" strokeWidth={1.4} strokeDasharray="4 4" dot={false} isAnimationActive={false} name="rpm 指令" />
-            <Line yAxisId="rpm" type="monotone" dataKey="rotorRpm" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name="转子 rpm" />
+            <Line yAxisId="rpm" type="monotone" dataKey="rpmRef" stroke="#9eb5cb" strokeWidth={1.4} strokeDasharray="4 4" dot={false} isAnimationActive={false} name={t('startupStateMachine.legendRpmRef')} />
+            <Line yAxisId="rpm" type="monotone" dataKey="rotorRpm" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('startupStateMachine.ifLegendRotorRpm')} />
             <Line yAxisId="i" type="monotone" dataKey="iRef" stroke="#ffb84d" strokeWidth={1.5} dot={false} isAnimationActive={false} name="i_ref (A)" />
           </LineChart>
         </SafeResponsiveContainer>
@@ -305,26 +310,22 @@ export function IFStartupCard() {
         )}
         <div className="text-caption leading-snug">
           {ok ? (
-            <span className="text-accent-measure">
-              已达切换条件：频率到位、|ω_m − ω*_m| 与 |δ| 都在门槛内，可以交班给闭环。
-            </span>
+            <span className="text-accent-measure">{t('startupStateMachine.ifStatusOk')}</span>
           ) : result.pullOut ? (
-            <span className="text-accent-warn">
-              拉出失步：负载角冲过 120° 或转子被拖反转，尚未满足切闭环条件。放慢斜坡或加大启动电流。
-            </span>
+            <span className="text-accent-warn">{t('startupStateMachine.ifStatusPullOut')}</span>
           ) : result.lostSync ? (
-            <span className="text-accent-warn">失步：同步被破坏，readyForHandoff 锁定为 false。</span>
+            <span className="text-accent-warn">{t('startupStateMachine.ifStatusLostSync')}</span>
           ) : (
-            <span className="text-accent-warn">未达切换条件：转速跟踪或负载角仍超限，继续爬坡或降低负载。</span>
+            <span className="text-accent-warn">{t('startupStateMachine.ifStatusNotReady')}</span>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：虚拟电角度积分 + 电流环跟踪
-        <span className="formula"> i_d* / i_q*</span>；
-        切换条件看观测器收敛 + 反电势幅值，不是只看频率到点；
-        压缩机斜坡要慢（液击 + 大惯量）。
+        <span className="text-accent-warn">{t('startupStateMachine.ifStm32Label')}</span>
+        {t('startupStateMachine.ifStm32Mid')}
+        <span className="formula"> i_d* / i_q*</span>
+        {t('startupStateMachine.ifStm32Tail')}
       </p>
     </Card>
   );

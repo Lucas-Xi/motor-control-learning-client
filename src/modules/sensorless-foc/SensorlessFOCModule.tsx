@@ -90,7 +90,7 @@ function Primary() {
         </SafeResponsiveContainer>
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        SMO 用电流估算误差作为开关面，开关函数（带边界层 sat）的等效输出经低通滤波即得到 BEMF 估算 z_α / z_β，再用 atan2(-z_α, z_β) + PLL 提取角度。
+        {t('sensorlessFoc.primaryPrinciple')}
         {formatNumber(params.speedRpm, 0)} rpm {lowSpeed ? `— ${t('sensorlessFoc.primaryFootnoteLow')}` : `— ${t('sensorlessFoc.primaryFootnoteGood')}`}。
       </p>
     </Card>

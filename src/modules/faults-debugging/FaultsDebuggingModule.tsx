@@ -7,6 +7,7 @@ import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { faultCases } from '../../content/faultCases';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
@@ -28,27 +29,33 @@ function ListBlock({ title, items, icon }: { title: string; items: string[]; ico
 }
 
 function Primary() {
+  const { t, locale } = useI18n();
+  const showEn = locale === 'en-US';
   const fault = useSimulationStore((s) => s.fault);
   const selected = faultCases[fault.faultType];
+  const title = showEn ? (selected.titleEn ?? selected.title) : selected.title;
   const data = useMemo(() => createFaultWaveform(fault.faultType, fault.severity), [fault.faultType, fault.severity]);
   if (isStatusOnlyFault(fault.faultType)) {
     return (
       <Card
-        title={`${selected.title}：状态位告警`}
-        eyebrow="status-only fault"
+        title={`${title}${t('faultsDebugging.titleColon')}${t('faultsDebugging.titleSuffixStatus')}`}
+        eyebrow={t('faultsDebugging.statusOnlyEyebrow')}
         density="compact"
         tone="warn"
-        action={<FidelityBadge level="illustrative" hint="此类故障由传感器/开关上报，不在电流或转速上留下可视特征" />}
+        action={<FidelityBadge level="illustrative" hint={t('faultsDebugging.statusOnlyFidelityHint')} />}
       >
         <div className="flex h-72 flex-col items-center justify-center gap-3 px-6 text-center">
           <AlertTriangle className="h-10 w-10 text-accent-warn" />
           <p className="text-body leading-relaxed text-ink-secondary">
-            该故障属于<span className="text-accent-warn">压力 / 油位 / 温度等独立传感通道</span>触发的状态位告警，
+            {t('faultsDebugging.statusOnlyDescTopLead')}
+            <span className="text-accent-warn">{t('faultsDebugging.statusOnlyDescChannels')}</span>
+            {t('faultsDebugging.statusOnlyDescTopMid')}
             <br />
-            主回路电流与转速在告警瞬间通常仍处于额定运行，<span className="text-accent-warn">不会出现可视电气波形特征</span>。
+            {t('faultsDebugging.statusOnlyDescBottomLead')}
+            <span className="text-accent-warn">{t('faultsDebugging.statusOnlyDescNoSignature')}</span>
           </p>
           <p className="text-caption text-ink-muted">
-            排查应直接查 GPIO 输入电平、I²C 传感器寄存器或 CAN 总线告警字段，而不是看示波器。
+            {t('faultsDebugging.statusOnlyAdvice')}
           </p>
         </div>
       </Card>
@@ -56,10 +63,10 @@ function Primary() {
   }
   return (
     <Card
-      title={`${selected.title}：波形表现`}
-      eyebrow="fault waveform signature"
+      title={`${title}${t('faultsDebugging.titleColon')}${t('faultsDebugging.titleSuffixWave')}`}
+      eyebrow={t('faultsDebugging.waveformEyebrow')}
       density="compact"
-      action={<FidelityBadge level="illustrative" hint="按故障类型合成的特征示意：方向与真实物理一致，幅值/时刻为教学缩放" />}
+      action={<FidelityBadge level="illustrative" hint={t('faultsDebugging.waveformFidelityHint')} />}
     >
       <div className="h-72">
         <SafeResponsiveContainer>
@@ -80,22 +87,29 @@ function Primary() {
 }
 
 function Probe() {
+  const { t, locale } = useI18n();
+  const showEn = locale === 'en-US';
   const fault = useSimulationStore((s) => s.fault);
   const selected = faultCases[fault.faultType];
+  const phenomenon = showEn ? (selected.phenomenonEn ?? selected.phenomenon) : selected.phenomenon;
+  const stm32 = showEn ? (selected.stm32En ?? selected.stm32) : selected.stm32;
+  const causes = showEn && selected.causesEn ? selected.causesEn : selected.causes;
+  const steps = showEn && selected.stepsEn ? selected.stepsEn : selected.steps;
+  const fix = showEn && selected.fixEn ? selected.fixEn : selected.fix;
   return (
     <>
-      <Card title="故障现象" eyebrow="symptom" density="compact" tone="fault">
+      <Card title={t('faultsDebugging.phenomenonTitle')} eyebrow={t('faultsDebugging.phenomenonEyebrow')} density="compact" tone="fault">
         <div className="flex gap-2 text-body leading-relaxed text-accent-fault">
           <Stethoscope className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>{selected.phenomenon}</p>
+          <p>{phenomenon}</p>
         </div>
       </Card>
-      <Card title="STM32 对应关系" eyebrow="hardware mapping" density="compact">
-        <p className="text-body leading-relaxed text-ink-secondary">{selected.stm32}</p>
+      <Card title={t('faultsDebugging.stm32MapTitle')} eyebrow={t('faultsDebugging.stm32MapEyebrow')} density="compact">
+        <p className="text-body leading-relaxed text-ink-secondary">{stm32}</p>
       </Card>
-      <ListBlock title="可能原因" items={selected.causes} icon="warn" />
-      <ListBlock title="排查步骤" items={selected.steps} icon="ok" />
-      <ListBlock title="解决建议" items={selected.fix} icon="ok" />
+      <ListBlock title={t('faultsDebugging.causesTitle')} items={causes} icon="warn" />
+      <ListBlock title={t('faultsDebugging.stepsTitle')} items={steps} icon="ok" />
+      <ListBlock title={t('faultsDebugging.fixTitle')} items={fix} icon="ok" />
       <BiquadFilterCard />
       <SerialFaultInjectionCard />
     </>

@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useBenchCycle } from './useBenchCycle';
 import {
-  FAULT_LIBRARY,
   applySystemFault,
   type SystemFaultType,
 } from '../../simulation/math/systemFaults';
@@ -22,6 +22,87 @@ const FAULT_ORDER: SystemFaultType[] = [
   'non-condensable-gas',
   'oil-circulation-low',
 ];
+
+/**
+ * 故障文案的 i18n 映射（FAULT_LIBRARY 在 simulation 层只有中文，展示统一走这里）。
+ */
+const FAULT_I18N: Record<SystemFaultType, { label: TKey; signature: TKey; diagnostic: TKey[] }> = {
+  none: {
+    label: 'refrigerationBench.faultLabelNone',
+    signature: 'refrigerationBench.faultSigNone',
+    diagnostic: ['refrigerationBench.faultDiagNone1', 'refrigerationBench.faultDiagNone2'],
+  },
+  'refrigerant-leak': {
+    label: 'refrigerationBench.faultLabelLeak',
+    signature: 'refrigerationBench.faultSigLeak',
+    diagnostic: [
+      'refrigerationBench.faultDiagLeak1',
+      'refrigerationBench.faultDiagLeak2',
+      'refrigerationBench.faultDiagLeak3',
+      'refrigerationBench.faultDiagLeak4',
+    ],
+  },
+  'condenser-fouling': {
+    label: 'refrigerationBench.faultLabelFouling',
+    signature: 'refrigerationBench.faultSigFouling',
+    diagnostic: [
+      'refrigerationBench.faultDiagFouling1',
+      'refrigerationBench.faultDiagFouling2',
+      'refrigerationBench.faultDiagFouling3',
+      'refrigerationBench.faultDiagFouling4',
+    ],
+  },
+  'evaporator-frost': {
+    label: 'refrigerationBench.faultLabelFrost',
+    signature: 'refrigerationBench.faultSigFrost',
+    diagnostic: [
+      'refrigerationBench.faultDiagFrost1',
+      'refrigerationBench.faultDiagFrost2',
+      'refrigerationBench.faultDiagFrost3',
+      'refrigerationBench.faultDiagFrost4',
+    ],
+  },
+  'eev-stuck-closed': {
+    label: 'refrigerationBench.faultLabelEevClosed',
+    signature: 'refrigerationBench.faultSigEevClosed',
+    diagnostic: [
+      'refrigerationBench.faultDiagEevClosed1',
+      'refrigerationBench.faultDiagEevClosed2',
+      'refrigerationBench.faultDiagEevClosed3',
+      'refrigerationBench.faultDiagEevClosed4',
+    ],
+  },
+  'eev-stuck-open': {
+    label: 'refrigerationBench.faultLabelEevOpen',
+    signature: 'refrigerationBench.faultSigEevOpen',
+    diagnostic: [
+      'refrigerationBench.faultDiagEevOpen1',
+      'refrigerationBench.faultDiagEevOpen2',
+      'refrigerationBench.faultDiagEevOpen3',
+      'refrigerationBench.faultDiagEevOpen4',
+    ],
+  },
+  'non-condensable-gas': {
+    label: 'refrigerationBench.faultLabelNonCond',
+    signature: 'refrigerationBench.faultSigNonCond',
+    diagnostic: [
+      'refrigerationBench.faultDiagNonCond1',
+      'refrigerationBench.faultDiagNonCond2',
+      'refrigerationBench.faultDiagNonCond3',
+      'refrigerationBench.faultDiagNonCond4',
+    ],
+  },
+  'oil-circulation-low': {
+    label: 'refrigerationBench.faultLabelOil',
+    signature: 'refrigerationBench.faultSigOil',
+    diagnostic: [
+      'refrigerationBench.faultDiagOil1',
+      'refrigerationBench.faultDiagOil2',
+      'refrigerationBench.faultDiagOil3',
+      'refrigerationBench.faultDiagOil4',
+    ],
+  },
+};
 
 /** 把符号化的偏差量染色：对该指标"变好/变坏"的方向做语义着色。 */
 function deltaColor(metric: 'Ps' | 'Pd' | 'Td' | 'SH' | 'cop', delta: number): string {
@@ -52,12 +133,13 @@ function formatDelta(value: number, digits: number, unit: string): string {
 
 /** 偏差方向：颜色 + 形状 + sr-only 三通道（色盲/打印友好） */
 function DeltaCell({ metric, delta, digits, unit }: { metric: 'Ps' | 'Pd' | 'Td' | 'SH' | 'cop'; delta: number; digits: number; unit: string }) {
+  const { t } = useI18n();
   const cls = deltaColor(metric, delta);
   const isNeutral = Math.abs(delta) < epsilon(metric) * 0.5;
   // cop 越高越好；其他过高均偏向故障表现
   const bad = metric === 'cop' ? delta < -0.05 : Math.abs(delta) > epsilon(metric);
   const Icon = isNeutral ? Minus : delta > 0 ? ArrowUpRight : ArrowDownRight;
-  const sr = isNeutral ? '基本无变化' : bad ? '异常偏差' : '正向偏差';
+  const sr = isNeutral ? t('refrigerationBench.faultDeltaNeutralSr') : bad ? t('refrigerationBench.faultDeltaBadSr') : t('refrigerationBench.faultDeltaGoodSr');
   return (
     <td className={`px-2 py-1.5 text-right font-mono ${cls}`}>
       <span className="inline-flex items-center justify-end gap-1">
@@ -79,6 +161,7 @@ function DeltaCell({ metric, delta, digits, unit }: { metric: 'Ps' | 'Pd' | 'Td'
  * - SH = 吸气温度 T1 - 蒸发温度 Te（refrigeration.Te）
  */
 export function SystemFaultPanel() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const baseline = useBenchCycle();
 
@@ -104,7 +187,7 @@ export function SystemFaultPanel() {
   }> = [
     {
       key: 'Ps',
-      label: '吸气压力 P_s',
+      label: t('refrigerationBench.suctionPressure'),
       unit: ' MPa',
       digits: 3,
       base: baseline.states[0].P,
@@ -113,7 +196,7 @@ export function SystemFaultPanel() {
     },
     {
       key: 'Pd',
-      label: '排气压力 P_d',
+      label: t('refrigerationBench.dischargePressure'),
       unit: ' MPa',
       digits: 3,
       base: baseline.states[1].P,
@@ -122,7 +205,7 @@ export function SystemFaultPanel() {
     },
     {
       key: 'Td',
-      label: '排气温度 T_d',
+      label: t('refrigerationBench.dischargeTemp'),
       unit: ' °C',
       digits: 1,
       base: baseline.Tdischarge,
@@ -131,7 +214,7 @@ export function SystemFaultPanel() {
     },
     {
       key: 'SH',
-      label: '吸气过热度 SH',
+      label: t('refrigerationBench.faultRowSh'),
       unit: ' K',
       digits: 1,
       base: baselineSH,
@@ -140,7 +223,7 @@ export function SystemFaultPanel() {
     },
     {
       key: 'cop',
-      label: '能效比 COP',
+      label: t('refrigerationBench.faultRowCop'),
       unit: '',
       digits: 2,
       base: baseline.cop,
@@ -153,15 +236,14 @@ export function SystemFaultPanel() {
 
   return (
     <Card
-      title="系统故障注入"
+      title={t('refrigerationBench.faultTitle')}
       eyebrow="system-side fault simulator"
       density="compact"
       tone={isFault ? 'fault' : 'default'}
     >
       {/* 8 个故障按钮 2x4 */}
-      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="选择注入故障类型">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label={t('refrigerationBench.faultAriaLabel')}>
         {FAULT_ORDER.map((id) => {
-          const def = FAULT_LIBRARY[id];
           const active = type === id;
           const isNone = id === 'none';
           return (
@@ -170,9 +252,9 @@ export function SystemFaultPanel() {
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={`${def.label}：${def.signature}`}
+              aria-label={`${t(FAULT_I18N[id].label)}${t('refrigerationBench.faultAriaSeparator')}${t(FAULT_I18N[id].signature)}`}
               onClick={() => setType(id)}
-              title={def.signature}
+              title={t(FAULT_I18N[id].signature)}
               className={[
                 'rounded-lg border px-2 py-1.5 text-caption transition-colors',
                 active
@@ -182,7 +264,7 @@ export function SystemFaultPanel() {
                   : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong hover:text-ink-primary',
               ].join(' ')}
             >
-              <div className="text-left font-medium leading-tight">{def.label}</div>
+              <div className="text-left font-medium leading-tight">{t(FAULT_I18N[id].label)}</div>
             </button>
           );
         })}
@@ -191,7 +273,7 @@ export function SystemFaultPanel() {
       {/* 严重度滑块（none 时禁用风格仍允许调，无副作用） */}
       <div className="mb-3">
         <Slider
-          label={isFault ? '故障严重度' : '严重度（无故障）'}
+          label={isFault ? t('refrigerationBench.faultSeverityLabel') : t('refrigerationBench.faultSeverityNoneLabel')}
           value={severity}
           min={0}
           max={1}
@@ -218,7 +300,7 @@ export function SystemFaultPanel() {
               isFault ? 'text-accent-fault' : 'text-accent-measure',
             ].join(' ')}
           >
-            {fault.signature}
+            {t(FAULT_I18N[type].signature)}
           </p>
         </div>
       </div>
@@ -226,11 +308,11 @@ export function SystemFaultPanel() {
       {/* 排查步骤 */}
       <div className="mb-3 rounded-lg border border-line-subtle bg-bg-base p-2.5">
         <div className="mb-1.5 text-caption uppercase tracking-[0.18em] text-ink-muted">
-          {isFault ? '排查步骤' : '巡检建议'}
+          {isFault ? t('refrigerationBench.faultStepsTitle') : t('refrigerationBench.faultInspectionTitle')}
         </div>
         <ol className="ml-4 list-decimal space-y-1 text-caption leading-relaxed text-ink-secondary">
-          {fault.diagnostic.map((step, idx) => (
-            <li key={idx}>{step}</li>
+          {FAULT_I18N[type].diagnostic.map((stepKey, idx) => (
+            <li key={idx}>{t(stepKey)}</li>
           ))}
         </ol>
       </div>
@@ -240,10 +322,10 @@ export function SystemFaultPanel() {
         <table className="w-full border-collapse text-caption">
           <thead>
             <tr className="bg-bg-base text-ink-muted">
-              <th className="px-2 py-1.5 text-left font-normal">指标</th>
-              <th className="px-2 py-1.5 text-right font-normal">正常</th>
-              <th className="px-2 py-1.5 text-right font-normal">故障</th>
-              <th className="px-2 py-1.5 text-right font-normal">偏差</th>
+              <th className="px-2 py-1.5 text-left font-normal">{t('refrigerationBench.faultColMetric')}</th>
+              <th className="px-2 py-1.5 text-right font-normal">{t('refrigerationBench.statusGood')}</th>
+              <th className="px-2 py-1.5 text-right font-normal">{t('refrigerationBench.faultColFault')}</th>
+              <th className="px-2 py-1.5 text-right font-normal">{t('refrigerationBench.faultColDelta')}</th>
             </tr>
           </thead>
           <tbody>
@@ -266,9 +348,7 @@ export function SystemFaultPanel() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        系统侧故障不会立刻出现电气波形畸变，但会让 P_s / P_d / T_d / SH 走出
-        典型异常组合，是现场维修最先看的"四表"。配合 12 号「故障与调试」的
-        电气类故障一起练，可形成完整的故障树思维。
+        {t('refrigerationBench.faultHint')}
       </p>
     </Card>
   );

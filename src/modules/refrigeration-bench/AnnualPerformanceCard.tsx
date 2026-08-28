@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Tooltip, XAxis, YAxis } from 'recha
 import { MapPin } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import {
   CLIMATES,
@@ -14,19 +15,19 @@ import {
 // 4 个城市按钮顺序与 lucide MapPin 风格一致
 const ZONE_ORDER: ClimateZone[] = ['beijing', 'shanghai', 'guangzhou', 'harbin'];
 
-const ratingColor: Record<ApfResult['rating'], string> = {
-  '一级': 'text-accent-measure',
-  '二级': 'text-accent-primary',
-  '三级': 'text-accent-warn',
-  '低于三级': 'text-accent-fault',
+const ZONE_LABEL: Record<ClimateZone, TKey> = {
+  beijing: 'refrigerationBench.annualZoneBeijing',
+  shanghai: 'refrigerationBench.annualZoneShanghai',
+  guangzhou: 'refrigerationBench.annualZoneGuangzhou',
+  harbin: 'refrigerationBench.annualZoneHarbin',
 };
 
-// 形状徽标：◆ ◆ ◇ ✕——颜色+形状双通道
-const ratingGlyph: Record<ApfResult['rating'], string> = {
-  '一级': '★★★',
-  '二级': '★★',
-  '三级': '★',
-  '低于三级': '⚠',
+// rating 键为 simulation 侧类型联合字面量（'一级' 等），仅作查表键，不直接渲染
+const RATING_META: Record<ApfResult['rating'], { color: string; glyph: string; key: TKey }> = {
+  '一级': { color: 'text-accent-measure', glyph: '★★★', key: 'refrigerationBench.ratingGrade1' },
+  '二级': { color: 'text-accent-primary', glyph: '★★', key: 'refrigerationBench.ratingGrade2' },
+  '三级': { color: 'text-accent-warn', glyph: '★', key: 'refrigerationBench.ratingGrade3' },
+  '低于三级': { color: 'text-accent-fault', glyph: '⚠', key: 'refrigerationBench.ratingBelowGrade3' },
 };
 
 /**
@@ -64,6 +65,7 @@ function heatColor(T: number, lo: number, hi: number): string {
  * 数据流：useSimulationStore 切片读 refrigeration + motorBasics → 组装 ApfParams → useMemo(calculateAPF)
  */
 export function AnnualPerformanceCard() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
   const [zone, setZone] = useState<ClimateZone>('shanghai');
@@ -118,9 +120,9 @@ export function AnnualPerformanceCard() {
   }, [result.copByBin, zone]);
 
   return (
-    <Card density="compact" title="全年能效 APF" eyebrow="annual performance factor">
+    <Card density="compact" title={t('refrigerationBench.annualTitle')} eyebrow="annual performance factor">
       {/* 4 城市 chip */}
-      <div className="mb-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="选择气候区">
+      <div className="mb-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('refrigerationBench.annualZoneAriaLabel')}>
         {ZONE_ORDER.map((z) => {
           const active = z === zone;
           return (
@@ -138,7 +140,7 @@ export function AnnualPerformanceCard() {
               ].join(' ')}
             >
               <MapPin className="h-3 w-3" aria-hidden="true" />
-              {CLIMATES[z].label}
+              {t(ZONE_LABEL[z])}
             </button>
           );
         })}
@@ -153,19 +155,19 @@ export function AnnualPerformanceCard() {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-caption uppercase tracking-[0.18em] text-ink-muted">能效等级</div>
-          <div className={`font-display text-title ${ratingColor[result.rating]}`}>
-            <span aria-hidden="true" className="mr-1">{ratingGlyph[result.rating]}</span>
-            {result.rating}
+          <div className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('refrigerationBench.ratingGradeLabel')}</div>
+          <div className={`font-display text-title ${RATING_META[result.rating].color}`}>
+            <span aria-hidden="true" className="mr-1">{RATING_META[result.rating].glyph}</span>
+            {t(RATING_META[result.rating].key)}
           </div>
         </div>
       </div>
 
       {/* 三段能耗分柱条形 */}
       <div className="mb-3 grid grid-cols-3 gap-2 text-caption">
-        <EnergyBar label="制冷季耗电" value={coolE} max={maxBar} color="bg-accent-measure/70" share={coolingShare} />
-        <EnergyBar label="制热季耗电" value={heatE} max={maxBar} color="bg-accent-warn/70" share={heatingShare} />
-        <EnergyBar label="全年耗电" value={totalE} max={maxBar} color="bg-accent-primary/70" />
+        <EnergyBar label={t('refrigerationBench.annualCoolingEnergy')} value={coolE} max={maxBar} color="bg-accent-measure/70" share={coolingShare} />
+        <EnergyBar label={t('refrigerationBench.annualHeatingEnergy')} value={heatE} max={maxBar} color="bg-accent-warn/70" share={heatingShare} />
+        <EnergyBar label={t('refrigerationBench.annualTotalEnergy')} value={totalE} max={maxBar} color="bg-accent-primary/70" />
       </div>
 
       {/* 各 bin COP 柱状图 */}
@@ -178,7 +180,7 @@ export function AnnualPerformanceCard() {
             <Tooltip
               cursor={{ fill: 'rgba(52,214,255,0.08)' }}
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
-              formatter={(value: unknown) => [`COP=${Number(value).toFixed(2)}`, '能效']}
+              formatter={(value: unknown) => [`COP=${Number(value).toFixed(2)}`, t('refrigerationBench.annualCopLabel')]}
             />
             <Bar dataKey="cop" isAnimationActive={false} radius={[3, 3, 0, 0]}>
               {chartData.map((d, i) => (
@@ -191,11 +193,11 @@ export function AnnualPerformanceCard() {
 
       {/* 教学洞察 */}
       <p className="mt-2 text-caption text-ink-muted leading-relaxed">
-        标定工况 COP=<span className="font-mono text-accent-warn">{result.designCop.toFixed(2)}</span>
-        {' '}但 APF=<span className="font-mono text-accent-measure">{result.apf.toFixed(2)}</span>
+        {t('refrigerationBench.annualInsightPrefix')}<span className="font-mono text-accent-warn">{result.designCop.toFixed(2)}</span>
+        {' '}{t('refrigerationBench.annualInsightBut')}<span className="font-mono text-accent-measure">{result.apf.toFixed(2)}</span>
         {result.apf >= result.designCop
-          ? '——部分负荷下变频降速、压比下降，COP 反而比满载更高。'
-          : '——极端工况权重大、除霜损失大，全年综合能效低于标定。'}
+          ? t('refrigerationBench.annualInsightApfHigher')
+          : t('refrigerationBench.annualInsightApfLower')}
       </p>
     </Card>
   );

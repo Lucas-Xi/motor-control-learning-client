@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockRefrigerationSample } from '../../utils/serialMockGenerators';
@@ -49,6 +50,7 @@ interface Row {
 }
 
 export function SerialCompareRefrigerationCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const refrig = useSimulationStore((s) => s.refrigeration);
   const [timebase, setTimebase] = useState<SerialTimebase>('1s');
@@ -141,7 +143,7 @@ export function SerialCompareRefrigerationCard() {
 
   return (
     <SerialCompareCardShell
-      title="制冷台架：P/T/I/COP 实测 vs 仿真"
+      title={t('refrigerationBench.serialTitle')}
       eyebrow="refrigeration compare"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -151,7 +153,7 @@ export function SerialCompareRefrigerationCard() {
     >
       <div className="mb-3 grid grid-cols-2 gap-2">
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">压缩机转速 {formatNumber(rpm, 0)} rpm</span>
+          <span className="block text-caption text-ink-muted">{t('refrigerationBench.serialRpmLabel')}{formatNumber(rpm, 0)} rpm</span>
           <input
             type="range"
             min={800}
@@ -160,15 +162,15 @@ export function SerialCompareRefrigerationCard() {
             value={rpm}
             onChange={(e) => setRpm(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="压缩机转速（rpm）"
+            aria-label={t('refrigerationBench.serialRpmAria')}
             aria-valuemin={800}
             aria-valuemax={6000}
             aria-valuenow={rpm}
-            aria-valuetext={`${formatNumber(rpm, 0)} 转每分`}
+            aria-valuetext={`${formatNumber(rpm, 0)}${t('refrigerationBench.serialRpmValueText')}`}
           />
         </label>
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">COP 退化 {formatNumber(copDegrade * 100, 1)}%</span>
+          <span className="block text-caption text-ink-muted">{t('refrigerationBench.serialCopDegradeLabel')}{formatNumber(copDegrade * 100, 1)}%</span>
           <input
             type="range"
             min={0}
@@ -177,38 +179,38 @@ export function SerialCompareRefrigerationCard() {
             value={copDegrade}
             onChange={(e) => setCopDegrade(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="实测 COP 退化比例（管路 / 换热损失）"
+            aria-label={t('refrigerationBench.serialCopDegradeAria')}
             aria-valuemin={0}
             aria-valuemax={0.2}
             aria-valuenow={copDegrade}
-            aria-valuetext={`${formatNumber(copDegrade * 100, 1)} 百分比`}
+            aria-valuetext={`${formatNumber(copDegrade * 100, 1)}%${t('refrigerationBench.serialPercentValueText')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <PressureChart title="排气压力 P_d（MPa）" rows={displayRows} realKey="pdReal" simKey="pdSim" />
-        <TempChart title="排气温度 T_d（°C）" rows={displayRows} realKey="tdReal" simKey="tdSim" />
+        <PressureChart title={t('refrigerationBench.serialPdTitle')} rows={displayRows} realKey="pdReal" simKey="pdSim" />
+        <TempChart title={t('refrigerationBench.serialTdTitle')} rows={displayRows} realKey="tdReal" simKey="tdSim" />
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <CurrentChart title="压缩机电流（A）" rows={displayRows} />
-        <CopChart title="COP 实测 vs 仿真" rows={displayRows} />
+        <CurrentChart title={t('refrigerationBench.serialCurrentTitle')} rows={displayRows} />
+        <CopChart title={t('refrigerationBench.serialCopTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="P_d 偏差" value={`${formatNumber(kpi.pdErr, 3)} MPa`} tone={kpi.pdErr > 0.05 ? 'warn' : 'measure'} />
-        <KpiTile label="T_d 偏差" value={`${formatNumber(kpi.tdErr, 1)} °C`} tone={kpi.tdErr > 3 ? 'warn' : 'measure'} />
-        <KpiTile label="COP 偏差" value={`${kpi.copErrPct >= 0 ? '+' : ''}${formatNumber(kpi.copErrPct, 1)} %`} tone={copTone} />
+        <KpiTile label={t('refrigerationBench.serialPdErr')} value={`${formatNumber(kpi.pdErr, 3)} MPa`} tone={kpi.pdErr > 0.05 ? 'warn' : 'measure'} />
+        <KpiTile label={t('refrigerationBench.serialTdErr')} value={`${formatNumber(kpi.tdErr, 1)} °C`} tone={kpi.tdErr > 3 ? 'warn' : 'measure'} />
+        <KpiTile label={t('refrigerationBench.serialCopErr')} value={`${kpi.copErrPct >= 0 ? '+' : ''}${formatNumber(kpi.copErrPct, 1)} %`} tone={copTone} />
         <KpiTile
-          label="η_isentropic 反推"
+          label={t('refrigerationBench.serialEtaEstLabel')}
           value={`${formatNumber(kpi.etaEst, 3)} (Δ${etaDelta >= 0 ? '+' : ''}${formatNumber(etaDelta, 3)})`}
           tone={Math.abs(etaDelta) > 0.05 ? 'warn' : 'measure'}
         />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us · <span className="text-accent-measure">p_suction, p_discharge, t_discharge, i_comp</span> ·
-        实测 COP 退化 → 反推等熵效率下降，定位是压缩机老化还是换热器结垢
+        {t('refrigerationBench.serialFooterA')}<span className="text-accent-measure">p_suction, p_discharge, t_discharge, i_comp</span>
+        {t('refrigerationBench.serialFooterB')}
       </p>
     </SerialCompareCardShell>
   );
@@ -360,6 +362,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -369,14 +372,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr: TKey = tone === 'fault' ? 'refrigerationBench.serialSrSevere' : tone === 'warn' ? 'refrigerationBench.serialSrWarn' : tone === 'primary' ? 'refrigerationBench.serialSrAux' : 'refrigerationBench.statusGood';
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>
       <p className="formula text-body font-medium" style={{ color }}>
         <span aria-hidden className="mr-1">{shape}</span>
         {value}
-        <span className="sr-only"> · {sr}</span>
+        <span className="sr-only"> · {t(sr)}</span>
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { saturationCurve, type Refrigerant } from '../../simulation/math/refrigerantProps';
 import type { CycleState } from '../../simulation/math/vaporCycle';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { useI18n } from '../../i18n/useI18n';
 
 /** 两级循环覆盖点：仅展示用，不含 CycleState 完整字段（无质量比焓导数等）。 */
 export interface TwoStageOverlayPoint {
@@ -45,6 +46,7 @@ function POf(y: number): number {
 }
 
 export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: Props) {
+  const { t } = useI18n();
   const draggingRef = useRef<1 | 3 | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const commit = useRafThrottle((idx: 1 | 3, h: number, P: number) => {
@@ -163,9 +165,9 @@ export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: 
       {pTicks.map((P) => (
         <text key={`pt-${P}`} x={PADDING.left - 8} y={yOf(P) + 3} textAnchor="end" fontSize="10" fill="#9eb5cb">{P}</text>
       ))}
-      <text x={(PADDING.left + W - PADDING.right) / 2} y={H - 10} textAnchor="middle" fontSize="11" fill="#9eb5cb">焓 h (kJ/kg)</text>
+      <text x={(PADDING.left + W - PADDING.right) / 2} y={H - 10} textAnchor="middle" fontSize="11" fill="#9eb5cb">{t('charts.phXLabel')}</text>
       <text x={16} y={(PADDING.top + H - PADDING.bottom) / 2} fontSize="11" fill="#9eb5cb"
-        transform={`rotate(-90 16 ${(PADDING.top + H - PADDING.bottom) / 2})`}>压力 P (MPa, log)</text>
+        transform={`rotate(-90 16 ${(PADDING.top + H - PADDING.bottom) / 2})`}>{t('charts.phYLabel')}</text>
 
       {/* 两相区填色（先于线条以便压在底层） */}
       {domeFillPath && <path d={domeFillPath} fill="rgba(125,211,252,0.05)" stroke="none" />}
@@ -175,9 +177,9 @@ export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: 
       <path d={vapPath} stroke="#ffb84d" strokeWidth="1.6" fill="none" />
 
       {/* 三相区域文字注释 */}
-      <text x={PADDING.left + 28} y={H - PADDING.bottom - 30} fontSize="9" fill="rgba(231,243,255,0.35)">过冷液</text>
-      <text x={(p3.x + p4.x) / 2} y={(p3.y + p4.y) / 2 + 4} textAnchor="middle" fontSize="9" fill="rgba(231,243,255,0.35)">两相区</text>
-      <text x={W - PADDING.right - 32} y={H - PADDING.bottom - 30} fontSize="9" fill="rgba(231,243,255,0.35)" textAnchor="end">过热气</text>
+      <text x={PADDING.left + 28} y={H - PADDING.bottom - 30} fontSize="9" fill="rgba(231,243,255,0.35)">{t('charts.phSubcooled')}</text>
+      <text x={(p3.x + p4.x) / 2} y={(p3.y + p4.y) / 2 + 4} textAnchor="middle" fontSize="9" fill="rgba(231,243,255,0.35)">{t('charts.phTwoPhase')}</text>
+      <text x={W - PADDING.right - 32} y={H - PADDING.bottom - 30} fontSize="9" fill="rgba(231,243,255,0.35)" textAnchor="end">{t('charts.phSuperheated')}</text>
 
       {/* 循环路径（先画线，再画箭头，最后画点 → 点压在最上层） */}
       <path d={compressionCurve} stroke="#43f7b5" strokeWidth="2.4" fill="none" markerEnd="url(#phArrow)" />
@@ -186,10 +188,10 @@ export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: 
       <line x1={p4.x} y1={p4.y} x2={p1.x} y2={p1.y} stroke="#43f7b5" strokeWidth="2.4" markerEnd="url(#phArrow)" />
 
       {/* 段标签（小字） */}
-      <text x={(p1.x + p2.x) / 2 + 30} y={(p1.y + p2.y) / 2 + 2} fontSize="10" fill="#43f7b5">压缩</text>
-      <text x={(p2.x + p3.x) / 2} y={p2.y - 8} textAnchor="middle" fontSize="10" fill="#43f7b5">冷凝放热</text>
-      <text x={p3.x - 8} y={(p3.y + p4.y) / 2} textAnchor="end" fontSize="10" fill="#43f7b5">节流</text>
-      <text x={(p4.x + p1.x) / 2} y={p4.y + 16} textAnchor="middle" fontSize="10" fill="#43f7b5">蒸发吸热</text>
+      <text x={(p1.x + p2.x) / 2 + 30} y={(p1.y + p2.y) / 2 + 2} fontSize="10" fill="#43f7b5">{t('charts.phCompression')}</text>
+      <text x={(p2.x + p3.x) / 2} y={p2.y - 8} textAnchor="middle" fontSize="10" fill="#43f7b5">{t('charts.phCondensation')}</text>
+      <text x={p3.x - 8} y={(p3.y + p4.y) / 2} textAnchor="end" fontSize="10" fill="#43f7b5">{t('charts.phThrottle')}</text>
+      <text x={(p4.x + p1.x) / 2} y={p4.y + 16} textAnchor="middle" fontSize="10" fill="#43f7b5">{t('charts.phEvaporation')}</text>
 
       {/* 两级压缩 + 闪发覆盖（紫色三角 + 闪发对角虚线）
           覆盖在单级循环线之上、状态点之下，让学员同时看见两组循环路径。 */}
@@ -295,8 +297,8 @@ export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: 
 
       {/* 拖动提示 */}
       {onPointDrag && (
-        <text x={W - PADDING.right - 6} y={PADDING.top + 28} textAnchor="end" fontSize="9" fill="#7dd3fc" opacity="0.7">
-          拖动 [1] 调蒸发温度+过热度 · 拖动 [3] 调冷凝温度+过冷度
+        <text x={W - PADDING.right - 6} y={PADDING.top + 28} textAnchor="end" fontSize="9" fill="#7dd3fc" opacity={0.7}>
+          {t('charts.phDragHint')}
         </text>
       )}
 
@@ -309,15 +311,15 @@ export function PhDiagram({ refrigerant, states, onPointDrag, twoStageStates }: 
       {/* 图例（左上角） */}
       <g transform={`translate(${PADDING.left + 8}, ${PADDING.top - 6})`}>
         <line x1="0" y1="6" x2="14" y2="6" stroke="#34d6ff" strokeWidth="1.6" />
-        <text x="18" y="9" fontSize="10" fill="#9eb5cb">饱和液</text>
+        <text x="18" y="9" fontSize="10" fill="#9eb5cb">{t('charts.phSatLiquid')}</text>
         <line x1="58" y1="6" x2="72" y2="6" stroke="#ffb84d" strokeWidth="1.6" />
-        <text x="76" y="9" fontSize="10" fill="#9eb5cb">饱和气</text>
+        <text x="76" y="9" fontSize="10" fill="#9eb5cb">{t('charts.phSatVapor')}</text>
         <line x1="116" y1="6" x2="130" y2="6" stroke="#43f7b5" strokeWidth="2" />
-        <text x="134" y="9" fontSize="10" fill="#9eb5cb">循环</text>
+        <text x="134" y="9" fontSize="10" fill="#9eb5cb">{t('charts.phCycle')}</text>
         {twoStageStates && twoStageStates.length > 0 && (
           <g transform="translate(164, 0)">
             <polygon points="7,1 1,11 13,11" fill="#c4b5fd" stroke="#0d1929" strokeWidth="1" />
-            <text x="18" y="9" fontSize="10" fill="#9eb5cb">两级 + 闪发</text>
+            <text x="18" y="9" fontSize="10" fill="#9eb5cb">{t('charts.phTwoStage')}</text>
           </g>
         )}
       </g>

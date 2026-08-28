@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { pSat, type Refrigerant } from '../../simulation/math/refrigerantProps';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 压缩机操作包线（Operating Envelope）— 在 (T_e, T_c) 平面绘制允许工作区域。
@@ -86,6 +87,7 @@ export function CompressorEnvelope({
   pressureRatio,
   refrigerant,
 }: CompressorEnvelopeProps) {
+  const { t } = useI18n();
   const tcHi = TC_HI_MAP[refrigerant];
 
   // 沿 T_e 扫描，构造上边界（min(Td限, 压比限, Tc范围)）和下边界（Tc_LO）
@@ -225,7 +227,7 @@ export function CompressorEnvelope({
         </text>
       ))}
       <text x={(PADDING.left + W - PADDING.right) / 2} y={H - 10} textAnchor="middle" fontSize="11" fill="#9eb5cb">
-        蒸发温度 T_e (°C)
+        {t('charts.evTeLabel')}
       </text>
       <text
         x={14}
@@ -234,7 +236,7 @@ export function CompressorEnvelope({
         fill="#9eb5cb"
         transform={`rotate(-90 14 ${(PADDING.top + H - PADDING.bottom) / 2})`}
       >
-        冷凝温度 T_c (°C)
+        {t('charts.evTcLabel')}
       </text>
 
       {/* 排气温度限：rose */}
@@ -276,7 +278,7 @@ export function CompressorEnvelope({
             strokeWidth="1"
           />
           <text x={PADDING.left + 14} y={PADDING.top + 39} fontSize="11" fontWeight="600" fill="#ff5c7a">
-            ⚠ 工作点越出包线
+            {t('charts.evViolated')}
           </text>
         </g>
       )}

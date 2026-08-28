@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { applyLimits } from '../../simulation/math/limits';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -32,6 +33,7 @@ const scaleX = PW / (ID_MAX - ID_MIN);
 const scaleY = PH / (IQ_MAX - IQ_MIN);
 
 export function LimitProjectionCard() {
+  const { t } = useI18n();
   // 读 store
   const id = useSimulationStore((s) => s.weakField.id);
   const iq = useSimulationStore((s) => s.weakField.iq);
@@ -74,16 +76,16 @@ export function LimitProjectionCard() {
   const currentR = currentLimit;
 
   return (
-    <Card title="电流圆 + 电压椭圆约束" eyebrow="limit projection" density="compact">
+    <Card title={t('weakField.limitProjectionTitle')} eyebrow="limit projection" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        公式 <code className="formula text-ink-secondary">id² + iq² ≤ Ilim² ∧ (Ld·id + ψf)² + (Lq·iq)² ≤ (Vlim/ωe)²</code>
+        {t('weakField.limitProjectionFormulaLabel')} <code className="formula text-ink-secondary">id² + iq² ≤ Ilim² ∧ (Ld·id + ψf)² + (Lq·iq)² ≤ (Vlim/ωe)²</code>
       </p>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`电流圆电压椭圆约束图，工作点 id=${formatNumber(id, 1)} iq=${formatNumber(iq, 1)}，激活约束 ${result.activeConstraint}，电流裕量 ${formatNumber(result.currentMargin, 1)}A`}
+        aria-label={`${t('weakField.limitProjectionAriaPrefix')} id=${formatNumber(id, 1)} iq=${formatNumber(iq, 1)}${t('weakField.limitProjectionAriaActive')} ${result.activeConstraint}${t('weakField.limitProjectionAriaMargin')} ${formatNumber(result.currentMargin, 1)}A`}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
 
@@ -164,33 +166,33 @@ export function LimitProjectionCard() {
         {/* 图例 */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">
           <line x1={PAD.l + 4} y1={PAD.t + 8} x2={PAD.l + 24} y2={PAD.t + 8} stroke="rgb(var(--accent-warn))" strokeWidth="2" strokeDasharray="5 4" />
-          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">电流圆</text>
+          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">{t('weakField.limitProjectionLegendCurrentCircle')}</text>
           <line x1={PAD.l + 74} y1={PAD.t + 8} x2={PAD.l + 94} y2={PAD.t + 8} stroke="#9b7fff" strokeWidth="2" />
-          <text x={PAD.l + 98} y={PAD.t + 11} fill="rgb(var(--ink-muted))">电压椭圆</text>
+          <text x={PAD.l + 98} y={PAD.t + 11} fill="rgb(var(--ink-muted))">{t('weakField.limitProjectionLegendVoltageEllipse')}</text>
         </g>
       </svg>
 
       <div className="mt-3 grid grid-cols-4 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">激活约束</p>
+          <p className="text-ink-muted">{t('weakField.limitProjectionMetricActive')}</p>
           <p className={`formula ${result.activeConstraint === 'none' ? 'text-accent-measure' : 'text-accent-fault'}`}>
-            {result.activeConstraint === 'none' ? '可行' : result.activeConstraint}
+            {result.activeConstraint === 'none' ? t('weakField.limitProjectionFeasible') : result.activeConstraint}
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">电流裕量</p>
+          <p className="text-ink-muted">{t('weakField.limitProjectionMetricCurrentMargin')}</p>
           <p className={`formula ${result.currentMargin < 0 ? 'text-accent-fault' : 'text-ink-primary'}`}>
             {formatNumber(result.currentMargin, 1)} A
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">电压裕量</p>
+          <p className="text-ink-muted">{t('weakField.limitProjectionMetricVoltageMargin')}</p>
           <p className={`formula ${result.voltageMargin < 0 ? 'text-accent-fault' : 'text-ink-primary'}`}>
             {formatNumber(result.voltageMargin, 1)} V
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">投影后 Id</p>
+          <p className="text-ink-muted">{t('weakField.limitProjectionMetricProjectedId')}</p>
           <p className="formula text-ink-primary">
             {formatNumber(result.projectedId, 1)}
           </p>
@@ -199,7 +201,7 @@ export function LimitProjectionCard() {
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
         ωe = {formatNumber(omegaE, 0)} rad/s · Vlim = {formatNumber(vLim, 1)} V ·
-        电压椭圆 ωe 升高时**圆心 −ψf/Ld 不动、半轴 ∝ 1/ωe 收缩**，所以高速必须把工作点往左拉（弱磁）。
+        {' '}{t('weakField.limitProjectionShrinkHint')}
       </p>
     </Card>
   );

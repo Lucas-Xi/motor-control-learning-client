@@ -3,6 +3,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } 
 import { Plug, PlugZap, Download, Trash2, AlertTriangle, Radio, Eraser } from 'lucide-react';
 import { useSerialStore } from '../../store/serialStore';
 import { simulateCurrentLoop } from '../../simulation/math/motorModel';
+import { useI18n } from '../../i18n/useI18n';
 import { SafeResponsiveContainer } from '../charts/SafeResponsiveContainer';
 import { downloadText, toCsv, timestamp } from '../../utils/download';
 import { formatNumber } from '../../utils/format';
@@ -21,6 +22,7 @@ import { formatNumber } from '../../utils/format';
  * 浏览器不兼容：UI 上方常驻提示一行，连接按钮文字自动切到"切换 Mock 数据源"。
  */
 export function SerialBenchPanel() {
+  const { t } = useI18n();
   const connected = useSerialStore((s) => s.connected);
   const source = useSerialStore((s) => s.source);
   const portLabel = useSerialStore((s) => s.portLabel);
@@ -170,31 +172,30 @@ export function SerialBenchPanel() {
     source === 'web-serial'
       ? `Web Serial · ${portLabel ?? ''}`
       : source === 'mock'
-        ? 'Mock 数据源（仿真合成）'
-        : '未连接';
+        ? t('lab.sourceMock')
+        : t('lab.sourceNone');
 
   return (
     <section
       className="space-y-3 rounded-2xl border border-line-subtle bg-bg-surface p-4"
-      aria-label="实测对照面板"
+      aria-label={t('lab.benchPanelAria')}
     >
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-lg border border-line-subtle text-accent-primary">
             <Radio className="h-4 w-4" aria-hidden />
           </span>
-          <h2 className="font-display text-title text-ink-primary">实测对照</h2>
+          <h2 className="font-display text-title text-ink-primary">{t('lab.benchTitle')}</h2>
         </div>
         <span className="text-caption text-ink-muted">
-          STM32 串口（ASCII · 921600 8N1） · 与本机仿真曲线并排对比
+          {t('lab.benchSubtitle')}
         </span>
       </header>
 
       {!webSerialSupported && (
         <p className="rounded-lg border border-accent-warn/40 bg-accent-warn/10 px-3 py-2 text-caption text-accent-warn">
           <AlertTriangle className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-          当前浏览器不支持 Web Serial（仅 Chrome / Edge 桌面端可用）—— 已自动切换到 Mock
-          数据源。如需真板测试请改用 Chromium 系浏览器或 Electron 客户端。
+          {t('lab.benchWebSerialUnsupported')}
         </p>
       )}
       {lastError && (
@@ -202,20 +203,20 @@ export function SerialBenchPanel() {
           className="rounded-lg border border-accent-fault/40 bg-accent-fault/10 px-3 py-2 text-caption text-accent-fault"
           role="alert"
         >
-          串口错误：{lastError}
+          {t('lab.serialErrorPrefix')}{lastError}
         </p>
       )}
 
       {/* 顶部状态条：连接按钮 + 源 + 采样率 + 缓冲使用率 */}
       <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
         <div className="flex flex-col gap-1 rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="text-caption text-ink-muted">连接状态</span>
+          <span className="text-caption text-ink-muted">{t('lab.benchConnectState')}</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onToggleConnect}
               disabled={pending}
-              aria-label={connected ? '断开串口连接' : '连接串口设备'}
+              aria-label={connected ? t('lab.disconnectAria') : t('lab.connectAria')}
               aria-pressed={connected}
               className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-body font-medium transition-colors ${
                 connected
@@ -224,14 +225,16 @@ export function SerialBenchPanel() {
               } disabled:opacity-50`}
             >
               {connected ? <PlugZap className="h-4 w-4" /> : <Plug className="h-4 w-4" />}
-              <span>{connected ? '已连接' : webSerialSupported ? '连接设备' : '启动 Mock'}</span>
+              <span>
+                {connected ? t('lab.connected') : webSerialSupported ? t('lab.benchConnectDevice') : t('lab.startMock')}
+              </span>
             </button>
             {webSerialSupported && !connected && (
               <button
                 type="button"
                 onClick={onConnectMock}
                 disabled={pending}
-                aria-label="启动 Mock 数据源（不连接真板）"
+                aria-label={t('lab.benchMockAria')}
                 className="rounded-lg border border-line-subtle px-2 py-1 text-caption text-ink-secondary hover:border-line-strong"
               >
                 Mock
@@ -240,7 +243,7 @@ export function SerialBenchPanel() {
           </div>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="text-caption text-ink-muted">数据源</span>
+          <span className="text-caption text-ink-muted">{t('lab.benchSourceLabel')}</span>
           <span
             className={`truncate text-body font-medium ${
               source === 'web-serial'
@@ -255,13 +258,15 @@ export function SerialBenchPanel() {
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="text-caption text-ink-muted">实测采样率</span>
+          <span className="text-caption text-ink-muted">{t('lab.benchSampleRateLabel')}</span>
           <span className="formula text-body font-medium text-ink-primary">
             {formatNumber(sampleRateHz, 1)} Hz
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="text-caption text-ink-muted">缓冲区 ({buffer.length} / 512)</span>
+          <span className="text-caption text-ink-muted">
+            {t('lab.benchBufferLabel')} ({buffer.length} / 512)
+          </span>
           <div className="flex h-3 items-center gap-2">
             <div
               className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-bg-base ring-1 ring-line-subtle"
@@ -269,7 +274,7 @@ export function SerialBenchPanel() {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={bufferPct}
-              aria-label={`缓冲区使用率 ${bufferPct}%`}
+              aria-label={`${t('lab.benchBufferUsageAria')} ${bufferPct}%`}
             >
               <div
                 className="absolute inset-y-0 left-0 bg-accent-primary"
@@ -284,28 +289,28 @@ export function SerialBenchPanel() {
       {/* 4 路实测/仿真对比波形 */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <CompareChart
-          title="Ia 相电流"
+          title={t('lab.benchChartIa')}
           unit="A"
           rows={rows}
           measKey="ia_meas"
           simKey="ia_sim"
         />
         <CompareChart
-          title="Iq 交轴电流"
+          title={t('lab.benchChartIq')}
           unit="A"
           rows={rows}
           measKey="iq_meas"
           simKey="iq_sim"
         />
         <CompareChart
-          title="Id 直轴电流"
+          title={t('lab.benchChartId')}
           unit="A"
           rows={rows}
           measKey="id_meas"
           simKey="id_sim"
         />
         <CompareChart
-          title="θe 电角度"
+          title={t('lab.benchChartTheta')}
           unit="rad"
           rows={rows}
           measKey="theta_meas"
@@ -326,32 +331,32 @@ export function SerialBenchPanel() {
           type="button"
           onClick={clearBuffer}
           disabled={buffer.length === 0}
-          aria-label="清空实测缓冲区"
+          aria-label={t('lab.benchClearBufferAria')}
           className="flex items-center gap-1.5 rounded-lg border border-line-subtle bg-bg-base px-2.5 py-1 text-body text-ink-secondary hover:border-line-strong disabled:opacity-50"
         >
           <Eraser className="h-4 w-4" aria-hidden />
-          清空缓冲
+          {t('lab.benchClearBuffer')}
         </button>
         <button
           type="button"
           onClick={onExport}
           disabled={buffer.length === 0}
-          aria-label="导出实测数据为 CSV"
+          aria-label={t('lab.benchExportCsvAria')}
           className="flex items-center gap-1.5 rounded-lg border border-accent-primary/60 bg-accent-primary/10 px-2.5 py-1 text-body text-accent-primary hover:bg-accent-primary/20 disabled:opacity-50"
         >
           <Download className="h-4 w-4" aria-hidden />
-          导出实测 CSV
+          {t('lab.benchExportCsv')}
         </button>
         {connected && (
           <button
             type="button"
             onClick={() => void disconnect()}
             disabled={pending}
-            aria-label="断开当前数据源"
+            aria-label={t('lab.benchDisconnectSourceAria')}
             className="flex items-center gap-1.5 rounded-lg border border-accent-fault/40 bg-accent-fault/5 px-2.5 py-1 text-body text-accent-fault hover:bg-accent-fault/10"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
-            断开
+            {t('lab.benchDisconnect')}
           </button>
         )}
       </div>
@@ -388,6 +393,7 @@ function CompareChart({
   measKey: keyof Row;
   simKey: keyof Row;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
@@ -395,14 +401,14 @@ function CompareChart({
         <span className="flex items-center gap-2">
           <span className="flex items-center gap-1">
             <span className="inline-block h-1 w-3 rounded bg-accent-measure" />
-            实测
+            {t('lab.benchLegendMeasured')}
           </span>
           <span className="flex items-center gap-1">
             <span
               className="inline-block h-0.5 w-3 rounded"
               style={{ background: 'var(--accent-primary)', borderTop: '1px dashed' }}
             />
-            仿真
+            {t('lab.benchLegendSimulated')}
           </span>
         </span>
       </header>
@@ -430,7 +436,7 @@ function CompareChart({
               strokeDasharray="4 3"
               strokeWidth={1.5}
               isAnimationActive={false}
-              name="仿真"
+              name={t('lab.benchLegendSimulated')}
             />
             <Line
               type="monotone"
@@ -439,7 +445,7 @@ function CompareChart({
               stroke="var(--accent-measure)"
               strokeWidth={1.8}
               isAnimationActive={false}
-              name="实测"
+              name={t('lab.benchLegendMeasured')}
             />
           </LineChart>
         </SafeResponsiveContainer>
@@ -461,6 +467,7 @@ function ErrorTile({
   faultAt: number;
   unit: string;
 }) {
+  const { t } = useI18n();
   const tone: 'measure' | 'warn' | 'fault' =
     value >= faultAt ? 'fault' : value >= warnAt ? 'warn' : 'measure';
   const color =
@@ -471,7 +478,12 @@ function ErrorTile({
         : 'var(--accent-measure)';
   // 状态形状区分（色盲友好）：fault → ▲ ; warn → ◆ ; measure → ●
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const srLabel = tone === 'fault' ? '严重偏差' : tone === 'warn' ? '警告偏差' : '在合理范围';
+  const srLabel =
+    tone === 'fault'
+      ? t('lab.benchDeviationFault')
+      : tone === 'warn'
+        ? t('lab.benchDeviationWarn')
+        : t('lab.benchDeviationOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

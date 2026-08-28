@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
+import { useI18n } from '../../i18n/useI18n';
 import { calculateSvpwm } from '../../simulation/math/svpwm';
 import { calculateSvpwmMinMax } from '../../simulation/math/svpwmMinMax';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -62,6 +63,7 @@ const PW = W - PAD.l - PAD.r;
 const PH = H - PAD.t - PAD.b;
 
 export function SvpwmMinMaxCard() {
+  const { t } = useI18n();
   const uAlpha = useSimulationStore((s) => s.svpwm.uAlpha);
   const uBeta = useSimulationStore((s) => s.svpwm.uBeta);
   const uDc = useSimulationStore((s) => s.svpwm.uDc);
@@ -97,16 +99,17 @@ export function SvpwmMinMaxCard() {
   const yCmOf = (v: number) => PAD.t + PH * 0.45 + PH * 0.4 * (1 - v / Math.max(vCmMax, 1));
 
   return (
-    <Card title="Min/Max 法 SVPWM 对比" eyebrow="common-mode injection" density="compact">
+    <Card title={t('svpwm.minMaxTitle')} eyebrow="common-mode injection" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        公式 <code className="formula text-ink-secondary">V_cm = −(max + min)/2 ; duty_x = 0.5 + (V_x + V_cm)/Udc</code>
+        {t('svpwm.minMaxFormulaLabel')}{' '}
+        <code className="formula text-ink-secondary">V_cm = −(max + min)/2 ; duty_x = 0.5 + (V_x + V_cm)/Udc</code>
       </p>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`SVPWM Min/Max 对比图，调制度 ${formatNumber(modulation, 2)}，两算法最大占空比差异 ${formatNumber(currentResult.maxDiff * 100, 3)}%`}
+        aria-label={`${t('svpwm.minMaxAriaLead')} ${formatNumber(modulation, 2)}${t('svpwm.minMaxAriaDiff')} ${formatNumber(currentResult.maxDiff * 100, 3)}%`}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
         <line x1={PAD.l} y1={yOf(0.5)} x2={W - PAD.r} y2={yOf(0.5)} stroke="rgba(231,243,255,0.12)" strokeWidth="1" />
@@ -141,7 +144,7 @@ export function SvpwmMinMaxCard() {
         {/* 图例 */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">
           <line x1={PAD.l + 4} y1={PAD.t + 8} x2={PAD.l + 24} y2={PAD.t + 8} stroke="rgba(52,214,255,0.6)" strokeWidth="2.6" />
-          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">七段式</text>
+          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">{t('svpwm.minMaxLegendSeven')}</text>
           <line x1={PAD.l + 70} y1={PAD.t + 8} x2={PAD.l + 90} y2={PAD.t + 8} stroke="rgb(var(--accent-primary))" strokeDasharray="3 3" />
           <text x={PAD.l + 94} y={PAD.t + 11} fill="rgb(var(--ink-muted))">Min/Max</text>
           <line x1={PAD.l + 150} y1={PAD.t + 8} x2={PAD.l + 170} y2={PAD.t + 8} stroke="rgb(155,127,255)" strokeWidth="1.4" />
@@ -151,27 +154,25 @@ export function SvpwmMinMaxCard() {
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">|V_cm| 峰值</p>
+          <p className="text-ink-muted">{t('svpwm.minMaxVcmPeak')}</p>
           <p className="formula text-ink-primary">{formatNumber(vCmMax, 1)} V</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">两算法误差</p>
+          <p className="text-ink-muted">{t('svpwm.minMaxAlgoDiff')}</p>
           <p className={`formula ${currentResult.maxDiff > 0.001 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(currentResult.maxDiff * 100, 3)}%
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">是否过调制</p>
+          <p className="text-ink-muted">{t('svpwm.minMaxOverMod')}</p>
           <p className={`formula ${currentResult.mm.saturated ? 'text-accent-fault' : 'text-accent-measure'}`}>
-            {currentResult.mm.saturated ? '是' : '否'}
+            {currentResult.mm.saturated ? t('common.yes') : t('common.no')}
           </p>
         </div>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        共模注入约 ±Udc/6 的三次谐波是把七段式 V0/V7 平均分配等价的"数学投影"——
-        相电压含 hump，但线-线 (Vab=Va−Vb) 相消，对电机无影响。Min/Max 跳过扇区判断和 atan2，
-        Cortex-M0/M3 上可比七段式快 3 倍。
+        {t('svpwm.minMaxExplain')}
       </p>
     </Card>
   );

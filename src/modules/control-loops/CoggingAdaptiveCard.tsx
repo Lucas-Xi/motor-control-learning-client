@@ -4,15 +4,16 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { simulateAdaptiveLearning } from '../../simulation/math/coggingAdaptive';
 import { formatNumber } from '../../utils/format';
 
 type PresetKey = 'coldMismatch' | 'hotDemag' | 'speedUnstable';
 
-const PRESETS: Record<PresetKey, { label: string; plantScale?: number; speedRipple?: number }> = {
-  coldMismatch: { label: '冷机失配 1.25', plantScale: 1.25, speedRipple: 0.01 },
-  hotDemag: { label: '热机退磁 0.75', plantScale: 0.75, speedRipple: 0.01 },
-  speedUnstable: { label: '转速不稳 ripple=0.10', speedRipple: 0.10 },
+const PRESETS: Record<PresetKey, { label: TKey; plantScale?: number; speedRipple?: number }> = {
+  coldMismatch: { label: 'controlLoops.coggingAdaptivePresetCold', plantScale: 1.25, speedRipple: 0.01 },
+  hotDemag: { label: 'controlLoops.coggingAdaptivePresetHot', plantScale: 0.75, speedRipple: 0.01 },
+  speedUnstable: { label: 'controlLoops.coggingAdaptivePresetRipple', speedRipple: 0.10 },
 };
 
 /**
@@ -20,6 +21,7 @@ const PRESETS: Record<PresetKey, { label: string; plantScale?: number; speedRipp
  * 本卡用 LMS 残差跟踪把表学回去——只在转速稳时学，不重复分辨率 vs 角误差那张卡。
  */
 export function CoggingAdaptiveCard() {
+  const { t } = useI18n();
   const [plantScale, setPlantScale] = useState(1.25);
   const [learningRate, setLearningRate] = useState(0.02);
   const [speedRipple, setSpeedRipple] = useState(0.01);
@@ -62,25 +64,25 @@ export function CoggingAdaptiveCard() {
 
   return (
     <Card
-      title="齿槽表会过时：LMS 在线把残差学回去"
+      title={t('controlLoops.coggingAdaptiveTitle')}
       eyebrow="adaptive CT-FFC · residual LMS"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="Ruderman 2008；稳态才学；μ 太大震荡，λ 控制遗忘；残差 T_res=T_true−T_model"
+          hint={t('controlLoops.coggingAdaptiveFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        静态表是额定 <span className="formula">ψf</span> 拍的；磁钢热了
-        <span className="formula"> Tcog</span> 变小，表就过补偿。
-        LMS 用残差 <span className="formula">T_res = T_true − T_model</span>
-        只改当前角度 bin。只在转速稳时学，否则把速度环纹波写进表。
+        {t('controlLoops.coggingAdaptiveIntroA')}<span className="formula">ψf</span>
+        {t('controlLoops.coggingAdaptiveIntroB')}<span className="formula"> Tcog</span>
+        {t('controlLoops.coggingAdaptiveIntroC')}<span className="formula">T_res = T_true − T_model</span>
+        {t('controlLoops.coggingAdaptiveIntroD')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">工况预设：</span>
+        <span className="text-caption text-ink-muted">{t('controlLoops.coggingAdaptivePresetLabel')}</span>
         {(Object.keys(PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -92,14 +94,14 @@ export function CoggingAdaptiveCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {PRESETS[k].label}
+            {t(PRESETS[k].label)}
           </button>
         ))}
       </div>
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>真实齿槽 / 建表齿槽，温度退磁&lt;1</span>
+          <span>{t('controlLoops.coggingAdaptivePlantScale')}</span>
           <span className="formula text-ink-primary">{formatNumber(plantScale, 2)}</span>
         </span>
         <input
@@ -110,7 +112,7 @@ export function CoggingAdaptiveCard() {
           step={0.01}
           onChange={(e) => setPlantScale(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="plant scale true over table cogging"
+          aria-label={t('controlLoops.coggingAdaptivePlantScale')}
           aria-valuemin={0.6}
           aria-valuemax={1.6}
           aria-valuenow={plantScale}
@@ -119,7 +121,7 @@ export function CoggingAdaptiveCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>学习率 μ</span>
+          <span>{t('controlLoops.coggingAdaptiveMu')}</span>
           <span className="formula text-ink-primary">{formatNumber(learningRate, 3)}</span>
         </span>
         <input
@@ -130,7 +132,7 @@ export function CoggingAdaptiveCard() {
           step={0.002}
           onChange={(e) => setLearningRate(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="LMS learning rate"
+          aria-label={t('controlLoops.coggingAdaptiveMu')}
           aria-valuemin={0.002}
           aria-valuemax={0.08}
           aria-valuenow={learningRate}
@@ -139,7 +141,7 @@ export function CoggingAdaptiveCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>转速波动</span>
+          <span>{t('controlLoops.coggingAdaptiveRipple')}</span>
           <span className="formula text-ink-primary">{formatNumber(speedRipple * 100, 1)}%</span>
         </span>
         <input
@@ -150,7 +152,7 @@ export function CoggingAdaptiveCard() {
           step={0.005}
           onChange={(e) => setSpeedRipple(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="speed ripple"
+          aria-label={t('controlLoops.coggingAdaptiveRipple')}
           aria-valuemin={0}
           aria-valuemax={0.15}
           aria-valuenow={speedRipple}
@@ -166,23 +168,23 @@ export function CoggingAdaptiveCard() {
               type="number"
               domain={[1, 'dataMax']}
               tick={{ fill: '#9eb5cb', fontSize: 11 }}
-              label={{ value: '转数', position: 'insideBottom', offset: -6, fill: '#9eb5cb', fontSize: 11 }}
+              label={{ value: t('controlLoops.coggingAdaptiveRevLabel'), position: 'insideBottom', offset: -6, fill: '#9eb5cb', fontSize: 11 }}
             />
             <YAxis
               yAxisId="res"
               tick={{ fill: '#9eb5cb', fontSize: 11 }}
-              label={{ value: '残差 RMS (mN·m)', angle: -90, position: 'insideLeft', fill: '#9eb5cb', fontSize: 11, dx: 14, dy: 40 }}
+              label={{ value: t('controlLoops.coggingAdaptiveResidualLabel'), angle: -90, position: 'insideLeft', fill: '#9eb5cb', fontSize: 11, dx: 14, dy: 40 }}
             />
             <YAxis
               yAxisId="cov"
               orientation="right"
               domain={[0, 100]}
               tick={{ fill: '#9eb5cb', fontSize: 10 }}
-              label={{ value: '覆盖率 %', angle: 90, position: 'insideRight', fill: '#9eb5cb', fontSize: 10, dx: -12, dy: -20 }}
+              label={{ value: t('controlLoops.coggingAdaptiveCoverageLabel'), angle: 90, position: 'insideRight', fill: '#9eb5cb', fontSize: 10, dx: -12, dy: -20 }}
             />
             <Tooltip
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
-              labelFormatter={(v) => `第 ${Number(v).toFixed(0)} 转`}
+              labelFormatter={(v) => `${t('controlLoops.coggingAdaptiveRevPrefix')}${Number(v).toFixed(0)}`}
             />
             <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
             <Line
@@ -193,7 +195,7 @@ export function CoggingAdaptiveCard() {
               strokeWidth={1.8}
               dot={false}
               isAnimationActive={false}
-              name="残差 RMS"
+              name={t('controlLoops.coggingAdaptiveLineResidual')}
             />
             <Line
               yAxisId="cov"
@@ -204,7 +206,7 @@ export function CoggingAdaptiveCard() {
               strokeDasharray="3 3"
               dot={false}
               isAnimationActive={false}
-              name="覆盖率"
+              name={t('controlLoops.coggingAdaptiveLineCoverage')}
             />
           </LineChart>
         </SafeResponsiveContainer>
@@ -212,30 +214,30 @@ export function CoggingAdaptiveCard() {
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">覆盖率</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.coggingAdaptiveCoverageMetric')}</p>
           <p className="formula text-body text-accent-primary">
             {formatNumber(result.finalCoveragePct, 1)}%
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">末转残差</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.coggingAdaptiveLastResidual')}</p>
           <p className="formula text-body text-accent-measure">
             {formatNumber(result.finalResidualRmsNm * 1000, 2)} mN·m
           </p>
           <p className="text-[10px] opacity-75">
-            首转 {formatNumber((first?.residualRmsNm ?? 0) * 1000, 2)} mN·m
+            {t('controlLoops.coggingAdaptiveFirstRevPrefix')}{formatNumber((first?.residualRmsNm ?? 0) * 1000, 2)} mN·m
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">最大 ΔLUT</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.coggingAdaptiveMaxDelta')}</p>
           <p className="formula text-body text-ink-primary">
             {formatNumber(last?.maxDelta ?? 0, 3)} A
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">是否在学</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.coggingAdaptiveLearningQ')}</p>
           <p className={`formula text-body ${last?.isLearning ? 'text-accent-measure' : 'text-accent-warn'}`}>
-            {last?.isLearning ? '学习中' : '已暂停'}
+            {last?.isLearning ? t('controlLoops.coggingAdaptiveLearningYes') : t('controlLoops.coggingAdaptiveLearningNo')}
           </p>
         </div>
       </div>
@@ -255,28 +257,28 @@ export function CoggingAdaptiveCard() {
         )}
         <div className="text-caption leading-snug">
           {ripplePaused ? (
-            <span className="text-accent-warn">转速波动 ≥ 5%：学习暂停，否则会把速度环纹波写进表。</span>
+            <span className="text-accent-warn">{t('controlLoops.coggingAdaptiveWarnRipple')}</span>
           ) : null}
           {ripplePaused && muHigh ? ' ' : null}
           {muHigh ? (
-            <span className="text-accent-warn">μ 太大：LMS 会在相邻 bin 之间震荡，表项来回抽。</span>
+            <span className="text-accent-warn">{t('controlLoops.coggingAdaptiveWarnMu')}</span>
           ) : null}
           {!warn && result.suppressed ? (
             <span className="text-accent-measure">
-              残差已降到首转的 60% 以下：失配被学回去，覆盖率够才能把更新后的表当正式前馈。
+              {t('controlLoops.coggingAdaptiveOkSuppressed')}
             </span>
           ) : null}
           {!warn && !result.suppressed ? (
             <span className="text-ink-secondary">
-              残差还没压到 60%。μ 太小会收敛慢；plantScale=1 时表本来就对齐，没什么可学。
+              {t('controlLoops.coggingAdaptiveInfoNotYet')}
             </span>
           ) : null}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：LUT 放 CCM RAM；
-        每 PWM 只更新当前 bin；μ 用 Q15；覆盖率不够不要启用前馈。
+        <span className="text-accent-warn">{t('controlLoops.coggingAdaptivePortingTitle')}</span>
+        {t('controlLoops.coggingAdaptivePortingBody')}
       </p>
     </Card>
   );

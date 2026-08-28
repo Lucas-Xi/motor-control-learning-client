@@ -12,6 +12,7 @@ import {
 import { Activity, Gauge, TrendingUp } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { simulatePartLoad } from '../../simulation/math/seasonalPerformance';
 import { formatNumber } from '../../utils/format';
@@ -26,6 +27,7 @@ import { formatNumber } from '../../utils/format';
  * 产线工程师视角：解释变频空调省电的真正原因——不是单点 COP 高，而是整年部分负荷下 COP 都更高。
  */
 export function PartLoadEfficiencyCard() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
   const [minRpm, setMinRpm] = useState(1200);
@@ -60,23 +62,23 @@ export function PartLoadEfficiencyCard() {
   );
 
   return (
-    <Card density="compact" title="变频部分负载效率" eyebrow="part-load efficiency">
+    <Card density="compact" title={t('refrigerationBench.partLoadTitle')} eyebrow="part-load efficiency">
       {/* 顶部 KPI */}
       <div className="mb-3 grid grid-cols-3 gap-2">
         <KpiSmall
-          label="定频平均 COP"
+          label={t('refrigerationBench.partLoadAvgCopFixed')}
           value={formatNumber(result.avgCopFixed, 2)}
           icon={<Gauge className="h-3 w-3" />}
           color="text-accent-warn"
         />
         <KpiSmall
-          label="变频平均 COP"
+          label={t('refrigerationBench.partLoadAvgCopInv')}
           value={formatNumber(result.avgCopInverter, 2)}
           icon={<Activity className="h-3 w-3" />}
           color="text-accent-measure"
         />
         <KpiSmall
-          label="整年提升"
+          label={t('refrigerationBench.partLoadYearGain')}
           value={`+${formatNumber(result.improvementPercent, 1)}%`}
           icon={<TrendingUp className="h-3 w-3" />}
           color={result.improvementPercent > 25 ? 'text-accent-measure' : result.improvementPercent > 10 ? 'text-accent-primary' : 'text-accent-warn'}
@@ -86,7 +88,7 @@ export function PartLoadEfficiencyCard() {
       {/* 滑块控件 */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <AriaSlider
-          label="电机最小转速 N_min"
+          label={t('refrigerationBench.partLoadMinRpmLabel')}
           unit=" rpm"
           value={minRpm}
           min={300}
@@ -95,7 +97,7 @@ export function PartLoadEfficiencyCard() {
           onChange={setMinRpm}
         />
         <AriaSlider
-          label="启停滞环 PLR 阈"
+          label={t('refrigerationBench.partLoadCyclingPlrLabel')}
           unit=""
           digits={2}
           value={cyclingPenaltyPlr}
@@ -105,7 +107,7 @@ export function PartLoadEfficiencyCard() {
           onChange={setCyclingPenalty}
         />
         <AriaSlider
-          label="调速比 N_max/N_min"
+          label={t('refrigerationBench.partLoadSpeedRatioLabel')}
           unit="×"
           digits={1}
           value={variableSpeedRatio}
@@ -148,7 +150,7 @@ export function PartLoadEfficiencyCard() {
               labelFormatter={(v) => `PLR = ${v}%`}
               formatter={((value: unknown, name: unknown) => {
                 const n = String(name ?? '');
-                if (n === '定频 COP' || n === '变频 COP') return [`${Number(value).toFixed(2)}`, n];
+                if (n === t('refrigerationBench.partLoadSeriesCopFixed') || n === t('refrigerationBench.partLoadSeriesCopInv')) return [`${Number(value).toFixed(2)}`, n];
                 return [`${value} rpm`, n];
               }) as never}
             />
@@ -162,7 +164,7 @@ export function PartLoadEfficiencyCard() {
               stroke="#ff5c7a"
               strokeOpacity={0.3}
               strokeDasharray="2 4"
-              label={{ value: '启停损失区', fill: '#ff5c7a', fontSize: 9, position: 'insideTop' }}
+              label={{ value: t('refrigerationBench.partLoadCyclingZone'), fill: '#ff5c7a', fontSize: 9, position: 'insideTop' }}
             />
             <Line
               yAxisId="cop"
@@ -171,7 +173,7 @@ export function PartLoadEfficiencyCard() {
               stroke="#ffb84d"
               strokeWidth={1.8}
               dot={{ r: 2, fill: '#ffb84d' }}
-              name="定频 COP"
+              name={t('refrigerationBench.partLoadSeriesCopFixed')}
               isAnimationActive={false}
             />
             <Line
@@ -181,7 +183,7 @@ export function PartLoadEfficiencyCard() {
               stroke="#43f7b5"
               strokeWidth={1.8}
               dot={{ r: 2, fill: '#43f7b5' }}
-              name="变频 COP"
+              name={t('refrigerationBench.partLoadSeriesCopInv')}
               isAnimationActive={false}
             />
             <Line
@@ -192,7 +194,7 @@ export function PartLoadEfficiencyCard() {
               strokeWidth={1.2}
               strokeDasharray="4 4"
               dot={false}
-              name="定频 rpm"
+              name={t('refrigerationBench.partLoadSeriesRpmFixed')}
               isAnimationActive={false}
             />
             <Line
@@ -203,7 +205,7 @@ export function PartLoadEfficiencyCard() {
               strokeWidth={1.2}
               strokeDasharray="4 4"
               dot={false}
-              name="变频 rpm"
+              name={t('refrigerationBench.partLoadSeriesRpmInv')}
               isAnimationActive={false}
             />
           </LineChart>
@@ -211,10 +213,9 @@ export function PartLoadEfficiencyCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        粉色阴影是定频"启停频繁区"：PLR&lt;
+        {t('refrigerationBench.partLoadInsightA')}
         <span className="font-mono text-accent-fault">{(cyclingPenaltyPlr * 100).toFixed(0)}%</span>{' '}
-        时定频靠开关达到部分负荷，启动损失把 COP 打到 50% 以下；
-        变频靠 N_min~N_max 之间连续调速，PLR 越低 COP 反而越高（压比下降 + 容积效率提升）。
+        {t('refrigerationBench.partLoadInsightB')}
       </p>
     </Card>
   );

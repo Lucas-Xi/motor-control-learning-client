@@ -1,5 +1,6 @@
 import { CheckCircle2, HelpCircle, RefreshCw, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 interface QuizItem {
   q: string;
@@ -15,6 +16,7 @@ interface Props {
 type AnswerState = 'unanswered' | 'correct' | 'wrong';
 
 export function Quiz({ items }: Props) {
+  const { t } = useI18n();
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [reveal, setReveal] = useState<Record<number, boolean>>({});
 
@@ -32,10 +34,10 @@ export function Quiz({ items }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between rounded-lg border border-line-subtle bg-bg-base px-3 py-2">
         <span className="text-body text-ink-secondary">
-          已答 {answeredCount} / {items.length} · 正确 <span className="text-accent-measure">{correctCount}</span>
+          {t('shell.quizAnswered')} {answeredCount} / {items.length} · {t('shell.quizCorrect')} <span className="text-accent-measure">{correctCount}</span>
         </span>
         <button onClick={reset} className="inline-flex items-center gap-1 rounded border border-line-subtle px-2 py-1 text-caption text-ink-muted transition-colors hover:text-ink-primary">
-          <RefreshCw className="h-3 w-3" />重做
+          <RefreshCw className="h-3 w-3" />{t('shell.quizRedo')}
         </button>
       </div>
       {items.map((item, i) => {
@@ -88,12 +90,12 @@ export function Quiz({ items }: Props) {
                 onClick={() => setReveal((prev) => ({ ...prev, [i]: true }))}
                 className="mt-2 inline-flex items-center gap-1 text-caption text-accent-warn hover:underline"
               >
-                <HelpCircle className="h-3 w-3" />看提示
+                <HelpCircle className="h-3 w-3" />{t('shell.quizShowHint')}
               </button>
             )}
             {((state === 'wrong' && isRevealed) || state === 'correct') && (
               <p className="mt-2 rounded border border-line-subtle bg-bg-surface p-2 text-caption leading-relaxed text-ink-secondary">
-                <span className="text-ink-primary">提示：</span>{item.hint}
+                <span className="text-ink-primary">{t('shell.quizHintLabel')}</span>{item.hint}
               </p>
             )}
           </div>

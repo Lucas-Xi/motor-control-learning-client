@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { blendObserverAngle, sweepObserverBlend } from '../../simulation/math/observer';
 import { formatNumber } from '../../utils/format';
 
@@ -12,6 +13,7 @@ import { formatNumber } from '../../utils/format';
  * 调用 blendObserverAngle / sweepObserverBlend，不用 Math.random 伪造交接误差。
  */
 export function ObserverBlendCard() {
+  const { t } = useI18n();
   const [transitionLow, setTransitionLow] = useState(300);
   const [transitionHigh, setTransitionHigh] = useState(600);
   const [hfiBiasDeg, setHfiBiasDeg] = useState(0);
@@ -62,23 +64,23 @@ export function ObserverBlendCard() {
 
   return (
     <Card
-      title="HFI → BEMF：融合带比硬切少一次角度跳"
+      title={t('hfiSensorless.blendTitle')}
       eyebrow="observer blend · shortest-path"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="blendObserverAngle 在 300–600 rpm 线性融合，走最短角路径。硬切会在交接处跳 Δθ。"
+          hint={t('hfiSensorless.blendFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        blendObserverAngle 在 300–600 rpm 线性融合，走最短角路径。硬切会在交接处跳 Δθ。
+        {t('hfiSensorless.blendIntro')}
       </p>
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>融合起点 transitionLow</span>
+          <span>{t('hfiSensorless.blendLowLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(low, 0)} rpm</span>
         </span>
         <input
@@ -98,7 +100,7 @@ export function ObserverBlendCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>融合终点 transitionHigh</span>
+          <span>{t('hfiSensorless.blendHighLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(high, 0)} rpm</span>
         </span>
         <input
@@ -118,7 +120,7 @@ export function ObserverBlendCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>HFI 偏置 hfiBiasDeg</span>
+          <span>{t('hfiSensorless.blendBiasLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(hfiBiasDeg, 0)}°</span>
         </span>
         <input
@@ -138,27 +140,27 @@ export function ObserverBlendCard() {
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">交接带宽</p>
+          <p className="text-caption text-ink-secondary">{t('hfiSensorless.blendBandwidth')}</p>
           <p className={`formula text-body ${narrow ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(bandwidth, 0)} rpm
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">中点融合比</p>
+          <p className="text-caption text-ink-secondary">{t('hfiSensorless.blendMidRatio')}</p>
           <p className="formula text-body text-accent-primary">
             {formatNumber(mid.blendRatio, 2)}
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">低速靠谁</p>
+          <p className="text-caption text-ink-secondary">{t('hfiSensorless.blendLowOwner')}</p>
           <p className="formula text-body text-accent-measure">{lowOwner}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">高速靠谁</p>
+          <p className="text-caption text-ink-secondary">{t('hfiSensorless.blendHighOwner')}</p>
           <p className="formula text-body text-accent-primary">{highOwner}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">硬切跳变</p>
+          <p className="text-caption text-ink-secondary">{t('hfiSensorless.blendHardJump')}</p>
           <p className={`formula text-body ${midJump > 15 ? 'text-accent-fault' : midJump > 8 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(midJump, 1)}°
           </p>
@@ -254,22 +256,27 @@ export function ObserverBlendCard() {
         <div className="text-caption leading-snug">
           {narrow ? (
             <span className="text-accent-warn">
-              带太窄（{formatNumber(bandwidth, 0)} rpm &lt; 80），接近硬切：中点一次跳 {formatNumber(midJump, 1)}°，电流环会打一拳。
+              {t('hfiSensorless.blendNarrowWarn')
+                .replace('{b}', formatNumber(bandwidth, 0))
+                .replace('{j}', formatNumber(midJump, 1))}
             </span>
           ) : (
             <span className="text-accent-measure">
-              融合带 {formatNumber(bandwidth, 0)} rpm，Δθ 摊在转速上。中点比 {formatNumber(mid.blendRatio, 2)}。
-              硬切会在中点一次吃掉 {formatNumber(midJump, 1)}°，白虚线就是那一跳。
+              {t('hfiSensorless.blendOkNote')
+                .replace('{b}', formatNumber(bandwidth, 0))
+                .replace('{r}', formatNumber(mid.blendRatio, 2))
+                .replace('{j}', formatNumber(midJump, 1))}
             </span>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        零速只能 HFI；高速 HFI 铁损+噪声该退。白虚线是硬切：在中点一次换人，θ 跳 {formatNumber(midJump, 1)}°。黄线把同一 Δθ 摊在融合带上。
+        {t('hfiSensorless.blendFootnote').replace('{j}', formatNumber(midJump, 1))}
       </p>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：用转速（或 |e|）做 t；角度用 atan2 最短路径；带宽 200–400 rpm 起步。
+        <span className="text-accent-warn">{t('hfiSensorless.blendStm32Label')}</span>
+        {t('hfiSensorless.blendStm32Body')}
       </p>
     </Card>
   );

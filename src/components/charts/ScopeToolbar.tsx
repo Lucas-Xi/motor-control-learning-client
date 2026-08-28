@@ -1,5 +1,6 @@
 import { Activity, BarChart3, Crosshair, Download, Eye, EyeOff, Pause, Play, Zap } from 'lucide-react';
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 示波器风格控件条：通道开关 + 时基选择 + 冻结按钮 + 实时测量。
@@ -87,6 +88,7 @@ export function ScopeToolbar({
   onToggleFft,
   onExportCsv,
 }: Props) {
+  const { t } = useI18n();
   const stats = useMemo(() => {
     return channels.map((c) => ({ key: c.key, ...computeStats(c.series) }));
   }, [channels]);
@@ -95,8 +97,8 @@ export function ScopeToolbar({
     <div className="mb-2 space-y-1.5">
       <div className="flex flex-wrap items-center gap-2 text-caption">
         {/* 时基 */}
-        <div role="group" aria-label="时基选择" className="flex items-center gap-1">
-          <span className="text-ink-muted">时基</span>
+        <div role="group" aria-label={t('charts.scopeTimebaseAria')} className="flex items-center gap-1">
+          <span className="text-ink-muted">{t('charts.scopeTimebase')}</span>
           <div className="flex items-center overflow-hidden rounded-md border border-line-subtle">
             {windowOptions.map((opt) => {
               const active = opt === windowMs;
@@ -106,13 +108,13 @@ export function ScopeToolbar({
                   type="button"
                   onClick={() => onWindowChange(opt)}
                   aria-pressed={active}
-                  aria-label={`时间窗 ${opt} 毫秒${active ? '（当前）' : ''}`}
+                  aria-label={`${t('charts.scopeWindowAria')} ${opt} ${t('charts.scopeMsUnit')}${active ? t('charts.scopeCurrentSuffix') : ''}`}
                   className={`px-2 py-0.5 text-caption transition-colors ${
                     active
                       ? 'bg-accent-primary/15 text-accent-primary'
                       : 'bg-bg-base text-ink-secondary hover:bg-bg-raised hover:text-ink-primary'
                   }`}
-                  title={`显示 ${opt} ms 时间窗`}
+                  title={`${t('charts.scopeShowWindowPrefix')} ${opt} ms ${t('charts.scopeShowWindowSuffix')}`}
                 >
                   {opt}
                 </button>
@@ -123,8 +125,8 @@ export function ScopeToolbar({
         </div>
 
         {/* 通道开关 */}
-        <div role="group" aria-label="通道开关" className="flex items-center gap-1">
-          <span className="text-ink-muted">通道</span>
+        <div role="group" aria-label={t('charts.scopeChannelsAria')} className="flex items-center gap-1">
+          <span className="text-ink-muted">{t('charts.scopeChannels')}</span>
           {channels.map((c) => {
             const visible = visibleKeys.has(c.key);
             return (
@@ -133,7 +135,7 @@ export function ScopeToolbar({
                 type="button"
                 onClick={() => onToggleChannel(c.key)}
                 aria-pressed={visible}
-                title={`${visible ? '隐藏' : '显示'} ${c.label}`}
+                title={`${visible ? t('charts.scopeHide') : t('charts.scopeShow')} ${c.label}`}
                 className={`flex items-center gap-1 rounded-md border px-2 py-0.5 transition-colors ${
                   visible
                     ? 'border-line-subtle bg-bg-base'
@@ -155,7 +157,7 @@ export function ScopeToolbar({
               type="button"
               onClick={onToggleFft}
               aria-pressed={fftEnabled}
-              title={fftEnabled ? '回到时域波形' : '切换到 FFT 频谱视图（看谐波分量）'}
+              title={fftEnabled ? t('charts.scopeBackToTime') : t('charts.scopeFftTitle')}
               className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption transition-colors ${
                 fftEnabled
                   ? 'border-accent-warn/50 bg-accent-warn/15 text-accent-warn'
@@ -163,7 +165,7 @@ export function ScopeToolbar({
               }`}
             >
               {fftEnabled ? <Activity className="h-3 w-3" aria-hidden="true" /> : <BarChart3 className="h-3 w-3" aria-hidden="true" />}
-              {fftEnabled ? '时域' : 'FFT'}
+              {fftEnabled ? t('charts.scopeTimeDomain') : 'FFT'}
             </button>
           )}
           {onToggleTrigger && (
@@ -174,10 +176,10 @@ export function ScopeToolbar({
               disabled={fftEnabled}
               title={
                 fftEnabled
-                  ? '触发只在时域有效（先切回时域）'
+                  ? t('charts.scopeTriggerFftOnly')
                   : triggerEnabled
-                    ? '关闭触发同步（自由扫描）'
-                    : '开启触发同步（锁定上升沿过零点，周期波看着不动）'
+                    ? t('charts.scopeTriggerOff')
+                    : t('charts.scopeTriggerOn')
               }
               className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 triggerEnabled
@@ -186,7 +188,7 @@ export function ScopeToolbar({
               }`}
             >
               <Zap className="h-3 w-3" aria-hidden="true" />
-              触发
+              {t('charts.scopeTrigger')}
             </button>
           )}
           {onToggleCursor && (
@@ -197,10 +199,10 @@ export function ScopeToolbar({
               disabled={fftEnabled}
               title={
                 fftEnabled
-                  ? '游标只在时域有效（先切回时域）'
+                  ? t('charts.scopeCursorFftOnly')
                   : cursorEnabled
-                    ? '关闭游标'
-                    : '开启游标（点击波形读取该时刻数值）'
+                    ? t('charts.scopeCursorOff')
+                    : t('charts.scopeCursorOn')
               }
               className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 cursorEnabled
@@ -209,14 +211,14 @@ export function ScopeToolbar({
               }`}
             >
               <Crosshair className="h-3 w-3" aria-hidden="true" />
-              游标
+              {t('charts.scopeCursor')}
             </button>
           )}
           <button
             type="button"
             onClick={onToggleFreeze}
             aria-pressed={frozen}
-            title={frozen ? '继续刷新' : '冻结当前画面'}
+            title={frozen ? t('charts.scopeResumeTitle') : t('charts.scopeFreezeTitle')}
             className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption transition-colors ${
               frozen
                 ? 'border-accent-warn/50 bg-accent-warn/15 text-accent-warn'
@@ -224,13 +226,13 @@ export function ScopeToolbar({
             }`}
           >
             {frozen ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
-            {frozen ? '继续' : '冻结'}
+            {frozen ? t('charts.scopeResume') : t('charts.scopeFreeze')}
           </button>
           {onExportCsv && (
             <button
               type="button"
               onClick={onExportCsv}
-              title="导出当前波形为 CSV（可在 Excel/MATLAB 打开）"
+              title={t('charts.scopeCsvTitle')}
               className="flex items-center gap-1 rounded-md border border-line-subtle bg-bg-base px-2 py-0.5 text-caption text-ink-secondary transition-colors hover:bg-bg-raised hover:text-ink-primary"
             >
               <Download className="h-3 w-3" aria-hidden="true" />

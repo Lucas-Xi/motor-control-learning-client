@@ -11,6 +11,7 @@ import {
   runAssembly,
   type AssemblyResult,
 } from '../../content/assemblyLibraries';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 历史会话两两对比（Phase C）。
@@ -83,6 +84,7 @@ function timeLabel(ts: number): string {
 }
 
 export function SnapshotDiffPanel() {
+  const { t } = useI18n();
   const history = useAssemblyProgressStore((s) => s.history);
   // 默认对比"最新两条"
   const defaultIds = useMemo(() => {
@@ -104,10 +106,10 @@ export function SnapshotDiffPanel() {
       <div className="rounded-2xl border border-line-subtle bg-bg-surface p-4">
         <div className="flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
           <ArrowLeftRight className="h-3.5 w-3.5 text-accent-primary" />
-          <span>历史会话两两对比</span>
+          <span>{t('assemblyWorkshop.diffTitle')}</span>
         </div>
         <p className="mt-2 text-caption text-ink-muted">
-          至少需要 2 条历史会话才能对比。回到上面的工作台点"运行整机仿真"两次（不同选型），就能在这里并排看差异。
+          {t('assemblyWorkshop.diffEmptyHint')}
         </p>
       </div>
     );
@@ -127,6 +129,7 @@ function SnapshotDiffBody({
   onPickA: (id: string) => void;
   onPickB: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const slotsA = lookupSlotNames(entryA.slotIds);
   const slotsB = lookupSlotNames(entryB.slotIds);
 
@@ -135,19 +138,19 @@ function SnapshotDiffBody({
   const resB = useMemo(() => recompute(entryB), [entryB]);
 
   const slotRows: Array<{ label: string; aValue: string; bValue: string }> = [
-    { label: '压缩机', aValue: slotsA.compressor, bValue: slotsB.compressor },
-    { label: '变频器', aValue: slotsA.inverter, bValue: slotsB.inverter },
-    { label: '控制策略', aValue: slotsA.strategy, bValue: slotsB.strategy },
-    { label: '工况负载', aValue: slotsA.load, bValue: slotsB.load },
-    { label: 'PFC 前级', aValue: slotsA.pfc, bValue: slotsB.pfc },
-    { label: '液气分离器', aValue: slotsA.separator, bValue: slotsB.separator },
+    { label: t('assemblyWorkshop.slotCompressor'), aValue: slotsA.compressor, bValue: slotsB.compressor },
+    { label: t('assemblyWorkshop.slotInverter'), aValue: slotsA.inverter, bValue: slotsB.inverter },
+    { label: t('assemblyWorkshop.slotStrategy'), aValue: slotsA.strategy, bValue: slotsB.strategy },
+    { label: t('assemblyWorkshop.slotLoadFull'), aValue: slotsA.load, bValue: slotsB.load },
+    { label: t('assemblyWorkshop.slotPfcFull'), aValue: slotsA.pfc, bValue: slotsB.pfc },
+    { label: t('assemblyWorkshop.slotSeparatorFull'), aValue: slotsA.separator, bValue: slotsB.separator },
   ];
 
   const kpiRows: Array<{ label: string; unit: string; a: number; b: number; positiveBetter: boolean }> = [
     { label: 'COP', unit: '', a: entryA.cop, b: entryB.cop, positiveBetter: true },
-    { label: 'Iq（稳态）', unit: 'A', a: resA?.metrics.requiredIqA ?? NaN, b: resB?.metrics.requiredIqA ?? NaN, positiveBetter: false },
-    { label: 'Pd（压比）', unit: '', a: resA?.metrics.pressureRatio ?? NaN, b: resB?.metrics.pressureRatio ?? NaN, positiveBetter: false },
-    { label: 'Td（排气温度）', unit: '°C', a: entryA.Tdischarge, b: entryB.Tdischarge, positiveBetter: false },
+    { label: t('assemblyWorkshop.diffKpiIq'), unit: 'A', a: resA?.metrics.requiredIqA ?? NaN, b: resB?.metrics.requiredIqA ?? NaN, positiveBetter: false },
+    { label: t('assemblyWorkshop.diffKpiPd'), unit: '', a: resA?.metrics.pressureRatio ?? NaN, b: resB?.metrics.pressureRatio ?? NaN, positiveBetter: false },
+    { label: t('assemblyWorkshop.diffKpiTd'), unit: '°C', a: entryA.Tdischarge, b: entryB.Tdischarge, positiveBetter: false },
   ];
 
   return (
@@ -155,13 +158,13 @@ function SnapshotDiffBody({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
           <ArrowLeftRight className="h-3.5 w-3.5 text-accent-primary" />
-          <span>历史会话两两对比 · 6 slot + 4 KPI</span>
+          <span>{t('assemblyWorkshop.diffTitleFull')}</span>
         </div>
         <div className="ml-auto flex flex-wrap gap-1.5 text-caption">
           <label className="flex items-center gap-1 rounded-md border border-accent-measure/40 bg-accent-measure/5 px-2 py-1 text-accent-measure">
             <span className="font-mono">A</span>
             <select
-              aria-label="选择左列（A）历史会话"
+              aria-label={t('assemblyWorkshop.diffSelectAAria')}
               value={idA}
               onChange={(e) => onPickA(e.target.value)}
               className="rounded bg-bg-base px-1 py-0.5 text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
@@ -176,7 +179,7 @@ function SnapshotDiffBody({
           <label className="flex items-center gap-1 rounded-md border border-accent-warn/40 bg-accent-warn/5 px-2 py-1 text-accent-warn">
             <span className="font-mono">B</span>
             <select
-              aria-label="选择右列（B）历史会话"
+              aria-label={t('assemblyWorkshop.diffSelectBAria')}
               value={idB}
               onChange={(e) => onPickB(e.target.value)}
               className="rounded bg-bg-base px-1 py-0.5 text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
@@ -196,7 +199,7 @@ function SnapshotDiffBody({
         <table className="w-full text-caption">
           <thead className="bg-bg-base text-ink-muted">
             <tr>
-              <th scope="col" className="px-2 py-1.5 text-left text-[10px] uppercase tracking-[0.18em]">槽位</th>
+              <th scope="col" className="px-2 py-1.5 text-left text-[10px] uppercase tracking-[0.18em]">{t('assemblyWorkshop.diffSlotHeader')}</th>
               <th scope="col" className="px-2 py-1.5 text-left text-accent-measure">A · {timeLabel(entryA.timestamp)}</th>
               <th scope="col" className="px-2 py-1.5 text-left text-accent-warn">B · {timeLabel(entryB.timestamp)}</th>
             </tr>
@@ -250,7 +253,7 @@ function SnapshotDiffBody({
                   <td className="px-2 py-1 text-right font-mono text-ink-primary">{fmt(r.b)}</td>
                   <td className={`px-2 py-1 text-right font-mono ${deltaCls}`}>
                     <span className="mr-0.5" aria-hidden="true">{shape}</span>
-                    <span className="sr-only">{better ? '更优' : sig ? '更差' : '无变化'} </span>
+                    <span className="sr-only">{better ? t('assemblyWorkshop.diffBetter') : sig ? t('assemblyWorkshop.diffWorse') : t('assemblyWorkshop.diffUnchanged')} </span>
                     {sig ? `${sign}${fmt(delta)}` : '0.00'}
                   </td>
                 </tr>
@@ -261,9 +264,8 @@ function SnapshotDiffBody({
       </div>
 
       <p className="mt-2 text-[10px] text-ink-muted">
-        <span className="text-accent-measure">A</span> = 较早 · <span className="text-accent-warn">B</span> = 较晚。
-        ↑/↓ 是相对方向：COP 越高越好（↑ 绿），Iq/Pd/Td 越低越好（↓ 绿）。
-        与上方 history tab 的 CompareTwoHistory 区别：这里通过重算给出 Iq + Pd 真值，并把 slot 6 项完整并排。
+        <span className="text-accent-measure">A</span> = {t('assemblyWorkshop.diffColoredA')} · <span className="text-accent-warn">B</span> = {t('assemblyWorkshop.diffColoredB')}。
+        {t('assemblyWorkshop.diffFooterNote')}
       </p>
     </div>
   );

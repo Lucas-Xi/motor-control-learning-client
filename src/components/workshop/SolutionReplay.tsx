@@ -11,6 +11,7 @@ import {
   pfcPlatforms,
 } from '../../content/assemblyLibraries';
 import type { AssemblySnapshot } from '../../store/assemblyProgressStore';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 /**
  * 解题路径回放（Phase C · 任务 1）。
@@ -43,22 +44,23 @@ function slotLabel(key: keyof AssemblySnapshot['slotIds'], id: string): string {
   return id;
 }
 
-const SLOT_KEYS: Array<{ key: keyof AssemblySnapshot['slotIds']; label: string }> = [
-  { key: 'compressorBundleId', label: '压缩机' },
-  { key: 'inverterPartNo', label: '变频器' },
-  { key: 'strategyId', label: '控制策略' },
-  { key: 'loadId', label: '工况' },
-  { key: 'pfcId', label: 'PFC' },
-  { key: 'separatorId', label: '分离器' },
+const SLOT_KEYS: Array<{ key: keyof AssemblySnapshot['slotIds']; label: TKey }> = [
+  { key: 'compressorBundleId', label: 'assemblyWorkshop.slotCompressor' },
+  { key: 'inverterPartNo', label: 'assemblyWorkshop.slotInverter' },
+  { key: 'strategyId', label: 'assemblyWorkshop.slotStrategy' },
+  { key: 'loadId', label: 'assemblyWorkshop.slotLoad' },
+  { key: 'pfcId', label: 'assemblyWorkshop.slotPfc' },
+  { key: 'separatorId', label: 'assemblyWorkshop.slotSeparator' },
 ];
 
-function verdictTone(v: ReplayStep['verdict']): { text: string; cls: string } {
-  if (v === 'pass') return { text: '通过', cls: 'text-accent-measure border-accent-measure/60 bg-accent-measure/10' };
-  if (v === 'pass-warn') return { text: '通过·告警', cls: 'text-accent-warn border-accent-warn/60 bg-accent-warn/10' };
-  return { text: '未通过', cls: 'text-accent-fault border-accent-fault/60 bg-accent-fault/10' };
+function verdictTone(v: ReplayStep['verdict']): { labelKey: TKey; cls: string } {
+  if (v === 'pass') return { labelKey: 'assemblyWorkshop.verdictPass', cls: 'text-accent-measure border-accent-measure/60 bg-accent-measure/10' };
+  if (v === 'pass-warn') return { labelKey: 'assemblyWorkshop.verdictPassWarnShort', cls: 'text-accent-warn border-accent-warn/60 bg-accent-warn/10' };
+  return { labelKey: 'assemblyWorkshop.verdictFailAlt', cls: 'text-accent-fault border-accent-fault/60 bg-accent-fault/10' };
 }
 
 export function SolutionReplay() {
+  const { t } = useI18n();
   const replays = useReplayStore((s) => s.replays);
   const clearChallenge = useReplayStore((s) => s.clearChallenge);
 
@@ -137,11 +139,10 @@ export function SolutionReplay() {
       <div className="rounded-2xl border border-line-subtle bg-bg-surface p-4">
         <div className="flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
           <History className="h-3.5 w-3.5 text-accent-primary" />
-          <span>解题路径回放</span>
+          <span>{t('assemblyWorkshop.replayTitle')}</span>
         </div>
         <p className="mt-2 text-caption text-ink-muted">
-          进入"挑战模式"调一道题并点几次"运行整机仿真"，这里就会记录"每次尝试的 slot 选型 + 4 KPI"。
-          5s/step 自动回放，帮你复盘是怎么一步步把不通过调成通过的。
+          {t('assemblyWorkshop.replayEmptyHint')}
         </p>
       </div>
     );
@@ -155,20 +156,20 @@ export function SolutionReplay() {
       ref={rootRef}
       tabIndex={0}
       role="region"
-      aria-label="解题路径回放面板（Space 播放暂停 / ← → 步进）"
+      aria-label={t('assemblyWorkshop.replayRegionAria')}
       className="rounded-2xl border border-line-subtle bg-bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent-primary"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
           <History className="h-3.5 w-3.5 text-accent-primary" />
-          <span>解题路径回放 · {STEP_MS / 1000}s/step</span>
+          <span>{t('assemblyWorkshop.replayTitleCount').replace('{n}', String(STEP_MS / 1000))}</span>
         </div>
         <label className="ml-auto flex items-center gap-1.5 text-caption">
-          <span className="text-ink-muted">挑战</span>
+          <span className="text-ink-muted">{t('assemblyWorkshop.challengeLabel')}</span>
           <select
             value={selectedChallenge}
             onChange={(e) => setSelectedChallenge(e.target.value)}
-            aria-label="选择要回放的挑战"
+            aria-label={t('assemblyWorkshop.replaySelectAria')}
             className="rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
           >
             {availableIds.map((id) => {
@@ -176,7 +177,7 @@ export function SolutionReplay() {
               const n = replays[id]?.steps.length ?? 0;
               return (
                 <option key={id} value={id}>
-                  {(meta?.title ?? id).slice(0, 16)} · {n} 步
+                  {(meta?.title ?? id).slice(0, 16)} · {t('assemblyWorkshop.replayStepOption').replace('{n}', String(n))}
                 </option>
               );
             })}
@@ -195,7 +196,7 @@ export function SolutionReplay() {
         <button
           type="button"
           onClick={() => { setCursor(0); setPlaying(false); }}
-          aria-label="回到第一步"
+          aria-label={t('assemblyWorkshop.replayFirstStepAria')}
           className="rounded-md border border-line-subtle bg-bg-base p-1.5 text-ink-secondary transition-colors hover:border-line-strong hover:text-ink-primary"
         >
           <SkipBack className="h-3.5 w-3.5" />
@@ -203,7 +204,7 @@ export function SolutionReplay() {
         <button
           type="button"
           onClick={() => setPlaying((p) => !p)}
-          aria-label={playing ? '暂停回放' : '开始回放'}
+          aria-label={playing ? t('assemblyWorkshop.replayPauseAria') : t('assemblyWorkshop.replayPlayAria')}
           aria-pressed={playing}
           className={`rounded-md border px-3 py-1.5 text-body font-medium transition-colors ${
             playing
@@ -213,37 +214,37 @@ export function SolutionReplay() {
           disabled={steps.length <= 1}
         >
           {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          <span className="ml-1 inline-block">{playing ? '暂停' : '播放'}</span>
+          <span className="ml-1 inline-block">{playing ? t('assemblyWorkshop.replayPause') : t('assemblyWorkshop.replayPlay')}</span>
         </button>
         <button
           type="button"
           onClick={() => { setCursor((c) => Math.min(steps.length - 1, c + 1)); setPlaying(false); }}
-          aria-label="下一步"
+          aria-label={t('assemblyWorkshop.replayNextAria')}
           disabled={cursor + 1 >= steps.length}
           className="rounded-md border border-line-subtle bg-bg-base p-1.5 text-ink-secondary transition-colors hover:border-line-strong hover:text-ink-primary disabled:opacity-40"
         >
           <SkipForward className="h-3.5 w-3.5" />
         </button>
         <span className="ml-2 text-caption text-ink-muted">
-          第 <span className="font-mono text-ink-primary">{cursor + 1}</span> / {steps.length} 步
+          {t('assemblyWorkshop.replayStepOf').replace('{n}', String(cursor + 1)).replace('{m}', String(steps.length))}
         </span>
         <button
           type="button"
           onClick={() => {
-            if (window.confirm(`清空"${challengeMeta?.title ?? selectedChallenge}"的回放记录？`)) {
+            if (window.confirm(t('assemblyWorkshop.replayClearConfirm').replace('{title}', challengeMeta?.title ?? selectedChallenge))) {
               clearChallenge(selectedChallenge);
             }
           }}
-          aria-label="清空当前挑战的回放"
+          aria-label={t('assemblyWorkshop.replayClearAria')}
           className="ml-auto flex items-center gap-1 rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-muted transition-colors hover:border-accent-fault/50 hover:text-accent-fault"
         >
           <Trash2 className="h-3 w-3" />
-          清空
+          {t('assemblyWorkshop.replayClear')}
         </button>
       </div>
 
       {/* 进度时间条 —— 每一步一个 chip + verdict 颜色 */}
-      <ol className="mb-3 flex flex-wrap gap-1" aria-label="回放步骤导航">
+      <ol className="mb-3 flex flex-wrap gap-1" aria-label={t('assemblyWorkshop.replayNavAria')}>
         {steps.map((s, i) => {
           const tone = verdictTone(s.verdict);
           const isActive = i === cursor;
@@ -252,7 +253,7 @@ export function SolutionReplay() {
               <button
                 type="button"
                 onClick={() => { setCursor(i); setPlaying(false); }}
-                aria-label={`跳到第 ${i + 1} 步 · ${tone.text}`}
+                aria-label={t('assemblyWorkshop.replayJumpAria').replace('{n}', String(i + 1)).replace('{verdict}', t(tone.labelKey))}
                 aria-current={isActive ? 'step' : undefined}
                 className={`rounded border px-2 py-0.5 text-caption font-mono transition-colors ${
                   isActive ? `${tone.cls} ring-2 ring-accent-primary` : `${tone.cls} opacity-60 hover:opacity-100`
@@ -269,14 +270,14 @@ export function SolutionReplay() {
       {cur && (
         <div className={`rounded-xl border p-3 ${verdictTone(cur.verdict).cls}`}>
           <div className="mb-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-body font-medium">第 {cur.attemptIndex} 次尝试 · {verdictTone(cur.verdict).text}</span>
+            <span className="text-body font-medium">{t('assemblyWorkshop.replayAttemptLine').replace('{n}', String(cur.attemptIndex)).replace('{verdict}', t(verdictTone(cur.verdict).labelKey))}</span>
             <span className="text-caption opacity-80">{cur.summary}</span>
           </div>
           {/* 6 slot 网格 */}
           <div className="mb-2 grid grid-cols-2 gap-1.5 text-caption sm:grid-cols-3">
             {SLOT_KEYS.map((sk) => (
               <div key={sk.key} className="rounded border border-line-subtle bg-bg-surface/60 px-2 py-1">
-                <div className="text-[10px] uppercase tracking-wider text-ink-muted">{sk.label}</div>
+                <div className="text-[10px] uppercase tracking-wider text-ink-muted">{t(sk.label)}</div>
                 <div className="truncate font-mono text-ink-primary" title={slotLabel(sk.key, cur.slotIds[sk.key])}>
                   {slotLabel(sk.key, cur.slotIds[sk.key])}
                 </div>
@@ -287,14 +288,14 @@ export function SolutionReplay() {
           <div className="grid grid-cols-2 gap-1.5 text-caption sm:grid-cols-4">
             <Kpi label="COP" value={cur.cop.toFixed(2)} />
             <Kpi label="Iq (A)" value={cur.requiredIqA.toFixed(2)} />
-            <Kpi label="Pd (压比)" value={cur.pressureRatio.toFixed(2)} />
+            <Kpi label={t('assemblyWorkshop.replayPdLabel')} value={cur.pressureRatio.toFixed(2)} />
             <Kpi label="Td (°C)" value={cur.Tdischarge.toFixed(1)} />
           </div>
         </div>
       )}
 
       <p className="mt-2 text-[10px] text-ink-muted">
-        快捷键：Space 播放暂停 · ← → 单步 · 点击 #编号 chip 跳转。回放记录跨刷新保留（每题最多 30 步）。
+        {t('assemblyWorkshop.replayShortcutHint')}
       </p>
     </div>
   );

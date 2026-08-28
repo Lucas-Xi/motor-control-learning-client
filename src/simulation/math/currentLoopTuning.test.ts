@@ -87,10 +87,13 @@ describe('currentLoopTuning', () => {
         kpD: 10, kiD: 100, kpQ: 15, kiQ: 100,
         bandwidthDHz: 5000, bandwidthQHz: 5000,
         phaseMarginDeg: 45, method: 'test',
+        methodCode: 'magnitudeOptimum' as const, targetBandwidthHz: 5000,
       };
       const v = validateTuning(badResult, 10000);
       expect(v.valid).toBe(false);
       expect(v.warnings.length).toBeGreaterThan(0);
+      expect(v.warningCodes.length).toBe(v.warnings.length);
+      expect(v.warningCodes[0].code).toBe('bwDTooHigh');
     });
   });
 

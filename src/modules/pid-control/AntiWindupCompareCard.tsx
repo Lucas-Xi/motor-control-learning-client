@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
+import { useI18n } from '../../i18n/useI18n';
 import { makeAntiWindupPI } from '../../simulation/math/antiwindup';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
@@ -68,6 +69,7 @@ const PW = W - PAD.l - PAD.r;
 const PH = H - PAD.t - PAD.b;
 
 export function AntiWindupCompareCard() {
+  const { t } = useI18n();
   // 借用 PID store 的 Kp/Ki，避免再加 store 字段
   const kp = useSimulationStore((s) => s.pid.kp);
   const ki = useSimulationStore((s) => s.pid.ki);
@@ -104,25 +106,26 @@ export function AntiWindupCompareCard() {
     data.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xOf(p.t).toFixed(1)} ${yOf(p[key]).toFixed(1)}`).join(' ');
 
   return (
-    <Card title="抗积分饱和对比" eyebrow="anti-windup back-calculation" density="compact">
+    <Card title={t('pidControl.antiWindupTitle')} eyebrow="anti-windup back-calculation" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        公式 <code className="formula text-ink-secondary">∫e += (e + ka/ki·(u_sat − u_unsat))·dt</code> ·
-        Åström 推荐 ka ≈ ki/kp = {formatNumber(ki / Math.max(kp, 0.01), 1)}
+        {t('pidControl.antiWindupFormulaLabel')}{' '}
+        <code className="formula text-ink-secondary">∫e += (e + ka/ki·(u_sat − u_unsat))·dt</code>{' '}
+        {t('pidControl.antiWindupKaRecommend')} {formatNumber(ki / Math.max(kp, 0.01), 1)}
       </p>
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Slider
-          label="ka 反算增益"
+          label={t('pidControl.antiWindupKaLabel')}
           value={ka}
           min={0}
           max={Math.max(ki / Math.max(kp, 0.01) * 3, 30)}
           step={0.5}
           unit=""
           onChange={setKa}
-          hint="0 = clamping；越大反算越激进"
+          hint={t('pidControl.antiWindupKaHint')}
         />
         <Slider
-          label="负载扰动 (0.5s 注入)"
+          label={t('pidControl.antiWindupDisturbanceLabel')}
           value={disturbance}
           min={0}
           max={6}
@@ -136,13 +139,13 @@ export function AntiWindupCompareCard() {
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`抗积分饱和对比图，目标 ${target}，扰动 ${disturbance}，clamping 整定 ${settlingMs.clampMs ?? '未达'} ms，back-calc 整定 ${settlingMs.backMs ?? '未达'} ms`}
+        aria-label={`${t('pidControl.antiWindupAriaLead')} ${target}${t('pidControl.antiWindupAriaDisturbance')} ${disturbance}${t('pidControl.antiWindupAriaClampSettle')} ${settlingMs.clampMs ?? t('pidControl.ariaNotReached')} ms${t('pidControl.antiWindupAriaBackSettle')} ${settlingMs.backMs ?? t('pidControl.ariaNotReached')} ms`}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
         <line x1={PAD.l} y1={yOf(0)} x2={W - PAD.r} y2={yOf(0)} stroke="rgba(231,243,255,0.12)" strokeWidth="1" />
         {/* 0.5s 扰动注入标线 */}
         <line x1={xOf(0.5)} y1={PAD.t} x2={xOf(0.5)} y2={H - PAD.b} stroke="rgba(255,184,77,0.4)" strokeWidth="1" strokeDasharray="3 3" />
-        <text x={xOf(0.5) + 4} y={PAD.t + 12} fill="rgb(var(--accent-warn))" fontSize="9">扰动</text>
+        <text x={xOf(0.5) + 4} y={PAD.t + 12} fill="rgb(var(--accent-warn))" fontSize="9">{t('pidControl.antiWindupDisturbanceMark')}</text>
 
         {/* 参考线 */}
         <path d={pathOf('ref')} stroke="rgba(231,243,255,0.5)" strokeWidth="1.2" strokeDasharray="4 4" fill="none" />
@@ -158,7 +161,7 @@ export function AntiWindupCompareCard() {
         {/* 图例 */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">
           <line x1={PAD.l + 4} y1={PAD.t + 8} x2={PAD.l + 24} y2={PAD.t + 8} stroke="rgba(231,243,255,0.5)" strokeDasharray="4 4" strokeWidth="1.2" />
-          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">目标</text>
+          <text x={PAD.l + 28} y={PAD.t + 11} fill="rgb(var(--ink-muted))">{t('pidControl.antiWindupLegendTarget')}</text>
           <line x1={PAD.l + 60} y1={PAD.t + 8} x2={PAD.l + 80} y2={PAD.t + 8} stroke="rgb(var(--accent-fault))" strokeWidth="1.6" />
           <text x={PAD.l + 84} y={PAD.t + 11} fill="rgb(var(--ink-muted))">Clamping</text>
           <line x1={PAD.l + 138} y1={PAD.t + 8} x2={PAD.l + 158} y2={PAD.t + 8} stroke="rgb(var(--accent-measure))" strokeWidth="1.8" />
@@ -168,22 +171,21 @@ export function AntiWindupCompareCard() {
 
       <div className="mt-3 grid grid-cols-2 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">Clamping 恢复</p>
+          <p className="text-ink-muted">{t('pidControl.antiWindupClampRecovery')}</p>
           <p className="formula text-accent-fault">
-            {settlingMs.clampMs === null ? '未稳定' : `${formatNumber(settlingMs.clampMs, 0)} ms`}
+            {settlingMs.clampMs === null ? t('pidControl.antiWindupNotSettled') : `${formatNumber(settlingMs.clampMs, 0)} ms`}
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">Back-calc 恢复</p>
+          <p className="text-ink-muted">{t('pidControl.antiWindupBackRecovery')}</p>
           <p className="formula text-accent-measure">
-            {settlingMs.backMs === null ? '未稳定' : `${formatNumber(settlingMs.backMs, 0)} ms`}
+            {settlingMs.backMs === null ? t('pidControl.antiWindupNotSettled') : `${formatNumber(settlingMs.backMs, 0)} ms`}
           </p>
         </div>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        饱和后 clamping 只"冻结积分"，积分项内部的虚高量得靠 P 项慢慢拉回；back-calc 把饱和量 ×ka 反向加到积分，
-        相当于在饱和瞬间额外加了一个负反馈环，时间常数 ≈ 1/ka。
+        {t('pidControl.antiWindupExplain')}
       </p>
     </Card>
   );

@@ -20,8 +20,7 @@ type SensorType = 'encoder' | 'hall' | 'adc';
  * 把"理想信号"撕成"实际毛刺"的全过程。
  */
 export function SensorNoiseCard() {
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [sensor, setSensor] = useState<SensorType>('encoder');
   const [bits, setBits] = useState(10);
@@ -95,12 +94,12 @@ export function SensorNoiseCard() {
   // KCL 残差举例：三相电流叠 A 相偏置
   const kclDemo = useMemo(() => {
     return [
-      { case: isEn ? 'Healthy' : '健康', residual: kclResidual(2, -1, -1) },
-      { case: isEn ? 'A bias +0.5A' : 'A偏置+0.5', residual: kclResidual(2.5, -1, -1) },
-      { case: isEn ? 'B gain 0.85' : 'B增益0.85', residual: kclResidual(2, -0.85, -1) },
-      { case: isEn ? 'C loss' : 'C缺相', residual: kclResidual(2, -1, 0) },
+      { case: t('sensorlessFoc.sensorNoiseKclHealthy'), residual: kclResidual(2, -1, -1) },
+      { case: t('sensorlessFoc.sensorNoiseKclABias'), residual: kclResidual(2.5, -1, -1) },
+      { case: t('sensorlessFoc.sensorNoiseKclBGain'), residual: kclResidual(2, -0.85, -1) },
+      { case: t('sensorlessFoc.sensorNoiseKclCLoss'), residual: kclResidual(2, -1, 0) },
     ];
-  }, [isEn]);
+  }, [t]);
 
   // 当前 sensor 类型对应的 RMS 误差
   const rmsErr = useMemo(() => {
@@ -128,40 +127,27 @@ export function SensorNoiseCard() {
 
   return (
     <Card
-      title={isEn ? 'Sensor Noise Sources (encoder · Hall · ADC)' : '传感器噪声三大源（编码器 · Hall · ADC）'}
-      eyebrow={isEn ? 'why your control loop sees grass' : '为啥控制环看到的不是纯净信号'}
+      title={t('sensorlessFoc.sensorNoiseTitle')}
+      eyebrow={t('sensorlessFoc.sensorNoiseEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Encoder quantization + eccentricity; Hall 60° sectoring + offsets; ADC 12-bit quantize + INL + Gaussian noise.'
-              : '编码器量化 + 偏心；Hall 60° 6 段 + 偏置；ADC 12-bit 量化 + INL + 高斯噪声。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('sensorlessFoc.sensorNoiseFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Real control software does not see clean sin/θ — it sees grass: quantized steps, eccentricity sine, sector flicker, ADC LSB shimmer. Switch the sensor type and drag parameters to see how each one contributes.'
-          : '真实控制软件看到的不是干净的 sin/θ —— 是毛刺：量化阶梯、偏心正弦、扇区跳动、ADC LSB 抖。切传感器类型 + 拖参数看每一项贡献。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('sensorlessFoc.sensorNoiseIntro')}</p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {(['encoder', 'hall', 'adc'] as const).map((t) => (
+        {(['encoder', 'hall', 'adc'] as const).map((s) => (
           <button
-            key={t}
+            key={s}
             type="button"
-            onClick={() => setSensor(t)}
-            aria-pressed={sensor === t}
+            onClick={() => setSensor(s)}
+            aria-pressed={sensor === s}
             className={`rounded-full border px-3 py-1 text-caption transition-colors ${
-              sensor === t
+              sensor === s
                 ? 'border-accent-primary/60 bg-accent-primary/10 text-accent-primary'
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
             }`}
           >
-            {t === 'encoder' ? (isEn ? 'Encoder' : '编码器') : t === 'hall' ? 'Hall' : 'ADC'}
+            {s === 'encoder' ? t('sensorlessFoc.sensorNoiseTabEncoder') : s === 'hall' ? 'Hall' : 'ADC'}
           </button>
         ))}
       </div>
@@ -171,7 +157,7 @@ export function SensorNoiseCard() {
           <div className="mb-3 grid grid-cols-2 gap-3">
             <label className="block">
               <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-                <span>{isEn ? 'Encoder bits' : '编码器位数'}</span>
+                <span>{t('sensorlessFoc.sensorNoiseEncoderBits')}</span>
                 <span className="formula text-ink-primary">{bits} bit ({Math.pow(2, bits)} PPR)</span>
               </span>
               <input type="range" value={bits} min={8} max={17} step={1}
@@ -182,7 +168,7 @@ export function SensorNoiseCard() {
             </label>
             <label className="block">
               <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-                <span>{isEn ? 'Eccentricity' : '偏心幅值'}</span>
+                <span>{t('sensorlessFoc.sensorNoiseEccentricity')}</span>
                 <span className="formula text-ink-primary">{formatNumber(eccentricityDeg, 2)}°</span>
               </span>
               <input type="range" value={eccentricityDeg} min={0} max={3} step={0.05}
@@ -201,7 +187,7 @@ export function SensorNoiseCard() {
                 <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} unit="°" />
                 <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
                 <ReferenceLine y={0} stroke="#5d7793" strokeDasharray="2 3" />
-                <Line type="monotone" dataKey="errDeg" stroke="#34d6ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name={isEn ? 'error (°)' : '误差 (°)'} />
+                <Line type="monotone" dataKey="errDeg" stroke="#34d6ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('sensorlessFoc.sensorNoiseEncoderSeries')} />
               </LineChart>
             </SafeResponsiveContainer>
           </div>
@@ -213,7 +199,7 @@ export function SensorNoiseCard() {
           <div className="mb-3">
             <label className="block">
               <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-                <span>{isEn ? 'Hall offset (°)' : 'Hall 偏置 (°)'}</span>
+                <span>{t('sensorlessFoc.sensorNoiseHallOffset')}</span>
                 <span className="formula text-ink-primary">±{formatNumber(hallOffsetDeg, 1)}°</span>
               </span>
               <input type="range" value={hallOffsetDeg} min={0} max={10} step={0.5}
@@ -231,7 +217,7 @@ export function SensorNoiseCard() {
                 <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} unit="°" domain={[-35, 35]} />
                 <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
                 <ReferenceLine y={0} stroke="#5d7793" strokeDasharray="2 3" />
-                <Line type="monotone" dataKey="errDeg" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name={isEn ? 'Hall - true' : 'Hall - 真值'} />
+                <Line type="monotone" dataKey="errDeg" stroke="#43f7b5" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('sensorlessFoc.sensorNoiseHallSeries')} />
               </LineChart>
             </SafeResponsiveContainer>
           </div>
@@ -283,7 +269,7 @@ export function SensorNoiseCard() {
                 <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} unit=" mA" />
                 <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
                 <ReferenceLine y={0} stroke="#5d7793" strokeDasharray="2 3" />
-                <Line type="monotone" dataKey="errA" stroke="#ffb84d" strokeWidth={1.6} dot={false} isAnimationActive={false} name={isEn ? 'ADC error (mA)' : 'ADC 误差 (mA)'} />
+                <Line type="monotone" dataKey="errA" stroke="#ffb84d" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('sensorlessFoc.sensorNoiseAdcSeries')} />
               </LineChart>
             </SafeResponsiveContainer>
           </div>
@@ -291,12 +277,12 @@ export function SensorNoiseCard() {
       )}
 
       <div className={`mt-3 rounded-lg border p-2 ${toneClass(tone)}`}>
-        <p className="text-caption opacity-80">{isEn ? 'RMS error over sweep' : '扫描全程 RMS 误差'}</p>
+        <p className="text-caption opacity-80">{t('sensorlessFoc.sensorNoiseKpiRms')}</p>
         <p className="formula text-body">{formatNumber(rmsErr.value, 2)} {rmsErr.unit}</p>
       </div>
 
       <div className="mt-3">
-        <p className="mb-2 text-caption text-ink-muted">{isEn ? 'KCL residual (Ia+Ib+Ic) – signature of imbalance' : 'KCL 残差 (Ia+Ib+Ic) – 失衡指纹'}</p>
+        <p className="mb-2 text-caption text-ink-muted">{t('sensorlessFoc.sensorNoiseKclTitle')}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kclDemo.map((d) => (
             <div key={d.case} className="rounded border border-line-subtle bg-bg-base p-2">
@@ -307,11 +293,7 @@ export function SensorNoiseCard() {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-          {isEn
-            ? 'Healthy three-phase ADC: |Ia+Ib+Ic| < 0.05 A. Anything above that screams sensor bias / gain mismatch / phase loss. This is the cheapest sanity check in your FOC ISR.'
-            : '健康三相 ADC 采样满足 |Ia+Ib+Ic| < 50 mA。残差超阈值就是传感器偏置 / 增益失配 / 缺相的指纹。这是 FOC ISR 里最便宜的健康自检。'}
-        </p>
+        <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{t('sensorlessFoc.sensorNoiseKclNote')}</p>
       </div>
     </Card>
   );

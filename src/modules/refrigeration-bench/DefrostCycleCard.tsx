@@ -13,6 +13,7 @@ import {
 import { Cloud, Flame, Snowflake } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { simulateDefrost, type DefrostMode, type DefrostTrigger } from '../../simulation/math/seasonalPerformance';
 import { formatNumber } from '../../utils/format';
 
@@ -27,6 +28,7 @@ import { formatNumber } from '../../utils/format';
  * 产线工程师视角：北方冬天空调"化霜中"屏显的来源 + 等效 COP 折损。
  */
 export function DefrostCycleCard() {
+  const { t } = useI18n();
   const [outdoorC, setOutdoorC] = useState(-5);
   const [rh, setRh] = useState(0.7);
   const [frostRate, setFrostRate] = useState(3.5);
@@ -69,23 +71,23 @@ export function DefrostCycleCard() {
   }, [result.samples]);
 
   return (
-    <Card density="compact" title="化霜启动 + 霜层模型" eyebrow="defrost cycle">
+    <Card density="compact" title={t('refrigerationBench.defrostTitle')} eyebrow="defrost cycle">
       {/* 顶部 KPI */}
       <div className="mb-3 grid grid-cols-3 gap-2">
         <KpiSmall
-          label="首次化霜"
-          value={result.firstDefrostMin === null ? '未触发' : `${formatNumber(result.firstDefrostMin, 0)} min`}
+          label={t('refrigerationBench.defrostFirstKpi')}
+          value={result.firstDefrostMin === null ? t('refrigerationBench.defrostNotTriggered') : `${formatNumber(result.firstDefrostMin, 0)} min`}
           icon={<Snowflake className="h-3 w-3" />}
           color="text-accent-primary"
         />
         <KpiSmall
-          label="化霜次数 / 90min"
+          label={t('refrigerationBench.defrostCountKpi')}
           value={String(result.defrostCount)}
           icon={<Cloud className="h-3 w-3" />}
           color={result.defrostCount > 3 ? 'text-accent-fault' : result.defrostCount > 1 ? 'text-accent-warn' : 'text-accent-measure'}
         />
         <KpiSmall
-          label="等效 COP"
+          label={t('refrigerationBench.defrostEffectiveCopKpi')}
           value={formatNumber(result.effectiveCop, 2)}
           icon={<Flame className="h-3 w-3" />}
           color={result.effectiveCop > 2.5 ? 'text-accent-measure' : result.effectiveCop > 1.8 ? 'text-accent-warn' : 'text-accent-fault'}
@@ -95,20 +97,20 @@ export function DefrostCycleCard() {
       {/* 控制条：模式 + 触发策略 */}
       <div className="mb-3 grid grid-cols-2 gap-2">
         <SegmentedControl
-          label="化霜模式"
+          label={t('refrigerationBench.defrostModeLabel')}
           value={mode}
           options={[
-            { value: 'reverse-cycle', label: '反向循环' },
-            { value: 'electric-heat', label: '电加热' },
+            { value: 'reverse-cycle', label: t('refrigerationBench.defrostModeReverse') },
+            { value: 'electric-heat', label: t('refrigerationBench.defrostModeElectric') },
           ]}
           onChange={(v) => setMode(v as DefrostMode)}
         />
         <SegmentedControl
-          label="触发策略"
+          label={t('refrigerationBench.defrostTriggerLabel')}
           value={trigger}
           options={[
-            { value: 'temp-diff', label: '温差阈' },
-            { value: 'time', label: '时间阈' },
+            { value: 'temp-diff', label: t('refrigerationBench.defrostTriggerTempDiff') },
+            { value: 'time', label: t('refrigerationBench.defrostTriggerTime') },
           ]}
           onChange={(v) => setTrigger(v as DefrostTrigger)}
         />
@@ -117,7 +119,7 @@ export function DefrostCycleCard() {
       {/* 滑块区 */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <AriaSlider
-          label="室外温度"
+          label={t('refrigerationBench.defrostOutdoorTempLabel')}
           unit=" °C"
           value={outdoorC}
           min={-15}
@@ -126,7 +128,7 @@ export function DefrostCycleCard() {
           onChange={setOutdoorC}
         />
         <AriaSlider
-          label="相对湿度 RH"
+          label={t('refrigerationBench.defrostRhLabel')}
           unit=""
           digits={2}
           value={rh}
@@ -136,7 +138,7 @@ export function DefrostCycleCard() {
           onChange={setRh}
         />
         <AriaSlider
-          label="霜层增厚速率"
+          label={t('refrigerationBench.defrostFrostRateLabel')}
           unit=" mm/h"
           digits={1}
           value={frostRate}
@@ -147,7 +149,7 @@ export function DefrostCycleCard() {
         />
         {trigger === 'temp-diff' ? (
           <AriaSlider
-            label="温差触发阈值"
+            label={t('refrigerationBench.defrostTempDiffThresholdLabel')}
             unit=" K"
             value={tempDiffK}
             min={1}
@@ -158,7 +160,7 @@ export function DefrostCycleCard() {
           />
         ) : (
           <AriaSlider
-            label="时间触发阈值"
+            label={t('refrigerationBench.defrostTimeThresholdLabel')}
             unit=" min"
             value={timeMin}
             min={10}
@@ -199,7 +201,7 @@ export function DefrostCycleCard() {
               labelFormatter={(v) => `t = ${Number(v).toFixed(1)} min`}
               formatter={((value: unknown, name: unknown) => {
                 const n = String(name ?? '');
-                if (n === '霜层 (mm)') return [`${Number(value).toFixed(2)} mm`, '霜层'];
+                if (n === t('refrigerationBench.defrostFrostSeries')) return [`${Number(value).toFixed(2)} mm`, t('refrigerationBench.defrostFrostShort')];
                 if (n === 'COP') return [`${Number(value).toFixed(2)}`, 'COP'];
                 return [value, n];
               }) as never}
@@ -226,7 +228,7 @@ export function DefrostCycleCard() {
               fill="#34d6ff"
               fillOpacity={0.18}
               strokeWidth={1.5}
-              name="霜层 (mm)"
+              name={t('refrigerationBench.defrostFrostSeries')}
               isAnimationActive={false}
               dot={false}
             />
@@ -246,11 +248,11 @@ export function DefrostCycleCard() {
 
       {/* 教学洞察 */}
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        粉色阴影区是化霜段：
+        {t('refrigerationBench.defrostInsightPrefix')}
         {mode === 'reverse-cycle'
-          ? '四通阀反向，从室内吸热融霜（COP→0.6），用户能感到冷风。'
-          : '电加热融霜（COP→0），整机变成电热水器。'}
-        {' '}产线工程师对策：调低 RH 工况下的化霜触发阈、增设光伏式霜层光学传感器。
+          ? t('refrigerationBench.defrostInsightReverse')
+          : t('refrigerationBench.defrostInsightElectric')}
+        {' '}{t('refrigerationBench.defrostActionHint')}
       </p>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { Line } from '@react-three/drei';
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 import { VectorArrow } from './VectorArrow';
@@ -21,6 +22,7 @@ function makeLoop(rx: number, ry: number, z: number): Array<[number, number, num
 }
 
 export function CurrentLimitSpace3D({ id, iq, currentLimit, voltageRatio, saturated, ariaLabel }: Props) {
+  const { t } = useI18n();
   const axis = Math.max(currentLimit * 1.15, Math.abs(id), Math.abs(iq), 1);
   const x = id / axis;
   const y = iq / axis;
@@ -29,7 +31,11 @@ export function CurrentLimitSpace3D({ id, iq, currentLimit, voltageRatio, satura
   const voltageR = Math.max(0.18, Math.min(1.18, 1 / Math.max(0.25, voltageRatio)));
   const currentLoop = useMemo(() => makeLoop(1, 1, 0.02), []);
   const voltageLoop = useMemo(() => makeLoop(voltageR, voltageR * 0.72, 0.08), [voltageR]);
-  const label = ariaLabel ?? `三维弱磁限幅空间：Id=${id.toFixed(1)} A，Iq=${iq.toFixed(1)} A，电压利用率 ${voltageRatio.toFixed(2)}。`;
+  const label =
+    ariaLabel ??
+    `${t('three.currentLimitAriaLead')}${id.toFixed(1)} A` +
+      `${t('three.currentLimitAriaIq')}${iq.toFixed(1)} A` +
+      `${t('three.currentLimitAriaVoltage')}${voltageRatio.toFixed(2)}${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame

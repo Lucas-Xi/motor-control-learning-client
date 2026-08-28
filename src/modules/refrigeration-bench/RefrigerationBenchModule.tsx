@@ -135,11 +135,11 @@ function PhPanel() {
                 ? 'border-[#c4b5fd]/60 bg-[#c4b5fd]/15 text-[#c4b5fd]'
                 : 'border-line bg-bg-elev text-ink-muted hover:text-ink'
             }`}
-            title="叠加 simulateTwoStageCycle 的 9 状态点（含闪发气 7v / 闪发液 8l），用紫色三角覆盖在原 4 状态点上"
+            title={t('refrigerationBench.phTwoStageOverlayHint')}
           >
-            两级覆盖{twoStageEnabled ? ' · 开' : ''}
+            {t('refrigerationBench.phTwoStageOverlay')}{twoStageEnabled ? t('refrigerationBench.phTwoStageOverlayOn') : ''}
           </button>
-          <FidelityBadge level="physical" hint="基于 Antoine + 多变压缩 + 容积效率的简化物性模型，趋势与真实制冷剂一致；精度 ±5% 左右，不替代 CoolProp/REFPROP" />
+          <FidelityBadge level="physical" hint={t('refrigerationBench.phFidelityHint')} />
         </div>
       }
     >
@@ -346,7 +346,7 @@ export function RefrigerationBenchModule() {
         <Suspense fallback={<ProbeCardFallback label={t('refrigerationBench.quadrant')} />}>
           <FourQuadrantCard />
         </Suspense>
-        <Suspense fallback={<ProbeCardFallback label="实测对照" />}>
+        <Suspense fallback={<ProbeCardFallback label={t('refrigerationBench.probeSerialCompare')} />}>
           <SerialCompareRefrigerationCard />
         </Suspense>
         {/* round-11 物理真实化：Wagner vs Antoine + 容积效率 3D */}
@@ -358,7 +358,7 @@ export function RefrigerationBenchModule() {
           <HeatExchangerSizingCard />
         </Suspense>
         {/* round-15 接入 UI：单级 vs 两级压缩 + 闪发分离 */}
-        <Suspense fallback={<ProbeCardFallback label="两级压缩" />}>
+        <Suspense fallback={<ProbeCardFallback label={t('refrigerationBench.probeTwoStage')} />}>
           <TwoStageCycleCard />
         </Suspense>
       </>}
@@ -369,17 +369,17 @@ export function RefrigerationBenchModule() {
 
 interface Scenario {
   labelKey: TKey;
-  hint: string;
+  hintKey: TKey;
   patch: Partial<Parameters<ReturnType<typeof useSimulationStore.getState>['updateRefrigeration']>[0]>;
 }
 
 const SCENARIOS: Scenario[] = [
-  { labelKey: 'refrigerationBench.sceneSummerTypical', hint: '室外 35℃ / 室内 27℃，T_c=45 T_e=7，COP 5+', patch: { refrigerant: 'R32', Te: 7, Tc: 45, superheatK: 5, subcoolK: 3, ambientOutdoorC: 35, ambientIndoorC: 27, eevOpening: 0.55 } },
-  { labelKey: 'refrigerationBench.sceneSummerHot', hint: '室外 42℃ 下 T_c 抬到 55℃，压比飙升、排气接近红线', patch: { refrigerant: 'R32', Te: 5, Tc: 55, superheatK: 8, subcoolK: 2, ambientOutdoorC: 42, ambientIndoorC: 27, eevOpening: 0.7 } },
-  { labelKey: 'refrigerationBench.sceneExtreme', hint: '室外 48℃ + 大温差，逼近压缩机包线', patch: { refrigerant: 'R410A', Te: 3, Tc: 60, superheatK: 10, subcoolK: 1, ambientOutdoorC: 48, ambientIndoorC: 30, eevOpening: 0.85 } },
-  { labelKey: 'refrigerationBench.sceneDehumidify', hint: '小温差低负载，T_e=10 T_c=38，EEV 关小', patch: { refrigerant: 'R32', Te: 10, Tc: 38, superheatK: 4, subcoolK: 4, ambientOutdoorC: 28, ambientIndoorC: 26, eevOpening: 0.4 } },
-  { labelKey: 'refrigerationBench.sceneCommFrozen', hint: 'R-134a 冷冻应用 T_e=-25℃，单位功巨大', patch: { refrigerant: 'R134a', Te: -25, Tc: 40, superheatK: 6, subcoolK: 3, ambientOutdoorC: 25, ambientIndoorC: -18, eevOpening: 0.4, displacementCc: 12 } },
-  { labelKey: 'refrigerationBench.sceneSlug', hint: '过热度=0、EEV 过开 → 实际系统会触发液击保护', patch: { superheatK: 0, eevOpening: 0.95 } },
+  { labelKey: 'refrigerationBench.sceneSummerTypical', hintKey: 'refrigerationBench.sceneSummerTypicalHint', patch: { refrigerant: 'R32', Te: 7, Tc: 45, superheatK: 5, subcoolK: 3, ambientOutdoorC: 35, ambientIndoorC: 27, eevOpening: 0.55 } },
+  { labelKey: 'refrigerationBench.sceneSummerHot', hintKey: 'refrigerationBench.sceneSummerHotHint', patch: { refrigerant: 'R32', Te: 5, Tc: 55, superheatK: 8, subcoolK: 2, ambientOutdoorC: 42, ambientIndoorC: 27, eevOpening: 0.7 } },
+  { labelKey: 'refrigerationBench.sceneExtreme', hintKey: 'refrigerationBench.sceneExtremeHint', patch: { refrigerant: 'R410A', Te: 3, Tc: 60, superheatK: 10, subcoolK: 1, ambientOutdoorC: 48, ambientIndoorC: 30, eevOpening: 0.85 } },
+  { labelKey: 'refrigerationBench.sceneDehumidify', hintKey: 'refrigerationBench.sceneDehumidifyHint', patch: { refrigerant: 'R32', Te: 10, Tc: 38, superheatK: 4, subcoolK: 4, ambientOutdoorC: 28, ambientIndoorC: 26, eevOpening: 0.4 } },
+  { labelKey: 'refrigerationBench.sceneCommFrozen', hintKey: 'refrigerationBench.sceneCommFrozenHint', patch: { refrigerant: 'R134a', Te: -25, Tc: 40, superheatK: 6, subcoolK: 3, ambientOutdoorC: 25, ambientIndoorC: -18, eevOpening: 0.4, displacementCc: 12 } },
+  { labelKey: 'refrigerationBench.sceneSlug', hintKey: 'refrigerationBench.sceneSlugHint', patch: { superheatK: 0, eevOpening: 0.95 } },
 ];
 
 function ScenarioPresets() {
@@ -394,12 +394,12 @@ function ScenarioPresets() {
             key={s.labelKey}
             variant="ghost"
             onClick={() => update(s.patch)}
-            title={s.hint}
+            title={t(s.hintKey)}
             className="!py-2 text-left"
           >
             <div className="flex flex-col items-start leading-tight">
               <span className="text-body font-medium">{t(s.labelKey)}</span>
-              <span className="text-caption text-ink-muted truncate w-full">{s.hint}</span>
+              <span className="text-caption text-ink-muted truncate w-full">{t(s.hintKey)}</span>
             </div>
           </Button>
         ))}

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { CascadeLoopDiagram } from '../../components/charts/CascadeLoopDiagram';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 import { formatNumber } from '../../utils/format';
 
 /**
@@ -34,6 +35,7 @@ function clampNum(v: number, lo: number, hi: number) {
 export function CascadeDiagramCard() {
   const cl = useSimulationStore((s) => s.controlLoop);
   const running = useSimulationStore((s) => s.running);
+  const { t } = useI18n();
 
   const bw = useMemo(
     () => deriveBandwidths(cl.currentKp, cl.currentKi, cl.speedKp, cl.speedKi, cl.positionKp, cl.positionKi),
@@ -54,7 +56,7 @@ export function CascadeDiagramCard() {
   const curErr = currentTarget - currentActual;
 
   return (
-    <Card title="级联控制信号流" eyebrow="cascade animation" density="compact">
+    <Card title={t('controlLoops.cascadeDiagramTitle')} eyebrow="cascade animation" density="compact">
       <div className="aspect-[2/1] w-full">
         <CascadeLoopDiagram
           positionTarget={cl.targetPosition}
@@ -77,21 +79,20 @@ export function CascadeDiagramCard() {
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <span className="text-ink-muted">位置误差 </span>
+          <span className="text-ink-muted">{t('controlLoops.cascadeErrPosition')} </span>
           <span className="text-accent-warn">{formatNumber(posErr, 2)}°</span>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <span className="text-ink-muted">速度误差 </span>
+          <span className="text-ink-muted">{t('controlLoops.cascadeErrSpeed')} </span>
           <span className="text-accent-primary">{formatNumber(spdErr, 1)} rpm</span>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <span className="text-ink-muted">电流误差 </span>
+          <span className="text-ink-muted">{t('controlLoops.cascadeErrCurrent')} </span>
           <span className="text-accent-measure">{formatNumber(curErr, 2)} A</span>
         </div>
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        脉冲沿信号路径流动 —— 内环（电流，BW≈{bw.currentBw.toFixed(0)} Hz）最快，外环（位置，BW≈{bw.positionBw.toFixed(0)} Hz）最慢。
-        整定顺序：电流 → 速度 → 位置；每一级的带宽至少比内层低 5 倍。
+        {t('controlLoops.cascadeDescA')}{bw.currentBw.toFixed(0)} Hz{t('controlLoops.cascadeDescB')}{bw.positionBw.toFixed(0)} Hz{t('controlLoops.cascadeDescC')}
       </p>
     </Card>
   );

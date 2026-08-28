@@ -212,7 +212,9 @@ function TrackCard({ track, active, onSelect }: TrackCardProps) {
     <button
       onClick={onSelect}
       aria-pressed={active}
-      aria-label={`${track.title}，完成 ${Math.round(ratio * 100)}%；点击展开 checkpoint 列表`}
+      aria-label={t('curriculum.trackCardAria')
+        .replace('{title}', track.title)
+        .replace('{n}', String(Math.round(ratio * 100)))}
       className={`group relative flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-colors ${
         active
           ? tone.cardActive
@@ -256,6 +258,7 @@ interface CheckpointRowProps {
 }
 
 function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: CheckpointRowProps) {
+  const { t } = useI18n();
   const tone = TONE_STYLES[track.tone];
   return (
     <li
@@ -265,7 +268,7 @@ function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: Check
     >
       <button
         onClick={() => onToggle(checkpoint)}
-        aria-label={done ? `取消勾选 ${checkpoint.title}` : `标记完成 ${checkpoint.title}`}
+        aria-label={(done ? t('curriculum.unmarkAria') : t('curriculum.markDoneAria')).replace('{title}', checkpoint.title)}
         aria-pressed={done}
         className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line-subtle text-ink-muted transition-colors hover:border-line-strong hover:text-ink-primary"
       >
@@ -288,21 +291,23 @@ function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: Check
           ))}
           {checkpoint.optionalWalkthroughStepRange && (
             <li className="text-caption text-ink-muted">
-              · 建议 walkthrough 步骤 {checkpoint.optionalWalkthroughStepRange[0]} – {checkpoint.optionalWalkthroughStepRange[1]}
+              · {t('curriculum.walkthroughRange')
+                .replace('{a}', String(checkpoint.optionalWalkthroughStepRange[0]))
+                .replace('{b}', String(checkpoint.optionalWalkthroughStepRange[1]))}
             </li>
           )}
           {checkpoint.optionalChallengeIds?.map((id) => (
-            <li key={id} className="text-caption text-ink-muted">· 选做挑战 <code className="font-mono">{id}</code></li>
+            <li key={id} className="text-caption text-ink-muted">· {t('curriculum.optionalChallenge')} <code className="font-mono">{id}</code></li>
           ))}
         </ul>
       </div>
       <Button
         variant={done ? 'ghost' : 'primary'}
         onClick={() => onGo(checkpoint)}
-        aria-label={`跳转到模块 ${moduleTitle(checkpoint.moduleId)} 并加载预设`}
+        aria-label={t('curriculum.goAria').replace('{title}', moduleTitle(checkpoint.moduleId))}
         className="shrink-0 self-start"
       >
-        前往
+        {t('curriculum.goShort')}
         <ChevronRight className="h-4 w-4" aria-hidden />
       </Button>
     </li>
@@ -378,7 +383,7 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
   };
 
   const handleResetPath = () => {
-    if (window.confirm(`确认重置「${activeTrack.title}」的所有勾选进度？`)) {
+    if (window.confirm(t('curriculum.resetConfirm').replace('{title}', activeTrack.title))) {
       resetPath(activeTrack.id);
     }
   };

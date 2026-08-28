@@ -1,4 +1,5 @@
 import { ShieldCheck, Beaker, Sparkles, FlaskConical } from 'lucide-react';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 type Fidelity = 'exact' | 'physical' | 'simplified' | 'illustrative';
 
@@ -8,30 +9,31 @@ interface Props {
   hint: string;
 }
 
-const meta: Record<Fidelity, { label: string; toneClass: string; Icon: typeof ShieldCheck }> = {
+const meta: Record<Fidelity, { labelKey: TKey; toneClass: string; Icon: typeof ShieldCheck }> = {
   exact: {
-    label: '精确算法',
+    labelKey: 'shell.fidelityExact',
     toneClass: 'border-accent-measure/40 bg-accent-measure/10 text-accent-measure',
     Icon: ShieldCheck,
   },
   physical: {
-    label: '物理仿真',
+    labelKey: 'shell.fidelityPhysical',
     toneClass: 'border-accent-primary/40 bg-accent-primary/10 text-accent-primary',
     Icon: FlaskConical,
   },
   simplified: {
-    label: '教学级简化',
+    labelKey: 'shell.fidelitySimplified',
     toneClass: 'border-accent-warn/40 bg-accent-warn/10 text-accent-warn',
     Icon: Beaker,
   },
   illustrative: {
-    label: '演示波形',
+    labelKey: 'shell.fidelityIllustrative',
     toneClass: 'border-ink-muted/40 bg-bg-base text-ink-secondary',
     Icon: Sparkles,
   },
 };
 
 export function FidelityBadge({ level, hint }: Props) {
+  const { t } = useI18n();
   const m = meta[level];
   const Icon = m.Icon;
   return (
@@ -40,7 +42,7 @@ export function FidelityBadge({ level, hint }: Props) {
       title={hint}
     >
       <Icon className="h-3 w-3" />
-      {m.label}
+      {t(m.labelKey)}
     </span>
   );
 }

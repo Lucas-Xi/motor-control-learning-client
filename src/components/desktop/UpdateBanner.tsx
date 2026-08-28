@@ -15,6 +15,7 @@
  */
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import {
   checkForUpdateNow,
   dismissUpdateBannerThisSession,
@@ -62,6 +63,7 @@ function eventToView(ev: UpdateEvent, dismissedVersion: string | null): BannerVi
 }
 
 export function UpdateBanner() {
+  const { t } = useI18n();
   const [view, setView] = useState<BannerView>({ kind: 'hidden' });
   const [busy, setBusy] = useState(false);
 
@@ -142,7 +144,7 @@ export function UpdateBanner() {
                 aria-hidden
                 className="inline-block h-3 w-3 animate-pulse rounded-full bg-accent-primary"
               />
-              <span>正在检查更新…</span>
+              <span>{t('shell.updateChecking')}</span>
             </>
           )}
 
@@ -153,8 +155,8 @@ export function UpdateBanner() {
                 className="inline-block h-3 w-3 rounded-full bg-accent-primary"
               />
               <span>
-                发现新版本 <strong className="font-semibold text-accent-primary">v{view.latest}</strong>
-                <span className="ml-2 text-ink-secondary">（当前 v{view.current}）</span>
+                {t('shell.updateFound')} <strong className="font-semibold text-accent-primary">v{view.latest}</strong>
+                <span className="ml-2 text-ink-secondary">{t('shell.updateCurrent').replace('{n}', view.current)}</span>
               </span>
               <span className="ml-auto flex items-center gap-2">
                 <button
@@ -163,14 +165,14 @@ export function UpdateBanner() {
                   disabled={busy}
                   className="rounded-md border border-accent-primary bg-accent-primary/10 px-3 py-1 text-caption font-medium text-accent-primary transition hover:bg-accent-primary/20 disabled:opacity-50"
                 >
-                  立即下载
+                  {t('shell.updateDownloadNow')}
                 </button>
                 <button
                   type="button"
                   onClick={() => onDismiss(view.latest)}
                   className="rounded-md border border-line-subtle px-3 py-1 text-caption text-ink-secondary transition hover:bg-bg-base"
                 >
-                  暂不更新
+                  {t('shell.updateSkip')}
                 </button>
               </span>
             </>
@@ -182,14 +184,14 @@ export function UpdateBanner() {
                 aria-hidden
                 className="inline-block h-3 w-3 animate-pulse rounded-full bg-accent-primary"
               />
-              <span className="min-w-[8rem]">下载更新中 {view.percent}%</span>
+              <span className="min-w-[8rem]">{t('shell.updateDownloading').replace('{n}', String(view.percent))}</span>
               <div
                 className="h-1.5 flex-1 overflow-hidden rounded bg-bg-base"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={view.percent}
-                aria-label="更新下载进度"
+                aria-label={t('shell.updateProgressAria')}
               >
                 <div
                   className="h-full bg-accent-primary transition-all"
@@ -206,7 +208,7 @@ export function UpdateBanner() {
                 className="inline-block h-3 w-3 rounded-full bg-accent-measure"
               />
               <span>
-                {view.latest ? `v${view.latest} ` : ''}已下载完成，重启后生效
+                {view.latest ? `v${view.latest} ` : ''}{t('shell.updateDownloaded')}
               </span>
               <span className="ml-auto flex items-center gap-2">
                 <button
@@ -215,14 +217,14 @@ export function UpdateBanner() {
                   disabled={busy}
                   className="rounded-md border border-accent-primary bg-accent-primary/10 px-3 py-1 text-caption font-medium text-accent-primary transition hover:bg-accent-primary/20 disabled:opacity-50"
                 >
-                  重启并安装
+                  {t('shell.updateRestartInstall')}
                 </button>
                 <button
                   type="button"
                   onClick={() => onDismiss(view.latest)}
                   className="rounded-md border border-line-subtle px-3 py-1 text-caption text-ink-secondary transition hover:bg-bg-base"
                 >
-                  稍后重启
+                  {t('shell.updateRestartLater')}
                 </button>
               </span>
             </>
@@ -234,12 +236,12 @@ export function UpdateBanner() {
                 aria-hidden
                 className="inline-block h-3 w-3 rounded-full bg-accent-measure"
               />
-              <span>已是最新版本</span>
+              <span>{t('shell.updateUpToDate')}</span>
               <button
                 type="button"
                 onClick={() => setView({ kind: 'hidden' })}
                 className="ml-auto rounded-md border border-line-subtle px-2 py-0.5 text-caption text-ink-secondary transition hover:bg-bg-base"
-                aria-label="关闭更新提示"
+                aria-label={t('shell.updateCloseAria')}
               >
                 ×
               </button>
@@ -252,7 +254,7 @@ export function UpdateBanner() {
                 aria-hidden
                 className="inline-block h-3 w-3 rounded-full bg-accent-fault"
               />
-              <span className="truncate">更新失败：{view.message}</span>
+              <span className="truncate">{t('shell.updateFailed')}{view.message === '未知错误' ? t('shell.updateUnknownError') : view.message}</span>
               <span className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
@@ -260,13 +262,13 @@ export function UpdateBanner() {
                   disabled={busy}
                   className="rounded-md border border-line-subtle px-3 py-1 text-caption text-ink-secondary transition hover:bg-bg-base disabled:opacity-50"
                 >
-                  重试
+                  {t('shell.updateRetry')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setView({ kind: 'hidden' })}
                   className="rounded-md border border-line-subtle px-2 py-0.5 text-caption text-ink-secondary transition hover:bg-bg-base"
-                  aria-label="关闭"
+                  aria-label={t('common.close')}
                 >
                   ×
                 </button>

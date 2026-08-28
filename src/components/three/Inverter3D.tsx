@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { PHASE_COLORS, THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 
@@ -73,9 +74,12 @@ function Bridge({ dutyA, dutyB, dutyC }: Required<Pick<Props, 'dutyA' | 'dutyB' 
 }
 
 export function Inverter3D({ dutyA = 0.5, dutyB = 0.5, dutyC = 0.5, ariaLabel }: Props) {
+  const { t } = useI18n();
   const label =
     ariaLabel ??
-    `三维三相逆变桥：A 相占空比 ${(dutyA * 100).toFixed(0)}%，B 相占空比 ${(dutyB * 100).toFixed(0)}%，C 相占空比 ${(dutyC * 100).toFixed(0)}%。`;
+    `${t('three.inverterAriaLead')}${(dutyA * 100).toFixed(0)}%` +
+      `${t('three.inverterAriaDutyB')}${(dutyB * 100).toFixed(0)}%` +
+      `${t('three.inverterAriaDutyC')}${(dutyC * 100).toFixed(0)}%${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame

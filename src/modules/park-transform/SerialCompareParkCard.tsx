@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockParkSample } from '../../utils/serialMockGenerators';
@@ -42,6 +43,7 @@ interface Row {
 }
 
 export function SerialCompareParkCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const threePhase = useSimulationStore((s) => s.threePhase);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -110,8 +112,8 @@ export function SerialCompareParkCard() {
 
   return (
     <SerialCompareCardShell
-      title="Park Id/Iq 理论 vs 实测"
-      eyebrow="park compare"
+      title={t('parkTransform.serialTitle')}
+      eyebrow={t('parkTransform.serialEyebrow')}
       timebase={timebase}
       onTimebaseChange={setTimebase}
       paused={paused}
@@ -121,7 +123,7 @@ export function SerialCompareParkCard() {
       <div className="mb-3">
         <label className="block rounded-lg border border-line-subtle bg-bg-base p-2">
           <span className="block text-caption text-ink-muted">
-            Δθ 注入角度误差 {formatNumber(thetaErrDeg, 1)}° · 1° ≈ Iq×sin(Δθ) 的 Id 串扰
+            {t('parkTransform.serialThetaErrPrefix')}{formatNumber(thetaErrDeg, 1)}°{t('parkTransform.serialThetaErrSuffix')}
           </span>
           <input
             type="range"
@@ -131,30 +133,31 @@ export function SerialCompareParkCard() {
             value={thetaErrDeg}
             onChange={(e) => setThetaErrDeg(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="θe 注入角度误差（度）"
+            aria-label={t('parkTransform.serialThetaErrAria')}
             aria-valuemin={-45}
             aria-valuemax={45}
             aria-valuenow={thetaErrDeg}
-            aria-valuetext={`${formatNumber(thetaErrDeg, 1)} 度`}
+            aria-valuetext={`${formatNumber(thetaErrDeg, 1)} ${t('parkTransform.serialAriaDegree')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <TwoLineChart title="Id（A）" rows={displayRows} realKey="idReal" theoryKey="idTheory" />
-        <TwoLineChart title="Iq（A）" rows={displayRows} realKey="iqReal" theoryKey="iqTheory" />
+        <TwoLineChart title={t('parkTransform.serialIdChartTitle')} rows={displayRows} realKey="idReal" theoryKey="idTheory" />
+        <TwoLineChart title={t('parkTransform.serialIqChartTitle')} rows={displayRows} realKey="iqReal" theoryKey="iqTheory" />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="Δθ 注入" value={`${formatNumber(thetaErrDeg, 1)} °`} tone="primary" />
-        <KpiTile label="Id 串扰峰值" value={`${formatNumber(kpi.idCrosstalk, 3)} A`} tone={crosstalkTone} />
-        <KpiTile label="Iq 跟踪 RMSE" value={`${formatNumber(kpi.iqRmse, 3)} A`} tone={iqTone} />
-        <KpiTile label="Id 实测均值" value={`${formatNumber(kpi.idMean, 3)} A`} tone="measure" />
+        <KpiTile label={t('parkTransform.serialKpiThetaErr')} value={`${formatNumber(thetaErrDeg, 1)} °`} tone="primary" />
+        <KpiTile label={t('parkTransform.serialKpiIdCrosstalk')} value={`${formatNumber(kpi.idCrosstalk, 3)} A`} tone={crosstalkTone} />
+        <KpiTile label={t('parkTransform.serialKpiIqRmse')} value={`${formatNumber(kpi.iqRmse, 3)} A`} tone={iqTone} />
+        <KpiTile label={t('parkTransform.serialKpiIdMean')} value={`${formatNumber(kpi.idMean, 3)} A`} tone="measure" />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, ia, ib, ic, <span className="text-accent-measure">theta_e</span> · 浏览器实时 Park。
-        Δθ 不为零 → dq 串扰、PI 错把磁通误差当作转矩误差 → 抖动 / 反转
+        {t('parkTransform.serialProtocolLead')}
+        <span className="text-accent-measure">theta_e</span>
+        {t('parkTransform.serialProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -226,6 +229,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -235,7 +239,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr =
+    tone === 'fault'
+      ? t('parkTransform.serialSrFault')
+      : tone === 'warn'
+        ? t('parkTransform.serialSrWarn')
+        : tone === 'primary'
+          ? t('parkTransform.serialSrAux')
+          : t('parkTransform.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

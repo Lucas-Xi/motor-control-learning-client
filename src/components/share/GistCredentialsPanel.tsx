@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useCloudShareStore } from '../../store/cloudShareStore';
 import { verifyToken, GistError } from '../../utils/gistCloud';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * GitHub PAT 凭据管理面板。
@@ -17,6 +18,7 @@ import { verifyToken, GistError } from '../../utils/gistCloud';
  */
 
 export function GistCredentialsPanel() {
+  const { t } = useI18n();
   const pat = useCloudShareStore((s) => s.pat);
   const ghLogin = useCloudShareStore((s) => s.ghLogin);
   const remaining = useCloudShareStore((s) => s.rateLimitRemaining);
@@ -37,7 +39,7 @@ export function GistCredentialsPanel() {
     setOk('');
     const candidate = draft.trim();
     if (!candidate) {
-      setErr('请先粘贴 PAT');
+      setErr(t('share.credPastePatFirst'));
       return;
     }
     setTesting(true);
@@ -45,28 +47,30 @@ export function GistCredentialsPanel() {
       const info = await verifyToken(candidate);
       setPat(candidate);
       setIdentity(info.login, info.remaining, info.limit);
-      setOk(`已绑定 @${info.login}（剩余配额 ${info.remaining}/${info.limit}）`);
+      setOk(
+        `${t('share.credBoundPrefix')}@${info.login}${t('share.credQuotaParenPrefix')}${info.remaining}/${info.limit}${t('share.parenClose')}`,
+      );
     } catch (e) {
       const msg = e instanceof GistError ? e.message : (e as Error).message;
       setErr(msg);
     } finally {
       setTesting(false);
     }
-  }, [draft, setPat, setIdentity]);
+  }, [draft, setPat, setIdentity, t]);
 
   const handleDisconnect = useCallback(() => {
     clearPat();
     setDraft('');
     setErr('');
-    setOk('已断开 GitHub 绑定，sessionStorage 中的 PAT 已清除');
-  }, [clearPat]);
+    setOk(t('share.credDisconnected'));
+  }, [clearPat, t]);
 
   return (
     <Card
       density="default"
       tone={bound ? 'measure' : 'default'}
-      eyebrow="V2 · GitHub Gist 凭据"
-      title="绑定 PAT 启用云端协作"
+      eyebrow={t('share.credEyebrow')}
+      title={t('share.credTitle')}
     >
       <div className="space-y-3">
         {/* 安全警示条 */}
@@ -76,11 +80,13 @@ export function GistCredentialsPanel() {
         >
           <ShieldAlert className="h-4 w-4 shrink-0 text-accent-warn" aria-hidden="true" />
           <div>
-            <p className="font-medium text-accent-warn">PAT 仅存当前标签页 session，关闭浏览器后清除。</p>
+            <p className="font-medium text-accent-warn">{t('share.credPatSessionWarn')}</p>
             <p className="mt-0.5 text-ink-muted">
-              永不写入 localStorage / cookie，永不上传到本客户端之外。请使用<strong className="text-ink-secondary">最小权限</strong>
-              的 token（classic 勾 <code className="rounded bg-bg-base px-1 font-mono">gist</code>；
-              fine-grained 选 Gists: Read &amp; Write）。
+              {t('share.credPatStoragePrefix')}
+              <strong className="text-ink-secondary">{t('share.credMinimalScope')}</strong>
+              {t('share.credScopeTail')}
+              <code className="rounded bg-bg-base px-1 font-mono">gist</code>
+              {t('share.credScopeFineGrained')}
             </p>
           </div>
         </div>
@@ -94,7 +100,7 @@ export function GistCredentialsPanel() {
               className="inline-flex items-center gap-1.5 rounded-md border border-accent-measure/40 bg-accent-measure/10 px-2 py-1 text-caption text-accent-measure"
             >
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              已绑定 @{ghLogin}
+              {t('share.credBoundPrefix')}@{ghLogin}
             </span>
           ) : (
             <span
@@ -103,12 +109,13 @@ export function GistCredentialsPanel() {
               className="inline-flex items-center gap-1.5 rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-muted"
             >
               <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
-              未绑定（仅可读公共 gist）
+              {t('share.credNotBound')}
             </span>
           )}
           {bound && limit > 0 && (
-            <span className="text-caption text-ink-muted" aria-label="GitHub API 剩余配额">
-              配额 <span className="font-mono text-accent-measure">{remaining}</span> /{' '}
+            <span className="text-caption text-ink-muted" aria-label={t('share.credQuotaAria')}>
+              {t('share.credQuotaPrefix')}
+              <span className="font-mono text-accent-measure">{remaining}</span> /{' '}
               <span className="font-mono">{limit}</span>
             </span>
           )}
@@ -127,10 +134,10 @@ export function GistCredentialsPanel() {
               if (err) setErr('');
               if (ok) setOk('');
             }}
-            placeholder="ghp_xxx 或 github_pat_xxx"
+            placeholder={t('share.credPatPlaceholder')}
             autoComplete="off"
             spellCheck={false}
-            aria-label="GitHub Personal Access Token 输入"
+            aria-label={t('share.credPatInputAria')}
             aria-describedby={err ? 'pat-err' : ok ? 'pat-ok' : undefined}
             aria-invalid={!!err}
             className="w-full rounded-lg border border-line-subtle bg-bg-base px-2.5 py-1.5 font-mono text-body text-ink-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
@@ -143,19 +150,19 @@ export function GistCredentialsPanel() {
             variant="primary"
             onClick={handleTest}
             disabled={testing}
-            aria-label="测试 PAT 并绑定"
+            aria-label={t('share.credTestBindAria')}
           >
             {testing ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <KeyRound className="h-4 w-4" aria-hidden="true" />
             )}
-            {testing ? '测试中…' : '测试连接 / 绑定'}
+            {testing ? t('share.credTesting') : t('share.credTestBind')}
           </Button>
           {bound && (
-            <Button variant="danger" onClick={handleDisconnect} aria-label="断开 PAT 绑定">
+            <Button variant="danger" onClick={handleDisconnect} aria-label={t('share.credDisconnectAria')}>
               <Unplug className="h-4 w-4" aria-hidden="true" />
-              断开
+              {t('share.credDisconnect')}
             </Button>
           )}
         </div>
@@ -166,7 +173,7 @@ export function GistCredentialsPanel() {
             role="alert"
             className="rounded-md border border-accent-fault/40 bg-accent-fault/10 px-2 py-1 text-caption text-accent-fault"
           >
-            <span className="sr-only">错误：</span>
+            <span className="sr-only">{t('share.srError')}</span>
             {err}
           </p>
         )}

@@ -18,8 +18,7 @@ type EffectKey = 'saturation' | 'ironLoss' | 'cogging' | 'bemfHarmonics' | 'fric
  */
 export function ModelComparisonCard() {
   const motor = useSimulationStore((s) => s.motorBasics);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [iqStep, setIqStep] = useState(4);
   const [windingTempC, setWindingTempC] = useState(25);
@@ -100,13 +99,16 @@ export function ModelComparisonCard() {
 
   const toggle = (k: EffectKey) => setEffects((prev) => ({ ...prev, [k]: !prev[k] }));
 
-  const EFFECT_LABELS: Array<{ key: EffectKey; zh: string; en: string }> = [
-    { key: 'saturation', zh: '饱和', en: 'Saturation' },
-    { key: 'ironLoss', zh: '铁损', en: 'Iron loss' },
-    { key: 'cogging', zh: '齿槽', en: 'Cogging' },
-    { key: 'bemfHarmonics', zh: 'BEMF 谐波', en: 'BEMF harm' },
-    { key: 'friction', zh: 'Stribeck', en: 'Stribeck' },
-    { key: 'thermalComp', zh: '温度补偿', en: 'Thermal' },
+  const EFFECT_LABELS: Array<{
+    key: EffectKey;
+    label: string;
+  }> = [
+    { key: 'saturation', label: t('motorBasics.modelCompareFxSaturation') },
+    { key: 'ironLoss', label: t('motorBasics.modelCompareFxIronLoss') },
+    { key: 'cogging', label: t('motorBasics.modelCompareFxCogging') },
+    { key: 'bemfHarmonics', label: t('motorBasics.modelCompareFxBemf') },
+    { key: 'friction', label: 'Stribeck' },
+    { key: 'thermalComp', label: t('motorBasics.modelCompareFxThermal') },
   ];
 
   // 偏差着色
@@ -121,49 +123,36 @@ export function ModelComparisonCard() {
 
   return (
     <Card
-      title={isEn ? 'Simple vs High-Fidelity Model A/B' : '简版 vs 高保真模型 A/B 对比'}
-      eyebrow={isEn ? 'see what simplification costs' : '看见简化代价'}
+      title={t('motorBasics.modelCompareTitle')}
+      eyebrow={t('motorBasics.modelCompareEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="exact"
-          hint={
-            isEn
-              ? 'Same vq step input fed to both models; toggle physical effects to isolate each contribution.'
-              : '同样 vq 阶跃同时喂给两个模型；点 chip 切物理效应，隔离每一项影响。'
-          }
-        />
-      }
+      action={<FidelityBadge level="exact" hint={t('motorBasics.modelCompareFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Drag iq step + winding temp + toggle effects to see how the simple textbook model deviates from the high-fidelity one. The deviation grows as you load up or heat up — and that\'s exactly the error your simulator was hiding.'
-          : '拖 iq 阶跃 + 绕组温度 + 切物理效应，看课本简版与高保真之间的偏差。负载或温度升高时偏差放大 —— 这就是之前仿真器藏起来的误差。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('motorBasics.modelCompareIntro')}</p>
 
       <div className="mb-3 grid grid-cols-2 gap-3">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'iq step (A)' : 'iq 阶跃 (A)'}</span>
+            <span>{t('motorBasics.modelCompareIqStep')}</span>
             <span className="formula text-ink-primary">{formatNumber(iqStep, 1)}</span>
           </span>
           <input type="range" value={iqStep} min={1} max={motor.ratedCurrent}
             step={0.5} onChange={(e) => setIqStep(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label={isEn ? 'iq step amplitude' : 'iq 阶跃幅值'}
+            aria-label={t('motorBasics.modelCompareIqStepAria')}
             aria-valuemin={1} aria-valuemax={motor.ratedCurrent} aria-valuenow={iqStep}
             aria-valuetext={`${formatNumber(iqStep, 1)} A`}
           />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Winding T (°C)' : '绕组温度 (°C)'}</span>
+            <span>{t('motorBasics.modelCompareWindingT')}</span>
             <span className="formula text-ink-primary">{formatNumber(windingTempC, 0)}</span>
           </span>
           <input type="range" value={windingTempC} min={-20} max={130}
             step={5} onChange={(e) => setWindingTempC(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label={isEn ? 'winding temperature' : '绕组温度'}
+            aria-label={t('motorBasics.modelCompareWindingTAria')}
             aria-valuemin={-20} aria-valuemax={130} aria-valuenow={windingTempC}
             aria-valuetext={`${formatNumber(windingTempC, 0)} °C`}
           />
@@ -183,22 +172,22 @@ export function ModelComparisonCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
             }`}
           >
-            {isEn ? e.en : e.zh}
+            {e.label}
           </button>
         ))}
       </div>
 
       <div className="mb-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'iq peak Δ' : 'iq 峰值偏差'}</p>
+          <p className="text-caption text-ink-muted">{t('motorBasics.modelCompareKpiPeak')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(sim.iqPeakDev, 3)} A</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(devTone)}`}>
-          <p className="text-caption opacity-80">{isEn ? 'iq steady Δ%' : 'iq 稳态偏差%'}</p>
+          <p className="text-caption opacity-80">{t('motorBasics.modelCompareKpiSteady')}</p>
           <p className="formula text-body">{formatNumber(devPct, 1)} %</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Te RMS Δ' : 'Te RMS 差'}</p>
+          <p className="text-caption text-ink-muted">{t('motorBasics.modelCompareKpiTeRms')}</p>
           <p className="formula text-body text-accent-measure">{formatNumber(sim.teRmsDev * 1000, 1)} mN·m</p>
         </div>
       </div>
@@ -211,26 +200,13 @@ export function ModelComparisonCard() {
             <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} unit=" A" />
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey="iqSimple" stroke="#34d6ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name={isEn ? 'iq simple' : 'iq 简版'} />
-            <Line type="monotone" dataKey="iqHd" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name={isEn ? 'iq HD' : 'iq 高保真'} strokeDasharray="4 3" />
+            <Line type="monotone" dataKey="iqSimple" stroke="#34d6ff" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('motorBasics.modelCompareSeriesSimple')} />
+            <Line type="monotone" dataKey="iqHd" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('motorBasics.modelCompareSeriesHd')} strokeDasharray="4 3" />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
-      <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn ? (
-          <>
-            Heat the winding to 120°C and the simple model's "iq tracks command in 8 ms" turns into the HD model's
-            "iq overshoots by 5% + steady-state drifts 3%" — because Rs grew +37%, ψf shrank 12%, and the saliency
-            you assumed for MTPA decayed. That's the real motor.
-          </>
-        ) : (
-          <>
-            把绕组烧到 120°C，简版模型"iq 8 ms 追上命令"在高保真里变成"过冲 5% + 稳态漂 3%"——因为 Rs 涨了 37%、
-            ψf 缩了 12%、你算 MTPA 用的凸极比退化。这才是真实电机。
-          </>
-        )}
-      </p>
+      <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{t('motorBasics.modelCompareNote')}</p>
     </Card>
   );
 }

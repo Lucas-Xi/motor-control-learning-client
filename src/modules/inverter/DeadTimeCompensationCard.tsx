@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
 import { Sparkline } from '../../components/charts/Sparkline';
+import { useI18n } from '../../i18n/useI18n';
 import { compensateDeadTime } from '../../simulation/math/deadtime';
 import { formatNumber } from '../../utils/format';
 
@@ -70,6 +71,7 @@ function buildSweep(
 }
 
 export function DeadTimeCompensationCard() {
+  const { t } = useI18n();
   const [t_dead_us, setTd] = useState(2);
   const [f_sw_kHz, setFsw] = useState(8);
   const [i_hys, setIhys] = useState(0.5);
@@ -112,23 +114,24 @@ export function DeadTimeCompensationCard() {
       .join(' ');
 
   return (
-    <Card title="死区补偿对比" eyebrow="dead-time compensation" density="compact">
+    <Card title={t('inverter.deadTimeCompTitle')} eyebrow="dead-time compensation" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        公式 <code className="formula text-ink-secondary">d&apos; = d − sign(i)·t_dead/T_sw</code>{' '}
-        | 滞环消除过零抖动
+        {t('inverter.deadTimeCompFormulaLabel')}{' '}
+        <code className="formula text-ink-secondary">d&apos; = d − sign(i)·t_dead/T_sw</code>{' '}
+        {t('inverter.deadTimeCompHystNote')}
       </p>
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <Slider label="死区时间 td" value={t_dead_us} min={0} max={5} step={0.1} unit=" μs" onChange={setTd} />
-        <Slider label="开关频率 fsw" value={f_sw_kHz} min={2} max={20} step={0.5} unit=" kHz" onChange={setFsw} />
-        <Slider label="滞环 i_hys" value={i_hys} min={0} max={2} step={0.1} unit=" A" onChange={setIhys} />
+        <Slider label={t('inverter.deadTimeTdLabel')} value={t_dead_us} min={0} max={5} step={0.1} unit=" μs" onChange={setTd} />
+        <Slider label={t('inverter.deadTimeFswLabel')} value={f_sw_kHz} min={2} max={20} step={0.5} unit=" kHz" onChange={setFsw} />
+        <Slider label={t('inverter.deadTimeHysLabel')} value={i_hys} min={0} max={2} step={0.1} unit=" A" onChange={setIhys} />
       </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`死区补偿对比图，死区 ${t_dead_us}μs，开关频率 ${f_sw_kHz}kHz，滞环 ${i_hys}A，补偿后过零残差 ${formatNumber(residualPeak, 1)}V`}
+        aria-label={`${t('inverter.deadTimeCompAriaLead')} ${t_dead_us}μs${t('inverter.deadTimeCompAriaFsw')} ${f_sw_kHz}kHz${t('inverter.deadTimeCompAriaHys')} ${i_hys}A${t('inverter.deadTimeCompAriaResidual')} ${formatNumber(residualPeak, 1)}V`}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
         {/* 网格 + 0 基线 */}
@@ -158,27 +161,27 @@ export function DeadTimeCompensationCard() {
         {/* 图例 */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">
           <line x1={PAD.l + 4} y1={PAD.t + 6} x2={PAD.l + 24} y2={PAD.t + 6} stroke="rgba(231,243,255,0.5)" strokeDasharray="4 4" strokeWidth="1.4" />
-          <text x={PAD.l + 28} y={PAD.t + 9} fill="rgb(var(--ink-muted))">理想</text>
+          <text x={PAD.l + 28} y={PAD.t + 9} fill="rgb(var(--ink-muted))">{t('inverter.deadTimeCompIdeal')}</text>
           <line x1={PAD.l + 64} y1={PAD.t + 6} x2={PAD.l + 84} y2={PAD.t + 6} stroke="rgb(var(--accent-fault))" strokeWidth="1.6" />
-          <text x={PAD.l + 88} y={PAD.t + 9} fill="rgb(var(--ink-muted))">未补偿</text>
+          <text x={PAD.l + 88} y={PAD.t + 9} fill="rgb(var(--ink-muted))">{t('inverter.deadTimeCompUncomp')}</text>
           <line x1={PAD.l + 134} y1={PAD.t + 6} x2={PAD.l + 154} y2={PAD.t + 6} stroke="rgb(var(--accent-measure))" strokeWidth="1.6" />
-          <text x={PAD.l + 158} y={PAD.t + 9} fill="rgb(var(--ink-muted))">补偿后</text>
+          <text x={PAD.l + 158} y={PAD.t + 9} fill="rgb(var(--ink-muted))">{t('inverter.deadTimeCompComp')}</text>
         </g>
       </svg>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">Δd 偏差</p>
+          <p className="text-ink-muted">{t('inverter.deadTimeCompDutyDelta')}</p>
           <p className="formula text-ink-primary">{formatNumber(dutyDelta * 100, 2)}%</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">ΔV 死区</p>
+          <p className="text-ink-muted">{t('inverter.deadTimeCompVoltDelta')}</p>
           <p className={`formula ${voltDelta > 5 ? 'text-accent-warn' : 'text-ink-primary'}`}>
             {formatNumber(voltDelta, 2)} V
           </p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">过零残差</p>
+          <p className="text-ink-muted">{t('inverter.deadTimeCompResidual')}</p>
           <p className={`formula ${residualPeak > 1 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(residualPeak, 1)} V
           </p>
@@ -187,11 +190,11 @@ export function DeadTimeCompensationCard() {
 
       <div className="mt-2 flex items-center gap-3 text-caption text-ink-muted">
         <span className="flex items-center gap-1">
-          未补偿误差
+          {t('inverter.deadTimeCompErrLabel')}
           <Sparkline data={errIdealActual} width={56} height={14} color="rgb(255,92,122)" yMin={-voltDelta * 1.2} yMax={voltDelta * 1.2} />
         </span>
         <span className="flex items-center gap-1">
-          补偿后残差
+          {t('inverter.deadTimeCompResLabel')}
           <Sparkline data={errIdealComp} width={56} height={14} color="rgb(67,247,181)" yMin={-voltDelta * 1.2} yMax={voltDelta * 1.2} />
         </span>
       </div>

@@ -97,16 +97,17 @@ function PIDBranch() {
 }
 
 function FaultBranch() {
+  const { t } = useI18n();
   const fault = useSimulationStore((state) => state.fault);
   const data = useMemo(() => createFaultWaveform(fault.faultType, fault.severity, 200), [fault.faultType, fault.severity]);
   const title = faultCases[fault.faultType]?.title ?? '';
   if (isStatusOnlyFault(fault.faultType)) {
     return (
       <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-xl border border-line-subtle bg-bg-base text-center">
-        <span className="text-caption text-ink-muted">当前故障：<span className="text-accent-warn">{title}</span></span>
+        <span className="text-caption text-ink-muted">{t('shell.faultCurrentLabel')}<span className="text-accent-warn">{title}</span></span>
         <p className="max-w-md px-6 text-body text-ink-secondary">
-          状态位类告警，<span className="text-accent-warn">无可见电气波形特征</span>。
-          仅由压力传感器 / 油位开关上报，电流和转速保持额定运行直到主控触发停机保护。
+          {t('shell.faultStatusOnlyLead')}<span className="text-accent-warn">{t('shell.faultStatusOnlyHighlight')}</span>
+          {t('shell.faultStatusOnlyTail')}
         </p>
       </div>
     );
@@ -114,8 +115,8 @@ function FaultBranch() {
   return (
     <div className="h-56">
       <div className="mb-1 flex items-center justify-between text-caption text-ink-muted">
-        <span>当前故障：<span className="text-accent-fault">{title}</span> · 严重度 {(fault.severity * 100).toFixed(0)}%</span>
-        <span>波形随严重度滑块即时变化</span>
+        <span>{t('shell.faultCurrentLabel')}<span className="text-accent-fault">{title}</span> · {t('faultsDebugging.serialSeverityLabel')} {(fault.severity * 100).toFixed(0)}%</span>
+        <span>{t('shell.faultSeverityHint')}</span>
       </div>
       <SafeResponsiveContainer>
         <LineChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: -10 }}>
@@ -175,7 +176,7 @@ export function WaveformPanel() {
       : <ThreePhaseBranch />;
 
   return (
-    <aside aria-label="底部波形观察区" className="mt-4 block">
+    <aside aria-label={t('shell.waveformCardTitle')} className="mt-4 block">
     <Card
       title={t('shell.waveformCardTitle')}
       eyebrow={t('shell.waveformCardEyebrow')}

@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockClarkeSample } from '../../utils/serialMockGenerators';
@@ -42,6 +43,7 @@ interface Row {
 }
 
 export function SerialCompareClarkeCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const threePhase = useSimulationStore((s) => s.threePhase);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -113,8 +115,8 @@ export function SerialCompareClarkeCard() {
 
   return (
     <SerialCompareCardShell
-      title="Clarke α/β 理论 vs 实测"
-      eyebrow="clarke compare"
+      title={t('clarkeTransform.serialTitle')}
+      eyebrow={t('clarkeTransform.serialEyebrow')}
       timebase={timebase}
       onTimebaseChange={setTimebase}
       paused={paused}
@@ -123,7 +125,7 @@ export function SerialCompareClarkeCard() {
     >
       <div className="mb-3">
         <label className="block rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">ic 通道增益 {formatNumber(icGain, 2)} ×（圆/椭圆切换）</span>
+          <span className="block text-caption text-ink-muted">{t('clarkeTransform.serialIcGainPrefix')}{formatNumber(icGain, 2)} ×{t('clarkeTransform.serialIcGainSuffix')}</span>
           <input
             type="range"
             min={0.7}
@@ -132,18 +134,18 @@ export function SerialCompareClarkeCard() {
             value={icGain}
             onChange={(e) => setIcGain(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="ic 通道增益系数（影响 αβ 轨迹圆/椭圆形态）"
+            aria-label={t('clarkeTransform.serialIcGainAria')}
             aria-valuemin={0.7}
             aria-valuemax={1.3}
             aria-valuenow={icGain}
-            aria-valuetext={`${formatNumber(icGain, 2)} 倍`}
+            aria-valuetext={`${formatNumber(icGain, 2)} ${t('clarkeTransform.serialAriaTimes')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <TwoLineChart title="α 实测 vs 理论（A）" rows={displayRows} realKey="alphaReal" theoryKey="alphaTheory" />
-        <TwoLineChart title="β 实测 vs 理论（A）" rows={displayRows} realKey="betaReal" theoryKey="betaTheory" />
+        <TwoLineChart title={t('clarkeTransform.serialAlphaChartTitle')} rows={displayRows} realKey="alphaReal" theoryKey="alphaTheory" />
+        <TwoLineChart title={t('clarkeTransform.serialBetaChartTitle')} rows={displayRows} realKey="betaReal" theoryKey="betaTheory" />
       </div>
 
       <div className="mt-3">
@@ -151,15 +153,16 @@ export function SerialCompareClarkeCard() {
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="α/β 跟踪 RMSE" value={`${formatNumber(kpi.rmse, 3)} A`} tone={kpi.rmse > 0.5 ? 'warn' : 'measure'} />
-        <KpiTile label="轨迹椭圆度" value={`${formatNumber(kpi.ellipticity * 100, 1)} %`} tone={ellipsisTone} />
-        <KpiTile label="零序分量 RMS" value={`${formatNumber(kpi.zeroRms, 3)} A`} tone={zeroTone} />
-        <KpiTile label="长/短轴比" value={`${formatNumber(kpi.axisLong, 2)} / ${formatNumber(kpi.axisShort, 2)} A`} tone="primary" />
+        <KpiTile label={t('clarkeTransform.serialKpiRmse')} value={`${formatNumber(kpi.rmse, 3)} A`} tone={kpi.rmse > 0.5 ? 'warn' : 'measure'} />
+        <KpiTile label={t('clarkeTransform.serialKpiEllipticity')} value={`${formatNumber(kpi.ellipticity * 100, 1)} %`} tone={ellipsisTone} />
+        <KpiTile label={t('clarkeTransform.serialKpiZeroSeq')} value={`${formatNumber(kpi.zeroRms, 3)} A`} tone={zeroTone} />
+        <KpiTile label={t('clarkeTransform.serialKpiAxisRatio')} value={`${formatNumber(kpi.axisLong, 2)} / ${formatNumber(kpi.axisShort, 2)} A`} tone="primary" />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, <span className="text-accent-measure">ia, ib, ic</span> · 浏览器实时 Clarke。
-        圆 → 平衡；椭圆 → ic 增益失配；偏离原点 → ADC 偏置
+        {t('clarkeTransform.serialProtocolLead')}
+        <span className="text-accent-measure">ia, ib, ic</span>
+        {t('clarkeTransform.serialProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -211,6 +214,7 @@ function TwoLineChart({
 }
 
 function AlphaBetaTrajectory({ rows }: { rows: Row[] }) {
+  const { t } = useI18n();
   // 内联 SVG 散点 + 折线，避免引入 Scatter 组件，体积更小。
   const size = 280;
   const pad = 18;
@@ -234,7 +238,7 @@ function AlphaBetaTrajectory({ rows }: { rows: Row[] }) {
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="mb-1 flex items-center justify-between text-caption text-ink-muted">
-        <span>αβ 平面轨迹（圆=平衡 / 椭圆=不平衡）</span>
+        <span>{t('clarkeTransform.serialTrajectoryTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-primary)" label="theory" dashed />
           <Legend color="var(--accent-measure)" label="real" />
@@ -244,7 +248,7 @@ function AlphaBetaTrajectory({ rows }: { rows: Row[] }) {
         viewBox={`0 0 ${size} ${size}`}
         className="mx-auto block h-64 w-64"
         role="img"
-        aria-label="αβ 平面散点轨迹，实测线越接近圆形说明三相越平衡"
+        aria-label={t('clarkeTransform.serialTrajectoryAria')}
       >
         {/* 网格 */}
         <line x1={pad} y1={cy} x2={size - pad} y2={cy} stroke="rgba(231,243,255,0.12)" />
@@ -284,6 +288,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -293,7 +298,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr =
+    tone === 'fault'
+      ? t('clarkeTransform.serialSrFault')
+      : tone === 'warn'
+        ? t('clarkeTransform.serialSrWarn')
+        : tone === 'primary'
+          ? t('clarkeTransform.serialSrAux')
+          : t('clarkeTransform.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

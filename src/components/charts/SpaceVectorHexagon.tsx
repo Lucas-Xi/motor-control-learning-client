@@ -3,6 +3,7 @@ import type { SVPWMResult } from '../../simulation/math/svpwm';
 import { formatNumber, formatPercent } from '../../utils/format';
 import type { MouseEvent, PointerEvent } from 'react';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   uAlpha: number;
@@ -17,6 +18,7 @@ interface Props {
 const SWITCH_STATES = ['100', '110', '010', '011', '001', '101'] as const;
 
 export function SpaceVectorHexagon({ uAlpha, uBeta, uDc, result, onVectorChange }: Props) {
+  const { t } = useI18n();
   const size = 360;
   const cx = size / 2;
   const cy = size / 2;
@@ -73,14 +75,14 @@ export function SpaceVectorHexagon({ uAlpha, uBeta, uDc, result, onVectorChange 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">space vector plane</p>
-          <h3 className="font-display text-title text-ink-primary">SVPWM 六边形空间矢量</h3>
+          <h3 className="font-display text-title text-ink-primary">{t('charts.svTitle')}</h3>
         </div>
         <div className={`rounded-lg border px-3 py-1.5 text-body font-medium ${
           result.saturated
             ? 'border-accent-fault/40 bg-accent-fault/10 text-accent-fault'
             : 'border-accent-measure/40 bg-accent-measure/10 text-accent-measure'
         }`}>
-          扇区 {result.sector} · m={formatNumber(result.modulationIndex, 3)}
+          {t('charts.svSectorPrefix')}{result.sector} · m={formatNumber(result.modulationIndex, 3)}
         </div>
       </div>
       <svg
@@ -183,7 +185,7 @@ export function SpaceVectorHexagon({ uAlpha, uBeta, uDc, result, onVectorChange 
         {/* 图例（左下） */}
         <g fontSize="10" fontFamily="Cascadia Code, Consolas, monospace">
           <line x1="14" y1={size - 50} x2="34" y2={size - 50} stroke="#34d6ff" strokeWidth="2.5" />
-          <text x="40" y={size - 47} fill="#9eb5cb">目标 Uαβ</text>
+          <text x="40" y={size - 47} fill="#9eb5cb">{t('charts.svTarget')}</text>
           <line x1="14" y1={size - 34} x2="34" y2={size - 34} stroke="#43f7b5" strokeWidth="2.5" />
           <text x="40" y={size - 31} fill="#9eb5cb">T1·V{result.sector}</text>
           <line x1="14" y1={size - 18} x2="34" y2={size - 18} stroke="#ffb84d" strokeWidth="2.5" />
@@ -196,17 +198,16 @@ export function SpaceVectorHexagon({ uAlpha, uBeta, uDc, result, onVectorChange 
           <span className="text-ink-primary">{formatNumber(uAlpha, 2)} / {formatNumber(uBeta, 2)} V</span>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-surface p-2">
-          <span className="text-ink-muted">线性区上限 </span>
+          <span className="text-ink-muted">{t('charts.svLinearLimit')}</span>
           <span className="text-ink-primary">{formatNumber(limit, 2)} V</span>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-surface p-2">
-          <span className="text-ink-muted">母线利用率 </span>
+          <span className="text-ink-muted">{t('charts.svBusUtil')}</span>
           <span className="text-ink-primary">{formatPercent(result.busUtilization)}</span>
         </div>
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        括号 (ABC) 是该顶点对应的上桥臂三相状态：1=高电平，0=低电平。SVPWM 用所在扇区的两条边
-        V<sub>k</sub>、V<sub>k+1</sub>（绿/橙箭头按 T1、T2 时间分配），加零矢量 V0/V7 凑齐周期，合成出蓝色目标矢量。
+        {t('charts.svNoteSeg1')}V<sub>k</sub>{t('charts.svEnumComma')}V<sub>k+1</sub>{t('charts.svNoteSeg2')}
       </p>
     </div>
   );

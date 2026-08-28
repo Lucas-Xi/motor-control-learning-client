@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BookX, CheckCircle2, ChevronRight, Trash2 } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import { summarizeMistakes, useInsightsStore, type QuizMistakeRecord } from '../../store/insightsStore';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { Card } from '../ui/Card';
@@ -34,10 +35,11 @@ interface RowProps {
 }
 
 function MistakeRow({ rec, onDismiss }: RowProps) {
+  const { t } = useI18n();
   return (
     <li
       className="rounded-xl border border-accent-fault/30 bg-accent-fault/[0.05] p-3"
-      aria-label={`错题：${moduleShortTitle(rec.moduleId)} · ${rec.q ?? rec.quizId}`}
+      aria-label={`${t('insights.mistakeRowAriaLead')}${moduleShortTitle(rec.moduleId)} · ${rec.q ?? rec.quizId}`}
     >
       <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="rounded-md border border-accent-fault/40 bg-accent-fault/10 px-2 py-0.5 text-caption font-medium text-accent-fault">
@@ -46,8 +48,10 @@ function MistakeRow({ rec, onDismiss }: RowProps) {
         <span className="font-mono text-caption text-ink-muted">{rec.stepId}</span>
         <span className="font-mono text-caption text-ink-muted">·</span>
         <span className="font-mono text-caption text-ink-muted">{rec.quizId}</span>
-        <span className="ml-auto font-mono text-caption text-ink-muted" title={`上次答错：${fmtTime(rec.ts)}`}>
-          答错 <span className="text-accent-fault">{rec.count}</span> 次
+        <span className="ml-auto font-mono text-caption text-ink-muted" title={`${t('insights.lastWrongTitle')}${fmtTime(rec.ts)}`}>
+          {t('insights.wrongCountLead')}
+          <span className="text-accent-fault">{rec.count}</span>
+          {t('insights.wrongCountTail')}
         </span>
       </header>
       {rec.q && (
@@ -55,33 +59,33 @@ function MistakeRow({ rec, onDismiss }: RowProps) {
       )}
       <div className="mb-2 grid gap-1.5 sm:grid-cols-2">
         <div className="rounded-lg border border-accent-fault/30 bg-bg-base p-2">
-          <p className="mb-1 text-caption uppercase tracking-[0.18em] text-accent-fault">你选的</p>
+          <p className="mb-1 text-caption uppercase tracking-[0.18em] text-accent-fault">{t('insights.yourChoice')}</p>
           <p className="text-body text-accent-fault">
             <span className="mr-1 font-mono">{letter(rec.chosen)}.</span>
-            {rec.options?.[rec.chosen] ?? `选项 ${letter(rec.chosen)}`}
+            {rec.options?.[rec.chosen] ?? `${t('insights.optionFallback')}${letter(rec.chosen)}`}
           </p>
         </div>
         <div className="rounded-lg border border-accent-measure/40 bg-bg-base p-2">
-          <p className="mb-1 text-caption uppercase tracking-[0.18em] text-accent-measure">正确答案</p>
+          <p className="mb-1 text-caption uppercase tracking-[0.18em] text-accent-measure">{t('insights.correctAnswer')}</p>
           <p className="text-body text-accent-measure">
             <span className="mr-1 font-mono">{letter(rec.correct)}.</span>
-            {rec.options?.[rec.correct] ?? `选项 ${letter(rec.correct)}`}
+            {rec.options?.[rec.correct] ?? `${t('insights.optionFallback')}${letter(rec.correct)}`}
           </p>
         </div>
       </div>
       {rec.hint && (
         <p className="mb-2 rounded-lg border border-accent-warn/30 bg-accent-warn/[0.06] p-2 text-caption leading-relaxed text-ink-secondary">
-          <span className="text-accent-warn">提示：</span>{rec.hint}
+          <span className="text-accent-warn">{t('insights.hintLead')}</span>{rec.hint}
         </p>
       )}
       <div className="flex justify-end">
         <Button
           variant="outline"
           onClick={onDismiss}
-          aria-label={`从错题本移除：${rec.q ?? rec.quizId}`}
+          aria-label={`${t('insights.dismissAriaLead')}${rec.q ?? rec.quizId}`}
         >
           <CheckCircle2 className="h-4 w-4" aria-hidden />
-          我懂了
+          {t('insights.gotItButton')}
         </Button>
       </div>
     </li>
@@ -89,6 +93,7 @@ function MistakeRow({ rec, onDismiss }: RowProps) {
 }
 
 export function MistakeBookPanel() {
+  const { t } = useI18n();
   const quizMistakes = useInsightsStore((s) => s.quizMistakes);
   const dismissMistake = useInsightsStore((s) => s.dismissMistake);
 
@@ -101,16 +106,20 @@ export function MistakeBookPanel() {
 
   return (
     <Card
-      title="错题本"
+      title={t('insights.mistakeBookTitle')}
       eyebrow="mistake book"
       tone="fault"
       action={
         <div className="flex items-center gap-2 text-caption">
           <span className="rounded-md border border-line-subtle bg-bg-base px-2 py-0.5 text-ink-secondary">
-            共 <span className="text-accent-fault">{stats.totalMistakes}</span> 道
+            {t('insights.totalMistakesLead')}
+            <span className="text-accent-fault">{stats.totalMistakes}</span>
+            {t('insights.totalMistakesTail')}
           </span>
           <span className="rounded-md border border-line-subtle bg-bg-base px-2 py-0.5 text-ink-secondary">
-            涉及 <span className="text-accent-warn">{stats.modules}</span> 个模块
+            {t('insights.modulesLead')}
+            <span className="text-accent-warn">{stats.modules}</span>
+            {t('insights.modulesTail')}
           </span>
         </div>
       }
@@ -121,11 +130,11 @@ export function MistakeBookPanel() {
           role="status"
         >
           <BookX className="h-6 w-6 text-ink-muted" aria-hidden />
-          <p className="text-body text-ink-primary">还没有错题</p>
-          <p className="text-caption text-ink-muted">在 walkthrough 小测里答错时会自动加进错题本</p>
+          <p className="text-body text-ink-primary">{t('insights.mistakeEmptyTitle')}</p>
+          <p className="text-caption text-ink-muted">{t('insights.mistakeEmptyHint')}</p>
         </div>
       ) : (
-        <ul className="space-y-2" aria-label="错题列表">
+        <ul className="space-y-2" aria-label={t('insights.listAria')}>
           {list.map((rec) => (
             <MistakeRow
               key={`${rec.moduleId}.${rec.stepId}.${rec.quizId}`}
@@ -139,10 +148,10 @@ export function MistakeBookPanel() {
         <footer className="mt-3 flex items-center justify-between text-caption text-ink-muted">
           <span className="inline-flex items-center gap-1">
             <ChevronRight className="h-3 w-3" aria-hidden />
-            点"我懂了"从错题本移除
+            {t('insights.dismissHint')}
           </span>
           <span className="sr-only">
-            <Trash2 className="h-3 w-3" aria-hidden />本面板仅本地存储，不会上传任何数据
+            <Trash2 className="h-3 w-3" aria-hidden />{t('insights.localOnlyNote')}
           </span>
         </footer>
       )}

@@ -21,8 +21,7 @@ type HxKind = 'condenser' | 'evaporator';
  */
 export function HeatExchangerSizingCard() {
   const refrig = useSimulationStore((s) => s.refrigeration);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [kind, setKind] = useState<HxKind>('condenser');
   // 默认参数走 1.5HP 家用空调样本
@@ -86,8 +85,8 @@ export function HeatExchangerSizingCard() {
 
   return (
     <Card
-      title={isEn ? 'ε-NTU Heat Exchanger Sizing' : '换热器 ε-NTU 选型校核'}
-      eyebrow={isEn ? 'why Tc actually drifts' : 'Tc/Te 为啥总跑'}
+      title={t('refrigerationBench.hxTitle')}
+      eyebrow={t('refrigerationBench.hxEyebrow')}
       density="compact"
       action={
         <div className="flex items-center gap-2">
@@ -113,39 +112,28 @@ export function HeatExchangerSizingCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
             }`}
           >
-            {hxEnabled ? (isEn ? 'Applied to bench' : '已应用到主台架') : (isEn ? 'Apply to bench' : '应用到主台架')}
+            {hxEnabled ? t('refrigerationBench.hxApplyOn') : t('refrigerationBench.hxApplyOff')}
           </button>
-          <FidelityBadge
-            level="physical"
-            hint={
-              isEn
-                ? 'Effectiveness-NTU method for fin-and-tube HX; ε = 1 − exp(−NTU) for phase-change side. Forces Tc/Te to honor real area + airflow.'
-                : '翅片管 ε-NTU 方法；相变侧 ε = 1 − exp(−NTU)。让 Tc/Te 真正受换热面积 + 风量约束。'
-            }
-          />
+          <FidelityBadge level="physical" hint={t('refrigerationBench.hxFidelityHint')} />
         </div>
       }
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'vaporCycle assumes the heat exchanger can hit any Tc/Te. Reality: limited UA × airflow caps the heat throughput. Drag UA, airflow, and required Q to see how the design point drifts under summer/winter conditions. Click "Apply to bench" to make the main KPIs honor these constraints.'
-          : 'vaporCycle 默认换热器能"任意"达到 Tc/Te。真实：UA × 风量限定了热量传输。拖 UA / 风量 / 所需 Q，看夏季高温 / 冬季工况下设计点怎么漂。点"应用到主台架"让主 KPI 端到端尊重换热器约束。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('refrigerationBench.hxIntro')}</p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {(['condenser', 'evaporator'] as const).map((t) => (
+        {(['condenser', 'evaporator'] as const).map((k) => (
           <button
-            key={t}
+            key={k}
             type="button"
-            onClick={() => setKind(t)}
-            aria-pressed={kind === t}
+            onClick={() => setKind(k)}
+            aria-pressed={kind === k}
             className={`rounded-full border px-3 py-1 text-caption transition-colors ${
-              kind === t
+              kind === k
                 ? 'border-accent-primary/60 bg-accent-primary/10 text-accent-primary'
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
             }`}
           >
-            {t === 'condenser' ? (isEn ? 'Condenser' : '冷凝器') : (isEn ? 'Evaporator' : '蒸发器')}
+            {k === 'condenser' ? t('refrigerationBench.hxTabCondenser') : t('refrigerationBench.hxTabEvaporator')}
           </button>
         ))}
       </div>
@@ -172,7 +160,7 @@ export function HeatExchangerSizingCard() {
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Airflow' : '风量'}</span>
+            <span>{t('refrigerationBench.hxAirflow')}</span>
             <span className="formula text-ink-primary">{formatNumber(airFlow, 2)} m³/s</span>
           </span>
           <input type="range" value={airFlow} min={0.05} max={1.5} step={0.02}
@@ -191,7 +179,7 @@ export function HeatExchangerSizingCard() {
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Required Q' : '所需 Q'}</span>
+            <span>{t('refrigerationBench.hxRequiredQ')}</span>
             <span className="formula text-ink-primary">{formatNumber(qRequired, 2)} kW</span>
           </span>
           <input type="range" value={qRequired} min={0.5} max={8} step={0.1}
@@ -217,9 +205,9 @@ export function HeatExchangerSizingCard() {
           <p className="formula text-body text-accent-primary">{formatNumber(current.qActualKW, 2)} kW</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(driftTone)}`}>
-          <p className="text-caption opacity-80">{isEn ? 'Tref drift' : 'Tref 漂移'}</p>
+          <p className="text-caption opacity-80">{t('refrigerationBench.hxKpiDrift')}</p>
           <p className="formula text-body">
-            {inverse.feasible ? `${formatNumber(drift, 1)} K` : (isEn ? 'over!' : '超界!')}
+            {inverse.feasible ? `${formatNumber(drift, 1)} K` : t('refrigerationBench.hxOverLimit')}
           </p>
         </div>
       </div>
@@ -240,16 +228,17 @@ export function HeatExchangerSizingCard() {
               label={{ value: 'op', fill: '#9eb5cb', fontSize: 10, position: 'top' }}
               yAxisId="left"
             />
-            <Line yAxisId="left" type="monotone" dataKey="q_kW" stroke="#34d6ff" strokeWidth={1.8} dot={false} isAnimationActive={false} name={isEn ? 'Q (kW)' : '换热量 Q (kW)'} />
-            <Line yAxisId="right" type="monotone" dataKey="eps_pct" stroke="#43f7b5" strokeWidth={1.4} dot={false} isAnimationActive={false} name={isEn ? 'ε (%)' : '效能 ε (%)'} strokeDasharray="4 3" />
+            <Line yAxisId="left" type="monotone" dataKey="q_kW" stroke="#34d6ff" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('refrigerationBench.hxSeriesQ')} />
+            <Line yAxisId="right" type="monotone" dataKey="eps_pct" stroke="#43f7b5" strokeWidth={1.4} dot={false} isAnimationActive={false} name={t('refrigerationBench.hxSeriesEps')} strokeDasharray="4 3" />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? `Required ${formatNumber(qRequired, 1)} kW with current UA & airflow needs Tref = ${inverse.feasible ? formatNumber(inverse.TrefC, 1) : '>limit'} °C (your input: ${formatNumber(Tref, 1)} °C). The gap = ${formatNumber(drift, 1)} K is what summer heat or HX fouling looks like in your design.`
-          : `当前 UA + 风量下要散 ${formatNumber(qRequired, 1)} kW 需要 Tref = ${inverse.feasible ? formatNumber(inverse.TrefC, 1) : '>上限'} °C（你输入的 ${formatNumber(Tref, 1)} °C）。漂移 ${formatNumber(drift, 1)} K 就是夏季高温 / 换热器结垢在设计里的样子。`}
+        {t('refrigerationBench.hxNoteA')} {formatNumber(qRequired, 1)} kW {t('refrigerationBench.hxNoteB')}{' '}
+        {inverse.feasible ? formatNumber(inverse.TrefC, 1) : t('refrigerationBench.hxNoteOverLimit')} °C
+        {t('refrigerationBench.hxNoteC')} {formatNumber(Tref, 1)} °C{t('refrigerationBench.hxNoteD')}{' '}
+        {formatNumber(drift, 1)} K{t('refrigerationBench.hxNoteE')}
       </p>
     </Card>
   );

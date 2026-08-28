@@ -5,6 +5,7 @@ import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveC
 import { simulateStartup } from '../../simulation/math/startup';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * HFI→BEMF 估计器过渡可视化。
@@ -15,6 +16,7 @@ import { formatNumber } from '../../utils/format';
  * 过渡时刻会有一个瞬态扰动（角度跳变尔后收敛）。
  */
 export function ObserverTransitionCard() {
+  const { t } = useI18n();
   const startup = useSimulationStore((s) => s.startup);
   const { samples, transitionTime } = useMemo(() => {
     const base = simulateStartup(startup);
@@ -53,7 +55,7 @@ export function ObserverTransitionCard() {
   }, [startup]);
 
   return (
-    <Card title="估计器收敛" eyebrow="HFI→BEMF 角度误差过渡" density="compact">
+    <Card title={t('charts.obTitle')} eyebrow={t('charts.obEyebrow')} density="compact">
       <div className="h-36">
         <SafeResponsiveContainer>
           <AreaChart data={samples} margin={{ top: 8, right: 8, bottom: 0, left: -10 }}>
@@ -62,7 +64,7 @@ export function ObserverTransitionCard() {
             <YAxis tick={{ fill: '#8fb7c9', fontSize: 9 }} unit="°" domain={[0, 40]} />
             <Tooltip
               contentStyle={{ background: '#07111f', border: '1px solid rgba(52,214,255,.35)', borderRadius: 10, fontSize: 11 }}
-              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)}°`, '角度误差']) as never}
+              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)}°`, t('charts.obAngleError')]) as never}
             />
             {transitionTime !== null && (
               <ReferenceLine x={transitionTime} stroke="#ffb84d" strokeDasharray="3 4"
@@ -75,12 +77,12 @@ export function ObserverTransitionCard() {
               </linearGradient>
             </defs>
             <Area type="monotone" dataKey="angleErrorDeg" stroke="#ff5c7a" strokeWidth={1.5}
-              fill="url(#errGrad)" dot={false} isAnimationActive={false} name="估计角度误差" />
+              fill="url(#errGrad)" dot={false} isAnimationActive={false} name={t('charts.obSeriesName')} />
           </AreaChart>
         </SafeResponsiveContainer>
       </div>
       <p className="mt-1 text-caption leading-relaxed text-ink-secondary">
-        HFI 区域（低频段）误差较大 ~15-25°；BEMF 接管后随转速升高迅速收敛至 &lt;5°，过渡点存在瞬态尖峰。
+        {t('charts.obNote')}
       </p>
     </Card>
   );

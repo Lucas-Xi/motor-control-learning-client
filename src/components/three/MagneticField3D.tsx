@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { memo, useMemo, useRef } from 'react';
 import type { Group } from 'three';
+import { useI18n } from '../../i18n/useI18n';
 import { PHASE_COLORS, THREE_COLORS } from './colors';
 import { approachAngle } from './rotation';
 import { SceneFrame } from './SceneFrame';
@@ -61,13 +62,16 @@ const FieldMemo = memo(Field, (prev, next) => {
 });
 
 export function MagneticField3D({ angle, amplitude, phaseCurrents, ariaLabel }: Props) {
+  const { t } = useI18n();
   const deg = ((((angle * 180) / Math.PI) % 360) + 360) % 360;
-  const label = ariaLabel ?? `三维三相旋转磁场：合成磁场角度 ${deg.toFixed(0)}°，电流基准 ${amplitude.toFixed(1)} A。`;
+  const label =
+    ariaLabel ??
+    `${t('three.fieldAriaLead')}${deg.toFixed(0)}°${t('three.fieldAriaCurrentBase')}${amplitude.toFixed(1)} A${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame
       ariaLabel={label}
-      badge="三相旋转磁场"
+      badge={t('three.fieldBadge')}
       camera={{ position: [0, -3.2, 2.1], fov: 48 }}
       className="relative h-64 overflow-hidden rounded-2xl border border-line-subtle bg-bg-base"
       controls={{ enablePan: false, enableZoom: false }}

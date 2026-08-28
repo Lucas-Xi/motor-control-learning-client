@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, AlertOctagon, Radar } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import {
   sampleComplianceParams,
   resonanceFrequencies,
@@ -18,10 +19,10 @@ const KT = 1.5 * 4 * 0.045;   // 与其他卡片一致：p=4, ψf=0.045 → 0.27
 // 只取柔性传动预设：directDriveCompressor 共振 > 3 kHz，超出扫频 Nyquist，也不需要陷波
 type PresetKey = 'industrialFanBelt' | 'roboticJoint' | 'agedDrive';
 
-const PRESET_LABELS: Record<PresetKey, string> = {
-  industrialFanBelt: '工业风机皮带（标称 ~298 Hz）',
-  roboticJoint: '机器人关节谐波减速器（~191 Hz）',
-  agedDrive: '老化传动（~139 Hz）',
+const PRESET_LABELS: Record<PresetKey, TKey> = {
+  industrialFanBelt: 'controlLoops.autoNotchPresetBelt',
+  roboticJoint: 'controlLoops.autoNotchPresetRobot',
+  agedDrive: 'controlLoops.autoNotchPresetAged',
 };
 
 // 扫频辨识参数：fs=2 kHz 下 Nyquist 1 kHz，覆盖三个预设 ±30% 刚度漂移后的共振范围
@@ -48,6 +49,7 @@ interface MergedSample {
  * 定位共振，自适应陷波恢复抑制。拖"刚度漂移"滑块直接看两条曲线分道扬镳。
  */
 export function AutoNotchCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('roboticJoint');
   const [driftPct, setDriftPct] = useState(-20);
   const [Q, setQ] = useState(8);
@@ -108,10 +110,10 @@ export function AutoNotchCard() {
     : 0;
 
   const status = idErrPct <= 5 && rmsGainPct >= 30
-    ? { tone: 'good', Icon: CheckCircle2, label: '辨识命中', hint: '谱峰对准真实共振，自适应陷波接管后振铃消失。' }
+    ? { tone: 'good', Icon: CheckCircle2, label: 'controlLoops.autoNotchStatusGoodLabel' as const, hint: 'controlLoops.autoNotchStatusGoodHint' as const }
     : idErrPct <= 5
-    ? { tone: 'warn', Icon: AlertTriangle, label: '辨识准但收益小', hint: '漂移本身不大或 Q 太宽——固定陷波还没完全失准。' }
-    : { tone: 'bad', Icon: AlertOctagon, label: '辨识偏差大', hint: '扫频幅值不足 / 频段没盖住共振 / 谱分辨率不够（加长扫频时长）。' };
+    ? { tone: 'warn', Icon: AlertTriangle, label: 'controlLoops.autoNotchStatusWarnLabel' as const, hint: 'controlLoops.autoNotchStatusWarnHint' as const }
+    : { tone: 'bad', Icon: AlertOctagon, label: 'controlLoops.autoNotchStatusBadLabel' as const, hint: 'controlLoops.autoNotchStatusBadHint' as const };
 
   const toneClass = (t: string) =>
     t === 'good'
@@ -122,25 +124,26 @@ export function AutoNotchCard() {
 
   return (
     <Card
-      title="扫频辨识 × 自适应陷波：漂移之后谁来对准"
+      title={t('controlLoops.autoNotchTitle')}
       eyebrow="chirp identification · adaptive notch"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="chirp 转矩激励双质量模型 → 单边幅值谱找峰 → 与解析共振交叉确认（±20% 内取模型值）。对应 STM32 上的 FFT / Goertzel 在线辨识。"
+          hint={t('controlLoops.autoNotchFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        上一张卡的陷波中心是<span className="text-accent-warn">出厂标定死的</span>。现场温度爬升、
-        联轴器老化让刚度 K<sub>s</sub> 漂移，真实共振点移走——固定陷波变成"陷在空处"。
-        对策：注入<span className="text-accent-primary"> chirp 扫频</span>激励，从速度响应谱里
-        重新找峰，把陷波中心搬过去。
+        {t('controlLoops.autoNotchIntroA')}
+        <span className="text-accent-warn">{t('controlLoops.autoNotchIntroB')}</span>
+        {t('controlLoops.autoNotchIntroC1')}K<sub>s</sub>{t('controlLoops.autoNotchIntroC2')}
+        <span className="text-accent-primary">{t('controlLoops.autoNotchIntroD')}</span>
+        {t('controlLoops.autoNotchIntroE')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">传动预设：</span>
+        <span className="text-caption text-ink-muted">{t('controlLoops.autoNotchPresetLabel')}</span>
         {(Object.keys(PRESET_LABELS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -152,7 +155,7 @@ export function AutoNotchCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {PRESET_LABELS[k]}
+            {t(PRESET_LABELS[k])}
           </button>
         ))}
       </div>
@@ -160,33 +163,33 @@ export function AutoNotchCard() {
       <div className="mb-3 grid grid-cols-2 gap-2">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>刚度漂移 ΔKs</span>
+            <span>{t('controlLoops.autoNotchDrift')}</span>
             <span className="formula text-ink-primary">{driftPct > 0 ? '+' : ''}{formatNumber(driftPct, 0)}%</span>
           </span>
           <input type="range" value={driftPct} min={-30} max={30} step={1}
             onChange={(e) => setDriftPct(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="stiffness drift" aria-valuemin={-30} aria-valuemax={30} aria-valuenow={driftPct} />
+            aria-label={t('controlLoops.autoNotchDrift')} aria-valuemin={-30} aria-valuemax={30} aria-valuenow={driftPct} />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>陷波 Q</span>
+            <span>{t('controlLoops.autoNotchQ')}</span>
             <span className="formula text-ink-primary">{formatNumber(Q, 1)}</span>
           </span>
           <input type="range" value={Q} min={2} max={20} step={0.5}
             onChange={(e) => setQ(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="notch Q" aria-valuemin={2} aria-valuemax={20} aria-valuenow={Q} />
+            aria-label={t('controlLoops.autoNotchQ')} aria-valuemin={2} aria-valuemax={20} aria-valuenow={Q} />
         </label>
       </div>
 
       <p className="mb-2 flex items-center gap-1.5 text-[11px] text-ink-muted">
         <Radar className="h-3.5 w-3.5 text-accent-primary" aria-hidden="true" />
         <span>
-          标称 <span className="formula">{formatNumber(frNominal, 0)} Hz</span> →
-          真实 <span className="formula text-accent-fault">{formatNumber(frReal, 0)} Hz</span> ·
-          扫频辨识 <span className="formula text-accent-measure">{formatNumber(frIdentified, 0)} Hz</span>
-          （误差 {formatNumber(idErrPct, 1)}%）
+          {t('controlLoops.autoNotchNominal')} <span className="formula">{formatNumber(frNominal, 0)} Hz</span> →
+          {t('controlLoops.autoNotchReal')} <span className="formula text-accent-fault">{formatNumber(frReal, 0)} Hz</span> ·
+          {t('controlLoops.autoNotchIdentified')} <span className="formula text-accent-measure">{formatNumber(frIdentified, 0)} Hz</span>
+          {t('controlLoops.autoNotchErrPrefix')}{formatNumber(idErrPct, 1)}{t('controlLoops.autoNotchErrSuffix')}
         </span>
       </p>
 
@@ -205,13 +208,13 @@ export function AutoNotchCard() {
             <Tooltip
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
               labelFormatter={(v) => `f = ${Number(v).toFixed(1)} Hz`}
-              formatter={(v) => [`${Number(v).toFixed(4)}`, '幅值']}
+              formatter={(v) => [`${Number(v).toFixed(4)}`, t('controlLoops.autoNotchMag')]}
             />
             <ReferenceLine x={frNominal} stroke="#fbbf24" strokeDasharray="4 3"
-              label={{ value: '出厂标定', fill: '#fbbf24', fontSize: 9, position: 'insideTopLeft' }} />
+              label={{ value: t('controlLoops.autoNotchFactoryLabel'), fill: '#fbbf24', fontSize: 9, position: 'insideTopLeft' }} />
             <ReferenceLine x={frIdentified} stroke="#43f7b5"
-              label={{ value: '辨识峰', fill: '#43f7b5', fontSize: 9, position: 'insideTopRight' }} />
-            <Line type="monotone" dataKey="mag" stroke="#38bdf8" strokeWidth={1.2} dot={false} isAnimationActive={false} name="扫频速度响应谱" />
+              label={{ value: t('controlLoops.autoNotchPeakLabel'), fill: '#43f7b5', fontSize: 9, position: 'insideTopRight' }} />
+            <Line type="monotone" dataKey="mag" stroke="#38bdf8" strokeWidth={1.2} dot={false} isAnimationActive={false} name={t('controlLoops.autoNotchSpectrumName')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
@@ -236,38 +239,40 @@ export function AutoNotchCard() {
             <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
             <ReferenceLine y={100} stroke="#5d7793" strokeDasharray="2 3"
               label={{ value: 'ref 100', fill: '#9eb5cb', fontSize: 9, position: 'insideTopRight' }} />
-            <Line type="monotone" dataKey="omegaFixed" stroke="#fbbf24" strokeWidth={1.4} dot={false} isAnimationActive={false} name="ω 固定陷波（出厂标定）" />
-            <Line type="monotone" dataKey="omegaAuto" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name="ω 自适应陷波（扫频辨识）" />
+            <Line type="monotone" dataKey="omegaFixed" stroke="#fbbf24" strokeWidth={1.4} dot={false} isAnimationActive={false} name={t('controlLoops.autoNotchLineFixed')} />
+            <Line type="monotone" dataKey="omegaAuto" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('controlLoops.autoNotchLineAuto')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">固定陷波 RMS</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.autoNotchRmsFixed')}</p>
           <p className="formula text-body text-accent-warn">{formatNumber(fixed.rmsErrorRadS, 2)} rad/s</p>
-          <p className="text-[10px] opacity-75">中心 {formatNumber(fixed.notchCenterHz, 0)} Hz（离真实 {formatNumber(Math.abs(fixed.notchCenterHz - frReal), 0)} Hz）</p>
+          <p className="text-[10px] opacity-75">{t('controlLoops.autoNotchCenterPrefix')}{formatNumber(fixed.notchCenterHz, 0)} Hz{t('controlLoops.autoNotchOffByPrefix')}{formatNumber(Math.abs(fixed.notchCenterHz - frReal), 0)}{t('controlLoops.autoNotchOffBySuffix')}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">自适应陷波 RMS</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.autoNotchRmsAuto')}</p>
           <p className="formula text-body text-accent-measure">{formatNumber(auto.rmsErrorRadS, 2)} rad/s</p>
-          <p className="text-[10px] opacity-75">中心 {formatNumber(auto.notchCenterHz, 0)} Hz · RMS 再降 {formatNumber(rmsGainPct, 0)}%</p>
+          <p className="text-[10px] opacity-75">{t('controlLoops.autoNotchCenterPrefix')}{formatNumber(auto.notchCenterHz, 0)} Hz{t('controlLoops.autoNotchRmsDropPrefix')}{formatNumber(rmsGainPct, 0)}%</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(status.tone)}`}>
           <div className="flex items-center gap-1.5 text-caption">
             <status.Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{status.label}</span>
+            <span>{t(status.label)}</span>
           </div>
-          <p className="formula text-body">辨识误差 {formatNumber(idErrPct, 1)}%</p>
-          <p className="text-[10px] leading-snug opacity-90">{status.hint}</p>
+          <p className="formula text-body">{t('controlLoops.autoNotchIdErrPrefix')}{formatNumber(idErrPct, 1)}%</p>
+          <p className="text-[10px] leading-snug opacity-90">{t(status.hint)}</p>
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：产线全频扫太慢，量产固件常用
-        <span className="formula"> Goertzel </span>只算疑似共振附近 10-20 个 bin（比全 FFT 省一个量级 RAM）；
-        扫频只在<span className="text-accent-fault">停机自检 / 维护模式</span>做，运行中改用振铃能量检测触发重辨识。
-        辨识出的中心频率写 Flash 参数区，重启后陷波直接热加载。
+        <span className="text-accent-warn">{t('controlLoops.autoNotchPortingTitle')}</span>
+        {t('controlLoops.autoNotchPortingA')}
+        <span className="formula"> Goertzel </span>
+        {t('controlLoops.autoNotchPortingC')}
+        <span className="text-accent-fault">{t('controlLoops.autoNotchPortingD')}</span>
+        {t('controlLoops.autoNotchPortingE')}
       </p>
     </Card>
   );

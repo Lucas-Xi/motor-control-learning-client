@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleId } from '../../simulation/engine/types';
 import { getCachedWalkthrough, hasWalkthrough, loadModuleWalkthrough } from '../../content/walkthroughs';
@@ -19,6 +20,7 @@ import { KeyHelpOverlay } from './KeyHelpOverlay';
  * 单字符直觉映射，留给方向键导航 + 侧栏点选。
  */
 export function GlobalKeybindings() {
+  const { t } = useI18n();
   const setActiveModule = useSimulationStore((s) => s.setActiveModule);
   const setRunning = useSimulationStore((s) => s.setRunning);
   const step = useSimulationStore((s) => s.step);
@@ -67,10 +69,12 @@ export function GlobalKeybindings() {
 
     const list: Shortcut[] = [
       // —— 运行控制 ——
+      // 注意：category 是中文字面量联合类型，由 KeyHelpOverlay 的 CATEGORY_I18N
+      // 映射到 shell.keyHelpCat* 翻译；description 直接进 KeyHelpOverlay 渲染，用 t()。
       {
         key: 'Space',
         category: '运行控制',
-        description: '运行 / 暂停',
+        description: t('shell.keyRunPause'),
         handler: (e) => {
           // Space 默认会滚动页面，得拦掉
           e.preventDefault();
@@ -81,33 +85,33 @@ export function GlobalKeybindings() {
       {
         key: 'r',
         category: '运行控制',
-        description: '仿真时间归零',
+        description: t('shell.keyResetSimTime'),
         handler: () => resetTime(),
       },
       {
         key: 's',
         category: '运行控制',
-        description: '单步推进 5ms',
+        description: t('shell.keyStep5ms'),
         handler: () => step(0.005),
       },
       // —— 布局 ——
       {
         key: 'f',
         category: '布局',
-        description: '切换全屏（隐藏侧栏 / 参数面板）',
+        description: t('shell.keyToggleFullscreen'),
         handler: () => toggleFullScreen(),
       },
       {
         key: 'm',
         category: '布局',
-        description: '循环切主题（深色 → 明色 → 高对比 → 投影 → 色盲友好）',
+        description: t('shell.keyCycleTheme'),
         handler: () => cycleTheme(),
       },
       // —— 模式 ——
       {
         key: 't',
         category: '模式',
-        description: '在 教学 / 实验 模式之间切换',
+        description: t('shell.keyToggleMode'),
         handler: () => {
           const cur = useSimulationStore.getState().mode;
           setMode(cur === 'teach' ? 'lab' : 'teach');
@@ -117,39 +121,39 @@ export function GlobalKeybindings() {
       {
         key: 'ArrowLeft',
         category: '导航',
-        description: '上一个模块（首尾循环）',
+        description: t('shell.keyPrevModule'),
         handler: () => gotoNeighbor(-1),
       },
       {
         key: 'ArrowRight',
         category: '导航',
-        description: '下一个模块（首尾循环）',
+        description: t('shell.keyNextModule'),
         handler: () => gotoNeighbor(1),
       },
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map<Shortcut>((d) => ({
         key: String(d),
         category: '导航',
-        description: `跳到 stage ${d === 0 ? '10' : `0${d}`}`,
+        description: t('shell.keyGotoStage').replace('{n}', d === 0 ? '10' : `0${d}`),
         handler: () => gotoStage(d),
       })),
       // —— 教学引导（walkthrough）—— vim 风格快进/后退
       {
         key: 'j',
         category: '导航',
-        description: '深度引导 · 下一步',
+        description: t('shell.keyWalkthroughNext'),
         handler: () => stepWalkthrough(1),
       },
       {
         key: 'k',
         category: '导航',
-        description: '深度引导 · 上一步',
+        description: t('shell.keyWalkthroughPrev'),
         handler: () => stepWalkthrough(-1),
       },
       // —— 帮助 ——
       {
         key: '?',
         category: '帮助',
-        description: '打开 / 关闭快捷键帮助',
+        description: t('shell.keyToggleKeyHelp'),
         handler: (e) => {
           e.preventDefault();
           setHelpOpen((v) => !v);
@@ -158,14 +162,14 @@ export function GlobalKeybindings() {
       {
         key: 'a',
         category: '帮助',
-        description: '打开 / 关闭本地教学助手',
+        description: t('shell.keyToggleAssistant'),
         handler: () => useAssistantStore.getState().toggleOpen(),
       },
       // —— 报告 ——
       {
         key: 'p',
         category: '运行控制',
-        description: '打印当前模块（Ctrl+P）',
+        description: t('shell.keyPrintModule'),
         meta: ['ctrl'],
         handler: (e) => {
           e.preventDefault();
@@ -174,7 +178,7 @@ export function GlobalKeybindings() {
       },
     ];
     return list;
-  }, [setActiveModule, setRunning, step, resetTime, toggleFullScreen, setMode, cycleTheme]);
+  }, [t, setActiveModule, setRunning, step, resetTime, toggleFullScreen, setMode, cycleTheme]);
 
   useKeyboardShortcuts(shortcuts);
 

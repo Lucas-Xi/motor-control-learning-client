@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { memo, useMemo, useRef } from 'react';
 import type { Group } from 'three';
+import { useI18n } from '../../i18n/useI18n';
 import { THREE_COLORS } from './colors';
 import { approachAngle } from './rotation';
 import { SceneFrame } from './SceneFrame';
@@ -79,6 +80,7 @@ const RotorFluxMemo = memo(RotorFlux, (prev, next) =>
 );
 
 export function RotorFluxScene({ theta, id, iq, iAlpha, iBeta, amplitude = 6, ariaLabel }: Props) {
+  const { t } = useI18n();
   const reduced = usePrefersReducedMotion();
   const resolvedAlpha = useMemo(() => (iAlpha !== undefined ? iAlpha : id * Math.cos(theta) - iq * Math.sin(theta)), [iAlpha, id, iq, theta]);
   const resolvedBeta = useMemo(() => (iBeta !== undefined ? iBeta : id * Math.sin(theta) + iq * Math.cos(theta)), [iBeta, id, iq, theta]);
@@ -86,7 +88,10 @@ export function RotorFluxScene({ theta, id, iq, iAlpha, iBeta, amplitude = 6, ar
   const thetaDeg = ((((theta * 180) / Math.PI) % 360) + 360) % 360;
   const label =
     ariaLabel ??
-    `三维 αβ-dq 矢量空间：θ_e=${thetaDeg.toFixed(0)}°，|I|=${imag.toFixed(2)} A，Id=${id.toFixed(2)} A，Iq=${iq.toFixed(2)} A。`;
+    `${t('three.rotorFluxAriaLead')}${thetaDeg.toFixed(0)}°` +
+      `${t('three.rotorFluxAriaImag')}${imag.toFixed(2)} A` +
+      `${t('three.rotorFluxAriaId')}${id.toFixed(2)} A` +
+      `${t('three.rotorFluxAriaIq')}${iq.toFixed(2)} A${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame

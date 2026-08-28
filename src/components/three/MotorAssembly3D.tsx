@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n/useI18n';
 import { PHASE_COLORS, THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 
@@ -6,7 +7,8 @@ interface Props {
 }
 
 export function MotorAssembly3D({ ariaLabel }: Props) {
-  const label = ariaLabel ?? '三维电机装配视图：定子、绕组、转子沿轴向展开，帮助理解整机搭建关系。';
+  const { t } = useI18n();
+  const label = ariaLabel ?? t('three.assemblyAriaLabel');
   return (
     <SceneFrame
       ariaLabel={label}

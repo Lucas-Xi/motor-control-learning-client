@@ -23,8 +23,7 @@ import { formatNumber } from '../../utils/format';
  */
 export function IronLossBreakdownCard() {
   const motor = useSimulationStore((s) => s.motorBasics);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [iq, setIq] = useState(motor.ratedCurrent * 0.6);
 
@@ -79,37 +78,24 @@ export function IronLossBreakdownCard() {
 
   return (
     <Card
-      title={isEn ? 'Iron Loss Breakdown (Bertotti)' : '铁损分解（Bertotti 三项）'}
-      eyebrow={isEn ? 'efficiency reality check' : '效率云图照妖镜'}
+      title={t('controlLoops.ironLossTitle')}
+      eyebrow={t('controlLoops.ironLossEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Bertotti 1988: P_fe = P_h + P_e + P_a (hysteresis + classical eddy + anomalous). Reveals why high-speed efficiency drops.'
-              : 'Bertotti 1988：P_fe = P_h + P_e + P_a（磁滞 + 经典涡流 + 异常）。揭示高速效率下降的真因。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('controlLoops.ironLossFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Iron loss is often ignored in simplified models, but at 4000+ rpm it can match or exceed copper loss. The eddy-current term grows as f², so high-speed cruise efficiency drops sharply. Drag iq to see the tradeoff.'
-          : '简化模型常忽略铁损，但 4000+ rpm 时它可达甚至超过铜损。涡流项随 f² 增长，所以高速巡航效率断崖式下降。拖动 iq 看权衡。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('controlLoops.ironLossIntro')}</p>
 
       <div className="mb-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Cu loss @ 4kRPM' : '铜损 @4krpm'}</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.ironLossKpiCu')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(current.pCu, 1)} W</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Fe loss @ 4kRPM' : '铁损 @4krpm'}</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.ironLossKpiFe')}</p>
           <p className="formula text-body text-accent-measure">{formatNumber(current.total, 1)} W</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(ironTone)}`}>
-          <p className="text-caption opacity-80">{isEn ? 'Fe / Total' : '铁损占比'}</p>
+          <p className="text-caption opacity-80">{t('controlLoops.ironLossKpiFePct')}</p>
           <p className="formula text-body">{formatNumber(ironPct, 0)} %</p>
         </div>
       </div>
@@ -127,7 +113,7 @@ export function IronLossBreakdownCard() {
           step={0.1}
           onChange={(e) => setIq(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="q 轴电流"
+          aria-label={t('controlLoops.ironLossIqAria')}
           aria-valuemin={0.5}
           aria-valuemax={motor.ratedCurrent * 1.2}
           aria-valuenow={iq}
@@ -150,28 +136,17 @@ export function IronLossBreakdownCard() {
               }}
             />
             <Legend wrapperStyle={{ fontSize: 10 }} />
-            <Area type="monotone" stackId="loss" dataKey="ph" stroke="#34d6ff" fill="#34d6ff" fillOpacity={0.7} name="P_h 磁滞" isAnimationActive={false} />
-            <Area type="monotone" stackId="loss" dataKey="pe" stroke="#43f7b5" fill="#43f7b5" fillOpacity={0.7} name="P_e 涡流" isAnimationActive={false} />
-            <Area type="monotone" stackId="loss" dataKey="pa" stroke="#ffb84d" fill="#ffb84d" fillOpacity={0.6} name="P_a 异常" isAnimationActive={false} />
-            <Area type="monotone" stackId="loss" dataKey="pcu" stroke="#ff5d8a" fill="#ff5d8a" fillOpacity={0.5} name="P_Cu 铜损" isAnimationActive={false} />
+            <Area type="monotone" stackId="loss" dataKey="ph" stroke="#34d6ff" fill="#34d6ff" fillOpacity={0.7} name={t('controlLoops.ironLossSeriesPh')} isAnimationActive={false} />
+            <Area type="monotone" stackId="loss" dataKey="pe" stroke="#43f7b5" fill="#43f7b5" fillOpacity={0.7} name={t('controlLoops.ironLossSeriesPe')} isAnimationActive={false} />
+            <Area type="monotone" stackId="loss" dataKey="pa" stroke="#ffb84d" fill="#ffb84d" fillOpacity={0.6} name={t('controlLoops.ironLossSeriesPa')} isAnimationActive={false} />
+            <Area type="monotone" stackId="loss" dataKey="pcu" stroke="#ff5d8a" fill="#ff5d8a" fillOpacity={0.5} name={t('controlLoops.ironLossSeriesPcu')} isAnimationActive={false} />
           </AreaChart>
         </SafeResponsiveContainer>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn ? (
-          <>
-            At low speed copper loss dominates (P_Cu = 1.5·iq²·Rs is speed-independent). At high speed
-            the eddy term <span className="formula">P_e ∝ (f·B)²</span> takes over — this is why aggressive
-            field weakening past base speed drops efficiency 4-6 pp.
-          </>
-        ) : (
-          <>
-            低速段铜损主导（P_Cu = 1.5·iq²·Rs 与转速无关）。高速段涡流项{' '}
-            <span className="formula">P_e ∝ (f·B)²</span> 接管 —— 这就是为什么过深弱磁
-            会让效率断崖式下降 4-6 个 percentage points。
-          </>
-        )}
+        {t('controlLoops.ironLossNoteA')} <span className="formula">P_e ∝ (f·B)²</span>{' '}
+        {t('controlLoops.ironLossNoteB')}
       </p>
     </Card>
   );

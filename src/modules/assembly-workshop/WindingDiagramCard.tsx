@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 定子绕组展开图。
@@ -11,6 +12,7 @@ import { Card } from '../../components/ui/Card';
  * - 鼠标悬停高亮同相绕组
  */
 export function WindingDiagramCard() {
+  const { t } = useI18n();
   // 配置：24 槽 4 极，双层叠绕组
   // 每极每相 2 槽，极距 τ = Z/2p = 24/4 = 6
   const [hoverPhase, setHoverPhase] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function WindingDiagramCard() {
   const polePitchLabelX = polePitchStartX + 3 * slotPitch;
 
   return (
-    <Card title="定子绕组展开图" eyebrow="24 槽 4 极 · 双层叠绕组" density="compact">
+    <Card title={t('assemblyWorkshop.windingTitle')} eyebrow={t('assemblyWorkshop.windingEyebrow')} density="compact">
       <div className="mb-2 flex gap-3">
         {(['U', 'V', 'W'] as const).map((ph) => (
           <button
@@ -63,7 +65,7 @@ export function WindingDiagramCard() {
             }`}
             style={hoverPhase === ph ? { backgroundColor: colors[ph] + '33', borderColor: colors[ph] } : {}}
           >
-            <span style={{ color: colors[ph] }}>●</span> {ph} 相
+            <span style={{ color: colors[ph] }}>●</span> {ph} {t('assemblyWorkshop.windingPhase')}
           </button>
         ))}
         {hoverPhase && (
@@ -72,7 +74,7 @@ export function WindingDiagramCard() {
             onClick={() => setHoverPhase(null)}
             className="text-caption text-ink-muted underline"
           >
-            清除
+            {t('assemblyWorkshop.windingClear')}
           </button>
         )}
       </div>
@@ -82,7 +84,7 @@ export function WindingDiagramCard() {
         className="overflow-x-auto rounded focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
         tabIndex={0}
         role="region"
-        aria-label="定子绕组展开图横向滚动区域"
+        aria-label={t('assemblyWorkshop.windingScrollAria')}
       >
         <svg viewBox="0 0 960 180" className="w-full" style={{ minWidth: 720 }}>
           {/* 背景槽线 */}
@@ -136,14 +138,13 @@ export function WindingDiagramCard() {
           <line x1={polePitchStartX} y1="150" x2={polePitchEndX} y2="150"
             stroke="rgba(148,210,255,0.25)" strokeWidth="1" strokeDasharray="4 2" />
           <text x={polePitchLabelX} y="163" textAnchor="middle" fill="#5a7a8e" fontSize="7">
-            极距 τ = 6
+            {t('assemblyWorkshop.windingPolePitch')}
           </text>
         </svg>
       </div>
 
       <p className="mt-1 text-caption leading-relaxed text-ink-secondary">
-        每极每相槽数 q = 2 · 双层叠绕组 · 极距 τ = 6。鼠标悬停高亮同相绕组。
-        端部连接仅示意同相相邻槽的串联关系。
+        {t('assemblyWorkshop.windingHint')}
       </p>
     </Card>
   );

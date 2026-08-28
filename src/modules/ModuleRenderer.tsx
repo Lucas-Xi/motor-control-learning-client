@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ModuleId } from '../simulation/engine/types';
+import { useI18n } from '../i18n/useI18n';
 
 /**
  * 模块异步加载策略：
@@ -78,9 +79,10 @@ const moduleEntries: Record<ModuleId, ModuleEntry> = {
 };
 
 function Skeleton() {
+  const { t } = useI18n();
   return (
     <div className="rounded-2xl border border-line-subtle bg-bg-surface p-8 text-center text-body text-ink-muted">
-      模块加载中…
+      {t('shell.moduleLoading')}
     </div>
   );
 }

@@ -75,7 +75,7 @@ function Probe() {
           ))}
         </div>
       </Card>
-      <Card title="αβ 波形叠加" eyebrow="虚线=abc · 实线=αβ" density="compact">
+      <Card title={t('clarkeTransform.waveOverlayTitle')} eyebrow={t('clarkeTransform.waveOverlayEyebrow')} density="compact">
         <ClarkeAlphaBetaWaveform clarke={clarke} threePhase={threePhase} cursorMs={cursorMs} />
       </Card>
       <Card title={t('clarkeTransform.matrixTitle')} eyebrow={t('clarkeTransform.matrixEyebrow')} density="compact">

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -16,6 +17,7 @@ import { formatNumber } from '../../utils/format';
  * 本组件简化建模：偏心 → 气隙长度变化 → 磁导变化 → 磁密变化 → 径向力密度变化
  */
 export function RotorEccentricityCard() {
+  const { t } = useI18n();
   const motor = useSimulationStore((s) => s.motorBasics);
   const updateMotor = useSimulationStore((s) => s.updateMotorBasics);
 
@@ -49,11 +51,11 @@ export function RotorEccentricityCard() {
   const sigmaRipple = maxSigma - minSigma;
 
   return (
-    <Card title="转子偏心" eyebrow="气隙磁密 · NTF 噪声分析" density="compact"
+    <Card title={t('assemblyWorkshop.rotorTitle')} eyebrow={t('assemblyWorkshop.rotorEyebrow')} density="compact"
       className="overflow-visible"
     >
       <div className="mb-2">
-        <label htmlFor="assembly-rotor-eccentricity" className="mb-1 block text-caption text-ink-muted">偏心度</label>
+        <label htmlFor="assembly-rotor-eccentricity" className="mb-1 block text-caption text-ink-muted">{t('assemblyWorkshop.rotorEccentricityLabel')}</label>
         <input
           id="assembly-rotor-eccentricity"
           type="range" min="0" max="50" value={eccentricityPct * 100}
@@ -103,22 +105,22 @@ export function RotorEccentricityCard() {
       {/* 数值指标 */}
       <div className="mt-2 grid grid-cols-3 gap-1 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base px-2 py-1 text-center">
-          <div className="text-ink-muted">最大磁密</div>
+          <div className="text-ink-muted">{t('assemblyWorkshop.rotorMaxFlux')}</div>
           <div className="text-accent-primary">{formatNumber(Math.max(...ntfData.map((d) => d.Bnormal)), 3)} T</div>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base px-2 py-1 text-center">
-          <div className="text-ink-muted">最小磁密</div>
+          <div className="text-ink-muted">{t('assemblyWorkshop.rotorMinFlux')}</div>
           <div className="text-accent-primary">{formatNumber(Math.min(...ntfData.map((d) => d.Bnormal)), 3)} T</div>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base px-2 py-1 text-center">
-          <div className="text-ink-muted">NTF 脉动</div>
+          <div className="text-ink-muted">{t('assemblyWorkshop.rotorNtfRipple')}</div>
           <div className="text-accent-fault">{formatNumber(sigmaRipple, 1)} kPa</div>
         </div>
       </div>
 
       {eccentricityPct > 0.15 && (
         <p className="mt-2 rounded border border-accent-warn/20 bg-accent-warn/8 px-2 py-1 text-caption text-accent-warn">
-          ⚠ 偏心 &gt; 15%：单边磁拉力显著增加，轴承寿命缩短，建议检查转子动平衡。
+          {t('assemblyWorkshop.rotorWarnHint')}
         </p>
       )}
     </Card>

@@ -84,12 +84,14 @@ describe('SnapshotPickerDialog · 选择入口', () => {
   const src = readSrc('src/components/share/SnapshotPickerDialog.tsx');
 
   it('入口 1：粘贴 gist URL / ID 输入框存在', () => {
-    expect(src).toContain('粘贴 gist URL 或 ID');
+    // i18n 接入后标题文案走 share.pickerPasteHeading（zh-CN 值：粘贴 gist URL 或 ID）
+    expect(src).toContain("t('share.pickerPasteHeading')");
     expect(src).toContain('extractGistId');
   });
 
   it('入口 2：我的快照列表（listMine）存在', () => {
-    expect(src).toContain('我的快照');
+    // i18n 接入后标题文案走 share.pickerMineHeading（zh-CN 值：我的快照（最近 30 条））
+    expect(src).toContain("t('share.pickerMineHeading')");
     expect(src).toContain('listMine');
   });
 
@@ -100,7 +102,8 @@ describe('SnapshotPickerDialog · 选择入口', () => {
   it('完整 a11y：role=dialog / aria-modal / 关闭 aria-label', () => {
     expect(src).toContain('role="dialog"');
     expect(src).toContain('aria-modal="true"');
-    expect(src).toContain('aria-label="关闭选择窗口"');
+    // i18n 接入后关闭按钮 aria-label 走 share.pickerCloseAria（zh-CN 值：关闭选择窗口）
+    expect(src).toContain("t('share.pickerCloseAria')");
   });
 
   it('Esc 关闭 + 点击外层遮罩关闭', () => {
@@ -122,13 +125,15 @@ describe('SnapshotTimeline · 时间线视觉与 a11y', () => {
   });
 
   it('提供「刷新」按钮（不主动轮询）', () => {
-    expect(src).toContain('aria-label="刷新时间线"');
+    // i18n 接入后 aria-label 走 share.tlRefreshAria（zh-CN 值：刷新时间线）
+    expect(src).toContain("t('share.tlRefreshAria')");
     expect(src).toContain('void refresh()');
   });
 
   it('「查看这个版本」「对比上一版」两个按钮俱在', () => {
-    expect(src).toContain('查看这个版本');
-    expect(src).toContain('对比上一版');
+    // i18n 接入后按钮文案走 share.tlViewBtn / share.tlCompareBtn（zh-CN 值：查看这个版本 / 对比上一版）
+    expect(src).toContain("t('share.tlViewBtn')");
+    expect(src).toContain("t('share.tlCompareBtn')");
   });
 
   it('错误状态用 role=alert + aria-live=assertive', () => {

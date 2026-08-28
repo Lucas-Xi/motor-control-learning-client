@@ -3,6 +3,7 @@ import { AlertOctagon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { DeadTimeSample } from '../../simulation/math/deadTimeDistortion';
 import { formatNumber } from '../../utils/format';
 import { SafeResponsiveContainer } from './SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 interface DeadTimeWaveformProps {
   samples: DeadTimeSample[];
@@ -17,6 +18,7 @@ interface DeadTimeWaveformProps {
  * 虚线 = 理想方波，实线 = 受死区调制后的实际电压。同色配对，便于眼睛聚焦差异。
  */
 export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeWaveformProps) {
+  const { t } = useI18n();
   return (
     <div>
       {/* 顶部 metric 行 —— 颜色 + 形状 + sr-only 三通道（色盲/打印友好） */}
@@ -25,13 +27,13 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
           const status = Math.abs(avgErrorV) < 1 ? 'measure' : Math.abs(avgErrorV) < 3 ? 'warn' : 'fault';
           const cls = status === 'measure' ? 'text-accent-measure' : status === 'warn' ? 'text-accent-warn' : 'text-accent-fault';
           const Icon = status === 'measure' ? CheckCircle2 : status === 'warn' ? AlertTriangle : AlertOctagon;
-          const sr = status === 'measure' ? '正常' : status === 'warn' ? '偏大' : '严重';
+          const srKey: TKey = status === 'measure' ? 'charts.statusNormal' : status === 'warn' ? 'charts.statusHigh' : 'charts.statusSevere';
           return (
             <div className="rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
-              <div className="text-ink-muted">平均误差电压 ΔV</div>
+              <div className="text-ink-muted">{t('charts.dtAvgErrorV')}</div>
               <div className={`flex items-center gap-1 font-mono ${cls}`}>
                 <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="sr-only">{sr}：</span>
+                <span className="sr-only">{t(srKey)}{t('charts.colon')}</span>
                 {formatNumber(avgErrorV, 2)} V
               </div>
             </div>
@@ -41,13 +43,13 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
           const status = Math.abs(errorPercent) < 1 ? 'measure' : Math.abs(errorPercent) < 3 ? 'warn' : 'fault';
           const cls = status === 'measure' ? 'text-accent-measure' : status === 'warn' ? 'text-accent-warn' : 'text-accent-fault';
           const Icon = status === 'measure' ? CheckCircle2 : status === 'warn' ? AlertTriangle : AlertOctagon;
-          const sr = status === 'measure' ? '正常' : status === 'warn' ? '偏大' : '严重';
+          const srKey: TKey = status === 'measure' ? 'charts.statusNormal' : status === 'warn' ? 'charts.statusHigh' : 'charts.statusSevere';
           return (
             <div className="rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
-              <div className="text-ink-muted">占额定 |ΔV/Udc|</div>
+              <div className="text-ink-muted">{t('charts.dtErrorPct')}</div>
               <div className={`flex items-center gap-1 font-mono ${cls}`}>
                 <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="sr-only">{sr}：</span>
+                <span className="sr-only">{t(srKey)}{t('charts.colon')}</span>
                 {formatNumber(errorPercent, 2)} %
               </div>
             </div>
@@ -93,7 +95,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeDasharray="3 3"
               dot={false}
               isAnimationActive={false}
-              name="Va 理想"
+              name={`Va ${t('charts.dtIdeal')}`}
             />
             <Line
               type="stepAfter"
@@ -103,7 +105,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeDasharray="3 3"
               dot={false}
               isAnimationActive={false}
-              name="Vb 理想"
+              name={`Vb ${t('charts.dtIdeal')}`}
             />
             <Line
               type="stepAfter"
@@ -113,7 +115,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeDasharray="3 3"
               dot={false}
               isAnimationActive={false}
-              name="Vc 理想"
+              name={`Vc ${t('charts.dtIdeal')}`}
             />
 
             {/* 含死区实际三相 - 实线 */}
@@ -124,7 +126,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeWidth={1.8}
               dot={false}
               isAnimationActive={false}
-              name="Va 实际"
+              name={`Va ${t('charts.dtActual')}`}
             />
             <Line
               type="stepAfter"
@@ -133,7 +135,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeWidth={1.8}
               dot={false}
               isAnimationActive={false}
-              name="Vb 实际"
+              name={`Vb ${t('charts.dtActual')}`}
             />
             <Line
               type="stepAfter"
@@ -142,7 +144,7 @@ export function DeadTimeWaveform({ samples, avgErrorV, errorPercent }: DeadTimeW
               strokeWidth={1.8}
               dot={false}
               isAnimationActive={false}
-              name="Vc 实际"
+              name={`Vc ${t('charts.dtActual')}`}
             />
           </ComposedChart>
         </SafeResponsiveContainer>

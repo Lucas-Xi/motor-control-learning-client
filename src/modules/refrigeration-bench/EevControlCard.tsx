@@ -13,6 +13,7 @@ import { AlertOctagon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { simulateEevPi, type EevSample } from '../../simulation/math/eevController';
 import { formatNumber } from '../../utils/format';
 
@@ -56,6 +57,7 @@ function computeSettleTime(samples: EevSample[], target: number): number | null 
  * 与 Zustand 解耦：所有状态本地 useState 管理，仅做"参数 → 时域响应"的纯计算演示。
  */
 export function EevControlCard() {
+  const { t } = useI18n();
   const [kp, setKp] = useState(DEFAULTS.kp);
   const [ki, setKi] = useState(DEFAULTS.ki);
   const [targetSH, setTargetSH] = useState(DEFAULTS.targetSH);
@@ -82,20 +84,20 @@ export function EevControlCard() {
   const settleTime = useMemo(() => computeSettleTime(samples, targetSH), [samples, targetSH]);
 
   return (
-    <Card title="EEV PI 控制环" eyebrow="electronic expansion valve" density="compact">
+    <Card title={t('refrigerationBench.eevTitle')} eyebrow="electronic expansion valve" density="compact">
       {/* 头部 metric 行 —— 颜色 + 形状 + sr-only 三通道（色盲/打印友好） */}
       <div className="mb-3 grid grid-cols-2 gap-2 text-caption">
         {(() => {
           const errStatus = Math.abs(steadyErr) < SETTLE_BAND_K ? 'measure' : Math.abs(steadyErr) < 1.5 ? 'warn' : 'fault';
           const ErrIcon = errStatus === 'measure' ? CheckCircle2 : errStatus === 'warn' ? AlertTriangle : AlertOctagon;
           const errCls = errStatus === 'measure' ? 'text-accent-measure' : errStatus === 'warn' ? 'text-accent-warn' : 'text-accent-fault';
-          const errSr = errStatus === 'measure' ? '收敛' : errStatus === 'warn' ? '偏差偏大' : '严重偏离';
+          const errSr: TKey = errStatus === 'measure' ? 'refrigerationBench.eevErrConvergedSr' : errStatus === 'warn' ? 'refrigerationBench.eevErrLargeSr' : 'refrigerationBench.eevErrSevereSr';
           return (
             <div className="rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
-              <div className="text-ink-muted">稳态偏差 ΔSH</div>
+              <div className="text-ink-muted">{t('refrigerationBench.eevSteadyErrorLabel')}</div>
               <div className={`flex items-center gap-1 font-mono ${errCls}`}>
                 <ErrIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="sr-only">{errSr}：</span>
+                <span className="sr-only">{t(errSr)}</span>
                 {formatNumber(steadyErr, 2)} K
               </div>
             </div>
@@ -105,14 +107,14 @@ export function EevControlCard() {
           const tStatus = settleTime === null ? 'fault' : settleTime < 5 ? 'measure' : 'warn';
           const TIcon = tStatus === 'measure' ? CheckCircle2 : tStatus === 'warn' ? AlertTriangle : AlertOctagon;
           const tCls = tStatus === 'measure' ? 'text-accent-measure' : tStatus === 'warn' ? 'text-accent-warn' : 'text-accent-fault';
-          const tSr = tStatus === 'measure' ? '快速收敛' : tStatus === 'warn' ? '收敛偏慢' : '未收敛';
+          const tSr: TKey = tStatus === 'measure' ? 'refrigerationBench.eevSettleFastSr' : tStatus === 'warn' ? 'refrigerationBench.eevSettleSlowSr' : 'refrigerationBench.eevNotSettledSr';
           return (
             <div className="rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
-              <div className="text-ink-muted">进入 ±0.5K 用时</div>
+              <div className="text-ink-muted">{t('refrigerationBench.eevSettleLabel')}</div>
               <div className={`flex items-center gap-1 font-mono ${tCls}`}>
                 <TIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="sr-only">{tSr}：</span>
-                {settleTime === null ? '未收敛' : `${formatNumber(settleTime, 2)} s`}
+                <span className="sr-only">{t(tSr)}</span>
+                {settleTime === null ? t('refrigerationBench.eevNotSettled') : `${formatNumber(settleTime, 2)} s`}
               </div>
             </div>
           );
@@ -122,7 +124,7 @@ export function EevControlCard() {
       {/* 滑块区 */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Slider
-          label="Kp 比例增益"
+          label={t('refrigerationBench.eevKpLabel')}
           value={kp}
           min={0}
           max={8}
@@ -131,7 +133,7 @@ export function EevControlCard() {
           onChange={setKp}
         />
         <Slider
-          label="Ki 积分增益"
+          label={t('refrigerationBench.eevKiLabel')}
           value={ki}
           min={0}
           max={20}
@@ -140,7 +142,7 @@ export function EevControlCard() {
           onChange={setKi}
         />
         <Slider
-          label="目标 SH"
+          label={t('refrigerationBench.eevTargetShLabel')}
           value={targetSH}
           min={2}
           max={10}
@@ -149,7 +151,7 @@ export function EevControlCard() {
           onChange={setTargetSH}
         />
         <Slider
-          label="起始扰动 SH"
+          label={t('refrigerationBench.eevInitialShLabel')}
           value={initialSH}
           min={0}
           max={15}
@@ -201,7 +203,7 @@ export function EevControlCard() {
               stroke="#43f7b5"
               strokeDasharray="4 4"
               strokeWidth={1.2}
-              label={{ value: '目标', fill: '#43f7b5', fontSize: 10, position: 'right' }}
+              label={{ value: t('refrigerationBench.eevTargetLabel'), fill: '#43f7b5', fontSize: 10, position: 'right' }}
             />
             <Line
               yAxisId="sh"
@@ -211,7 +213,7 @@ export function EevControlCard() {
               strokeWidth={1.8}
               dot={false}
               isAnimationActive={false}
-              name="SH 实际 (K)"
+              name={t('refrigerationBench.eevSeriesSh')}
             />
             <Line
               yAxisId="step"
@@ -221,15 +223,14 @@ export function EevControlCard() {
               strokeWidth={1.4}
               dot={false}
               isAnimationActive={false}
-              name="EEV 步数"
+              name={t('refrigerationBench.eevSeriesSteps')}
             />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        反向作用回路：SH 高于目标 → PI 输出加大 EEV 开度 → 制冷剂流量增大 → SH 回落。
-        Ki 太小残留稳态偏差，Ki 太大会引起 SH 振荡甚至液击；典型实机 Kp 1~3、Ki 2~6，更新周期 1~5 s。
+        {t('refrigerationBench.eevHint')}
       </p>
     </Card>
   );

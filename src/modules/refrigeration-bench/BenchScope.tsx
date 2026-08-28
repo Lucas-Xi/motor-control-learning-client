@@ -3,6 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'r
 import { Activity } from 'lucide-react';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { simulateCycle } from '../../simulation/math/vaporCycle';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useBenchHxStore } from '../../store/benchHxStore';
 import { adcMeasurement, type AdcParams } from '../../simulation/math/sensorNoise';
@@ -37,6 +38,7 @@ const ADC_BY_CHANNEL: Record<'Pd' | 'Td' | 'cop' | 'Iq', AdcParams> = {
  * 零点偏置，让学员看见理想模型与硬件采样链读数的差距，呼应 sensorNoise.ts 教学内容。
  */
 export function BenchScope() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
   const time = useSimulationStore((s) => s.time);
@@ -112,7 +114,7 @@ export function BenchScope() {
       <div className="mb-1 flex items-center justify-between text-caption">
         <span className="flex items-center gap-1.5 text-ink-muted">
           <Activity className="h-3.5 w-3.5 text-accent-primary" />
-          台架记录器（{WINDOW_SEC}s 滚动窗口 · {SAMPLE_HZ}Hz 采样）
+          {t('refrigerationBench.scopeTitlePre')}{WINDOW_SEC}{t('refrigerationBench.scopeTitleInfix')}{SAMPLE_HZ}{t('refrigerationBench.scopeTitlePost')}
           <button
             type="button"
             onClick={() => setSensorNoise(!sensorNoise)}
@@ -121,13 +123,13 @@ export function BenchScope() {
                 ? 'border-accent-warn/60 bg-accent-warn/15 text-accent-warn'
                 : 'border-line bg-bg-elev text-ink-muted hover:text-ink'
             }`}
-            title="开启后四通道叠 12-bit ADC 量化 + INL + 高斯噪声 + 零点偏置，模拟真实采样链毛刺"
+            title={t('refrigerationBench.scopeHdHint')}
           >
-            HD 实测{sensorNoise ? ' · 开' : ''}
+            {t('refrigerationBench.scopeHdLabel')}{sensorNoise ? t('refrigerationBench.scopeHdOnSuffix') : ''}
           </button>
         </span>
         <span className="text-ink-muted">
-          当前：P_d <span className="text-accent-warn font-mono">{result.states[1].P.toFixed(2)}</span> MPa ·
+          {t('refrigerationBench.scopeCurrent')}P_d <span className="text-accent-warn font-mono">{result.states[1].P.toFixed(2)}</span> MPa ·
           T_d <span className="text-accent-fault font-mono ml-2">{result.Tdischarge.toFixed(1)}</span> °C ·
           COP <span className="text-accent-measure font-mono ml-2">{result.cop.toFixed(2)}</span> ·
           Iq <span className="text-accent-primary font-mono ml-2">{requiredIq.toFixed(1)}</span> A
@@ -148,7 +150,7 @@ export function BenchScope() {
           <YAxis yAxisId="T" orientation="right" tick={{ fill: '#9eb5cb', fontSize: 10 }} domain={[0, 130]} />
           <Tooltip
             contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
-            labelFormatter={(v) => `t = ${Number(v).toFixed(1)}s（相对当前 ${(Number(v) - time).toFixed(1)}s）`}
+            labelFormatter={(v) => `t = ${Number(v).toFixed(1)}${t('refrigerationBench.scopeTooltipRelPre')}${(Number(v) - time).toFixed(1)}${t('refrigerationBench.scopeTooltipRelPost')}`}
           />
           <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
           <Line yAxisId="P" type="monotone" dataKey="Pd" stroke="#ffb84d" strokeWidth={1.6} dot={false} isAnimationActive={false} name="P_d (MPa)" />

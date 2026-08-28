@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockHFISample } from '../../utils/serialMockGenerators';
@@ -45,6 +46,7 @@ interface Row {
 }
 
 export function SerialCompareHFICard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const hfi = useSimulationStore((s) => s.hfi);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -128,7 +130,7 @@ export function SerialCompareHFICard() {
 
   return (
     <SerialCompareCardShell
-      title="HFI 信号链：注入 / 解调 / 估角"
+      title={t('hfiSensorless.serialTitle')}
       eyebrow="HFI signal chain"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -143,43 +145,46 @@ export function SerialCompareHFICard() {
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="|Δθ| 均值"
+          label={t('hfiSensorless.serialKpiMeanErr')}
           value={`${formatNumber((kpi.meanErrRad * 180) / Math.PI, 2)}°`}
           tone={kpi.meanErrRad > 0.1 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="|Δθ| 峰值"
+          label={t('hfiSensorless.serialKpiPeakErr')}
           value={`${formatNumber((kpi.peakErrRad * 180) / Math.PI, 1)}°`}
           tone={kpi.peakErrRad > 0.5 ? 'fault' : kpi.peakErrRad > 0.2 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="估算 Lq/Ld"
-          value={`${formatNumber(kpi.saliencyMean, 2)}（设定 ${formatNumber(hfi.saliencyRatio, 2)}）`}
+          label={t('hfiSensorless.serialKpiSaliency')}
+          value={t('hfiSensorless.serialSaliencyValue')
+            .replace('{est}', formatNumber(kpi.saliencyMean, 2))
+            .replace('{set}', formatNumber(hfi.saliencyRatio, 2))}
           tone={Math.abs(kpi.saliencyMean - hfi.saliencyRatio) > 0.3 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="锁相时间"
-          value={Number.isFinite(kpi.lockTimeMs) ? `${formatNumber(kpi.lockTimeMs, 0)} ms` : '未锁定'}
+          label={t('hfiSensorless.metricLockTime')}
+          value={Number.isFinite(kpi.lockTimeMs) ? `${formatNumber(kpi.lockTimeMs, 0)} ms` : t('hfiSensorless.notLocked')}
           tone={Number.isFinite(kpi.lockTimeMs) && kpi.lockTimeMs < 50 ? 'measure' : 'warn'}
         />
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic,{' '}
-        <span className="text-accent-warn">v_inject(f32), demod_err(f32), theta_est(f32), theta_real(f32)</span> ·
-        凸极比 Lq/Ld 由解调误差幅值反推，IPM 典型 1.5-3；SPM 接近 1 → HFI 失效
+        {t('hfiSensorless.serialProtoLead')}{' '}
+        <span className="text-accent-warn">v_inject(f32), demod_err(f32), theta_est(f32), theta_real(f32)</span>{' '}
+        {t('hfiSensorless.serialProtoTail')}
       </p>
     </SerialCompareCardShell>
   );
 }
 
 function InjectionChart({ rows }: { rows: Row[] }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>注入电压 + 解调误差</span>
+        <span>{t('hfiSensorless.serialInjectChartTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-primary)" label="V_inject (V)" />
-          <Legend color="var(--accent-warn)" label="demod (A 等效)" />
+          <Legend color="var(--accent-warn)" label={t('hfiSensorless.serialLegendDemod')} />
         </span>
       </header>
       <div className="h-40">
@@ -209,10 +214,11 @@ function InjectionChart({ rows }: { rows: Row[] }) {
 }
 
 function ThetaChart({ rows }: { rows: Row[] }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>电角度：真实 vs HFI 估算 / 误差</span>
+        <span>{t('hfiSensorless.serialThetaChartTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-measure)" label="θ_real" />
           <Legend color="var(--accent-primary)" label="θ_est" dashed />
@@ -267,6 +273,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -276,7 +283,11 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : '正常';
+  const sr = tone === 'fault'
+    ? t('hfiSensorless.serialSrSevere')
+    : tone === 'warn'
+      ? t('hfiSensorless.serialSrWarn')
+      : t('hfiSensorless.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

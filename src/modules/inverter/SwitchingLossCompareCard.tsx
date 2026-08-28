@@ -20,8 +20,7 @@ import { formatNumber } from '../../utils/format';
  */
 export function SwitchingLossCompareCard() {
   const inverter = useSimulationStore((s) => s.inverter);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [Vdc, setVdc] = useState(inverter.uDc ?? 310);
   const [Irms, setIrms] = useState(8);
@@ -89,25 +88,12 @@ export function SwitchingLossCompareCard() {
 
   return (
     <Card
-      title={isEn ? 'IGBT vs MOSFET vs SiC: Loss + Junction Temp' : 'IGBT vs MOSFET vs SiC：损耗 + 结温'}
-      eyebrow={isEn ? 'why SiC matters at high frequency' : 'SiC 为啥高频才值'}
+      title={t('inverter.swLossTitle')}
+      eyebrow={t('inverter.swLossEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Conduction + switching loss breakdown per Infineon AN2008-03; one-pole RC thermal Rth_jc + Rth_ca.'
-              : '导通 + 开关损耗按 Infineon AN2008-03 拆分；结温走一阶 RC R_th_jc + R_th_ca。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('inverter.swLossFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'At low fsw, IGBT wins on cost & conduction loss. At high fsw, SiC\'s fast switching + low Coss outshine — typical crossover ~20 kHz. Drag Vdc/Irms/duty to find your design sweet spot.'
-          : '低 fsw 时 IGBT 凭成本 + 导通损取胜；高 fsw 时 SiC 凭快开关 + 低 Coss 反超。典型交叉点 ~20 kHz。拖 Vdc/Irms/duty 找你设计的甜区。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('inverter.swLossIntro')}</p>
 
       <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         <label className="block">
@@ -148,7 +134,7 @@ export function SwitchingLossCompareCard() {
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Case T' : 'Case 温'}</span>
+            <span>{t('inverter.swLossCaseT')}</span>
             <span className="formula text-ink-primary">{formatNumber(TcaseC, 0)} °C</span>
           </span>
           <input type="range" value={TcaseC} min={20} max={120} step={5}
@@ -192,9 +178,8 @@ export function SwitchingLossCompareCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? `At ${formatNumber(fswCurrent / 1000, 0)} kHz, IGBT/SiC junction temps are ${formatNumber(TjIgbt, 0)}°C / ${formatNumber(TjSic, 0)}°C respectively. IGBT max Tj typically 150°C; SiC can sustain 175°C+. Stay below 125°C for long-life designs.`
-          : `当前 ${formatNumber(fswCurrent / 1000, 0)} kHz 下 IGBT/SiC 结温 ${formatNumber(TjIgbt, 0)}°C / ${formatNumber(TjSic, 0)}°C。IGBT max Tj 通常 150°C；SiC 能撑 175°C+。长寿命设计建议 < 125°C。`}
+        {t('inverter.swLossNoteLead')} {formatNumber(fswCurrent / 1000, 0)} kHz{t('inverter.swLossNoteMid')}{' '}
+        {formatNumber(TjIgbt, 0)}°C / {formatNumber(TjSic, 0)}°C{t('inverter.swLossNoteTail')}
       </p>
     </Card>
   );

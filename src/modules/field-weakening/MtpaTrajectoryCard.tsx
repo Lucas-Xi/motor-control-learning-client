@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { solveMtpa } from '../../simulation/math/mtpa';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -33,6 +34,7 @@ const xOf = (id: number) => PAD.l + ((id - ID_MIN) / (ID_MAX - ID_MIN)) * PW;
 const yOf = (iq: number) => PAD.t + (1 - (iq - IQ_MIN) / (IQ_MAX - IQ_MIN)) * PH;
 
 export function MtpaTrajectoryCard() {
+  const { t } = useI18n();
   // 从 store 读电机参数（与 MtpaCurveCard 同源）
   const ldMh = useSimulationStore((s) => s.motorBasics.ldMh);
   const lqMh = useSimulationStore((s) => s.motorBasics.lqMh);
@@ -85,16 +87,16 @@ export function MtpaTrajectoryCard() {
   const distanceToMtpa = Math.hypot(id - currentWorkPoint.id_ref, iq - currentWorkPoint.iq_ref);
 
   return (
-    <Card title="MTPA 最优轨迹" eyebrow="max torque per ampere" density="compact">
+    <Card title={t('weakField.mtpaTrajectoryTitle')} eyebrow="max torque per ampere" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        公式 <code className="formula text-ink-secondary">id* = [ψf − √(ψf² + 8·(Lq−Ld)²·iq²)] / [4·(Lq−Ld)]</code>
+        {t('weakField.mtpaTrajectoryFormulaLabel')} <code className="formula text-ink-secondary">id* = [ψf − √(ψf² + 8·(Lq−Ld)²·iq²)] / [4·(Lq−Ld)]</code>
       </p>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`MTPA 轨迹图：当前工作点 id=${formatNumber(id, 1)}A iq=${formatNumber(iq, 1)}A，到 MTPA 距离 ${formatNumber(distanceToMtpa, 1)}A`}
+        aria-label={`${t('weakField.mtpaTrajectoryAriaPrefix')} id=${formatNumber(id, 1)}A iq=${formatNumber(iq, 1)}A${t('weakField.mtpaTrajectoryAriaDist')} ${formatNumber(distanceToMtpa, 1)}A`}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
 
@@ -153,13 +155,13 @@ export function MtpaTrajectoryCard() {
           <line x1={W - 130} y1={PAD.t + 22} x2={W - 110} y2={PAD.t + 22} stroke="rgb(var(--accent-measure))" strokeWidth="2" strokeDasharray="6 4" />
           <text x={W - 106} y={PAD.t + 25} fill="rgb(var(--ink-muted))">SPM MTPA</text>
           <circle cx={W - 122} cy={PAD.t + 36} r="4" fill="rgb(var(--accent-warn))" />
-          <text x={W - 106} y={PAD.t + 39} fill="rgb(var(--ink-muted))">当前点</text>
+          <text x={W - 106} y={PAD.t + 39} fill="rgb(var(--ink-muted))">{t('weakField.mtpaTrajectoryLegendCurrent')}</text>
         </g>
       </svg>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">电机类型</p>
+          <p className="text-ink-muted">{t('weakField.mtpaTrajectoryMetricMotorType')}</p>
           <p className="formula text-ink-primary">{isIpm ? `IPM Lq/Ld=${formatNumber(lqMh / ldMh, 2)}` : 'SPM (Lq≈Ld)'}</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
@@ -167,7 +169,7 @@ export function MtpaTrajectoryCard() {
           <p className="formula text-accent-primary">{formatNumber(currentWorkPoint.id_ref, 2)} A</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">偏离距离</p>
+          <p className="text-ink-muted">{t('weakField.mtpaTrajectoryMetricDeviation')}</p>
           <p className={`formula ${distanceToMtpa > 2 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(distanceToMtpa, 2)} A
           </p>

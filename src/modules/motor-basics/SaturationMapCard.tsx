@@ -27,8 +27,7 @@ import { formatNumber } from '../../utils/format';
  */
 export function SaturationMapCard() {
   const motor = useSimulationStore((s) => s.motorBasics);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   // 工作点：用户可拖滑块改 id/iq
   const [id, setId] = useState(0);
@@ -81,25 +80,12 @@ export function SaturationMapCard() {
 
   return (
     <Card
-      title={isEn ? 'Inductance Saturation (Ld/Lq cross-coupling)' : '电感饱和（Ld/Lq 交叉饱和）'}
-      eyebrow={isEn ? 'high-fidelity PMSM' : '高保真 PMSM 模型'}
+      title={t('motorBasics.satMapTitle')}
+      eyebrow={t('motorBasics.satMapEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Vorobiev 2010 polynomial fit + sigmoid soft saturation; replaces constant Ld/Lq.'
-              : 'Vorobiev 2010 多项式拟合 + sigmoid 软饱和；替代常量 Ld/Lq。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('motorBasics.satMapFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Real IPM motors saturate at high currents: Lq drops 20-40% under heavy iq, the saliency ratio degrades, and MTPA trajectory shifts. Drag id/iq to see how Ld, Lq, and saliency change.'
-          : '真实 IPM 电机重载饱和：Lq 在高 iq 下退化 20-40%，凸极比下降，MTPA 轨迹偏移。拖动 id/iq 滑块看 Ld、Lq、凸极比的实时变化。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('motorBasics.satMapIntro')}</p>
 
       <div className="mb-3 grid grid-cols-2 gap-3">
         <label className="block">
@@ -115,7 +101,7 @@ export function SaturationMapCard() {
             step={0.1}
             onChange={(e) => setId(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="d 轴电流"
+            aria-label={t('motorBasics.satMapIdAria')}
             aria-valuemin={-motor.ratedCurrent}
             aria-valuemax={motor.ratedCurrent * 0.3}
             aria-valuenow={id}
@@ -135,7 +121,7 @@ export function SaturationMapCard() {
             step={0.1}
             onChange={(e) => setIq(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="q 轴电流"
+            aria-label={t('motorBasics.satMapIqAria')}
             aria-valuemin={0}
             aria-valuemax={motor.ratedCurrent * 1.4}
             aria-valuenow={iq}
@@ -189,25 +175,13 @@ export function SaturationMapCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn ? (
-          <>
-            <span className="text-accent-primary">No-load:</span> Lq/Ld ={' '}
-            <span className="formula">{formatNumber(noLoad.saliency, 2)}</span> ·{' '}
-            <span className="text-accent-measure">Operating:</span>{' '}
-            <span className="formula">{formatNumber(current.saliency, 2)}</span> · Saturation margin{' '}
-            <span className="formula">{formatNumber(current.margin * 100, 0)}%</span>.
-            Sample preset: Hitachi 1.5HP IPM (12-slot 8-pole).
-          </>
-        ) : (
-          <>
-            <span className="text-accent-primary">空载</span> Lq/Ld ={' '}
-            <span className="formula">{formatNumber(noLoad.saliency, 2)}</span>，
-            <span className="text-accent-measure">当前工作点</span>{' '}
-            <span className="formula">{formatNumber(current.saliency, 2)}</span>，饱和裕度{' '}
-            <span className="formula">{formatNumber(current.margin * 100, 0)}%</span>。
-            饱和系数用海立 1.5HP 12 槽 8 极样本。
-          </>
-        )}
+        <span className="text-accent-primary">{t('motorBasics.satMapNoteNoLoad')}</span>{' '}
+        <span className="formula">{formatNumber(noLoad.saliency, 2)}</span>{' '}
+        <span className="text-accent-measure">{t('motorBasics.satMapNoteOp')}</span>{' '}
+        <span className="formula">{formatNumber(current.saliency, 2)}</span>
+        {t('motorBasics.satMapNoteMargin')}{' '}
+        <span className="formula">{formatNumber(current.margin * 100, 0)}%</span>
+        {t('motorBasics.satMapNoteSample')}
       </p>
 
       {/* 凸极比退化 bar：让"重载下凸极比少了多少"一眼可见 */}
@@ -215,8 +189,8 @@ export function SaturationMapCard() {
         <SafeResponsiveContainer>
           <BarChart
             data={[
-              { label: isEn ? 'No-load' : '空载', saliency: noLoad.saliency },
-              { label: isEn ? 'Operating' : '当前', saliency: current.saliency },
+              { label: t('motorBasics.satMapBarNoLoad'), saliency: noLoad.saliency },
+              { label: t('motorBasics.satMapBarOperating'), saliency: current.saliency },
             ]}
             layout="vertical"
             margin={{ top: 4, right: 18, bottom: 4, left: 30 }}

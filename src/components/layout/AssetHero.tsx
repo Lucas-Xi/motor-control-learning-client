@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Maximize2, X } from 'lucide-react';
 import type { ModuleId } from '../../simulation/engine/types';
 import { getVisualAssetForModule } from '../../content/visualAssets';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   moduleId: ModuleId;
@@ -18,6 +19,7 @@ interface Props {
  * - 高度 120-180px，object-cover，不破坏现有模块卡片布局。
  */
 export function AssetHero({ moduleId, title, compact = false }: Props) {
+  const { t } = useI18n();
   const asset = getVisualAssetForModule(moduleId);
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
@@ -43,11 +45,11 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
       >
         <button
           type="button"
-          aria-label={`查看 ${caption} 大图`}
+          aria-label={t('shell.heroViewLargeAria').replace('{title}', caption)}
           onClick={() => setOpen(true)}
           className="absolute inset-0 z-10 flex h-full w-full cursor-zoom-in items-end justify-start text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
         >
-          <span className="sr-only">{caption}（点击展开大图）</span>
+          <span className="sr-only">{t('shell.heroExpandHint').replace('{title}', caption)}</span>
         </button>
         <picture>
           {asset.optimizedFilename && <source srcSet={asset.optimizedFilename} type="image/webp" />}
@@ -65,7 +67,7 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
           className="absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-md border border-line-subtle bg-bg-base/80 px-1.5 py-0.5 text-caption text-ink-secondary backdrop-blur-sm"
         >
           <Maximize2 className="h-3 w-3" />
-          大图
+          {t('shell.heroZoomBadge')}
         </span>
         <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-bg-base/95 via-bg-base/60 to-transparent px-3 py-2 text-caption text-ink-primary">
           {caption}
@@ -76,14 +78,14 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${caption} 大图`}
+          aria-label={t('shell.heroDialogAria').replace('{title}', caption)}
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4"
           onClick={close}
         >
           <button
             type="button"
             onClick={close}
-            aria-label="关闭大图"
+            aria-label={t('shell.heroCloseAria')}
             className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-line-subtle bg-bg-surface text-ink-primary hover:border-accent-primary hover:text-accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           >
             <X className="h-4 w-4" />

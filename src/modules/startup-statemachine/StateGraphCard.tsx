@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { StartupStateGraph } from '../../components/charts/StartupStateGraph';
+import { useI18n } from '../../i18n/useI18n';
 import { simulateStartup } from '../../simulation/math/startup';
 import type { StartupState } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -17,6 +18,7 @@ import { useSimulationStore } from '../../store/simulationStore';
  * 比例 hack：viewBox 720×360 = 2:1，用 padding-top: 50% 维持。
  */
 export function StateGraphCard() {
+  const { t } = useI18n();
   const params = useSimulationStore((s) => s.startup);
   const time = useSimulationStore((s) => s.time);
 
@@ -46,7 +48,7 @@ export function StateGraphCard() {
   }, [currentState, time, params]);
 
   return (
-    <Card title="启动状态转移图" eyebrow="state graph" density="compact">
+    <Card title={t('startupStateMachine.stateGraphTitle')} eyebrow="state graph" density="compact">
       {/* padding-top hack 维持 2:1 比例 */}
       <div className="relative w-full" style={{ paddingTop: '50%' }}>
         <div className="absolute inset-0">

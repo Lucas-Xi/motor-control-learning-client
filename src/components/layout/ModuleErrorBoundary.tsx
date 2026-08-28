@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { AlertOctagon, RotateCcw } from 'lucide-react';
+import { getCurrentLocale, translate } from '../../i18n/useI18n';
 
 interface Props {
   /** 模块标识，重置时显示。父组件如果传 key={moduleId} 会让本边界在模块切换时自然 remount，
@@ -40,6 +41,8 @@ export class ModuleErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
+      // class 组件用不了 hook：走 translate 纯函数，render 时取当前 locale
+      const tr = (key: Parameters<typeof translate>[1]) => translate(getCurrentLocale(), key);
       return (
         <div
           role="alert"
@@ -47,12 +50,12 @@ export class ModuleErrorBoundary extends Component<Props, State> {
         >
           <div className="flex items-center gap-2 text-accent-fault">
             <AlertOctagon className="h-5 w-5" aria-hidden="true" />
-            <span className="font-display text-title">模块加载出错</span>
+            <span className="font-display text-title">{tr('shell.moduleErrorTitle')}</span>
           </div>
           <p className="text-body text-ink-secondary leading-relaxed">
             {this.props.moduleId
-              ? <>模块 <span className="font-mono text-ink-primary">{this.props.moduleId}</span> 渲染时抛出异常：</>
-              : <>本模块渲染时抛出异常：</>}
+              ? <>{tr('shell.moduleErrorWithIdPrefix')} <span className="font-mono text-ink-primary">{this.props.moduleId}</span>{tr('shell.moduleErrorWithIdSuffix')}</>
+              : <>{tr('shell.moduleErrorGeneric')}</>}
           </p>
           <pre className="formula max-h-40 w-full overflow-auto rounded-lg border border-line-subtle bg-bg-base p-3 text-caption text-accent-fault">
             {this.state.error.message}
@@ -64,7 +67,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
               className="inline-flex items-center gap-1.5 rounded-xl border border-accent-primary/60 bg-accent-primary/15 px-3 py-1.5 text-body font-medium text-accent-primary transition-colors hover:bg-accent-primary/25"
             >
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
-              重试加载
+              {tr('shell.moduleErrorRetry')}
             </button>
             <button
               type="button"
@@ -77,10 +80,10 @@ export class ModuleErrorBoundary extends Component<Props, State> {
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-line-subtle bg-bg-surface px-3 py-1.5 text-body text-ink-secondary transition-colors hover:border-line-strong hover:text-ink-primary"
             >
-              复制错误堆栈
+              {tr('shell.moduleErrorCopyStack')}
             </button>
           </div>
-          <p className="text-caption text-ink-muted">其它模块仍可正常使用。重试不解决时检查浏览器控制台堆栈。</p>
+          <p className="text-caption text-ink-muted">{tr('shell.moduleErrorFooter')}</p>
         </div>
       );
     }

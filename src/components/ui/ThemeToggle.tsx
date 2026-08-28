@@ -1,14 +1,15 @@
 import { Sun, Moon, Eye, Projector, Glasses } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { THEME_ORDER, useThemeStore, type Theme } from '../../store/themeStore';
 
-/** 5 主题 chip 元数据（图标 + 中文短标签 + 长描述）。 */
-const META: Record<Theme, { label: string; description: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }> = {
-  dark: { label: '深色', description: '深色 · 工程仪表盘', Icon: Moon },
-  light: { label: '明色', description: '明色 · 打印 / 演示', Icon: Sun },
-  'high-contrast': { label: '高对比', description: '高对比 · 视障辅助', Icon: Eye },
-  projector: { label: '投影', description: '投影 · 大屏教学', Icon: Projector },
-  colorblind: { label: '色盲友好', description: '色盲友好 · Wong/IBM 安全调色板', Icon: Glasses },
+/** 5 主题 chip 元数据（图标 + 翻译 key，短标签 / 长描述在渲染时由 t() 取）。 */
+const META: Record<Theme, { labelKey: TKey; descKey: TKey; Icon: ComponentType<SVGProps<SVGSVGElement>> }> = {
+  dark: { labelKey: 'shell.themeLabelDark', descKey: 'shell.themeDescDark', Icon: Moon },
+  light: { labelKey: 'shell.themeLabelLight', descKey: 'shell.themeDescLight', Icon: Sun },
+  'high-contrast': { labelKey: 'shell.themeLabelHighContrast', descKey: 'shell.themeDescHighContrast', Icon: Eye },
+  projector: { labelKey: 'shell.themeLabelProjector', descKey: 'shell.themeDescProjector', Icon: Projector },
+  colorblind: { labelKey: 'shell.themeLabelColorblind', descKey: 'shell.themeDescColorblind', Icon: Glasses },
 };
 
 /**
@@ -17,18 +18,20 @@ const META: Record<Theme, { label: string; description: string; Icon: ComponentT
  * 不再用 framer-motion 的 AnimatePresence 旋转过渡，纯 CSS hover 即可。
  */
 export function ThemeToggle() {
+  const { t } = useI18n();
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
 
   return (
     <div
       role="group"
-      aria-label="主题切换"
+      aria-label={t('shell.themeToggleAria')}
       className="inline-flex items-center gap-0.5 rounded-full border border-line-subtle bg-bg-surface p-0.5"
     >
       {THEME_ORDER.map((id) => {
-        const { label, description, Icon } = META[id];
+        const { labelKey, descKey, Icon } = META[id];
         const active = theme === id;
+        const description = `${t(labelKey)} · ${t(descKey)}`;
         return (
           <button
             key={id}
@@ -45,7 +48,7 @@ export function ThemeToggle() {
             }`}
           >
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">{label}</span>
+            <span className="hidden sm:inline">{t(labelKey)}</span>
           </button>
         );
       })}

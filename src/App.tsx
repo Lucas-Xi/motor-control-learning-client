@@ -14,6 +14,7 @@ import {
   type OpenSnapshotPayload,
 } from './utils/desktopBridge';
 import { decodeSnapshot, type AppStateInput, type DecodedSnapshot } from './utils/snapshotCodec';
+import { getCurrentLocale, translate, useI18n } from './i18n/useI18n';
 import { useSimulationStore } from './store/simulationStore';
 import { useUIStore } from './store/uiStore';
 import { useThemeStore } from './store/themeStore';
@@ -63,7 +64,7 @@ function applyDecodedSimSlices(sim: Partial<Record<keyof AppStateInput, Record<s
 function applyIncomingSnapshot(payload: OpenSnapshotPayload) {
   if (!payload || !payload.json) return;
   let decodedSim: Partial<Record<keyof AppStateInput, Record<string, unknown>>> | null = null;
-  let label = payload.source ?? '收到的快照';
+  const label = payload.source ?? translate(getCurrentLocale(), 'shell.snapshotReceivedLabel');
 
   const trimmed = payload.json.trim();
   // 形式 1：原始 JSON，含 sim 段
@@ -87,19 +88,17 @@ function applyIncomingSnapshot(payload: OpenSnapshotPayload) {
     if (decoded.ok && decoded.state) decodedSim = decoded.state.sim;
   }
   if (!decodedSim) {
-    window.alert(`无法识别快照文件：${label}\n格式必须是 .compbench JSON 或 snapshotCodec token。`);
+    window.alert(translate(getCurrentLocale(), 'shell.snapshotUnrecognizedAlert').replace('{label}', label));
     return;
   }
 
   // 临时确认弹窗：未来若有 ReceiveSnapshotModal，可在此处复用
-  const ok = window.confirm(
-    `检测到工况快照：${label}\n\n是否把其中的参数应用到当前学习客户端？\n（不会清除你已有的参数，只覆盖快照中明确给出的字段。）`,
-  );
+  const ok = window.confirm(translate(getCurrentLocale(), 'shell.snapshotConfirmApply').replace('{label}', label));
   if (!ok) return;
 
   const touched = applyDecodedSimSlices(decodedSim);
   if (touched === 0) {
-    window.alert('快照里没有可识别的参数段，未做任何更改。');
+    window.alert(translate(getCurrentLocale(), 'shell.snapshotNoParamsAlert'));
   }
 }
 
@@ -171,7 +170,10 @@ function useDesktopMenuSubscriptions() {
             const res = await bridge?.checkForUpdate();
             if (res) {
               window.alert(
-                `当前版本：${res.currentVersion}\n最新版本：${res.latestVersion}\n${res.message}`,
+                translate(getCurrentLocale(), 'shell.updateCheckAlert')
+                  .replace('{cur}', res.currentVersion)
+                  .replace('{latest}', res.latestVersion)
+                  .replace('{message}', res.message),
               );
             }
           } catch (err) {
@@ -301,6 +303,7 @@ export default function App() {
   useDesktopMenuSubscriptions();
   useBroadcastShareSubscription();
   const { pending, open, onApply, onClose } = useShareHashReceiver();
+  const { t } = useI18n();
   return (
     <>
       {/* Skip link：键盘 / 屏幕阅读器用户进入页面第一个 Tab 命中此项，
@@ -309,7 +312,7 @@ export default function App() {
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:border focus:border-accent-primary focus:bg-bg-surface focus:px-3 focus:py-1.5 focus:text-body focus:text-ink-primary"
       >
-        跳到主内容
+        {t('shell.skipToMain')}
       </a>
       <UpdateBanner />
       <AppShell />

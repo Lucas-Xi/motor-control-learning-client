@@ -9,6 +9,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { faultCases } from '../../content/faultCases';
@@ -69,6 +70,8 @@ interface Row {
 }
 
 export function SerialFaultInjectionCard() {
+  const { t, locale } = useI18n();
+  const showEn = locale === 'en-US';
   const buffer = useSerialStore((s) => s.buffer);
   const source = useSerialStore((s) => s.source);
   const fault = useSimulationStore((s) => s.fault);
@@ -180,6 +183,8 @@ export function SerialFaultInjectionCard() {
   };
 
   const selected = faultCases[fault.faultType];
+  /** faultCases 双语字段：en-US 优先英文，缺失回退中文原文 */
+  const selectedTitle = showEn ? (selected.titleEn ?? selected.title) : selected.title;
 
   const extraAction = (
     <div className="flex items-center gap-1.5">
@@ -187,20 +192,20 @@ export function SerialFaultInjectionCard() {
         type="button"
         onClick={onInject}
         disabled={buffer.length === 0}
-        aria-label={`注入${selected.title}故障`}
+        aria-label={t('faultsDebugging.serialInjectAria').replace('{title}', selectedTitle)}
         className="flex items-center gap-1 rounded-md border border-accent-fault/60 bg-accent-fault/10 px-2 py-1 text-caption text-accent-fault transition hover:bg-accent-fault/20 disabled:opacity-50"
       >
         <Zap className="h-3.5 w-3.5" aria-hidden />
-        注入
+        {t('faultsDebugging.serialInjectBtn')}
       </button>
       {triggerOffsetMs != null && (
         <button
           type="button"
           onClick={onClear}
-          aria-label="清除故障注入标记"
+          aria-label={t('faultsDebugging.serialClearAria')}
           className="rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-secondary transition hover:border-line-strong"
         >
-          清除
+          {t('faultsDebugging.serialClearBtn')}
         </button>
       )}
     </div>
@@ -208,7 +213,7 @@ export function SerialFaultInjectionCard() {
 
   return (
     <SerialCompareCardShell
-      title="故障注入与实测瞬态"
+      title={t('faultsDebugging.serialTitle')}
       eyebrow="fault injection"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -221,7 +226,7 @@ export function SerialFaultInjectionCard() {
       <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2">
         <div>
           <label htmlFor="fault-type-select" className="text-caption text-ink-muted">
-            故障类型
+            {t('faultsDebugging.serialFaultTypeLabel')}
           </label>
           <select
             id="fault-type-select"
@@ -230,12 +235,14 @@ export function SerialFaultInjectionCard() {
               updateFault({ faultType: e.target.value as FaultType });
               setTriggerOffsetMs(null);
             }}
-            aria-label="故障类型下拉"
+            aria-label={t('faultsDebugging.serialFaultTypeAria')}
             className="mt-1 w-full rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-body text-ink-primary focus:border-accent-primary focus:outline-none"
           >
-            {FAULT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {faultCases[t].title}（{t}）
+            {FAULT_TYPES.map((ft) => (
+              <option key={ft} value={ft}>
+                {t('faultsDebugging.serialFaultOption')
+                  .replace('{title}', showEn ? (faultCases[ft].titleEn ?? faultCases[ft].title) : faultCases[ft].title)
+                  .replace('{code}', ft)}
               </option>
             ))}
           </select>
@@ -243,7 +250,7 @@ export function SerialFaultInjectionCard() {
         <div>
           <div className="mb-1 flex items-baseline justify-between">
             <label htmlFor="fault-severity-range" className="text-caption text-ink-muted">
-              严重度
+              {t('faultsDebugging.serialSeverityLabel')}
             </label>
             <span className="formula text-caption text-ink-primary">{formatNumber(fault.severity, 2)}</span>
           </div>
@@ -255,11 +262,11 @@ export function SerialFaultInjectionCard() {
             step={0.01}
             value={fault.severity}
             onChange={(e) => updateFault({ severity: Number(e.target.value) })}
-            aria-label="故障严重度"
+            aria-label={t('faultsDebugging.serialSeverityAria')}
             aria-valuemin={0}
             aria-valuemax={1}
             aria-valuenow={fault.severity}
-            aria-valuetext={`${formatNumber(fault.severity * 100, 0)} 百分比`}
+            aria-valuetext={t('faultsDebugging.serialSeverityValuetext').replace('{v}', formatNumber(fault.severity * 100, 0))}
             className="simulation-slider w-full"
           />
         </div>
@@ -269,11 +276,12 @@ export function SerialFaultInjectionCard() {
         <div className="flex h-44 flex-col items-center justify-center gap-2 rounded-lg border border-accent-warn/40 bg-accent-warn/[0.06] px-6 text-center">
           <ShieldAlert className="h-8 w-8 text-accent-warn" aria-hidden />
           <p className="text-body leading-relaxed text-accent-warn">
-            <span className="font-medium">{selected.title}</span> 属于<span className="font-medium">状态位告警</span>，
-            主回路电流无可视特征。
+            <span className="font-medium">{selectedTitle}</span> {t('faultsDebugging.serialStatusOnlyIs')}
+            <span className="font-medium">{t('faultsDebugging.titleSuffixStatus')}</span>
+            {t('faultsDebugging.serialStatusOnlyTail')}
           </p>
           <p className="text-caption text-ink-muted">
-            排查走 GPIO / I²C / CAN 告警字段，而非示波器波形。
+            {t('faultsDebugging.serialStatusOnlyHint')}
           </p>
         </div>
       ) : (
@@ -282,23 +290,23 @@ export function SerialFaultInjectionCard() {
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="选定故障"
-          value={selected.title}
+          label={t('faultsDebugging.serialKpiSelected')}
+          value={selectedTitle}
           tone="primary"
         />
         <KpiTile
-          label="峰值电流"
+          label={t('faultsDebugging.serialKpiPeakI')}
           value={`${formatNumber(kpi.peakI, 2)} A`}
           tone={kpi.peakI > 8 ? 'fault' : kpi.peakI > 5 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="OCP 响应时延"
-          value={kpi.ocpTriggered ? `${formatNumber(kpi.tripLatencyUs, 0)} μs` : triggerOffsetMs != null ? '未截断' : '--'}
+          label={t('faultsDebugging.serialKpiLatency')}
+          value={kpi.ocpTriggered ? `${formatNumber(kpi.tripLatencyUs, 0)} μs` : triggerOffsetMs != null ? t('faultsDebugging.serialNotTripped') : '--'}
           tone={kpi.ocpTriggered ? 'measure' : triggerOffsetMs != null ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="OCP 触发"
-          value={kpi.ocpTriggered ? '是' : triggerOffsetMs != null ? '否' : '待注入'}
+          label={t('faultsDebugging.serialKpiOcp')}
+          value={kpi.ocpTriggered ? t('common.yes') : triggerOffsetMs != null ? t('common.no') : t('faultsDebugging.serialPendingInject')}
           tone={kpi.ocpTriggered ? 'measure' : 'warn'}
         />
       </div>
@@ -309,24 +317,27 @@ export function SerialFaultInjectionCard() {
           role="status"
         >
           <Siren className="h-3.5 w-3.5" aria-hidden />
-          已向板端下发命令字节：fault={boardCommand.type} · severity=
-          {formatNumber(boardCommand.severity, 2)}（{new Date(boardCommand.at).toLocaleTimeString()}）
+          {t('faultsDebugging.serialBoardCmd')
+            .replace('{type}', boardCommand.type)
+            .replace('{sev}', formatNumber(boardCommand.severity, 2))
+            .replace('{time}', new Date(boardCommand.at).toLocaleTimeString())}
         </p>
       )}
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic, <span className="text-accent-warn">fault_flag(u8), trip_lat_us(u32)</span> ·
-        当前协议未含字段，UI 用注入时刻 + 实测电流跌落时间近似 OCP 响应。
+        {t('faultsDebugging.serialProtoLead')} <span className="text-accent-warn">fault_flag(u8), trip_lat_us(u32)</span>{' '}
+        {t('faultsDebugging.serialProtoTail')}
       </p>
     </SerialCompareCardShell>
   );
 }
 
 function CurrentChart({ rows, triggerMs }: { rows: Row[]; triggerMs: number | null }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex flex-wrap items-center justify-between gap-1 text-caption text-ink-muted">
-        <span>三相电流瞬态（A）</span>
+        <span>{t('faultsDebugging.serialCurrentTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-primary)" label="Ia" />
           <Legend color="var(--accent-measure)" label="Ib" />
@@ -360,7 +371,7 @@ function CurrentChart({ rows, triggerMs }: { rows: Row[]; triggerMs: number | nu
                 x={triggerMs}
                 stroke="var(--accent-fault)"
                 strokeDasharray="3 3"
-                label={{ value: '注入', fill: '#ff5c7a', fontSize: 10, position: 'insideTopLeft' }}
+                label={{ value: t('faultsDebugging.serialInjectBtn'), fill: '#ff5c7a', fontSize: 10, position: 'insideTopLeft' }}
               />
             )}
             <Line type="monotone" dataKey="ia" dot={false} stroke="var(--accent-primary)" strokeWidth={1.5} isAnimationActive={false} name="Ia" />
@@ -400,8 +411,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr =
-    tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '信息' : '正常';
+  const { t } = useI18n();
+  const sr = tone === 'fault'
+    ? t('faultsDebugging.serialSrSevere')
+    : tone === 'warn'
+      ? t('faultsDebugging.serialSrWarn')
+      : tone === 'primary'
+        ? t('faultsDebugging.serialSrInfo')
+        : t('faultsDebugging.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

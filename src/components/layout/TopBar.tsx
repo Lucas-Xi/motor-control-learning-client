@@ -71,12 +71,12 @@ export function TopBar() {
   const step = useSimulationStore((state) => state.step);
   const resetTime = useSimulationStore((state) => state.resetTime);
   const toggleFullScreen = useSimulationStore((state) => state.toggleFullScreen);
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [aboutOpen, setAboutOpen] = useState(false);
-  const aboutLabel = locale === 'en-US' ? 'About' : '关于';
+  const aboutLabel = t('shell.aboutButton');
 
   return (
-    <header role="banner" aria-label="顶栏 · 运行与主题控制" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-2 sm:gap-3">
+    <header role="banner" aria-label={t('shell.topbarAria')} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-2 sm:gap-3">
       <div className="flex items-center gap-2 text-caption text-ink-muted">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-accent-measure' : 'bg-ink-muted'}`} />
         <span className="uppercase tracking-[0.18em]">{running ? t('shell.runStateRun') : t('shell.runStateHold')}</span>

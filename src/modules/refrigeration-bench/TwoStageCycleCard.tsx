@@ -18,8 +18,7 @@ export function TwoStageCycleCard() {
   const refrig = useSimulationStore((s) => s.refrigeration);
   const overlayEnabled = useBenchTwoStageStore((s) => s.enabled);
   const toggleOverlay = useBenchTwoStageStore((s) => s.toggleEnabled);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [Te, setTe] = useState(refrig.Te ?? -10);
   const [Tc, setTc] = useState(refrig.Tc ?? 50);
@@ -66,10 +65,10 @@ export function TwoStageCycleCard() {
   const cmp = useMemo(
     () => [
       { metric: 'COP', single: Number(single.cop.toFixed(2)), twoStage: Number(twoStage.cop.toFixed(2)), unit: '' },
-      { metric: isEn ? 'T_d (°C)' : '排气温度 (°C)', single: Number(single.Tdischarge.toFixed(1)), twoStage: Number(twoStage.TdischargeC.toFixed(1)), unit: '°C' },
-      { metric: isEn ? 'W (kW)' : '总功 (kW)', single: Number(single.Wcomp.toFixed(2)), twoStage: Number(twoStage.WtotKW.toFixed(2)), unit: 'kW' },
+      { metric: t('refrigerationBench.twoStageCmpMetricTd'), single: Number(single.Tdischarge.toFixed(1)), twoStage: Number(twoStage.TdischargeC.toFixed(1)), unit: '°C' },
+      { metric: t('refrigerationBench.twoStageCmpMetricW'), single: Number(single.Wcomp.toFixed(2)), twoStage: Number(twoStage.WtotKW.toFixed(2)), unit: 'kW' },
     ],
-    [single, twoStage, isEn],
+    [single, twoStage, t],
   );
 
   const copGainPct = single.cop > 0 ? ((twoStage.cop - single.cop) / single.cop) * 100 : 0;
@@ -85,8 +84,8 @@ export function TwoStageCycleCard() {
 
   return (
     <Card
-      title={isEn ? 'Single-Stage vs Two-Stage + Flash Tank' : '单级 vs 两级压缩 + 闪发分离'}
-      eyebrow={isEn ? 'high-efficiency topology' : '高端能效拓扑'}
+      title={t('refrigerationBench.twoStageTitle')}
+      eyebrow={t('refrigerationBench.twoStageEyebrow')}
       density="compact"
       action={
         <div className="flex items-center gap-2">
@@ -98,28 +97,15 @@ export function TwoStageCycleCard() {
                 ? 'border-[#c4b5fd]/60 bg-[#c4b5fd]/15 text-[#c4b5fd]'
                 : 'border-line bg-bg-elev text-ink-muted hover:text-ink'
             }`}
-            title={isEn
-              ? 'Overlay 9 two-stage state points (incl. flash gas 7v / flash liquid 8l) onto the main P-h diagram in purple triangles.'
-              : '把 9 个两级状态点（含闪发气 7v / 闪发液 8l）以紫色三角覆盖到主 P-h 图上'}
+            title={t('refrigerationBench.twoStageOverlayBtnHint')}
           >
-            {isEn ? `Overlay on main P-h${overlayEnabled ? ' · on' : ''}` : `叠到主 P-h 图${overlayEnabled ? ' · 开' : ''}`}
+            {t('refrigerationBench.twoStageOverlayBtn')}{overlayEnabled ? t('refrigerationBench.twoStageOverlayOn') : ''}
           </button>
-          <FidelityBadge
-            level="physical"
-            hint={
-              isEn
-                ? 'Two-stage compression with optimal P_i = sqrt(Ps·Pd) + flash separator; lowers discharge temp + raises COP at large pressure ratios.'
-                : '两级压缩 + 最优中间压力 sqrt(Ps·Pd) + 闪发分离；大压比工况下降排气温度、升 COP。'
-            }
-          />
+          <FidelityBadge level="physical" hint={t('refrigerationBench.twoStageFidelityHint')} />
         </div>
       }
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'At large pressure ratios (Pd/Ps > 6), single-stage discharge temperature pushes 100-130°C — straight into compressor over-temperature trip. Two-stage with intercooling drops T_d by 20-40°C and lifts COP 10-25%. The price is one extra compressor + flash tank.'
-          : '大压比工况（Pd/Ps > 6）下，单级排气温度 100-130°C 直接撞压缩机过温保护。两级压缩 + 中间冷却让 T_d 降 20-40°C、COP 升 10-25%。代价：多一级压缩机 + 闪发罐。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('refrigerationBench.twoStageIntro')}</p>
 
       <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         <label className="block">
@@ -147,7 +133,7 @@ export function TwoStageCycleCard() {
           />
         </label>
         <label className="flex flex-col">
-          <span className="mb-1 text-caption text-ink-muted">{isEn ? 'P_i mode' : '中间压力'}</span>
+          <span className="mb-1 text-caption text-ink-muted">{t('refrigerationBench.twoStagePiMode')}</span>
           <button
             type="button"
             aria-pressed={autoPi}
@@ -158,7 +144,7 @@ export function TwoStageCycleCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted'
             }`}
           >
-            {autoPi ? (isEn ? 'optimal' : '最优') : (isEn ? 'manual' : '手动')}
+            {autoPi ? t('refrigerationBench.twoStagePiOptimal') : t('refrigerationBench.twoStagePiManual')}
           </button>
         </label>
         <div className="flex flex-col">
@@ -169,15 +155,15 @@ export function TwoStageCycleCard() {
 
       <div className="mb-3 grid grid-cols-3 gap-2">
         <div className={`rounded-lg border p-2 ${toneClass(gainTone)}`}>
-          <p className="text-caption opacity-80">{isEn ? 'COP gain' : 'COP 提升'}</p>
+          <p className="text-caption opacity-80">{t('refrigerationBench.twoStageKpiCopGain')}</p>
           <p className="formula text-body">+{formatNumber(copGainPct, 1)} %</p>
         </div>
         <div className="rounded-lg border border-accent-measure/40 bg-accent-measure/10 p-2 text-accent-measure">
-          <p className="text-caption opacity-80">{isEn ? 'T_d drop' : 'T_d 下降'}</p>
+          <p className="text-caption opacity-80">{t('refrigerationBench.twoStageKpiTdDrop')}</p>
           <p className="formula text-body">−{formatNumber(TdDropC, 1)} K</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Flash x' : '闪发分气比'}</p>
+          <p className="text-caption text-ink-muted">{t('refrigerationBench.twoStageKpiFlash')}</p>
           <p className="formula text-body text-accent-warn">{formatNumber(twoStage.flashFraction * 100, 1)} %</p>
         </div>
       </div>
@@ -190,10 +176,10 @@ export function TwoStageCycleCard() {
             <YAxis tick={{ fill: '#9eb5cb', fontSize: 11 }} />
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="single" name={isEn ? 'Single-stage' : '单级'} fill="#34d6ff" isAnimationActive={false} radius={[3, 3, 0, 0]}>
+            <Bar dataKey="single" name={t('refrigerationBench.twoStageSeriesSingle')} fill="#34d6ff" isAnimationActive={false} radius={[3, 3, 0, 0]}>
               {cmp.map((_, i) => <Cell key={i} fill="#34d6ff" />)}
             </Bar>
-            <Bar dataKey="twoStage" name={isEn ? 'Two-stage' : '两级'} fill="#43f7b5" isAnimationActive={false} radius={[3, 3, 0, 0]}>
+            <Bar dataKey="twoStage" name={t('refrigerationBench.twoStageSeriesTwo')} fill="#43f7b5" isAnimationActive={false} radius={[3, 3, 0, 0]}>
               {cmp.map((_, i) => <Cell key={i} fill="#43f7b5" />)}
             </Bar>
           </BarChart>
@@ -201,21 +187,16 @@ export function TwoStageCycleCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn ? (
-          <>
-            At Te=<span className="formula">{formatNumber(Te, 0)}</span>°C / Tc=<span className="formula">{formatNumber(Tc, 0)}</span>°C:
-            single-stage T_d = <span className="formula text-accent-fault">{formatNumber(single.Tdischarge, 0)}</span>°C
-            (compressor limit ~110°C). Two-stage with flash tank: T_d = <span className="formula text-accent-measure">{formatNumber(twoStage.TdischargeC, 0)}</span>°C,
-            COP <span className="formula">{formatNumber(twoStage.cop, 2)}</span> vs <span className="formula">{formatNumber(single.cop, 2)}</span>.
-          </>
-        ) : (
-          <>
-            当 Te=<span className="formula">{formatNumber(Te, 0)}</span>°C / Tc=<span className="formula">{formatNumber(Tc, 0)}</span>°C:
-            单级 T_d = <span className="formula text-accent-fault">{formatNumber(single.Tdischarge, 0)}</span>°C
-            （压缩机上限 ~110°C）；两级 + 闪发 T_d = <span className="formula text-accent-measure">{formatNumber(twoStage.TdischargeC, 0)}</span>°C，
-            COP <span className="formula">{formatNumber(twoStage.cop, 2)}</span> vs <span className="formula">{formatNumber(single.cop, 2)}</span>。
-          </>
-        )}
+        {t('refrigerationBench.twoStageNoteLead')}
+        <span className="formula">{formatNumber(Te, 0)}</span>°C / Tc=
+        <span className="formula">{formatNumber(Tc, 0)}</span>
+        {t('refrigerationBench.twoStageNoteMid2')}{' '}
+        <span className="formula text-accent-fault">{formatNumber(single.Tdischarge, 0)}</span>
+        {t('refrigerationBench.twoStageNoteMid3')}{' '}
+        <span className="formula text-accent-measure">{formatNumber(twoStage.TdischargeC, 0)}</span>
+        {t('refrigerationBench.twoStageNoteMid4')} <span className="formula">{formatNumber(twoStage.cop, 2)}</span> vs{' '}
+        <span className="formula">{formatNumber(single.cop, 2)}</span>
+        {t('refrigerationBench.twoStageNoteEnd')}
       </p>
     </Card>
   );

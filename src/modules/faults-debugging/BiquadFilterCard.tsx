@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Slider } from '../../components/ui/Slider';
+import { useI18n } from '../../i18n/useI18n';
 import { makeHighpass, makeLowpass, makeNotch } from '../../simulation/math/biquad';
 import { formatNumber } from '../../utils/format';
 
@@ -86,6 +87,7 @@ const PW = W - PAD.l - PAD.r;
 const PH = H - PAD.t - PAD.b;
 
 export function BiquadFilterCard() {
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('lpf');
   const [fcLpf, setFcLpf] = useState(200);
   const [fcNotch, setFcNotch] = useState(1000);
@@ -123,9 +125,9 @@ export function BiquadFilterCard() {
   const suppression = rawRms > 1e-6 ? (1 - filtRms / rawRms) * 100 : 0;
 
   return (
-    <Card title="测量噪声 + 双二阶滤波" eyebrow="biquad DF-II-T" density="compact">
+    <Card title={t('faultsDebugging.biquadTitle')} eyebrow="biquad DF-II-T" density="compact">
       <p className="mb-2 text-caption leading-relaxed text-ink-muted">
-        信号 = 50Hz 基波 + 1kHz/5kHz 谐波 + 高斯噪声 ·{' '}
+        {t('faultsDebugging.biquadSignalDesc')}{' '}
         <code className="formula text-ink-secondary">y[n] = b0·x + z1; z1 = b1·x − a1·y + z2; z2 = b2·x − a2·y</code>
       </p>
 
@@ -133,7 +135,7 @@ export function BiquadFilterCard() {
       <div
         className="mb-3 inline-flex overflow-hidden rounded-md border border-line-subtle"
         role="radiogroup"
-        aria-label="滤波器模式选择"
+        aria-label={t('faultsDebugging.biquadModeAria')}
       >
         {(['pass', 'lpf', 'notch', 'hpf'] as Mode[]).map((m) => (
           <button
@@ -155,7 +157,7 @@ export function BiquadFilterCard() {
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Slider
-          label={mode === 'hpf' ? 'fc 截止' : mode === 'lpf' ? 'fc 截止' : 'fc 截止 (LPF)'}
+          label={mode === 'hpf' ? t('faultsDebugging.biquadFcCutoff') : mode === 'lpf' ? t('faultsDebugging.biquadFcCutoff') : t('faultsDebugging.biquadFcCutoffLpf')}
           value={fcLpf}
           min={50}
           max={2000}
@@ -164,7 +166,7 @@ export function BiquadFilterCard() {
           onChange={setFcLpf}
         />
         <Slider
-          label="fc 中心 (Notch)"
+          label={t('faultsDebugging.biquadFcNotch')}
           value={fcNotch}
           min={500}
           max={6000}
@@ -172,14 +174,18 @@ export function BiquadFilterCard() {
           unit=" Hz"
           onChange={setFcNotch}
         />
-        <Slider label="噪声幅值" value={noiseAmp} min={0} max={1.5} step={0.05} unit=" σ" onChange={setNoiseAmp} />
+        <Slider label={t('faultsDebugging.biquadNoiseAmp')} value={noiseAmp} min={0} max={1.5} step={0.05} unit=" σ" onChange={setNoiseAmp} />
       </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label={`双二阶滤波器对比图，模式 ${mode}，原始 RMS ${formatNumber(rawRms, 2)}，滤波后 RMS ${formatNumber(filtRms, 2)}，抑制率 ${formatNumber(suppression, 1)}%`}
+        aria-label={t('faultsDebugging.biquadChartAria')
+          .replace('{mode}', mode)
+          .replace('{raw}', formatNumber(rawRms, 2))
+          .replace('{filt}', formatNumber(filtRms, 2))
+          .replace('{sup}', formatNumber(suppression, 1))}
       >
         <rect x="0" y="0" width={W} height={H} rx="8" fill="rgb(var(--bg-base))" />
         <line x1={PAD.l} y1={yOf(0)} x2={W - PAD.r} y2={yOf(0)} stroke="rgba(231,243,255,0.12)" strokeWidth="1" />
@@ -195,15 +201,15 @@ export function BiquadFilterCard() {
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">原始 RMS</p>
+          <p className="text-ink-muted">{t('faultsDebugging.biquadRawRms')}</p>
           <p className="formula text-accent-fault">{formatNumber(rawRms, 2)} A</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">滤波后 RMS</p>
+          <p className="text-ink-muted">{t('faultsDebugging.biquadFiltRms')}</p>
           <p className="formula text-accent-measure">{formatNumber(filtRms, 2)} A</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">抑制率</p>
+          <p className="text-ink-muted">{t('faultsDebugging.biquadSuppression')}</p>
           <p className={`formula ${suppression > 30 ? 'text-accent-measure' : 'text-ink-primary'}`}>
             {formatNumber(suppression, 1)}%
           </p>

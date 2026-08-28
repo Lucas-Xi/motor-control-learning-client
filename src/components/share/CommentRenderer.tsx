@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { renderMiniMarkdown, type CommentEntry } from '../../utils/broadcastShare';
 import { isValidParameterPath } from '../../utils/reviewModel';
+import { useI18n, translate, getCurrentLocale } from '../../i18n/useI18n';
 
 /**
  * 评论 Markdown 渲染组件。
@@ -54,7 +55,7 @@ function postProcessRichSubset(html: string, paramClickHandlerId?: string): stri
   out = out.replace(/\{\{([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)\}\}/g, (_, p: string) => {
     if (!isValidParameterPath(p)) return _;
     const handler = paramClickHandlerId
-      ? ` data-param-ref="${p}" tabindex="0" role="button" aria-label="跳转到参数 ${p}"`
+      ? ` data-param-ref="${p}" tabindex="0" role="button" aria-label="${translate(getCurrentLocale(), 'share.jumpToParamPrefix')}${p}"`
       : '';
     return `<code class="rounded bg-accent-primary/15 px-1.5 py-0.5 font-mono text-caption text-accent-primary"${handler}>${p}</code>`;
   });
@@ -72,6 +73,7 @@ export function CommentRenderer({
   headerExtra,
   footer,
 }: CommentRendererProps) {
+  const { t } = useI18n();
   const html = useMemo(() => {
     const mini = renderMiniMarkdown(entry.body);
     return postProcessRichSubset(mini, onParamClick ? 'on' : undefined);
@@ -120,7 +122,7 @@ export function CommentRenderer({
     <article
       className="rounded-lg border bg-bg-base p-2.5"
       style={{ marginLeft: indentPx, borderColor: 'rgb(var(--line-subtle))', borderLeftColor: accent, borderLeftWidth: depth > 0 ? '2px' : '1px' }}
-      aria-label={index !== undefined ? `第 ${index + 1} 条评论` : '评论'}
+      aria-label={index !== undefined ? `${t('share.commentAriaPrefix')}${index + 1}` : t('share.commentAriaDefault')}
     >
       <header className="mb-1 flex items-center justify-between gap-2 text-caption text-ink-muted">
         <span className="inline-flex items-center gap-1.5">
@@ -147,9 +149,9 @@ export function CommentRenderer({
               type="button"
               onClick={onDelete}
               className="rounded border border-line-subtle px-1.5 py-0.5 text-caption text-ink-muted hover:border-accent-fault hover:text-accent-fault"
-              aria-label={`删除${index !== undefined ? `第 ${index + 1} 条` : ''}评论`}
+              aria-label={index !== undefined ? `${t('share.deleteCommentAriaPrefix')}${index + 1}` : t('share.deleteCommentAriaDefault')}
             >
-              删除
+              {t('share.deleteCommentBtn')}
             </button>
           )}
         </span>

@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockFieldWeakeningSample } from '../../utils/serialMockGenerators';
@@ -47,6 +48,7 @@ interface Row {
 }
 
 export function SerialCompareFieldWeakeningCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const weakField = useSimulationStore((s) => s.weakField);
   const motor = useSimulationStore((s) => s.motorBasics);
@@ -122,7 +124,7 @@ export function SerialCompareFieldWeakeningCard() {
 
   return (
     <SerialCompareCardShell
-      title="弱磁工作点：实测 vs MTPA / 电压极限"
+      title={t('weakField.serialFwTitle')}
       eyebrow="field weakening compare"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -132,7 +134,9 @@ export function SerialCompareFieldWeakeningCard() {
     >
       <div className="mb-3">
         <label className="block rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">铁损涡流系数 ke {formatNumber(ironKe, 4)}（高速主导铁损）</span>
+          <span className="block text-caption text-ink-muted">
+            {t('weakField.serialFwIronKeLabel')} {formatNumber(ironKe, 4)}{t('weakField.serialFwIronKeHint')}
+          </span>
           <input
             type="range"
             min={0.0001}
@@ -141,31 +145,32 @@ export function SerialCompareFieldWeakeningCard() {
             value={ironKe}
             onChange={(e) => setIronKe(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="铁损涡流系数 ke"
+            aria-label={t('weakField.serialFwIronKeLabel')}
             aria-valuemin={0.0001}
             aria-valuemax={0.003}
             aria-valuenow={ironKe}
-            aria-valuetext={`${formatNumber(ironKe, 4)} 瓦秒平方`}
+            aria-valuetext={`${formatNumber(ironKe, 4)} ${t('weakField.serialFwKeUnit')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <CurrentChart title="Id 实测 vs MTPA（A）" rows={displayRows} />
-        <VoltageChart title="电压幅值 vs 极限（V）" rows={displayRows} />
+        <CurrentChart title={t('weakField.serialFwCurrentChartTitle')} rows={displayRows} />
+        <VoltageChart title={t('weakField.serialFwVoltageChartTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="Id 偏离 MTPA" value={`${formatNumber(kpi.idOffMtpa, 3)} A`} tone={offTone} />
+        <KpiTile label={t('weakField.serialFwKpiIdOff')} value={`${formatNumber(kpi.idOffMtpa, 3)} A`} tone={offTone} />
         <KpiTile label="V / V_lim" value={`${formatNumber(kpi.vRatio * 100, 1)} %`} tone={vTone} />
-        <KpiTile label="估算转矩" value={`${formatNumber(kpi.torque, 3)} Nm`} tone="measure" />
-        <KpiTile label="铁损" value={`${formatNumber(kpi.ironLossW, 2)} W`} tone={kpi.ironLossW > 30 ? 'warn' : 'measure'} />
+        <KpiTile label={t('weakField.serialFwKpiTorque')} value={`${formatNumber(kpi.torque, 3)} Nm`} tone="measure" />
+        <KpiTile label={t('weakField.serialFwKpiIronLoss')} value={`${formatNumber(kpi.ironLossW, 2)} W`} tone={kpi.ironLossW > 30 ? 'warn' : 'measure'} />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, ia, ib, ic, theta_e · <span className="text-accent-measure">id, iq, v_mag</span>。
-        撞限 → 注负 Id 弱磁；偏离 MTPA 越多 → 单位转矩多耗电
-        {kpi.anySat && <span className="ml-1 text-accent-fault">· 窗口内出现电压撞限</span>}
+        {t('weakField.serialFwProtocolLabel')}t_us, ia, ib, ic,{' '}
+        <span className="text-accent-measure">id, iq, v_mag</span>
+        {t('weakField.serialFwProtocolHint')}
+        {kpi.anySat && <span className="ml-1 text-accent-fault">{t('weakField.serialFwWindowSat')}</span>}
       </p>
     </SerialCompareCardShell>
   );
@@ -263,6 +268,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -272,7 +278,14 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr =
+    tone === 'fault'
+      ? t('weakField.serialFwSrFault')
+      : tone === 'warn'
+        ? t('weakField.serialFwSrWarn')
+        : tone === 'primary'
+          ? t('weakField.serialFwSrPrimary')
+          : t('weakField.serialFwSrMeasure');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

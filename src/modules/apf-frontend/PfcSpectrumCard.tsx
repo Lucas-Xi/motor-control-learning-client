@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { spectrumOf, outputSampleRate, type BoostPfcResult } from '../../simulation/math/boostPfc';
 import { makeNotch } from '../../simulation/math/biquad';
+import { useI18n } from '../../i18n/useI18n';
 import { formatNumber } from '../../utils/format';
 
 /**
@@ -31,6 +32,7 @@ const WARN = '#ffb84d';
 const FAULT = '#ff5d8a';
 
 export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<FilterMode>('none');
   const [source, setSource] = useState<'pfc' | 'noPfc'>('pfc');
 
@@ -85,7 +87,7 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
 
   return (
     <Card
-      title="输入电流频谱"
+      title={t('apfFrontend.spectrumCardTitle')}
       eyebrow="harmonics (DFT)"
       density="compact"
       action={<span className={`rounded-md border px-2 py-0.5 text-caption font-medium ${tone(thdTone)}`}>THD {formatNumber(thd, 1)}%</span>}
@@ -98,7 +100,7 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
             source === 'pfc' ? 'bg-accent-primary/15 text-accent-primary' : 'text-ink-secondary hover:text-ink-primary'
           }`}
         >
-          PFC 输出
+          {t('apfFrontend.spectrumSourcePfc')}
         </button>
         <button
           type="button"
@@ -107,7 +109,7 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
             source === 'noPfc' ? 'bg-accent-warn/15 text-accent-warn' : 'text-ink-secondary hover:text-ink-primary'
           }`}
         >
-          裸整流
+          {t('apfFrontend.chipBare')}
         </button>
       </div>
 
@@ -121,7 +123,7 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
               mode === m ? 'bg-accent-measure/15 text-accent-measure' : 'text-ink-secondary hover:text-ink-primary'
             }`}
           >
-            {m === 'none' ? '不滤波' : `陷波 ${m.replace('notch', '')}×50Hz`}
+            {m === 'none' ? t('apfFrontend.spectrumFilterNone') : `${t('apfFrontend.spectrumNotchLabel')} ${m.replace('notch', '')}×50Hz`}
           </button>
         ))}
       </div>
@@ -136,7 +138,7 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }}
               formatter={((v: unknown, _name: unknown, item: { payload?: { order?: number; freq?: number } }) => [
                 `${formatNumber(Number(v), 3)} A`,
-                `${item.payload?.order ?? '-'} 次（${item.payload?.freq ?? '-'} Hz）`,
+                `${item.payload?.order ?? '-'}${t('apfFrontend.spectrumTooltipOrder')}${item.payload?.freq ?? '-'}${t('apfFrontend.spectrumTooltipHz')}`,
               ]) as never}
             />
             <ReferenceLine y={0} stroke="#1e2a3d" />
@@ -165,17 +167,19 @@ export function PfcSpectrumCard({ result }: { result: BoostPfcResult }) {
         {bars.slice(1, 4).map((b) => (
           <div key={b.freq} className="rounded border border-line-subtle bg-bg-base p-2">
             <p className="text-ink-muted">
-              {b.order} 次 · {b.freq} Hz
+              {b.order}{t('apfFrontend.spectrumOrderTimes')}{b.freq} Hz
             </p>
             <p className="text-ink-primary">
-              {formatNumber(bars[0].mag > 1e-6 ? (b.mag / bars[0].mag) * 100 : 0, 1)}% 基波
+              {formatNumber(bars[0].mag > 1e-6 ? (b.mag / bars[0].mag) * 100 : 0, 1)}{t('apfFrontend.spectrumOfFundamental')}
             </p>
           </div>
         ))}
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        基波（50 Hz）<span className="text-accent-primary">cyan</span>，3/5/7 次重点谐波<span className="text-accent-fault">红</span>（家电 PFC 主要痛点，IEC 61000-3-2 Class D 主限值）。切到"陷波 N×50Hz"会用 biquad 把该次压下来 —— 这是仿真演示；真实 STM32 实现一般把陷波放在电流环参考侧，避免吞控制带宽。
+        {t('apfFrontend.spectrumHintFundamental')}<span className="text-accent-primary">cyan</span>
+        {t('apfFrontend.spectrumHintMid')}<span className="text-accent-fault">{t('apfFrontend.spectrumHintRed')}</span>
+        {t('apfFrontend.spectrumHintSuffix')}
       </p>
     </Card>
   );

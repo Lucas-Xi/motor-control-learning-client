@@ -1,6 +1,7 @@
 import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis, Legend, ReferenceLine } from 'recharts';
 import { SafeResponsiveContainer } from './SafeResponsiveContainer';
 import type { HfiSignalSample } from '../../simulation/math/hfiSignals';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   samples: HfiSignalSample[];
@@ -19,6 +20,7 @@ interface Props {
  * 教学上比双 Y 轴更直观（学员关心的是相对形状而不是绝对量纲）。
  */
 export function HfiInjectionWaveform({ samples, height = 220 }: Props) {
+  const { t } = useI18n();
   return (
     <div style={{ height }}>
       <SafeResponsiveContainer>
@@ -46,7 +48,7 @@ export function HfiInjectionWaveform({ samples, height = 220 }: Props) {
             dot={false}
             stroke="#34d6ff"
             strokeWidth={1.2}
-            name="注入电压 V_h"
+            name={t('charts.hfiInjectV')}
             isAnimationActive={false}
           />
           <Line
@@ -55,7 +57,7 @@ export function HfiInjectionWaveform({ samples, height = 220 }: Props) {
             dot={false}
             stroke="#43f7b5"
             strokeWidth={1.4}
-            name="电流响应 i (含噪声)"
+            name={t('charts.hfiCurrentResp')}
             isAnimationActive={false}
           />
           <Line
@@ -64,7 +66,7 @@ export function HfiInjectionWaveform({ samples, height = 220 }: Props) {
             dot={false}
             stroke="#ffb84d"
             strokeWidth={1.2}
-            name="解调中间信号"
+            name={t('charts.hfiDemod')}
             isAnimationActive={false}
           />
           <Line
@@ -73,7 +75,7 @@ export function HfiInjectionWaveform({ samples, height = 220 }: Props) {
             dot={false}
             stroke="#ff5c7a"
             strokeWidth={2}
-            name="LPF 误差 ∝ sin(2θe)"
+            name={t('charts.hfiErrorLpf')}
             isAnimationActive={false}
           />
         </LineChart>

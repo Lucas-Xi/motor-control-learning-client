@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockSvpwmSample } from '../../utils/serialMockGenerators';
@@ -47,6 +48,7 @@ interface Row {
 }
 
 export function SerialCompareSvpwmCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const svpwm = useSimulationStore((s) => s.svpwm);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -134,7 +136,7 @@ export function SerialCompareSvpwmCard() {
 
   return (
     <SerialCompareCardShell
-      title="SVPWM 三相 duty：实测 vs 理论"
+      title={t('svpwm.serialSvpwmTitle')}
       eyebrow="svpwm compare"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -144,7 +146,9 @@ export function SerialCompareSvpwmCard() {
     >
       <div className="mb-3 grid grid-cols-2 gap-2">
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">矢量旋转 {formatNumber(rotationHz, 1)} Hz</span>
+          <span className="block text-caption text-ink-muted">
+            {t('svpwm.serialSvpwmRotation')} {formatNumber(rotationHz, 1)} Hz
+          </span>
           <input
             type="range"
             min={1}
@@ -153,15 +157,17 @@ export function SerialCompareSvpwmCard() {
             value={rotationHz}
             onChange={(e) => setRotationHz(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="电压矢量旋转频率"
+            aria-label={t('svpwm.serialSvpwmRotationAria')}
             aria-valuemin={1}
             aria-valuemax={100}
             aria-valuenow={rotationHz}
-            aria-valuetext={`${formatNumber(rotationHz, 1)} 赫兹`}
+            aria-valuetext={`${formatNumber(rotationHz, 1)} ${t('svpwm.serialSvpwmHzAria')}`}
           />
         </label>
         <label className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">死区 {formatNumber(deadTimeUs, 1)} μs</span>
+          <span className="block text-caption text-ink-muted">
+            {t('svpwm.serialSvpwmDeadTime')} {formatNumber(deadTimeUs, 1)} μs
+          </span>
           <input
             type="range"
             min={0}
@@ -170,40 +176,41 @@ export function SerialCompareSvpwmCard() {
             value={deadTimeUs}
             onChange={(e) => setDeadTimeUs(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="死区时间（微秒）"
+            aria-label={t('svpwm.serialSvpwmDeadTimeAria')}
             aria-valuemin={0}
             aria-valuemax={6}
             aria-valuenow={deadTimeUs}
-            aria-valuetext={`${formatNumber(deadTimeUs, 1)} 微秒`}
+            aria-valuetext={`${formatNumber(deadTimeUs, 1)} ${t('svpwm.serialSvpwmUsAria')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <ThreeChannelDutyChart
-          title="duty 实测（% / 三相）"
+          title={t('svpwm.serialSvpwmDutyTitle')}
           rows={displayRows}
           aKey="dutyARealPct"
           bKey="dutyBRealPct"
           cKey="dutyCRealPct"
         />
-        <SectorChart title="扇区切换 1..6 + 调制比" rows={displayRows} />
+        <SectorChart title={t('svpwm.serialSvpwmSectorTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="duty 误差 RMS (A)" value={`${formatNumber(kpi.dutyErrRms, 2)} %`} tone={kpi.dutyErrRms > 3 ? 'warn' : 'measure'} />
-        <KpiTile label="当前扇区" value={`Sec ${kpi.sector}`} tone="primary" />
-        <KpiTile label="调制比 m" value={formatNumber(kpi.modulationIndex, 3)} tone={mTone} />
+        <KpiTile label={t('svpwm.serialSvpwmKpiRms')} value={`${formatNumber(kpi.dutyErrRms, 2)} %`} tone={kpi.dutyErrRms > 3 ? 'warn' : 'measure'} />
+        <KpiTile label={t('svpwm.serialSvpwmKpiSector')} value={`Sec ${kpi.sector}`} tone="primary" />
+        <KpiTile label={t('svpwm.serialSvpwmKpiM')} value={formatNumber(kpi.modulationIndex, 3)} tone={mTone} />
         <KpiTile
-          label="过调制"
-          value={kpi.overModulation ? '是' : '否'}
+          label={t('svpwm.serialSvpwmKpiOver')}
+          value={kpi.overModulation ? t('common.yes') : t('common.no')}
           tone={kpi.overModulation ? 'fault' : 'measure'}
         />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us · <span className="text-accent-measure">duty_a/b/c (Q15 或 f32)</span> ·
-        m ≥ 1.0 进入过调制 → 线电压非正弦 → 谐波激增；死区让 duty 实测低于理论
+        {t('svpwm.serialSvpwmProtocolLead')}{' '}
+        <span className="text-accent-measure">{t('svpwm.serialSvpwmDutyField')}</span>{' '}
+        {t('svpwm.serialSvpwmProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -311,6 +318,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -320,7 +328,13 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr = tone === 'fault'
+    ? t('svpwm.kpiSrFault')
+    : tone === 'warn'
+      ? t('svpwm.kpiSrWarn')
+      : tone === 'primary'
+        ? t('svpwm.kpiSrAux')
+        : t('svpwm.kpiSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

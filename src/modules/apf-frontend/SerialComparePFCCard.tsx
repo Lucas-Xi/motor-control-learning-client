@@ -5,6 +5,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockPfcSample } from '../../utils/serialMockGenerators';
@@ -33,6 +34,7 @@ import { formatNumber } from '../../utils/format';
  */
 
 export function SerialComparePFCCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const apf = useSimulationStore((s) => s.apf);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -77,7 +79,7 @@ export function SerialComparePFCCard() {
 
   return (
     <SerialCompareCardShell
-      title="PF / THD：实测 vs 仿真"
+      title={t('apfFrontend.serialPfcTitle')}
       eyebrow="boost PFC compliance"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -93,22 +95,22 @@ export function SerialComparePFCCard() {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
             <KpiTile
-              label="实测 PF"
-              value={`${formatNumber(result.pfReal, 3)}（仿真 ${formatNumber(result.pfSim, 3)}）`}
+              label={t('apfFrontend.serialPfcKpiPfReal')}
+              value={`${formatNumber(result.pfReal, 3)}${t('apfFrontend.serialPfcSimOpen')}${formatNumber(result.pfSim, 3)}${t('apfFrontend.serialPfcSimClose')}`}
               tone={result.pfReal < 0.9 ? 'warn' : 'measure'}
             />
             <KpiTile
-              label="实测 THD"
-              value={`${formatNumber(result.thdReal, 1)} %（仿真 ${formatNumber(result.thdSim, 1)} %）`}
+              label={t('apfFrontend.serialPfcKpiThdReal')}
+              value={`${formatNumber(result.thdReal, 1)} %${t('apfFrontend.serialPfcSimOpen')}${formatNumber(result.thdSim, 1)} %${t('apfFrontend.serialPfcSimClose')}`}
               tone={result.thdReal > 20 ? 'fault' : result.thdReal > 10 ? 'warn' : 'measure'}
             />
             <KpiTile
-              label="Udc 平均"
+              label={t('apfFrontend.serialPfcKpiUdcAvg')}
               value={`${formatNumber(result.udcAvg, 1)} V`}
               tone={Math.abs(result.udcAvg - apf.udcRef) > 10 ? 'warn' : 'measure'}
             />
             <KpiTile
-              label="Udc 纹波（pk-pk）"
+              label={t('apfFrontend.serialPfcKpiUdcRipple')}
               value={`${formatNumber(result.udcRipple, 1)} V`}
               tone={result.udcRipple > apf.udcRef * 0.05 ? 'warn' : 'measure'}
             />
@@ -116,22 +118,23 @@ export function SerialComparePFCCard() {
         </>
       ) : null}
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic,{' '}
-        <span className="text-accent-warn">udc(f32), v_grid(f32), i_grid(f32), pf(f32), thd(f32)</span> ·
-        谐波限值参考 IEC 61000-3-2 Class D（家电 ≤ 600 W），超限项以 fault 红色柱标记
+        {t('apfFrontend.serialPfcProtocolLabel')}t_us, ia, ib, ic,{' '}
+        <span className="text-accent-warn">udc(f32), v_grid(f32), i_grid(f32), pf(f32), thd(f32)</span>
+        {t('apfFrontend.serialPfcIecHint')}
       </p>
     </SerialCompareCardShell>
   );
 }
 
 function UdcRippleChart({ rows, udcRef }: { rows: Array<{ t_ms: number; udc: number; iGridSim: number; iGridReal: number }>; udcRef: number }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>Udc 母线纹波 + 电网电流</span>
+        <span>{t('apfFrontend.serialPfcUdcChartTitle')}</span>
         <span className="flex items-center gap-2">
-          <Legend color="var(--accent-primary)" label="i_grid 仿真" dashed />
-          <Legend color="var(--accent-measure)" label="i_grid 实测" />
+          <Legend color="var(--accent-primary)" label={t('apfFrontend.serialPfcLegendIGridSim')} dashed />
+          <Legend color="var(--accent-measure)" label={t('apfFrontend.serialPfcLegendIGridReal')} />
           <Legend color="var(--accent-warn)" label="Udc" />
         </span>
       </header>
@@ -163,9 +166,10 @@ function UdcRippleChart({ rows, udcRef }: { rows: Array<{ t_ms: number; udc: num
 }
 
 function HarmonicBarChart({ harmonics }: { harmonics: Array<{ order: number; measuredPct: number; simPct: number; iecLimitPct: number | null }> }) {
+  const { t } = useI18n();
   // 行结构：每个 order 一行，三列（measured, sim, limit）
   const rows = harmonics.map((h) => ({
-    label: `${h.order}次`,
+    label: `${h.order}${t('apfFrontend.serialPfcOrderSuffix')}`,
     measured: h.measuredPct,
     sim: h.simPct,
     limit: h.iecLimitPct ?? 0,
@@ -174,11 +178,11 @@ function HarmonicBarChart({ harmonics }: { harmonics: Array<{ order: number; mea
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>谐波柱状（% 基波）vs IEC 61000-3-2 Class D</span>
+        <span>{t('apfFrontend.serialPfcHarmonicChartTitle')}</span>
         <span className="flex items-center gap-2">
-          <Legend color="var(--accent-measure)" label="实测" />
-          <Legend color="var(--accent-primary)" label="仿真" />
-          <Legend color="var(--accent-fault)" label="超限" />
+          <Legend color="var(--accent-measure)" label={t('apfFrontend.serialPfcLegendMeasured')} />
+          <Legend color="var(--accent-primary)" label={t('apfFrontend.serialPfcLegendSim')} />
+          <Legend color="var(--accent-fault)" label={t('apfFrontend.serialPfcLegendOverLimit')} />
         </span>
       </header>
       <div className="h-44">
@@ -196,17 +200,17 @@ function HarmonicBarChart({ harmonics }: { harmonics: Array<{ order: number; mea
                 fontSize: 11,
               }}
             />
-            <Bar dataKey="measured" isAnimationActive={false} name="实测">
+            <Bar dataKey="measured" isAnimationActive={false} name={t('apfFrontend.serialPfcLegendMeasured')}>
               {rows.map((r, i) => (
                 <Cell key={`m-${i}`} fill={r.overLimit ? 'var(--accent-fault)' : 'var(--accent-measure)'} fillOpacity={0.85} />
               ))}
             </Bar>
-            <Bar dataKey="sim" isAnimationActive={false} name="仿真">
+            <Bar dataKey="sim" isAnimationActive={false} name={t('apfFrontend.serialPfcLegendSim')}>
               {rows.map((_, i) => (
                 <Cell key={`s-${i}`} fill="var(--accent-primary)" fillOpacity={0.6} />
               ))}
             </Bar>
-            <Bar dataKey="limit" isAnimationActive={false} name="IEC 限值">
+            <Bar dataKey="limit" isAnimationActive={false} name={t('apfFrontend.serialPfcLegendIecLimit')}>
               {rows.map((_, i) => (
                 <Cell key={`l-${i}`} fill="var(--accent-warn)" fillOpacity={0.35} />
               ))}
@@ -239,6 +243,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -248,7 +253,12 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : '正常';
+  const sr =
+    tone === 'fault'
+      ? t('apfFrontend.serialPfcSrFault')
+      : tone === 'warn'
+        ? t('apfFrontend.serialPfcSrWarn')
+        : t('apfFrontend.serialPfcSrMeasure');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

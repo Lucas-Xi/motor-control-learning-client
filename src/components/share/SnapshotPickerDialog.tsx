@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Cloud, CloudDownload, Loader2, RefreshCw, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useCloudShareStore } from '../../store/cloudShareStore';
+import { useI18n } from '../../i18n/useI18n';
 import {
   GistError,
   extractGistId,
@@ -30,6 +31,7 @@ interface SnapshotPickerDialogProps {
 }
 
 export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDialogProps) {
+  const { t } = useI18n();
   const pat = useCloudShareStore((s) => s.pat);
 
   const [list, setList] = useState<GistMeta[]>([]);
@@ -56,7 +58,7 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
 
   const refresh = useCallback(async () => {
     if (!pat) {
-      setError('需要绑定 PAT 才能列出我的快照。请先到「凭据」面板绑定带 gist scope 的 PAT。');
+      setError(t('share.pickerNeedPat'));
       return;
     }
     setError('');
@@ -65,15 +67,15 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
       const items = await listMine(pat, 30);
       setList(items);
       if (items.length === 0) {
-        setError('没有找到 snapshot.json 命中的 gist。先去【上传到 Gist】保存一份再回来。');
+        setError(t('share.pickerNoSnapshotGist'));
       }
     } catch (e) {
       const msg = e instanceof GistError ? e.message : (e as Error).message;
-      setError(`加载失败：${msg}`);
+      setError(`${t('share.loadFailPrefix')}${msg}`);
     } finally {
       setLoading(false);
     }
-  }, [pat]);
+  }, [pat, t]);
 
   // 打开 dialog 且未加载过时自动拉一次
   useEffect(() => {
@@ -89,13 +91,13 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
 
   const handleSubmitUrl = useCallback(() => {
     if (!parsedFromUrl) {
-      setUrlError('无法识别 gist ID（请粘贴完整链接或纯 ID）。');
+      setUrlError(t('share.pickerBadId'));
       return;
     }
     setUrlError('');
     onPick(parsedFromUrl);
     onClose();
-  }, [parsedFromUrl, onPick, onClose]);
+  }, [parsedFromUrl, onPick, onClose, t]);
 
   const handlePickFromList = useCallback(
     (gistId: string) => {
@@ -131,22 +133,20 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
             <header className="flex items-start justify-between gap-3 border-b border-line-subtle p-4">
               <div className="min-w-0">
                 <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">
-                  V3 · PR-style review · 选择 snapshot
+                  {t('share.pickerHeaderEyebrow')}
                 </p>
                 <h2
                   id="snapshot-picker-title"
                   className="mt-0.5 font-display text-display text-ink-primary"
                 >
-                  选一个 gist 作为 review 目标
+                  {t('share.pickerTitle')}
                 </h2>
-                <p className="mt-1 text-caption text-ink-muted">
-                  可从【我的快照】里直接挑，也可粘贴别人发来的 gist URL / ID。
-                </p>
+                <p className="mt-1 text-caption text-ink-muted">{t('share.pickerSubtitle')}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="关闭选择窗口"
+                aria-label={t('share.pickerCloseAria')}
                 className="rounded-lg border border-line-subtle bg-bg-base p-1.5 text-ink-secondary hover:text-ink-primary focus-visible:ring-2 focus-visible:ring-accent-primary"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -164,11 +164,11 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                   className="text-caption uppercase tracking-[0.18em] text-ink-muted"
                 >
                   <CloudDownload className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-                  粘贴 gist URL 或 ID
+                  {t('share.pickerPasteHeading')}
                 </h3>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <label className="flex-1">
-                    <span className="sr-only">Gist URL 或 ID</span>
+                    <span className="sr-only">{t('share.pickerUrlSr')}</span>
                     <input
                       type="text"
                       value={urlDraft}
@@ -182,8 +182,8 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                           handleSubmitUrl();
                         }
                       }}
-                      placeholder="https://gist.github.com/<user>/<id> 或纯 ID"
-                      aria-label="Gist URL 或 ID 输入框"
+                      placeholder={t('share.pickerUrlPlaceholder')}
+                      aria-label={t('share.pickerUrlInputAria')}
                       aria-invalid={!!urlError}
                       aria-describedby={urlError ? 'picker-url-err' : undefined}
                       className="w-full rounded-lg border border-line-subtle bg-bg-surface px-2 py-1.5 font-mono text-caption text-ink-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
@@ -193,10 +193,10 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                     variant="primary"
                     onClick={handleSubmitUrl}
                     disabled={!parsedFromUrl}
-                    aria-label="使用该 gist 作为 review 目标"
+                    aria-label={t('share.pickerUseItAria')}
                   >
                     <CloudDownload className="h-4 w-4" aria-hidden="true" />
-                    用它
+                    {t('share.pickerUseIt')}
                   </Button>
                 </div>
                 {urlError && (
@@ -206,7 +206,8 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                 )}
                 {parsedFromUrl && (
                   <p className="text-caption text-accent-measure">
-                    识别到 gist ID：<code className="font-mono">{parsedFromUrl.slice(0, 12)}…</code>
+                    {t('share.pickerRecognizedPrefix')}
+                    <code className="font-mono">{parsedFromUrl.slice(0, 12)}…</code>
                   </p>
                 )}
               </section>
@@ -222,27 +223,25 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                     className="text-caption uppercase tracking-[0.18em] text-ink-muted"
                   >
                     <Cloud className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-                    我的快照（最近 30 条）
+                    {t('share.pickerMineHeading')}
                   </h3>
                   <Button
                     variant="ghost"
                     onClick={() => void refresh()}
                     disabled={loading || !pat}
-                    aria-label="刷新我的 gist 列表"
+                    aria-label={t('share.refreshMyGistListAria')}
                   >
                     {loading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                     ) : (
                       <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                     )}
-                    刷新
+                    {t('share.refreshBtn')}
                   </Button>
                 </header>
 
                 {!pat && (
-                  <p className="text-caption text-accent-warn">
-                    需要先在「凭据」面板绑定 PAT 才能列出我的 gist。
-                  </p>
+                  <p className="text-caption text-accent-warn">{t('share.pickerNeedPatShort')}</p>
                 )}
                 {error && pat && (
                   <p role="alert" className="text-caption text-accent-fault">
@@ -251,7 +250,7 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                 )}
 
                 {pat && list.length > 0 && (
-                  <ul className="space-y-1.5" aria-label="可选的 gist 列表">
+                  <ul className="space-y-1.5" aria-label={t('share.pickerListAria')}>
                     {list.map((g) => (
                       <li
                         key={g.id}
@@ -264,14 +263,14 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                               : 'border border-accent-warn/40 bg-accent-warn/10 text-accent-warn'
                           }`}
                         >
-                          {g.public ? '公开' : '私密'}
+                          {g.public ? t('share.publicBadge') : t('share.privateBadge')}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p
                             className="truncate text-body text-ink-primary"
                             title={g.description}
                           >
-                            {g.description || `(无描述) ${g.id.slice(0, 8)}…`}
+                            {g.description || `${t('share.noDescPrefix')}${g.id.slice(0, 8)}…`}
                           </p>
                           <p className="text-caption text-ink-muted">
                             {g.createdAt ? new Date(g.createdAt).toLocaleString('zh-CN') : ''}
@@ -280,10 +279,10 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
                         <Button
                           variant="primary"
                           onClick={() => handlePickFromList(g.id)}
-                          aria-label={`选择 ${g.description || g.id.slice(0, 8)} 进入 review`}
+                          aria-label={`${t('share.pickerPickAriaPrefix')}${g.description || g.id.slice(0, 8)}${t('share.pickerPickAriaSuffix')}`}
                           className="px-2 py-0.5 text-caption"
                         >
-                          选它
+                          {t('share.pickerPick')}
                         </Button>
                       </li>
                     ))}
@@ -293,8 +292,8 @@ export function SnapshotPickerDialog({ open, onPick, onClose }: SnapshotPickerDi
             </div>
 
             <footer className="flex items-center justify-end gap-2 border-t border-line-subtle bg-bg-base p-3">
-              <Button variant="ghost" onClick={onClose} aria-label="取消选择，关闭窗口">
-                取消
+              <Button variant="ghost" onClick={onClose} aria-label={t('share.pickerCancelAria')}>
+                {t('common.cancel')}
               </Button>
             </footer>
           </motion.div>

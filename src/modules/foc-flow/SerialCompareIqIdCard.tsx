@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockFocFlowSample } from '../../utils/serialMockGenerators';
@@ -64,6 +65,7 @@ function estimateRiseTimeMs(times: number[], values: number[], target: number): 
 }
 
 export function SerialCompareIqIdCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const foc = useSimulationStore((s) => s.foc);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -150,7 +152,7 @@ export function SerialCompareIqIdCard() {
 
   return (
     <SerialCompareCardShell
-      title="Iq / Id 理论 vs 实测"
+      title={t('focFlow.serialIqIdTitle')}
       eyebrow="foc current loop"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -160,14 +162,14 @@ export function SerialCompareIqIdCard() {
     >
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <ThreeLineChart
-          title="Iq（A）"
+          title={t('focFlow.serialIqChartTitle')}
           rows={displayRows}
           refKey="iqRef"
           simKey="iqSim"
           realKey="iqReal"
         />
         <ThreeLineChart
-          title="Id（A）"
+          title={t('focFlow.serialIdChartTitle')}
           rows={displayRows}
           refKey="idRef"
           simKey="idSim"
@@ -176,22 +178,22 @@ export function SerialCompareIqIdCard() {
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="Iq 跟踪 RMSE"
+          label={t('focFlow.serialKpiRmse')}
           value={`${formatNumber(kpi.rmse, 3)} A`}
           tone={rmseTone}
         />
         <KpiTile
-          label="实测上升时间"
+          label={t('focFlow.serialKpiRiseReal')}
           value={Number.isFinite(kpi.riseReal) ? `${formatNumber(kpi.riseReal, 1)} ms` : '--'}
           tone="measure"
         />
         <KpiTile
-          label="仿真上升时间"
+          label={t('focFlow.serialKpiRiseSim')}
           value={Number.isFinite(kpi.riseSim) ? `${formatNumber(kpi.riseSim, 1)} ms` : '--'}
           tone="primary"
         />
         <KpiTile
-          label="上升时间差"
+          label={t('focFlow.serialKpiRiseDiff')}
           value={
             Number.isFinite(kpi.riseDiffPct)
               ? `${kpi.riseDiffPct >= 0 ? '+' : ''}${formatNumber(kpi.riseDiffPct, 1)} %`
@@ -201,8 +203,10 @@ export function SerialCompareIqIdCard() {
         />
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, ia, ib, ic, <span className="text-accent-measure">iq, id</span>, theta_e ·
-        缺 iq/id 字段时实测自动回退到 mock 合成（基于当前 Kp / Ki 仿真）
+        {t('focFlow.serialProtocolLead')}{' '}
+        <span className="text-accent-measure">iq, id</span>
+        {t('focFlow.serialProtocolMid')}{' '}
+        {t('focFlow.serialProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -304,6 +308,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -314,7 +319,13 @@ function KpiTile({
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
   const sr =
-    tone === 'fault' ? '严重偏差' : tone === 'warn' ? '警告偏差' : tone === 'primary' ? '仿真值' : '正常';
+    tone === 'fault'
+      ? t('focFlow.kpiSrFault')
+      : tone === 'warn'
+        ? t('focFlow.kpiSrWarn')
+        : tone === 'primary'
+          ? t('focFlow.kpiSrSim')
+          : t('focFlow.kpiSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

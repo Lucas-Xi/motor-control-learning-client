@@ -1,6 +1,7 @@
 import { formatNumber } from '../../utils/format';
 import { useCallback, useEffect, useRef, type MouseEvent, type PointerEvent } from 'react';
 import { useRafThrottle } from '../../utils/useRafThrottle';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   alpha: number;
@@ -21,7 +22,9 @@ function polarLine(length: number, angle: number, scale: number, cx: number, cy:
   };
 }
 
-export function VectorPlane({ alpha, beta, theta = 0, d, q, title = 'αβ 矢量平面', max, showDqAxes = false, onVectorChange }: Props) {
+export function VectorPlane({ alpha, beta, theta = 0, d, q, title, max, showDqAxes = false, onVectorChange }: Props) {
+  const { t } = useI18n();
+  const heading = title ?? t('charts.vpTitle');
   const size = 280;
   const cx = size / 2;
   const cy = size / 2;
@@ -57,7 +60,7 @@ export function VectorPlane({ alpha, beta, theta = 0, d, q, title = 'αβ 矢量
   return (
     <div className="rounded-2xl border border-line-subtle bg-bg-base p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-body font-medium text-ink-primary">{title}</span>
+        <span className="text-body font-medium text-ink-primary">{heading}</span>
         <span className="formula text-caption text-accent-primary">α {formatNumber(alpha)} / β {formatNumber(beta)}</span>
       </div>
       <svg
@@ -135,7 +138,7 @@ export function VectorPlane({ alpha, beta, theta = 0, d, q, title = 'αβ 矢量
         )}
       </svg>
       {onVectorChange && (
-        <p className="mt-1 text-caption text-ink-muted">拖白点可直接改变矢量端点</p>
+        <p className="mt-1 text-caption text-ink-muted">{t('charts.vpDragHint')}</p>
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import { computeSingleSidedSpectrum, computeTHD } from './dft';
 import { generateThreePhaseCurrent } from '../../simulation/math/transforms';
 import { formatNumber } from '../../utils/format';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 
 type PhaseKey = 'ia' | 'ib' | 'ic';
 
@@ -37,6 +38,7 @@ interface PhaseThd {
  * 并排显示三相谐波条状图 + THD 对比。
  */
 export function ThreePhaseSpectrumCard() {
+  const { t } = useI18n();
   const threePhase = useSimulationStore((s) => s.threePhase);
   const cursorMs = useSimulationStore((s) => s.time);
 
@@ -115,7 +117,7 @@ export function ThreePhaseSpectrumCard() {
   const avgThd = thds.reduce((s, t) => s + t.thd, 0) / thds.length;
 
   return (
-    <Card title="三相电流频谱 (DFT)" eyebrow="Ia / Ib / Ic · FFT 对比" density="compact"
+    <Card title={t('charts.spTitle')} eyebrow={t('charts.spEyebrow')} density="compact"
       action={
         <div className="flex gap-1.5">
           {thds.map((t) => (
@@ -141,7 +143,7 @@ export function ThreePhaseSpectrumCard() {
             <Tooltip
               contentStyle={{ background: '#07111f', border: '1px solid rgba(52,214,255,.35)', borderRadius: 10, fontSize: 12 }}
               formatter={((v: unknown, _name: string, item: { payload?: { order?: number } }) =>
-                [`${formatNumber(Number(v), 3)} A`, `${item.payload?.order ?? '-'} 次`]) as never}
+                [`${formatNumber(Number(v), 3)} A`, `${item.payload?.order ?? '-'}${t('charts.spOrderSuffix')}`]) as never}
             />
             <ReferenceLine y={0} stroke="rgba(148,210,255,0.15)" />
             <Bar dataKey="ia" radius={[2, 2, 0, 0]} fill="#f5a623" opacity={0.7} />
@@ -172,9 +174,9 @@ export function ThreePhaseSpectrumCard() {
       </div>
 
       <div className="mt-1 flex flex-wrap gap-2 text-caption text-ink-muted">
-        <span><span style={{ color: '#f5a623' }}>■</span> A 相</span>
-        <span><span style={{ color: '#43f7b5' }}>■</span> B 相</span>
-        <span><span style={{ color: '#34d6ff' }}>■</span> C 相</span>
+        <span><span style={{ color: '#f5a623' }}>■</span> A{t('charts.spPhaseSuffix')}</span>
+        <span><span style={{ color: '#43f7b5' }}>■</span> B{t('charts.spPhaseSuffix')}</span>
+        <span><span style={{ color: '#34d6ff' }}>■</span> C{t('charts.spPhaseSuffix')}</span>
       </div>
     </Card>
   );

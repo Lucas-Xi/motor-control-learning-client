@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { estimateDeadTimeUsFromDistortion, mockInverterSample } from '../../utils/serialMockGenerators';
@@ -48,6 +49,7 @@ interface Row {
 }
 
 export function SerialCompareDeadTimeCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const inverter = useSimulationStore((s) => s.inverter);
   const [timebase, setTimebase] = useState<SerialTimebase>('10ms');
@@ -121,7 +123,7 @@ export function SerialCompareDeadTimeCard() {
 
   return (
     <SerialCompareCardShell
-      title="死区电压畸变：实测 vs 理论"
+      title={t('inverter.serialDeadTimeTitle')}
       eyebrow="dead-time distortion"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -130,26 +132,27 @@ export function SerialCompareDeadTimeCard() {
       onExportCsv={onExportCsv}
     >
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <VoltageChart title="Va 实测 vs 理论（V）" rows={displayRows} realKey="vaReal" theoryKey="vaTheory" />
-        <ErrorChart title="V_real − V_theory（V）" rows={displayRows} />
+        <VoltageChart title={t('inverter.serialDeadTimeVaTitle')} rows={displayRows} realKey="vaReal" theoryKey="vaTheory" />
+        <ErrorChart title={t('inverter.serialDeadTimeErrTitle')} rows={displayRows} />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="V 误差 RMS"
+          label={t('inverter.serialDeadTimeKpiRms')}
           value={`${formatNumber(kpi.rmsErr, 2)} V`}
           tone={kpi.rmsErr > 4 ? 'fault' : kpi.rmsErr > 2 ? 'warn' : 'measure'}
         />
-        <KpiTile label="V 误差峰值" value={`${formatNumber(kpi.peakErr, 2)} V`} tone="measure" />
-        <KpiTile label="参数面板 t_dead" value={`${formatNumber(inverter.deadTimeUs, 2)} μs`} tone="primary" />
+        <KpiTile label={t('inverter.serialDeadTimeKpiPeak')} value={`${formatNumber(kpi.peakErr, 2)} V`} tone="measure" />
+        <KpiTile label={t('inverter.serialDeadTimeKpiPanel')} value={`${formatNumber(inverter.deadTimeUs, 2)} μs`} tone="primary" />
         <KpiTile
-          label="估算 t_dead"
+          label={t('inverter.serialDeadTimeKpiEst')}
           value={`${formatNumber(kpi.estDeadUs, 2)} μs · Δ${kpi.deltaPct >= 0 ? '+' : ''}${formatNumber(kpi.deltaPct, 0)}%`}
           tone={Math.abs(kpi.deltaPct) > 30 ? 'warn' : 'measure'}
         />
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic, <span className="text-accent-warn">va_meas, vb_meas, vc_meas</span> ·
-        当前版本协议尚未含电压字段 → 全部走 mock 合成（与 UI 死区参数一致）
+        {t('inverter.serialDeadTimeProtocolLead')}{' '}
+        <span className="text-accent-warn">va_meas, vb_meas, vc_meas</span>{' '}
+        {t('inverter.serialDeadTimeProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );

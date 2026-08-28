@@ -4,6 +4,7 @@ import { X, Check, CircleAlert } from 'lucide-react';
 import { useSimulationStore } from '../../store/simulationStore';
 import { Button } from '../ui/Button';
 import { useFocusTrap } from '../../utils/useFocusTrap';
+import { useI18n, translate, getCurrentLocale } from '../../i18n/useI18n';
 import {
   packAppState,
   SLICE_LABELS,
@@ -68,7 +69,7 @@ function fmtVal(v: unknown): string {
     if (Number.isInteger(v)) return String(v);
     return v.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
   }
-  if (typeof v === 'boolean') return v ? '是' : '否';
+  if (typeof v === 'boolean') return v ? translate(getCurrentLocale(), 'common.yes') : translate(getCurrentLocale(), 'common.no');
   return String(v);
 }
 
@@ -111,6 +112,7 @@ function diffSlice(
 }
 
 export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: ReceiveSnapshotModalProps) {
+  const { t } = useI18n();
   const dialogRef = useRef<HTMLDivElement>(null);
   // Esc 关闭
   useEffect(() => {
@@ -177,24 +179,31 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
             <header className="flex items-start justify-between gap-3 border-b border-line-subtle p-4">
               <div className="min-w-0">
                 <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">
-                  收到分享 · 预览对比
+                  {t('share.recvEyebrow')}
                 </p>
                 <h2
                   id="receive-snap-title"
                   className="mt-0.5 font-display text-display text-ink-primary"
                 >
-                  应用远端 snapshot 到当前 store？
+                  {t('share.recvTitle')}
                 </h2>
                 <p className="mt-1 text-caption text-ink-muted">
-                  共 <span className="text-accent-primary">{totalChanged}</span> 个字段不同 ·
-                  装配选型 <span className={hasAsm ? 'text-accent-measure' : 'text-ink-muted'}>{hasAsm ? '已包含' : '未包含'}</span> ·
-                  通关摘要 <span className="text-ink-secondary">{challengeCount} 条</span>
+                  {t('share.recvTotalPrefix')}
+                  <span className="text-accent-primary">{totalChanged}</span>
+                  {t('share.recvFieldsDiffSuffix')}
+                  {t('share.recvAsmPrefix')}
+                  <span className={hasAsm ? 'text-accent-measure' : 'text-ink-muted'}>
+                    {hasAsm ? t('share.recvAsmIncluded') : t('share.recvAsmNotIncluded')}
+                  </span>{' '}
+                  · {t('share.recvChallengePrefix')}
+                  <span className="text-ink-secondary">{challengeCount}</span>
+                  {t('share.recvChallengeCountSuffix')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="关闭接收对比窗口"
+                aria-label={t('share.recvCloseAria')}
                 className="rounded-lg border border-line-subtle bg-bg-base p-1.5 text-ink-secondary hover:text-ink-primary focus-visible:ring-2 focus-visible:ring-accent-primary"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -205,14 +214,15 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
               {diffs.length === 0 ? (
                 <div className="rounded-xl border border-line-subtle bg-bg-base p-4 text-center text-body text-ink-muted">
                   <Check className="mx-auto mb-2 h-6 w-6 text-accent-measure" aria-hidden="true" />
-                  远端 snapshot 与当前状态<span className="text-accent-measure">完全一致</span>，无需应用。
+                  {t('share.recvIdenticalPrefix')}
+                  <span className="text-accent-measure">{t('share.recvIdenticalHighlight')}</span>
+                  {t('share.recvIdenticalSuffix')}
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="rounded-lg border border-accent-warn/40 bg-accent-warn/5 px-3 py-2 text-caption text-accent-warn">
                     <CircleAlert className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-                    左 = 当前状态，右 = 远端 snapshot。点"应用"会覆盖当前 store 对应字段；
-                    取消或 Esc 仅关闭窗口。
+                    {t('share.recvDiffWarning')}
                   </p>
                   {diffs.map((d) => (
                     <section
@@ -232,18 +242,18 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
                             d.changedCount > 0 ? 'text-accent-primary' : 'text-ink-muted'
                           }`}
                         >
-                          {d.changedCount > 0 ? `${d.changedCount} 个字段不同` : '完全相同'}
+                          {d.changedCount > 0 ? `${d.changedCount}${t('share.recvFieldDiffSuffix')}` : t('share.recvAllSame')}
                         </span>
                       </header>
                       <table className="w-full text-caption">
                         <thead className="bg-bg-base text-ink-muted">
                           <tr>
-                            <th scope="col" className="px-2 py-1 text-left">字段</th>
+                            <th scope="col" className="px-2 py-1 text-left">{t('share.recvThField')}</th>
                             <th scope="col" className="px-2 py-1 text-right text-accent-measure">
-                              当前
+                              {t('share.recvThCurrent')}
                             </th>
                             <th scope="col" className="px-2 py-1 text-right text-accent-warn">
-                              远端
+                              {t('share.recvThRemote')}
                             </th>
                           </tr>
                         </thead>
@@ -264,7 +274,7 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
                                     ●
                                   </span>
                                 )}
-                                {!f.same && <span className="sr-only">已变更：</span>}
+                                {!f.same && <span className="sr-only">{t('share.recvChangedSr')}</span>}
                                 {f.key}
                               </th>
                               <td className="px-2 py-1 text-right font-mono text-ink-primary">
@@ -287,7 +297,7 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
                     <section className="overflow-hidden rounded-xl border border-line-subtle">
                       <header className="bg-bg-base px-3 py-1.5">
                         <h3 className="text-caption uppercase tracking-[0.18em] text-ink-muted">
-                          装配选型（6 槽位）
+                          {t('share.recvAsmSectionTitle')}
                         </h3>
                       </header>
                       <ul className="divide-y divide-line-subtle">
@@ -302,7 +312,7 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
                         ))}
                       </ul>
                       <p className="px-3 py-1.5 text-[10px] text-ink-muted">
-                        注：装配槽位 ID 只会被记录在最近一次 history 引用里供 STM32 工程导出使用；不会自动改动工作台当前选型。
+                        {t('share.recvAsmSlotNote')}
                       </p>
                     </section>
                   )}
@@ -311,8 +321,8 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
             </div>
 
             <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line-subtle bg-bg-base p-3">
-              <Button variant="ghost" onClick={onClose} aria-label="取消应用，关闭窗口">
-                取消
+              <Button variant="ghost" onClick={onClose} aria-label={t('share.recvCancelAria')}>
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -320,12 +330,14 @@ export function ReceiveSnapshotModal({ open, decoded, onApply, onClose }: Receiv
                 disabled={diffs.length === 0}
                 aria-label={
                   diffs.length === 0
-                    ? '当前已与远端一致，无需应用'
-                    : `应用远端 snapshot，覆盖当前 ${totalChanged} 个字段`
+                    ? t('share.recvApplyAriaIdentical')
+                    : `${t('share.recvApplyAriaPrefix')}${totalChanged}${t('share.recvApplyAriaSuffix')}`
                 }
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
-                应用（覆盖 {totalChanged} 字段）
+                {t('share.recvApplyPrefix')}
+                {totalChanged}
+                {t('share.recvApplySuffix')}
               </Button>
             </footer>
           </motion.div>

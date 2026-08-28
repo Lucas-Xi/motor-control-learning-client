@@ -4,6 +4,7 @@ import { Card } from '../ui/Card';
 import { SafeResponsiveContainer } from './SafeResponsiveContainer';
 import { computePidBode, findUltimateGain, findGainCrossover, znTuning, type PIDGain } from '../../simulation/math/pidFrequency';
 import { formatNumber } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   gains: PIDGain;
@@ -17,6 +18,7 @@ type ZnMode = 'P' | 'PI' | 'PID' | 'PID-no-os';
  * 点击"Z-N 建议"可基于临界增益 Ku 计算整定参数。
  */
 export function PidBodeChart({ gains }: Props) {
+  const { t } = useI18n();
   const [znMode, setZnMode] = useState<ZnMode>('PID');
 
   const { bodeData, ultimate, crossover, zn } = useMemo(() => {
@@ -31,7 +33,7 @@ export function PidBodeChart({ gains }: Props) {
   const phaseData = bodeData.map((p) => ({ freq: p.freq, phase: p.phaseDeg }));
 
   return (
-    <Card title="Bode 图" eyebrow="频率响应 · 幅值 & 相位"
+    <Card title={t('charts.bdTitle')} eyebrow={t('charts.bdEyebrow')}
       action={
         ultimate ? (
           <span className="rounded-md border border-accent-measure/30 bg-accent-measure/8 px-2 py-0.5 text-caption font-medium text-accent-measure">
@@ -49,7 +51,7 @@ export function PidBodeChart({ gains }: Props) {
             <YAxis tick={{ fill: '#8fb7c9', fontSize: 9 }} unit="dB" />
             <Tooltip
               contentStyle={{ background: '#07111f', border: '1px solid rgba(52,214,255,.35)', borderRadius: 10, fontSize: 11 }}
-              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)} dB`, '幅值']) as never}
+              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)} dB`, t('charts.bdMagnitude')]) as never}
             />
             <ReferenceLine y={0} stroke="rgba(148,210,255,0.25)" strokeDasharray="4 4" />
             {crossover && <ReferenceLine x={crossover.f0dB} stroke="rgba(255,92,122,0.3)" strokeDasharray="3 6" />}
@@ -66,7 +68,7 @@ export function PidBodeChart({ gains }: Props) {
             <YAxis tick={{ fill: '#8fb7c9', fontSize: 9 }} unit="°" domain={[-270, 90]} />
             <Tooltip
               contentStyle={{ background: '#07111f', border: '1px solid rgba(52,214,255,.35)', borderRadius: 10, fontSize: 11 }}
-              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)}°`, '相位']) as never}
+              formatter={((v: unknown) => [`${formatNumber(Number(v), 1)}°`, t('charts.bdPhase')]) as never}
             />
             <ReferenceLine y={-180} stroke="rgba(255,92,122,0.4)" strokeDasharray="4 4" />
             {crossover && <ReferenceLine x={crossover.f0dB} stroke="rgba(255,92,122,0.3)" strokeDasharray="3 6" />}
@@ -89,7 +91,7 @@ export function PidBodeChart({ gains }: Props) {
       {zn && (
         <div className="mt-2 rounded-lg border border-accent-measure/20 bg-accent-measure/5 p-2">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-caption font-medium text-accent-measure">Z-N 整定</span>
+            <span className="text-caption font-medium text-accent-measure">{t('charts.bdZnTuning')}</span>
             <select
               className="rounded border border-line-subtle bg-bg-base px-2 py-0.5 text-caption text-ink-primary"
               value={znMode}
@@ -98,7 +100,7 @@ export function PidBodeChart({ gains }: Props) {
               <option value="P">P</option>
               <option value="PI">PI</option>
               <option value="PID">PID</option>
-              <option value="PID-no-os">PID (无超调)</option>
+              <option value="PID-no-os">{t('charts.bdZnNoOvershoot')}</option>
             </select>
           </div>
           <div className="grid grid-cols-3 gap-2 text-caption">
@@ -109,7 +111,7 @@ export function PidBodeChart({ gains }: Props) {
         </div>
       )}
       {!ultimate && (
-        <p className="mt-2 text-caption text-ink-secondary">未检测到 -180° 相角穿越，当前系统无临界振荡点。</p>
+        <p className="mt-2 text-caption text-ink-secondary">{t('charts.bdNoUltimate')}</p>
       )}
     </Card>
   );

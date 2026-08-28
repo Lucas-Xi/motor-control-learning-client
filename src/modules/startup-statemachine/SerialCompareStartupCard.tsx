@@ -9,10 +9,10 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockStartupSample } from '../../utils/serialMockGenerators';
-import { STATE_DESCRIPTIONS } from '../../simulation/math/startup';
 import { toCsv } from '../../utils/download';
 import { formatNumber } from '../../utils/format';
 import type { StartupState } from '../../simulation/engine/types';
@@ -52,17 +52,33 @@ interface Row {
 
 const STATE_ORDER: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak'];
 
+/** simulation 层 STATE_DESCRIPTIONS（中文）的 TKey 映射；Record 全量覆盖由 TS 保证。 */
+const STATE_NAME_KEYS: Record<StartupState, TKey> = {
+  idle: 'startupStateMachine.stateIdle',
+  precharge: 'startupStateMachine.statePrecharge',
+  align: 'startupStateMachine.stateAlign',
+  'open-loop': 'startupStateMachine.stateOpenLoop',
+  hfi: 'startupStateMachine.stateHfi',
+  bemf: 'startupStateMachine.stateBemf',
+  fieldweak: 'startupStateMachine.stateFieldweak',
+  fault: 'startupStateMachine.stateFault',
+};
+
 function stateToIdx(s: StartupState): number {
   const idx = STATE_ORDER.indexOf(s);
   return idx < 0 ? 0 : idx;
 }
 
 export function SerialCompareStartupCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const startup = useSimulationStore((s) => s.startup);
   const [timebase, setTimebase] = useState<SerialTimebase>('1s');
   const [paused, setPaused] = useState(false);
   const windowMs = timebaseToWindowMs(timebase);
+
+  /** state id → 本地化名称（Record 全量覆盖由 TS 保证；t 找不到时返回 key 兜底） */
+  const stateName = (s: StartupState) => t(STATE_NAME_KEYS[s]);
 
   const rows = useMemo<Row[]>(() => {
     if (buffer.length === 0) return [];
@@ -138,7 +154,7 @@ export function SerialCompareStartupCard() {
 
   return (
     <SerialCompareCardShell
-      title="启动状态机：实测 vs 仿真"
+      title={t('startupStateMachine.serialTitle')}
       eyebrow="startup sequence"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -152,22 +168,16 @@ export function SerialCompareStartupCard() {
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="当前 state" value={STATE_DESCRIPTIONS[kpi.currentState].name} tone="primary" />
-        <KpiTile label="状态切换次数" value={`${kpi.transitionCount}`} tone="measure" />
+        <KpiTile label={t('startupStateMachine.serialKpiState')} value={stateName(kpi.currentState)} tone="primary" />
+        <KpiTile label={t('startupStateMachine.serialKpiTransitions')} value={`${kpi.transitionCount}`} tone="measure" />
         <KpiTile
-          label="rpm 跟踪 RMSE"
+          label={t('startupStateMachine.serialKpiRmse')}
           value={`${formatNumber(kpi.rmseRpm, 1)} rpm`}
           tone={kpi.rmseRpm > 30 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="反液击违规"
-          value={
-            kpi.slugCount === 0 ? (
-              '0 次'
-            ) : (
-              `${kpi.slugCount} 次`
-            )
-          }
+          label={t('startupStateMachine.serialKpiSlug')}
+          value={t('startupStateMachine.serialTimesCount').replace('{v}', `${kpi.slugCount}`)}
           tone={kpi.slugCount > 0 ? 'fault' : 'measure'}
         />
       </div>
@@ -190,16 +200,16 @@ export function SerialCompareStartupCard() {
               aria-current={isActive ? 'step' : undefined}
             >
               {isActive && <span aria-hidden>● </span>}
-              {STATE_DESCRIPTIONS[s].name}
+              {stateName(s)}
             </span>
           );
         })}
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic,{' '}
-        <span className="text-accent-warn">state(u8 enum), rpm_meas(f32), iq_meas(f32)</span> ·
-        反液击斜坡上限 {formatNumber(startup.accelRampRpmS, 0)} rpm/s；超出 1.5× 视为违规
+        {t('startupStateMachine.serialProtoLead')}{' '}
+        <span className="text-accent-warn">state(u8 enum), rpm_meas(f32), iq_meas(f32)</span>{' '}
+        {t('startupStateMachine.serialProtoTail').replace('{v}', formatNumber(startup.accelRampRpmS, 0))}
       </p>
     </SerialCompareCardShell>
   );
@@ -214,10 +224,11 @@ function RpmChart({
   transitions: Array<{ t: number; from: StartupState; to: StartupState }>;
   accelRamp: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex flex-wrap items-center justify-between gap-1 text-caption text-ink-muted">
-        <span>转速时序（rpm）· 斜坡 {formatNumber(accelRamp, 0)} rpm/s</span>
+        <span>{t('startupStateMachine.serialRpmChartTitle').replace('{v}', formatNumber(accelRamp, 0))}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-primary)" label="sim" dashed />
           <Legend color="var(--accent-measure)" label="real" />
@@ -245,7 +256,7 @@ function RpmChart({
                 x={tr.t}
                 stroke="var(--accent-warn)"
                 strokeDasharray="2 3"
-                label={{ value: STATE_DESCRIPTIONS[tr.to].name, fill: '#ffb84d', fontSize: 9, position: 'top' }}
+                label={{ value: t(STATE_NAME_KEYS[tr.to]), fill: '#ffb84d', fontSize: 9, position: 'top' }}
               />
             ))}
             <Line type="monotone" dataKey="rpmSim" dot={false} stroke="var(--accent-primary)" strokeDasharray="3 3" strokeWidth={1.4} isAnimationActive={false} name="sim" />
@@ -264,10 +275,11 @@ function StateChart({
   rows: Row[];
   transitions: Array<{ t: number; from: StartupState; to: StartupState }>;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>state 时序 + 反液击标记</span>
+        <span>{t('startupStateMachine.serialStateChartTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-warn)" label="state idx" />
           <span className="flex items-center gap-1 text-accent-fault">
@@ -285,7 +297,7 @@ function StateChart({
               width={66}
               domain={[0, STATE_ORDER.length - 1]}
               ticks={[0, 1, 2, 3, 4, 5, 6]}
-              tickFormatter={(v) => STATE_DESCRIPTIONS[STATE_ORDER[v as number]]?.name ?? ''}
+              tickFormatter={(v) => t(STATE_NAME_KEYS[STATE_ORDER[v as number]])}
             />
             <Tooltip
               contentStyle={{
@@ -297,7 +309,7 @@ function StateChart({
               }}
               formatter={(value: unknown) => {
                 const idx = Number(value);
-                return [STATE_DESCRIPTIONS[STATE_ORDER[idx]]?.name ?? '--', 'state'];
+                return [t(STATE_NAME_KEYS[STATE_ORDER[idx]]), 'state'];
               }}
             />
             {transitions.map((tr, i) => (
@@ -344,7 +356,12 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const Icon = tone === 'fault' ? AlertTriangle : tone === 'warn' ? AlertTriangle : CheckCircle2;
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : '正常';
+  const { t } = useI18n();
+  const sr = tone === 'fault'
+    ? t('startupStateMachine.serialSrSevere')
+    : tone === 'warn'
+      ? t('startupStateMachine.serialSrWarn')
+      : t('startupStateMachine.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

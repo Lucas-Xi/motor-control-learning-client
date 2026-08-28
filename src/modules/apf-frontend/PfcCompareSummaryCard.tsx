@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
+import { useI18n } from '../../i18n/useI18n';
 import { formatNumber } from '../../utils/format';
 import { type BoostPfcResult } from '../../simulation/math/boostPfc';
 
@@ -12,6 +13,7 @@ interface Props {
  * 让学员一眼看出 PFC 带来的全部好处，以及有无 PFC 的量化差异。
  */
 export function PfcCompareSummaryCard({ result }: Props) {
+  const { t } = useI18n();
   const stats = useMemo(() => {
     // 估算效率：取最后半个周期稳态值
     const half = Math.floor(result.t_ms.length / 2);
@@ -52,20 +54,19 @@ export function PfcCompareSummaryCard({ result }: Props) {
   };
 
   return (
-    <Card title="PFC 对比摘要" eyebrow="THD · PF · η" density="compact">
+    <Card title={t('apfFrontend.compareSummaryTitle')} eyebrow="THD · PF · η" density="compact">
       <div className="mb-2 flex items-center gap-3 rounded-lg border border-accent-measure/20 bg-accent-measure/5 px-3 py-1.5 text-caption">
         <span className="text-accent-measure font-medium">PFC</span>
         <span className="text-ink-muted">│</span>
-        <span className="text-ink-muted">裸整流</span>
+        <span className="text-ink-muted">{t('apfFrontend.chipBare')}</span>
       </div>
       <div className="space-y-1.5">
         <Row label="THD" pfc={stats.thdPfc} raw={stats.thdRaw} unit="%" better="low" />
-        <Row label="功率因数" pfc={stats.pfPfc} raw={stats.pfRaw} unit="" better="high" />
-        <Row label="效率" pfc={stats.effPfc} raw={stats.effRaw} unit="%" better="high" />
+        <Row label={t('apfFrontend.compareSummaryPowerFactor')} pfc={stats.pfPfc} raw={stats.pfRaw} unit="" better="high" />
+        <Row label={t('apfFrontend.compareSummaryEfficiency')} pfc={stats.effPfc} raw={stats.effRaw} unit="%" better="high" />
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        PFC 将整流尖峰电流整形为正弦，THD 从 {formatNumber(stats.thdRaw, 0)}% 降至 {formatNumber(stats.thdPfc, 0)}%，
-        功率因数从 {formatNumber(stats.pfRaw, 3)} 提升至 {formatNumber(stats.pfPfc, 3)}。
+        {t('apfFrontend.compareSummarySentA')}{formatNumber(stats.thdRaw, 0)}%{t('apfFrontend.compareSummarySentB')}{formatNumber(stats.thdPfc, 0)}%{t('apfFrontend.compareSummarySentC')}{formatNumber(stats.pfRaw, 3)}{t('apfFrontend.compareSummarySentD')}{formatNumber(stats.pfPfc, 3)}{t('apfFrontend.compareSummarySentE')}
       </p>
     </Card>
   );

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * MTPA / MTPV / 电流极限圆 / 电压极限椭圆 — IPM 电机操作图（Operating Map）
@@ -75,6 +76,7 @@ export function MtpaCurve({
   rpm,
   uDc,
 }: MtpaCurveProps) {
+  const { t } = useI18n();
   const ldH = ld / 1000;
   const lqH = lq / 1000;
   const omegaE = ((rpm * 2 * Math.PI) / 60) * polePairs;
@@ -295,11 +297,11 @@ export function MtpaCurve({
         <rect x={0} y={0} width={150} height={showMtpv ? 76 : 60} fill="rgba(13,25,41,0.78)" stroke="#1e2a3d" rx="6" />
         <g transform="translate(8 14)">
           <line x1={0} y1={0} x2={18} y2={0} stroke="#34d6ff" strokeWidth="2" strokeDasharray="6 5" />
-          <text x={24} y={3} fill="#9eb5cb">电流极限圆</text>
+          <text x={24} y={3} fill="#9eb5cb">{t('charts.mpCurrentCircle')}</text>
         </g>
         <g transform="translate(8 30)">
           <line x1={0} y1={0} x2={18} y2={0} stroke="#ffb84d" strokeWidth="2" />
-          <text x={24} y={3} fill="#9eb5cb">电压极限椭圆</text>
+          <text x={24} y={3} fill="#9eb5cb">{t('charts.mpVoltageEllipse')}</text>
         </g>
         <g transform="translate(8 46)">
           <line x1={0} y1={0} x2={18} y2={0} stroke="#43f7b5" strokeWidth="2" />
@@ -319,7 +321,7 @@ export function MtpaCurve({
           fill={overCurrent ? 'rgba(251,113,133,0.18)' : voltageSat ? 'rgba(255,184,77,0.16)' : onMtpa ? 'rgba(67,247,181,0.14)' : 'rgba(52,214,255,0.14)'}
           stroke={dotColor} strokeWidth="1" />
         <text x={66} y={15} textAnchor="middle" fontSize="11" fontWeight="700" fill={dotColor}>
-          {overCurrent ? '电流越界' : voltageSat ? '电压撞限·弱磁' : onMtpa ? '运行在 MTPA' : '过渡区'}
+          {overCurrent ? t('charts.mpOverCurrent') : voltageSat ? t('charts.mpVoltageSat') : onMtpa ? t('charts.mpOnMtpa') : t('charts.mpTransition')}
         </text>
       </g>
     </svg>

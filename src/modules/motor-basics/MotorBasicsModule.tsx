@@ -85,7 +85,7 @@ function Primary() {
             <ViewChip active={view === '2d'} onClick={() => setView('2d')} label={t('motorBasics.view2D')}>{t('motorBasics.view2D')}</ViewChip>
             <ViewChip active={view === '3d'} onClick={() => setView('3d')} label={t('motorBasics.view3D')}>{t('motorBasics.view3D')}</ViewChip>
           </div>
-          <FidelityBadge level="exact" hint="标准 12 槽 PMSM 结构示意；磁极数随极对数同步变化" />
+          <FidelityBadge level="exact" hint={t('motorBasics.anatomyFidelityHint')} />
         </div>
       }
     >
@@ -121,7 +121,7 @@ function Primary() {
 function Probe() {
   const params = useSimulationStore((s) => s.motorBasics);
   const time = useSimulationStore((s) => s.time);
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   // 仪表盘跟随仿真时钟：暂停时静止；运行 / 单步把 time 推进，转子和数字一起前进。
   // 滑块的 mechanicalDeg 作为基准角，叠加 rpm × time 的旋转分量。
   const derived = useMemo(() => {
@@ -137,9 +137,7 @@ function Probe() {
     };
   }, [params, time]);
   // 极对数描述行，按 locale 组织语法
-  const polePairsLine = locale === 'en-US'
-    ? `${params.polePairs} pole pairs: one mechanical revolution = ${derived.cycles} electrical revolutions, electrical frequency = ${formatNumber(derived.freq, 1)} Hz.`
-    : `${params.polePairs} 极对：转子机械转 1 圈，电角度转 ${derived.cycles} 圈，电频率 ${formatNumber(derived.freq, 1)} Hz。`;
+  const polePairsLine = `${params.polePairs} ${t('motorBasics.polePairsLead')} ${t('motorBasics.polePairsCycle')} ${derived.cycles} ${t('motorBasics.polePairsCycleSuffix')} ${formatNumber(derived.freq, 1)} Hz`;
   return (
     <>
       <Card title={t('motorBasics.angleCardTitle')} eyebrow={t('motorBasics.angleCardEyebrow')} density="compact">

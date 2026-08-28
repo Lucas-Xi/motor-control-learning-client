@@ -1,4 +1,5 @@
 import type { StartupState } from '../../simulation/engine/types';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 /**
  * 压缩机启动状态机有向图。
@@ -51,43 +52,19 @@ function nodeCenter(state: StartupState): { x: number; y: number } {
   return { x, y: ROW_Y };
 }
 
-/** 节点中文名 */
-const NODE_NAME: Record<StartupState, string> = {
-  idle: '待机',
-  precharge: '预充电',
-  align: '对齐',
-  'open-loop': 'V/f 开环',
-  hfi: 'HFI',
-  bemf: 'BEMF',
-  fieldweak: '弱磁',
-  fault: '故障',
-};
-
-/** 节点关键动作（旁注信息块用） */
-const NODE_ACTION: Record<StartupState, string> = {
-  idle: '输出关 / 等待使能',
-  precharge: '限流给母线电容缓充 ~200ms',
-  align: 'd 轴注入直流 1A 持续 800ms',
-  'open-loop': 'V/f 强制斜坡升速到 ~100rpm',
-  hfi: '高频注入解调出转子角度',
-  bemf: '反电动势观测器接管角度',
-  fieldweak: '注入负 Id 削弱磁链突破电压限',
-  fault: 'PWM 关断 / 停机保护',
-};
-
 /** 主路径转移条件（每相邻一对一条），label 中的占位符在 render 时替换 */
-function buildTransitions(p: Props): Transition[] {
+function buildTransitions(p: Props, t: (key: TKey) => string): Transition[] {
   return [
-    { from: 'idle',       to: 'precharge', label: '使能 / t > 50ms',                        kind: 'forward' },
-    { from: 'precharge',  to: 'align',     label: 'Vbus 稳定 / t > 200ms',                  kind: 'forward' },
-    { from: 'align',      to: 'open-loop', label: '对齐完成 / t > Talign',                  kind: 'forward' },
+    { from: 'idle',       to: 'precharge', label: t('charts.suTrEnable'),                   kind: 'forward' },
+    { from: 'precharge',  to: 'align',     label: t('charts.suTrVbusStable'),               kind: 'forward' },
+    { from: 'align',      to: 'open-loop', label: t('charts.suTrAlignDone'),                kind: 'forward' },
     { from: 'open-loop',  to: 'hfi',       label: `rpm > ${Math.round(p.hfiHandoffRpm)}`,    kind: 'forward' },
     { from: 'hfi',        to: 'bemf',      label: `rpm > ${Math.round(p.bemfHandoffRpm)}`,   kind: 'forward' },
     { from: 'bemf',       to: 'fieldweak', label: `rpm > ${Math.round(p.fieldweakRpm)}`,     kind: 'forward' },
     // 反向降级
-    { from: 'bemf',       to: 'hfi',       label: 'BEMF 信号弱',  kind: 'fallback' },
-    { from: 'hfi',        to: 'open-loop', label: 'HFI 解角失败',  kind: 'fallback' },
-    { from: 'fieldweak',  to: 'bemf',      label: 'rpm 回落',      kind: 'fallback' },
+    { from: 'bemf',       to: 'hfi',       label: t('charts.suTrBemfWeak'),  kind: 'fallback' },
+    { from: 'hfi',        to: 'open-loop', label: t('charts.suTrHfiFail'),   kind: 'fallback' },
+    { from: 'fieldweak',  to: 'bemf',      label: t('charts.suTrRpmDrop'),   kind: 'fallback' },
   ];
 }
 
@@ -115,7 +92,30 @@ const COLORS = {
 } as const;
 
 export function StartupStateGraph(props: Props) {
-  const transitions = buildTransitions(props);
+  const { t } = useI18n();
+  const transitions = buildTransitions(props, t);
+
+  // 节点名 / 关键动作（旁注信息块用）
+  const nodeName: Record<StartupState, string> = {
+    idle: t('charts.suStateIdle'),
+    precharge: t('charts.suStatePrecharge'),
+    align: t('charts.suStateAlign'),
+    'open-loop': t('charts.suStateOpenLoop'),
+    hfi: 'HFI',
+    bemf: 'BEMF',
+    fieldweak: t('charts.suStateFieldweak'),
+    fault: t('charts.suStateFault'),
+  };
+  const nodeAction: Record<StartupState, string> = {
+    idle: t('charts.suActionIdle'),
+    precharge: t('charts.suActionPrecharge'),
+    align: t('charts.suActionAlign'),
+    'open-loop': t('charts.suActionOpenLoop'),
+    hfi: t('charts.suActionHfi'),
+    bemf: t('charts.suActionBemf'),
+    fieldweak: t('charts.suActionFieldweak'),
+    fault: t('charts.suActionFault'),
+  };
 
   return (
     <svg
@@ -255,7 +255,7 @@ export function StartupStateGraph(props: Props) {
               fontWeight={isActive ? 600 : 500}
               fill={isActive ? '#ffffff' : col.text}
             >
-              {NODE_NAME[s]}
+              {nodeName[s]}
             </text>
           </g>
         );
@@ -264,7 +264,7 @@ export function StartupStateGraph(props: Props) {
       {/* === 3. 当前状态信息块（节点下方/上方留出位置避开回退弧）=== */}
       {(() => {
         const c = nodeCenter(props.currentState);
-        const action = NODE_ACTION[props.currentState];
+        const action = nodeAction[props.currentState];
         // 信息块放在主行上方，避开下方反向弧
         const boxW = 220;
         const boxH = 38;
@@ -315,12 +315,12 @@ export function StartupStateGraph(props: Props) {
       {/* === 4. 图例 === */}
       <g transform={`translate(12, ${VB_H - 18})`}>
         <line x1={0} y1={0} x2={20} y2={0} stroke="#43f7b5" strokeWidth={2} markerEnd="url(#arrow-fwd)" />
-        <text x={26} y={3} fontSize={10} fill="#9eb5cb">主路径</text>
+        <text x={26} y={3} fontSize={10} fill="#9eb5cb">{t('charts.suLegendMain')}</text>
         <line x1={90} y1={0} x2={110} y2={0} stroke="#ffb84d" strokeWidth={1.5} strokeDasharray="4 3" markerEnd="url(#arrow-back)" />
-        <text x={116} y={3} fontSize={10} fill="#9eb5cb">降级回退</text>
-        <text x={186} y={3} fontSize={10} fill="#43f7b5">● 当前</text>
-        <text x={236} y={3} fontSize={10} fill="#34d6ff">● 已访问</text>
-        <text x={300} y={3} fontSize={10} fill="#5d7793">● 未访问</text>
+        <text x={116} y={3} fontSize={10} fill="#9eb5cb">{t('charts.suLegendFallback')}</text>
+        <text x={186} y={3} fontSize={10} fill="#43f7b5">{t('charts.suLegendCurrent')}</text>
+        <text x={236} y={3} fontSize={10} fill="#34d6ff">{t('charts.suLegendVisited')}</text>
+        <text x={300} y={3} fontSize={10} fill="#5d7793">{t('charts.suLegendUnvisited')}</text>
       </g>
     </svg>
   );

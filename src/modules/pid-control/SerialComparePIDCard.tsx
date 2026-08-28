@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockPidSample, suggestZnTuning } from '../../utils/serialMockGenerators';
@@ -44,6 +45,7 @@ const RMSE_WARN_RATIO = 0.1;
 const RMSE_FAULT_RATIO = 0.25;
 
 export function SerialComparePIDCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const pid = useSimulationStore((s) => s.pid);
   const [timebase, setTimebase] = useState<SerialTimebase>('1s');
@@ -108,7 +110,7 @@ export function SerialComparePIDCard() {
 
   return (
     <SerialCompareCardShell
-      title="PI 阶跃响应：实测 vs 仿真"
+      title={t('pidControl.serialPidTitle')}
       eyebrow="pid step compare"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -118,7 +120,9 @@ export function SerialComparePIDCard() {
     >
       <div className="mb-3">
         <label className="block rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">实测噪声幅值 {formatNumber(noise, 3)}</span>
+          <span className="block text-caption text-ink-muted">
+            {t('pidControl.serialPidNoiseLabel')} {formatNumber(noise, 3)}
+          </span>
           <input
             type="range"
             min={0}
@@ -127,11 +131,11 @@ export function SerialComparePIDCard() {
             value={noise}
             onChange={(e) => setNoise(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="实测噪声幅值"
+            aria-label={t('pidControl.serialPidNoiseLabel')}
             aria-valuemin={0}
             aria-valuemax={0.3}
             aria-valuenow={noise}
-            aria-valuetext={`${formatNumber(noise, 3)} 单位`}
+            aria-valuetext={`${formatNumber(noise, 3)} ${t('pidControl.serialPidUnitAria')}`}
           />
         </label>
       </div>
@@ -141,25 +145,25 @@ export function SerialComparePIDCard() {
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="跟踪误差 RMS" value={formatNumber(kpi.rmse, 3)} tone={rmseTone} />
-        <KpiTile label="实测超调" value={`${formatNumber(kpi.overshootPct, 1)} %`} tone={overshootTone} />
+        <KpiTile label={t('pidControl.serialPidKpiRmse')} value={formatNumber(kpi.rmse, 3)} tone={rmseTone} />
+        <KpiTile label={t('pidControl.serialPidKpiOvershoot')} value={`${formatNumber(kpi.overshootPct, 1)} %`} tone={overshootTone} />
         <KpiTile
-          label="ZN 建议 Kp"
+          label={t('pidControl.serialPidKpiZnkP')}
           value={`${formatNumber(kpi.zn.kpSuggest, 2)} (Δ${kpDelta >= 0 ? '+' : ''}${formatNumber(kpDelta, 2)})`}
           tone={kpi.zn.oscillating ? 'warn' : 'primary'}
         />
         <KpiTile
-          label="ZN 建议 Ki"
+          label={t('pidControl.serialPidKpiZnkI')}
           value={`${formatNumber(kpi.zn.kiSuggest, 2)} (Δ${kiDelta >= 0 ? '+' : ''}${formatNumber(kiDelta, 2)})`}
           tone={kpi.zn.oscillating ? 'warn' : 'primary'}
         />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us · 通用 PI 通道由 mock 合成；ZN 建议仅在"振荡 + 超调 &gt; 10%"时给出
+        {t('pidControl.serialPidProtocolNote')}
         {kpi.zn.Tu && (
           <>
-            {' '}· 振荡周期 Tu ≈ {formatNumber(kpi.zn.Tu * 1000, 1)} ms
+            {' '}· {t('pidControl.serialPidTuNote')} {formatNumber(kpi.zn.Tu * 1000, 1)} ms
           </>
         )}
       </p>
@@ -225,6 +229,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -234,7 +239,13 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '建议' : '正常';
+  const sr = tone === 'fault'
+    ? t('pidControl.kpiSrFault')
+    : tone === 'warn'
+      ? t('pidControl.kpiSrWarn')
+      : tone === 'primary'
+        ? t('pidControl.kpiSrAdvice')
+        : t('pidControl.kpiSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

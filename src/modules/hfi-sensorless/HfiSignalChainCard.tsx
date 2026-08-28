@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { AlertOctagon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { HfiInjectionWaveform } from '../../components/charts/HfiInjectionWaveform';
+import { useI18n } from '../../i18n/useI18n';
 import { computeHfiSignals } from '../../simulation/math/hfiSignals';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
@@ -17,6 +18,7 @@ import { formatNumber } from '../../utils/format';
  *   - 假定角度估计误差 θe，0 - 30°，让学员看到误差信号峰值如何随 sin(2θe) 变。
  */
 export function HfiSignalChainCard() {
+  const { t } = useI18n();
   // 切片选择器：避免每帧 time 推送拉爆
   const injectVoltage = useSimulationStore((s) => s.hfi.injectVoltage);
   const injectFreqHz = useSimulationStore((s) => s.hfi.injectFreqHz);
@@ -55,19 +57,19 @@ export function HfiSignalChainCard() {
 
   return (
     <Card
-      title="HFI 信号链可视化"
+      title={t('hfiSensorless.signalChainTitle')}
       eyebrow="injection ↔ demod chain"
       density="compact"
     >
       <div className="grid grid-cols-3 gap-2">
-        <Metric label="凸极比 Lq/Ld" value={formatNumber(ratio, 2)} hint={ratio < 1.2 ? 'IPM 凸极不足' : '可用'} tone={ratio < 1.2 ? 'fault' : 'measure'} />
-        <Metric label="误差信号峰值" value={`${formatNumber(summary.errorPeak, 4)} A`} hint="∝ sin(2θe)" tone="warn" />
-        <Metric label="解调 SNR" value={`${formatNumber(summary.demodSnrDb, 1)} dB`} hint={summary.demodSnrDb > 6 ? '可锁相' : '过噪声'} tone={summary.demodSnrDb > 6 ? 'measure' : 'fault'} />
+        <Metric label={t('hfiSensorless.signalChainSaliencyRatio')} value={formatNumber(ratio, 2)} hint={ratio < 1.2 ? t('hfiSensorless.signalChainHintWeakSaliency') : t('hfiSensorless.signalChainHintUsable')} tone={ratio < 1.2 ? 'fault' : 'measure'} />
+        <Metric label={t('hfiSensorless.signalChainErrorPeak')} value={`${formatNumber(summary.errorPeak, 4)} A`} hint="∝ sin(2θe)" tone="warn" />
+        <Metric label={t('hfiSensorless.signalChainDemodSnr')} value={`${formatNumber(summary.demodSnrDb, 1)} dB`} hint={summary.demodSnrDb > 6 ? t('hfiSensorless.signalChainHintLockable') : t('hfiSensorless.signalChainHintNoisy')} tone={summary.demodSnrDb > 6 ? 'measure' : 'fault'} />
       </div>
 
       <div className="mt-3 rounded-md border border-line-subtle bg-bg-base px-3 py-2">
         <div className="flex items-center justify-between text-caption">
-          <span className="text-ink-muted">假定角度估计误差 θe</span>
+          <span className="text-ink-muted">{t('hfiSensorless.signalChainAssumedErr')}</span>
           <span className="text-ink-primary tabular-nums">{thetaErrDeg.toFixed(0)}°</span>
         </div>
         <input
@@ -78,14 +80,14 @@ export function HfiSignalChainCard() {
           value={thetaErrDeg}
           onChange={(e) => setThetaErrDeg(Number(e.target.value))}
           className="mt-1 w-full accent-accent-primary"
-          aria-label="假定角度估计误差 (°)"
+          aria-label={t('hfiSensorless.signalChainAssumedErrAria')}
           aria-valuemin={0}
           aria-valuemax={30}
           aria-valuenow={thetaErrDeg}
           aria-valuetext={`${thetaErrDeg.toFixed(0)}°`}
         />
         <p className="mt-1 text-caption leading-snug text-ink-muted">
-          θe = 0° 时误差信号几乎为零；增大 θe 误差信号峰值按 sin(2θe) 上升，约在 45° 处最大。这就是 PLL 闭环要驱回 0 的方向信息。
+          {t('hfiSensorless.signalChainErrNote')}
         </p>
       </div>
 
@@ -94,7 +96,7 @@ export function HfiSignalChainCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        cyan = 注入电压 V_h·sin(ω_h·t)；mint = IPM 凸极调制后的电流响应（含噪声）；amber = 与 sin(ω_h·t) 相乘的解调中间信号（含 2ω_h 振荡 + 直流误差项）；rose = 一阶 LPF 后留下的角度误差信号 ∝ -(V_h / 2ω_h)·Δ·sin(2θe)。
+        {t('hfiSensorless.signalChainWaveformNote')}
       </p>
     </Card>
   );
@@ -108,19 +110,24 @@ interface MetricProps {
 }
 
 function Metric({ label, value, hint, tone }: MetricProps) {
+  const { t } = useI18n();
   const toneCls =
     tone === 'measure' ? 'text-accent-measure' :
     tone === 'warn' ? 'text-accent-warn' :
     'text-accent-fault';
   // 颜色 + 形状 + sr-only 三通道（色盲/打印友好）
   const Icon = tone === 'measure' ? CheckCircle2 : tone === 'warn' ? AlertTriangle : AlertOctagon;
-  const srLabel = tone === 'measure' ? '正常' : tone === 'warn' ? '警戒' : '异常';
+  const srLabel = tone === 'measure'
+    ? t('hfiSensorless.signalChainSrOk')
+    : tone === 'warn'
+      ? t('hfiSensorless.signalChainSrAlert')
+      : t('hfiSensorless.signalChainSrFault');
   return (
     <div className="rounded border border-line-subtle bg-bg-base px-2 py-1.5">
       <p className="text-caption text-ink-muted">{label}</p>
       <p className={`flex items-center gap-1 font-display text-body tabular-nums ${toneCls}`}>
         <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-        <span className="sr-only">{srLabel}：</span>
+        <span className="sr-only">{srLabel}:</span>
         {value}
       </p>
       {hint && <p className="text-caption text-ink-muted">{hint}</p>}

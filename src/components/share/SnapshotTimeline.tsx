@@ -10,6 +10,7 @@ import {
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useCloudShareStore } from '../../store/cloudShareStore';
+import { useI18n, translate, getCurrentLocale } from '../../i18n/useI18n';
 import {
   GistError,
   fetchRevisionContent,
@@ -51,21 +52,21 @@ type LoadState =
   | { kind: 'empty' }
   | { kind: 'error'; code: GistError['code']; message: string };
 
-/** 把 GistError code 翻译成中文友好提示 */
+/** 把 GistError code 翻译成友好提示（跟随当前 locale；默认 zh-CN） */
 export function describeGistErrorCode(code: GistError['code']): string {
   switch (code) {
     case 'rate-limit':
-      return '请求过于频繁（GitHub API 限频）。匿名 60 次/小时；绑定 PAT 后 5000 次/小时。请稍后再试。';
+      return translate(getCurrentLocale(), 'share.errRateLimit');
     case 'unauthorized':
-      return 'GitHub 拒绝当前令牌（PAT 失效或权限不足）。请到「凭据」面板重新绑定带 gist scope 的 PAT。';
+      return translate(getCurrentLocale(), 'share.errUnauthorized');
     case 'not-found':
-      return '该 gist 不存在或仅私密可见。请检查链接、ID，或绑定有权限的 PAT。';
+      return translate(getCurrentLocale(), 'share.errNotFound');
     case 'network':
-      return '网络错误，无法连接 api.github.com。请检查网络/代理设置后重试。';
+      return translate(getCurrentLocale(), 'share.errNetwork');
     case 'parse':
-      return 'gist 返回内容不可解析（可能不是本客户端创建的 snapshot 文件）。';
+      return translate(getCurrentLocale(), 'share.errParse');
     default:
-      return '未知错误';
+      return translate(getCurrentLocale(), 'share.unknownError');
   }
 }
 
@@ -128,6 +129,7 @@ export function countRevisionComments(reviewRaw: string): number {
 }
 
 export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
+  const { t } = useI18n();
   const pat = useCloudShareStore((s) => s.pat);
 
   const [state, setState] = useState<LoadState>({ kind: 'idle' });
@@ -166,14 +168,14 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
     } catch (e) {
       if (e instanceof GistError) {
         setState({ kind: 'error', code: e.code, message: describeGistErrorCode(e.code) });
-        flash('err', `时间线加载失败：${e.message}`);
+        flash('err', `${t('share.tlLoadFailFlashPrefix')}${e.message}`);
       } else {
-        const msg = (e as Error).message || '未知错误';
+        const msg = (e as Error).message || t('share.unknownError');
         setState({ kind: 'error', code: 'unknown', message: msg });
-        flash('err', `时间线加载失败：${msg}`);
+        flash('err', `${t('share.tlLoadFailFlashPrefix')}${msg}`);
       }
     }
-  }, [gistId, pat, flash]);
+  }, [gistId, pat, flash, t]);
 
   // 切换 gistId 时清状态
   useEffect(() => {
@@ -197,10 +199,10 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
       } catch (e) {
         // 失败不阻断；只标记 -1 表示加载失败
         setPerRevCommentCount((cur) => ({ ...cur, [version]: -1 }));
-        if (e instanceof GistError) flash('err', `评论数加载失败：${e.message}`);
+        if (e instanceof GistError) flash('err', `${t('share.tlCommentFailPrefix')}${e.message}`);
       }
     },
-    [gistId, pat, perRevCommentCount, flash],
+    [gistId, pat, perRevCommentCount, flash, t],
   );
 
   // ---- 操作：查看某个 revision ----
@@ -211,18 +213,21 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
         const { snapshotRaw } = await fetchRevisionContent(gistId, version, pat || undefined);
         const decoded = decodeRevisionSnapshot(snapshotRaw);
         if (!decoded) {
-          flash('err', `revision ${shortHash(version)} 的 ${SNAPSHOT_FILENAME} 解码失败`);
+          flash(
+            'err',
+            `revision ${shortHash(version)}${t('share.tlDecodeFailMid')}${SNAPSHOT_FILENAME}${t('share.tlDecodeFailSuffix')}`,
+          );
           return;
         }
         setViewer({ open: true, decoded, title: `revision ${shortHash(version)}` });
       } catch (e) {
-        if (e instanceof GistError) flash('err', `查看 revision 失败：${e.message}`);
-        else flash('err', `查看 revision 失败：${(e as Error).message}`);
+        if (e instanceof GistError) flash('err', `${t('share.tlViewRevFailPrefix')}${e.message}`);
+        else flash('err', `${t('share.tlViewRevFailPrefix')}${(e as Error).message}`);
       } finally {
         setRevisionBusy('');
       }
     },
-    [gistId, pat, flash],
+    [gistId, pat, flash, t],
   );
 
   // ---- 操作：对比上一版 → 用 ReceiveSnapshotModal 复用 diff 范式 ----
@@ -233,7 +238,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
         const { snapshotRaw } = await fetchRevisionContent(gistId, version, pat || undefined);
         const decoded = decodeRevisionSnapshot(snapshotRaw);
         if (!decoded) {
-          flash('err', `revision ${shortHash(version)} 解码失败`);
+          flash('err', `revision ${shortHash(version)}${t('share.tlDecodeFailSuffix')}`);
           return;
         }
         // ReceiveSnapshotModal 内部会和"当前 store"对比；这里改为传入"目标 revision"
@@ -243,16 +248,16 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
         setViewer({
           open: true,
           decoded,
-          title: `对比：revision ${shortHash(version)} vs ${shortHash(prevVersion)}（上一版）→ 显示当前 store 与目标 revision 的 diff`,
+          title: `${t('share.tlCompareTitlePrefix')}revision ${shortHash(version)} vs ${shortHash(prevVersion)}${t('share.tlCompareTitleSuffix')}`,
         });
       } catch (e) {
-        if (e instanceof GistError) flash('err', `对比上一版失败：${e.message}`);
-        else flash('err', `对比上一版失败：${(e as Error).message}`);
+        if (e instanceof GistError) flash('err', `${t('share.tlCompareFailPrefix')}${e.message}`);
+        else flash('err', `${t('share.tlCompareFailPrefix')}${(e as Error).message}`);
       } finally {
         setRevisionBusy('');
       }
     },
-    [gistId, pat, flash],
+    [gistId, pat, flash, t],
   );
 
   // ---- 顶部摘要 ----
@@ -273,10 +278,8 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
   // ---- 空 gistId 的 placeholder ----
   if (!gistId) {
     return (
-      <Card density="default" tone="default" eyebrow="V3 · 时间线" title="选择 snapshot 后查看修订历史">
-        <p className="text-caption text-ink-muted">
-          先在【我的快照】或粘贴 gist URL 选定一个 snapshot，时间线会列出该 gist 的所有修订。
-        </p>
+      <Card density="default" tone="default" eyebrow={t('share.tlEyebrowEmpty')} title={t('share.tlEmptyTitle')}>
+        <p className="text-caption text-ink-muted">{t('share.tlEmptyHint')}</p>
       </Card>
     );
   }
@@ -285,21 +288,21 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
     <Card
       density="default"
       tone="measure"
-      eyebrow="V3 · 修订时间线"
+      eyebrow={t('share.tlEyebrow')}
       title={`Timeline · gist ${gistId.slice(0, 8)}…`}
       action={
         <Button
           variant="ghost"
           onClick={() => void refresh()}
           disabled={state.kind === 'loading'}
-          aria-label="刷新时间线"
+          aria-label={t('share.tlRefreshAria')}
         >
           {state.kind === 'loading' ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           ) : (
             <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           )}
-          刷新
+          {t('share.refreshBtn')}
         </Button>
       }
     >
@@ -312,17 +315,20 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
             aria-live="polite"
           >
             <span className="text-ink-primary">
-              <strong className="text-accent-primary">{summary.total}</strong> 个 revision
+              <strong className="text-accent-primary">{summary.total}</strong>
+              {t('share.tlRevCountSuffix')}
             </span>
             <span className="text-ink-secondary">
-              <strong className="text-accent-measure">{summary.commentsSum}</strong> 条评论
+              <strong className="text-accent-measure">{summary.commentsSum}</strong>
+              {t('share.tlCommentCountSuffix')}
               {!summary.commentsKnown && (
-                <span className="ml-1 text-ink-muted">（点【加载评论数】统计剩余）</span>
+                <span className="ml-1 text-ink-muted">{t('share.tlLoadRemainingHint')}</span>
               )}
             </span>
             {summary.activeOrdinal > 0 && (
               <span className="ml-auto text-ink-secondary">
-                当前 active：<strong className="text-accent-primary">#{summary.activeOrdinal}</strong>
+                {t('share.tlActivePrefix')}
+                <strong className="text-accent-primary">#{summary.activeOrdinal}</strong>
               </span>
             )}
           </div>
@@ -336,7 +342,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
             aria-live="polite"
           >
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            正在加载 gist history…
+            {t('share.tlLoadingHistory')}
           </p>
         )}
 
@@ -346,7 +352,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
             className="rounded-lg border border-dashed border-line-subtle bg-bg-base p-3 text-caption text-ink-muted"
             role="status"
           >
-            该 gist 没有 revision（很少见，可能刚刚创建还未 PATCH 过）。
+            {t('share.tlEmptyHistory')}
           </p>
         )}
 
@@ -357,11 +363,14 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
             aria-live="assertive"
             className="space-y-1 rounded-lg border border-accent-fault/40 bg-accent-fault/5 p-3 text-caption text-accent-fault"
           >
-            <strong className="block">加载失败 · 类型：{state.code}</strong>
+            <strong className="block">
+              {t('share.tlLoadFailPrefix')}
+              {state.code}
+            </strong>
             <span>{state.message}</span>
-            <Button variant="ghost" onClick={() => void refresh()} aria-label="重试加载时间线" className="mt-2">
+            <Button variant="ghost" onClick={() => void refresh()} aria-label={t('share.tlRetryAria')} className="mt-2">
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-              重试
+              {t('share.tlRetryBtn')}
             </Button>
           </div>
         )}
@@ -370,7 +379,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
         {state.kind === 'loaded' && (
           <ol
             className="relative space-y-2 border-l border-line-subtle pl-5"
-            aria-label="gist 修订历史"
+            aria-label={t('share.tlHistoryAria')}
           >
             {state.list.map((rev, idx) => {
               const isActive = rev.version === activeVersion;
@@ -392,7 +401,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                   />
                   <article
                     aria-current={isActive ? 'step' : undefined}
-                    aria-label={`revision ${shortHash(rev.version)}（第 ${ordinal} 版）`}
+                    aria-label={`revision ${shortHash(rev.version)}${t('share.tlRevAriaPrefix')}${ordinal}${t('share.tlRevAriaSuffix')}`}
                     className={`rounded-lg border bg-bg-base p-2.5 ${
                       isActive
                         ? 'border-accent-primary/50'
@@ -422,12 +431,12 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                       )}
                       {isActive && (
                         <span className="rounded-full border border-accent-primary/50 bg-accent-primary/10 px-2 py-0.5 text-accent-primary">
-                          当前 active
+                          {t('share.tlActiveBadge')}
                         </span>
                       )}
                       {isLatest && !isActive && (
                         <span className="rounded-full border border-line-subtle px-2 py-0.5 text-ink-muted">
-                          最新
+                          {t('share.tlLatestBadge')}
                         </span>
                       )}
                       <span className="ml-auto inline-flex items-center gap-1 text-ink-muted">
@@ -436,15 +445,18 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                           <button
                             type="button"
                             onClick={() => void ensureCommentCount(rev.version)}
-                            aria-label={`加载 revision ${shortHash(rev.version)} 评论数`}
+                            aria-label={`${t('share.tlLoadCountAriaPrefix')}revision ${shortHash(rev.version)}${t('share.tlLoadCountAriaSuffix')}`}
                             className="rounded border border-line-subtle px-1.5 py-0 text-caption text-ink-muted hover:border-accent-primary hover:text-accent-primary"
                           >
-                            加载评论数
+                            {t('share.tlLoadCountBtn')}
                           </button>
                         ) : cmtCount < 0 ? (
-                          <span className="text-accent-warn">加载失败</span>
+                          <span className="text-accent-warn">{t('share.tlCountLoadFail')}</span>
                         ) : (
-                          <span className="text-ink-secondary">{cmtCount} 条评论</span>
+                          <span className="text-ink-secondary">
+                            {cmtCount}
+                            {t('share.tlCommentCountSuffix')}
+                          </span>
                         )}
                       </span>
                     </header>
@@ -456,7 +468,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                           void openRevision(rev.version);
                         }}
                         disabled={busy}
-                        aria-label={`查看 revision ${shortHash(rev.version)}`}
+                        aria-label={`${t('share.tlViewAriaPrefix')}revision ${shortHash(rev.version)}`}
                         className="px-2 py-0.5 text-caption"
                       >
                         {busy ? (
@@ -464,7 +476,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                         ) : (
                           <Eye className="h-3 w-3" aria-hidden="true" />
                         )}
-                        查看这个版本
+                        {t('share.tlViewBtn')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -472,13 +484,13 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
                         disabled={busy || !prev}
                         aria-label={
                           prev
-                            ? `对比 revision ${shortHash(rev.version)} 与上一版 ${shortHash(prev.version)}`
-                            : '已是最旧版本，无上一版可对比'
+                            ? `${t('share.tlCompareAriaPrefix')}revision ${shortHash(rev.version)}${t('share.tlCompareAriaMid')}revision ${shortHash(prev.version)}`
+                            : t('share.tlCompareOldestAria')
                         }
                         className="px-2 py-0.5 text-caption"
                       >
                         <ArrowLeftRight className="h-3 w-3" aria-hidden="true" />
-                        对比上一版
+                        {t('share.tlCompareBtn')}
                       </Button>
                     </div>
                   </article>
@@ -489,10 +501,13 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
         )}
 
         <p className="text-caption text-ink-muted">
-          注：GitHub Gist history 最多保留 30 条。时间线只在打开或手动【刷新】时拉取，不主动轮询。
-          支持的字段集合见 {Object.keys(SLICE_LABELS).length} 个 slice；revision 文件名固定为
+          {t('share.tlFootnoteA')}
+          {t('share.tlFootnoteB')}
+          {Object.keys(SLICE_LABELS).length}
+          {t('share.tlFootnoteC')}
           <code className="ml-1 rounded bg-bg-base px-1 font-mono">{SNAPSHOT_FILENAME}</code> /
-          <code className="ml-1 rounded bg-bg-base px-1 font-mono">{REVIEW_COMMENTS_FILENAME}</code>。
+          <code className="ml-1 rounded bg-bg-base px-1 font-mono">{REVIEW_COMMENTS_FILENAME}</code>
+          {t('share.period')}
         </p>
 
         <ReceiveSnapshotModal
@@ -501,7 +516,7 @@ export function SnapshotTimeline({ gistId, onFlash }: SnapshotTimelineProps) {
           onApply={() => {
             // 时间线里"查看历史 revision"通常是只读对比，不直接应用到 store。
             // 但 ReceiveSnapshotModal 仍提供应用入口，这里把决策交给用户。
-            flash('ok', `已应用 ${viewer.title}`);
+            flash('ok', `${t('share.tlAppliedPrefix')}${viewer.title}`);
           }}
           onClose={() => setViewer({ open: false, decoded: null, title: '' })}
         />

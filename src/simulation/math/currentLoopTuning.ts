@@ -53,8 +53,23 @@ export interface CurrentLoopTuningResult {
   bandwidthQHz: number;
   /** 相位裕度（°） */
   phaseMarginDeg: number;
-  /** 整定方法描述 */
+  /** 整定方法描述（中文；UI 层建议改用 methodCode + 数值自行组装双语文案） */
   method: string;
+  /** 结构化方法标识：'magnitudeOptimum'，UI 层据此选翻译 key */
+  methodCode: 'magnitudeOptimum';
+  /** 目标带宽（Hz），组装方法文案用 */
+  targetBandwidthHz: number;
+}
+
+/** validateTuning 的结构化警告码（UI 层据此选翻译 key，避免渲染算法层中文字符串）。 */
+export type TuningWarningCode = 'bwDTooHigh' | 'bwQTooHigh' | 'pmTooLow' | 'pmTooHigh';
+
+export interface TuningWarning {
+  code: TuningWarningCode;
+  /** 相关数值：带宽警告为 Hz，相位裕度警告为度 */
+  value: number;
+  /** 参考阈值：带宽警告为 fs/4，相位裕度为 15/85 */
+  limit: number;
 }
 
 /**
@@ -114,6 +129,8 @@ export function tuneCurrentLoop(input: CurrentLoopTuningInput): CurrentLoopTunin
     bandwidthQHz: fBw,
     phaseMarginDeg: clamp(pm, 0, 90),
     method: `模最优（Magnitude Optimum），f_BW = ${fBw.toFixed(0)} Hz (fs/${bandwidthFactor.toFixed(1)})`,
+    methodCode: 'magnitudeOptimum' as const,
+    targetBandwidthHz: fBw,
   };
 }
 
@@ -259,24 +276,30 @@ export function simulateCurrentLoopStep(input: CurrentLoopStepSimInput): Current
 export function validateTuning(
   result: CurrentLoopTuningResult,
   fs: number,
-): { valid: boolean; warnings: string[] } {
+): { valid: boolean; warnings: string[]; warningCodes: TuningWarning[] } {
   const warnings: string[] = [];
+  const warningCodes: TuningWarning[] = [];
 
   if (result.bandwidthDHz > fs / 3) {
     warnings.push(`d 轴带宽 ${result.bandwidthDHz.toFixed(0)} Hz 超过 fs/4=${(fs / 4).toFixed(0)} Hz，可能不稳定`);
+    warningCodes.push({ code: 'bwDTooHigh', value: result.bandwidthDHz, limit: fs / 4 });
   }
   if (result.bandwidthQHz > fs / 4) {
     warnings.push(`q 轴带宽 ${result.bandwidthQHz.toFixed(0)} Hz 超过 fs/4=${(fs / 4).toFixed(0)} Hz，可能不稳定`);
+    warningCodes.push({ code: 'bwQTooHigh', value: result.bandwidthQHz, limit: fs / 4 });
   }
   if (result.phaseMarginDeg < 15) {
     warnings.push(`相位裕度 ${result.phaseMarginDeg.toFixed(1)}° < 15°，系统振荡风险高`);
+    warningCodes.push({ code: 'pmTooLow', value: result.phaseMarginDeg, limit: 15 });
   }
   if (result.phaseMarginDeg > 85) {
     warnings.push(`相位裕度 ${result.phaseMarginDeg.toFixed(1)}° > 85°，响应过于缓慢`);
+    warningCodes.push({ code: 'pmTooHigh', value: result.phaseMarginDeg, limit: 85 });
   }
 
   return {
     valid: warnings.length === 0,
     warnings,
+    warningCodes,
   };
 }

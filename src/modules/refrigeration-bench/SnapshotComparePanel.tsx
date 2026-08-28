@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Camera, Crown, Download, Eye, EyeOff, Pencil, Trash2, Upload } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useSnapshotsStore, parseSnapshots, serializeSnapshots, type BenchSnapshot } from '../../store/snapshotsStore';
 import { runBenchCycle } from './useBenchCycle';
@@ -21,7 +22,7 @@ import { formatNumber } from '../../utils/format';
 
 interface MetricRow {
   key: string;
-  label: string;
+  label: TKey;
   /** 给定快照返回展示文本 */
   format: (s: BenchSnapshot) => string;
   /** 是否对该 metric 启用 max 高亮（mint） */
@@ -31,22 +32,23 @@ interface MetricRow {
 }
 
 const METRICS: MetricRow[] = [
-  { key: 'refrigerant', label: '制冷剂', format: (s) => s.refrigerant },
+  { key: 'refrigerant', label: 'refrigerationBench.snapshotMetricRefrigerant', format: (s) => s.refrigerant },
   {
     key: 'cop',
-    label: 'COP',
+    label: 'refrigerationBench.snapshotMetricCop',
     format: (s) => formatNumber(s.cop, 2),
     highlightMax: true,
     numeric: (s) => s.cop,
   },
-  { key: 'qc', label: '制冷量 Q_c (kW)', format: (s) => formatNumber(s.Qc, 2) },
-  { key: 'w', label: '输入功率 W (kW)', format: (s) => formatNumber(s.Wcomp, 2) },
-  { key: 'pd', label: '排气压力 P_d (MPa)', format: (s) => formatNumber(s.states[1].P, 3) },
-  { key: 'td', label: '排气温度 T_d (°C)', format: (s) => formatNumber(s.Tdischarge, 1) },
-  { key: 'pr', label: '压比 P_d/P_s', format: (s) => formatNumber(s.pressureRatio, 2) },
+  { key: 'qc', label: 'refrigerationBench.snapshotMetricCooling', format: (s) => formatNumber(s.Qc, 2) },
+  { key: 'w', label: 'refrigerationBench.snapshotMetricPower', format: (s) => formatNumber(s.Wcomp, 2) },
+  { key: 'pd', label: 'refrigerationBench.snapshotMetricPd', format: (s) => formatNumber(s.states[1].P, 3) },
+  { key: 'td', label: 'refrigerationBench.snapshotMetricTd', format: (s) => formatNumber(s.Tdischarge, 1) },
+  { key: 'pr', label: 'refrigerationBench.snapshotMetricPr', format: (s) => formatNumber(s.pressureRatio, 2) },
 ];
 
 export function SnapshotComparePanel() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
   const list = useSnapshotsStore((s) => s.list);
@@ -115,7 +117,9 @@ export function SnapshotComparePanel() {
       const snapshots = parseSnapshots(text);
       // 自己可能多次试错导入；如果当前有快照，二次确认避免覆盖
       if (list.length > 0 && typeof window !== 'undefined') {
-        const ok = window.confirm(`当前有 ${list.length} 个快照，导入将整体替换。继续？`);
+        const ok = window.confirm(
+          `${t('refrigerationBench.snapshotImportConfirmPre')}${list.length}${t('refrigerationBench.snapshotImportConfirmPost')}`,
+        );
         if (!ok) return;
       }
       replaceAll(snapshots);
@@ -129,30 +133,30 @@ export function SnapshotComparePanel() {
   };
 
   return (
-    <Card title="工况快照对比" eyebrow="snapshot diff" density="compact">
+    <Card title={t('refrigerationBench.snapshotTitle')} eyebrow="snapshot diff" density="compact">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Button variant="primary" onClick={handleCapture} className="!py-1.5">
           <Camera className="h-3.5 w-3.5" />
-          保存当前工况为快照
+          {t('refrigerationBench.snapshotSaveButton')}
         </Button>
         <Button
           variant="ghost"
           onClick={handleExportJson}
           disabled={list.length === 0}
           className="!py-1.5"
-          title="把所有快照导出为 JSON 文件，可跨设备同步或贴到论坛 / 群里跟同行讨论"
+          title={t('refrigerationBench.snapshotExportHint')}
         >
           <Download className="h-3.5 w-3.5" />
-          导出 JSON
+          {t('refrigerationBench.snapshotExportButton')}
         </Button>
         <Button
           variant="ghost"
           onClick={handleImportClick}
           className="!py-1.5"
-          title="导入 JSON 快照集（会替换当前列表）"
+          title={t('refrigerationBench.snapshotImportHint')}
         >
           <Upload className="h-3.5 w-3.5" />
-          导入 JSON
+          {t('refrigerationBench.snapshotImportButton')}
         </Button>
         <input
           ref={fileInputRef}
@@ -170,21 +174,21 @@ export function SnapshotComparePanel() {
           className="!py-1.5"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          清空全部
+          {t('refrigerationBench.snapshotClearButton')}
         </Button>
         <span className="ml-auto text-caption text-ink-muted">
-          已保存 {list.length} 组
+          {t('refrigerationBench.snapshotSavedCountPre')}{list.length}{t('refrigerationBench.snapshotSavedCountPost')}
         </span>
       </div>
       {importError && (
         <div role="alert" className="mb-2 rounded-md border border-accent-fault/40 bg-accent-fault/[0.06] px-2 py-1 text-caption text-accent-fault">
-          导入失败：{importError}
+          {t('refrigerationBench.snapshotImportFailed')}{importError}
         </div>
       )}
 
       {list.length === 0 ? (
         <div className="rounded-lg border border-dashed border-line-subtle bg-bg-base px-3 py-6 text-center text-caption text-ink-muted">
-          尚未保存工况，点上方按钮捕获当前状态
+          {t('refrigerationBench.snapshotEmpty')}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -234,7 +238,7 @@ export function SnapshotComparePanel() {
                       <button
                         type="button"
                         onClick={() => startRename(snap)}
-                        title="重命名"
+                        title={t('refrigerationBench.snapshotRename')}
                         className="inline-flex h-6 w-6 items-center justify-center rounded border border-line-subtle text-ink-muted transition-colors hover:border-line-strong hover:text-ink-primary"
                       >
                         <Pencil className="h-3 w-3" />
@@ -242,7 +246,7 @@ export function SnapshotComparePanel() {
                       <button
                         type="button"
                         onClick={() => toggleOverlay(snap.id)}
-                        title={snap.overlay ? '隐藏 P-h 叠加' : '显示 P-h 叠加'}
+                        title={snap.overlay ? t('refrigerationBench.snapshotHideOverlay') : t('refrigerationBench.snapshotShowOverlay')}
                         className={`inline-flex h-6 w-6 items-center justify-center rounded border transition-colors ${
                           snap.overlay
                             ? 'border-accent-primary/50 bg-accent-primary/10 text-accent-primary'
@@ -254,7 +258,7 @@ export function SnapshotComparePanel() {
                       <button
                         type="button"
                         onClick={() => remove(snap.id)}
-                        title="删除"
+                        title={t('refrigerationBench.snapshotDelete')}
                         className="inline-flex h-6 w-6 items-center justify-center rounded border border-line-subtle text-ink-muted transition-colors hover:border-accent-fault/50 hover:text-accent-fault"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -268,7 +272,7 @@ export function SnapshotComparePanel() {
               {METRICS.map((m) => (
                 <tr key={m.key} className="border-t border-line-subtle">
                   <td className="sticky left-0 z-10 bg-bg-surface px-2 py-1.5 text-ink-muted">
-                    {m.label}
+                    {t(m.label)}
                   </td>
                   {list.map((snap) => {
                     const isMax =
@@ -287,7 +291,7 @@ export function SnapshotComparePanel() {
                         {isMax && (
                           <>
                             <Crown className="mr-1 inline h-3 w-3 align-text-bottom" aria-hidden="true" />
-                            <span className="sr-only">本组最高 </span>
+                            <span className="sr-only">{t('refrigerationBench.snapshotMaxSr')}</span>
                           </>
                         )}
                         {m.format(snap)}

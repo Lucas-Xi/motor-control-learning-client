@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { memo, useMemo, useRef } from 'react';
 import type { Group } from 'three';
+import { useI18n } from '../../i18n/useI18n';
 import { PHASE_COLORS, THREE_COLORS } from './colors';
 import { approachAngle } from './rotation';
 import { SceneFrame } from './SceneFrame';
@@ -112,6 +113,7 @@ interface PublicProps {
 }
 
 export function Motor3D({ thetaE = 0, polePairs = 4, iAlpha, iBeta, amplitude = 4, phaseCurrents, ariaLabel }: PublicProps) {
+  const { t } = useI18n();
   const reduced = usePrefersReducedMotion();
   const resolvedAlpha = iAlpha ?? amplitude * Math.cos(thetaE);
   const resolvedBeta = iBeta ?? amplitude * Math.sin(thetaE);
@@ -120,7 +122,10 @@ export function Motor3D({ thetaE = 0, polePairs = 4, iAlpha, iBeta, amplitude = 
   const fluxDeg = (((Math.atan2(resolvedBeta, resolvedAlpha) * 180) / Math.PI + 360) % 360).toFixed(0);
   const label =
     ariaLabel ??
-    `三维 PMSM 视图：极对数 ${Math.round(polePairs)}，电角度 ${thetaEDeg.toFixed(0)}°，合成电流矢量 ${imag.toFixed(2)} A，方向 ${fluxDeg}°。`;
+    `${t('three.motorAriaLead')}${Math.round(polePairs)}` +
+      `${t('three.motorAriaTheta')}${thetaEDeg.toFixed(0)}°` +
+      `${t('three.motorAriaCurrentVec')}${imag.toFixed(2)} A` +
+      `${t('three.motorAriaDirection')}${fluxDeg}°${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame

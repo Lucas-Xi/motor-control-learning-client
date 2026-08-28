@@ -8,6 +8,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockSensorlessSample } from '../../utils/serialMockGenerators';
@@ -44,6 +45,7 @@ interface Row {
 }
 
 export function SerialCompareSensorlessCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const sensorless = useSimulationStore((s) => s.sensorless);
   const motor = useSimulationStore((s) => s.motorBasics);
@@ -121,7 +123,7 @@ export function SerialCompareSensorlessCard() {
 
   return (
     <SerialCompareCardShell
-      title="无感角度：BEMF Observer vs 真值"
+      title={t('sensorlessFoc.serialTitle')}
       eyebrow="sensorless compare"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -131,7 +133,9 @@ export function SerialCompareSensorlessCard() {
     >
       <div className="mb-3">
         <label className="block rounded-lg border border-line-subtle bg-bg-base p-2">
-          <span className="block text-caption text-ink-muted">PLL 锁相 τ {formatNumber(lockTauMs, 0)} ms（越小越快锁定）</span>
+          <span className="block text-caption text-ink-muted">
+            {t('sensorlessFoc.serialLockTauLabel').replace('{v}', formatNumber(lockTauMs, 0))}
+          </span>
           <input
             type="range"
             min={5}
@@ -140,30 +144,30 @@ export function SerialCompareSensorlessCard() {
             value={lockTauMs}
             onChange={(e) => setLockTauMs(Number(e.target.value))}
             className="mt-1 w-full"
-            aria-label="PLL 一阶低通时间常数（毫秒）"
+            aria-label={t('sensorlessFoc.serialLockTauAria')}
             aria-valuemin={5}
             aria-valuemax={150}
             aria-valuenow={lockTauMs}
-            aria-valuetext={`${formatNumber(lockTauMs, 0)} 毫秒`}
+            aria-valuetext={`${formatNumber(lockTauMs, 0)} ${t('sensorlessFoc.serialAriaMs')}`}
           />
         </label>
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <ThetaChart title="θ 真值 / Obs / PLL（°）" rows={displayRows} />
-        <ErrorChart title="角度误差 Δθ（°）" rows={displayRows} />
+        <ThetaChart title={t('sensorlessFoc.serialThetaChartTitle')} rows={displayRows} />
+        <ErrorChart title={t('sensorlessFoc.serialErrorChartTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiTile label="|Δθ| 均值" value={`${formatNumber(kpi.meanErr, 2)} °`} tone={errorTone === 'fault' ? 'fault' : kpi.meanErr > 3 ? 'warn' : 'measure'} />
-        <KpiTile label="|Δθ| 峰值" value={`${formatNumber(kpi.peakErr, 2)} °`} tone={errorTone} />
-        <KpiTile label="速度估算误差" value={`${formatNumber(kpi.speedErr, 1)} rpm`} tone={speedTone} />
-        <KpiTile label="PLL 状态" value={kpi.locked ? '已锁定' : '未收敛'} tone={kpi.locked ? 'measure' : 'warn'} />
+        <KpiTile label={t('sensorlessFoc.serialKpiMeanErr')} value={`${formatNumber(kpi.meanErr, 2)} °`} tone={errorTone === 'fault' ? 'fault' : kpi.meanErr > 3 ? 'warn' : 'measure'} />
+        <KpiTile label={t('sensorlessFoc.serialKpiPeakErr')} value={`${formatNumber(kpi.peakErr, 2)} °`} tone={errorTone} />
+        <KpiTile label={t('sensorlessFoc.serialKpiSpeedErr')} value={`${formatNumber(kpi.speedErr, 1)} rpm`} tone={speedTone} />
+        <KpiTile label={t('sensorlessFoc.serialKpiPllState')} value={kpi.locked ? t('sensorlessFoc.serialPllLocked') : t('sensorlessFoc.serialPllUnconverged')} tone={kpi.locked ? 'measure' : 'warn'} />
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, ia, ib, ic · <span className="text-accent-measure">theta_obs, theta_pll, speed_est</span>。
-        BEMF ≈ {formatNumber(kpi.bemf, 2)} V · 低速 (&lt; 500 rpm) BEMF 太小 → 误差放大
+        {t('sensorlessFoc.serialProtoLead')} <span className="text-accent-measure">theta_obs, theta_pll, speed_est</span>
+        {t('sensorlessFoc.serialBemfNote').replace('{v}', formatNumber(kpi.bemf, 2))}
       </p>
     </SerialCompareCardShell>
   );
@@ -259,6 +263,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -268,7 +273,13 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : tone === 'primary' ? '辅助' : '正常';
+  const sr = tone === 'fault'
+    ? t('sensorlessFoc.serialSrSevere')
+    : tone === 'warn'
+      ? t('sensorlessFoc.serialSrWarn')
+      : tone === 'primary'
+        ? t('sensorlessFoc.serialSrInfo')
+        : t('sensorlessFoc.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

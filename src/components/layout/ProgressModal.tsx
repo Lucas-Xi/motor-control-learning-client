@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Award, CheckCircle2, Clock, GraduationCap, RotateCcw, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { useProgressStore } from '../../store/progressStore';
 
@@ -9,27 +10,29 @@ interface Props {
   onClose: () => void;
 }
 
-function formatDuration(ms: number): string {
-  if (!ms || ms < 1000) return '0 秒';
+/** 用 t 拼接时长（zh "2 小时 5 分" / en "2 h 5 m"）。 */
+function formatDuration(ms: number, t: (key: TKey) => string): string {
+  if (!ms || ms < 1000) return t('shell.progressTimeZero');
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  if (h > 0) return `${h} 小时 ${m} 分`;
-  if (m > 0) return `${m} 分 ${s} 秒`;
-  return `${s} 秒`;
+  if (h > 0) return `${h} ${t('shell.progressTimeHour')} ${m} ${t('shell.progressTimeMinute')}`;
+  if (m > 0) return `${m} ${t('shell.progressTimeMinute')} ${s} ${t('shell.progressTimeSecond')}`;
+  return `${s} ${t('shell.progressTimeSecond')}`;
 }
 
-function formatLastVisit(ts: number | null | undefined): string {
-  if (!ts) return '未访问';
+/** 相对时间（zh "5 分钟前" / en "5 min ago"）。 */
+function formatLastVisit(ts: number | null | undefined, t: (key: TKey) => string): string {
+  if (!ts) return t('shell.progressNeverVisited');
   const diffMs = Date.now() - ts;
   const min = Math.floor(diffMs / 60000);
-  if (min < 1) return '刚刚';
-  if (min < 60) return `${min} 分钟前`;
+  if (min < 1) return t('shell.progressJustNow');
+  if (min < 60) return `${min} ${t('shell.progressMinutesAgo')}`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} 小时前`;
+  if (hr < 24) return `${hr} ${t('shell.progressHoursAgo')}`;
   const day = Math.floor(hr / 24);
-  return `${day} 天前`;
+  return `${day} ${t('shell.progressDaysAgo')}`;
 }
 
 /**
@@ -39,6 +42,7 @@ function formatLastVisit(ts: number | null | undefined): string {
  * 顶部汇总：访问完成度、总活跃时间、quiz 正确率。
  */
 export function ProgressModal({ open, onClose }: Props) {
+  const { t, locale } = useI18n();
   const perModule = useProgressStore((s) => s.perModule);
   const totalActiveMs = useProgressStore((s) => s.totalActiveMs);
   const startSession = useProgressStore((s) => s.startSession);
@@ -79,7 +83,7 @@ export function ProgressModal({ open, onClose }: Props) {
   }, [perModule]);
 
   const handleReset = () => {
-    if (typeof window !== 'undefined' && window.confirm('确认重置全部学习进度？该操作不可撤销。')) {
+    if (typeof window !== 'undefined' && window.confirm(t('shell.progressResetConfirm'))) {
       reset();
     }
   };
@@ -96,7 +100,7 @@ export function ProgressModal({ open, onClose }: Props) {
           onClick={onClose}
           role="dialog"
           aria-modal="true"
-          aria-label="学习进度详情"
+          aria-label={t('shell.progressDetailsAria')}
         >
           <motion.div
             className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-line-subtle bg-bg-surface p-5 shadow-2xl"
@@ -110,9 +114,10 @@ export function ProgressModal({ open, onClose }: Props) {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line-subtle pb-3">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-accent-measure" />
-                <h2 className="text-title text-ink-primary">学习进度</h2>
+                <h2 className="text-title text-ink-primary">{t('shell.progressTitle')}</h2>
                 <span className="text-caption text-ink-muted">
-                  会话起始：{new Date(startSession).toLocaleString('zh-CN')}
+                  {t('shell.progressSessionStart')}
+                  {new Date(startSession).toLocaleString(locale)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -122,13 +127,13 @@ export function ProgressModal({ open, onClose }: Props) {
                   className="inline-flex items-center gap-1 rounded border border-line-subtle px-2 py-1 text-caption text-ink-muted transition-colors hover:border-accent-fault/60 hover:text-accent-fault"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  重置进度
+                  {t('curriculum.resetProgress')}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
                   className="grid h-8 w-8 place-items-center rounded border border-line-subtle text-ink-muted transition-colors hover:text-ink-primary"
-                  aria-label="关闭"
+                  aria-label={t('common.close')}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -138,33 +143,37 @@ export function ProgressModal({ open, onClose }: Props) {
             {/* 汇总卡 */}
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
               <SummaryCard
-                label="已访问"
+                label={t('shell.progressSummaryVisited')}
                 value={`${summary.visited}/${total}`}
-                hint={`${Math.round((summary.visited / Math.max(1, total)) * 100)}% 模块打开过`}
+                hint={t('shell.progressVisitedHint').replace('{n}', String(Math.round((summary.visited / Math.max(1, total)) * 100)))}
                 tone="primary"
               />
               <SummaryCard
-                label="已通关"
+                label={t('shell.progressSummaryCompleted')}
                 value={`${summary.completed}/${total}`}
-                hint={summary.totalCompletions > summary.completed ? `累计 ${summary.totalCompletions} 次（含重做）` : '走完全部步骤'}
+                hint={
+                  summary.totalCompletions > summary.completed
+                    ? t('shell.progressCompletionsHint').replace('{n}', String(summary.totalCompletions))
+                    : t('shell.progressAllStepsHint')
+                }
                 tone="measure"
               />
               <SummaryCard
-                label="答对题数"
+                label={t('shell.progressSummaryQuiz')}
                 value={`${summary.quizCorrect}`}
-                hint={summary.quizTotal > 0 ? `共答 ${summary.quizTotal} 题` : '尚未答题'}
+                hint={summary.quizTotal > 0 ? t('shell.progressQuizTotalHint').replace('{n}', String(summary.quizTotal)) : t('shell.progressNoQuizHint')}
                 tone="primary"
               />
               <SummaryCard
-                label="正确率"
+                label={t('shell.progressSummaryAccuracy')}
                 value={summary.quizTotal > 0 ? `${Math.round(summary.accuracy * 100)}%` : '—'}
-                hint="覆盖全部模块"
+                hint={t('shell.progressAccuracyHint')}
                 tone="warn"
               />
               <SummaryCard
-                label="累积学习时长"
-                value={formatDuration(summary.totalModuleMs || totalActiveMs)}
-                hint="仅在页面可见时累加"
+                label={t('shell.progressSummaryDuration')}
+                value={formatDuration(summary.totalModuleMs || totalActiveMs, t)}
+                hint={t('shell.progressDurationHint')}
                 tone="primary"
               />
             </div>
@@ -199,10 +208,10 @@ export function ProgressModal({ open, onClose }: Props) {
                         <div className="flex items-center gap-1.5 text-caption text-ink-muted">
                           <span className="tabular-nums">{m.stage}</span>
                           {visited && !completions && (
-                            <CheckCircle2 className="h-3 w-3 text-accent-measure" aria-label="已访问" />
+                            <CheckCircle2 className="h-3 w-3 text-accent-measure" aria-label={t('shell.progressSummaryVisited')} />
                           )}
                           {completions >= 1 && (
-                            <span className="flex items-center gap-0.5 text-accent-primary" title={`已通关 ${completions} 次`}>
+                            <span className="flex items-center gap-0.5 text-accent-primary" title={t('shell.progressCompletedTimes').replace('{n}', String(completions))}>
                               <Award className="h-3 w-3" aria-hidden="true" />
                               <span className="tabular-nums text-[10px]">×{completions}</span>
                             </span>
@@ -216,11 +225,11 @@ export function ProgressModal({ open, onClose }: Props) {
                     <p className="mb-2 line-clamp-2 text-caption text-ink-muted">{m.subtitle}</p>
                     <dl className="grid grid-cols-2 gap-1 text-caption">
                       <div className="flex items-center gap-1 text-ink-muted">
-                        <span>访问</span>
-                        <span className="tabular-nums text-ink-primary">{visits} 次</span>
+                        <span>{t('shell.progressStatVisited')}</span>
+                        <span className="tabular-nums text-ink-primary">{t('shell.progressVisitsCount').replace('{n}', String(visits))}</span>
                       </div>
                       <div className="flex items-center gap-1 text-ink-muted">
-                        <span>答对</span>
+                        <span>{t('shell.progressStatCorrect')}</span>
                         <span className="tabular-nums text-accent-measure">
                           {correct}
                           {totalQuiz > 0 && (
@@ -231,9 +240,9 @@ export function ProgressModal({ open, onClose }: Props) {
                       <div className="col-span-2 flex items-center gap-1 text-ink-muted">
                         <Clock className="h-3 w-3" />
                         <span className="tabular-nums text-ink-secondary">
-                          {formatDuration(dwell)}
+                          {formatDuration(dwell, t)}
                         </span>
-                        <span className="ml-auto text-ink-muted">{formatLastVisit(last)}</span>
+                        <span className="ml-auto text-ink-muted">{formatLastVisit(last, t)}</span>
                       </div>
                     </dl>
                   </motion.div>

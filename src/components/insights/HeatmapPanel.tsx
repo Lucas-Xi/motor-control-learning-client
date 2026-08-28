@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Flame } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import { useInsightsStore } from '../../store/insightsStore';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { Card } from '../ui/Card';
@@ -35,6 +36,7 @@ interface CellInfo {
 }
 
 export function HeatmapPanel() {
+  const { t } = useI18n();
   const stepRevisits = useInsightsStore((s) => s.stepRevisits);
   const [hover, setHover] = useState<CellInfo | null>(null);
 
@@ -66,20 +68,20 @@ export function HeatmapPanel() {
 
   return (
     <Card
-      title="学习热力图"
+      title={t('insights.heatmapTitle')}
       eyebrow="step revisits"
       tone="warn"
       action={
         <span className="inline-flex items-center gap-2 text-caption text-ink-secondary">
           <Flame className="h-3.5 w-3.5 text-accent-warn" aria-hidden />
-          累计回看 <span className="font-mono text-accent-warn">{totalRevisits}</span> 次
+          {t('insights.totalRevisitsLead')}
+          <span className="font-mono text-accent-warn">{totalRevisits}</span>
+          {t('insights.timesTail')}
         </span>
       }
     >
-      <p className="mb-3 text-caption text-ink-muted">
-        每行一个模块，列代表 walkthrough 的步骤；颜色越深说明你回看次数越多——通常是"卡壳"的地方。
-      </p>
-      <div className="space-y-1.5" role="grid" aria-label="学习热力图">
+      <p className="mb-3 text-caption text-ink-muted">{t('insights.heatmapDesc')}</p>
+      <div className="space-y-1.5" role="grid" aria-label={t('insights.heatmapTitle')}>
         {moduleMetas.map((m) => {
           const cells = grid.get(m.id) ?? [];
           return (
@@ -99,8 +101,8 @@ export function HeatmapPanel() {
                   const intensity = maxCount > 0 ? count / maxCount : 0;
                   const cellClass = bandClass(intensity);
                   const label = c
-                    ? `${m.shortTitle} · 步骤 ${c.stepId} · 回看 ${count} 次`
-                    : `${m.shortTitle} · 第 ${i + 1} 列 · 暂无数据`;
+                    ? `${m.shortTitle}${t('insights.cellStepSep')}${c.stepId}${t('insights.cellRevisitSep')}${count}${t('insights.timesTail')}`
+                    : `${m.shortTitle}${t('insights.cellColLead')}${i + 1}${t('insights.cellColTail')}`;
                   return (
                     <button
                       key={i}
@@ -138,10 +140,14 @@ export function HeatmapPanel() {
             <span className="mx-2 text-ink-muted">·</span>
             <span className="font-mono">{hover.stepId}</span>
             <span className="mx-2 text-ink-muted">·</span>
-            <span className="text-accent-warn">回看 {hover.count} 次</span>
+            <span className="text-accent-warn">
+              {t('insights.revisitLead')}
+              {hover.count}
+              {t('insights.timesTail')}
+            </span>
           </>
         ) : (
-          <span className="text-ink-muted">悬停 / 聚焦格子查看详情</span>
+          <span className="text-ink-muted">{t('insights.hoverHint')}</span>
         )}
       </footer>
     </Card>

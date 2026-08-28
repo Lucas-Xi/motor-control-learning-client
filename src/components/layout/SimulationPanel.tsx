@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { ModuleRenderer } from '../../modules/ModuleRenderer';
+import { useI18n } from '../../i18n/useI18n';
 import { moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleMeta } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -11,30 +13,38 @@ import { InsightsView } from '../insights/InsightsView';
 
 const ASSEMBLY_MODULE_META: ModuleMeta = {
   id: 'assembly-workshop',
-  title: '整机搭建工作台',
-  shortTitle: '搭建台',
-  subtitle: '把电机、逆变器、PFC、控制策略与制冷台架串成完整系统',
+  // 占位文案；渲染时由 shell.assembly* 翻译覆盖（见 fallbackMeta）
+  title: '',
+  shortTitle: '',
+  subtitle: '',
   stage: '17',
   accent: '#43f7b5',
 };
 
-function getPanelMeta(moduleId: ModuleMeta['id']) {
-  return moduleMetas.find((item) => item.id === moduleId) ?? ASSEMBLY_MODULE_META;
-}
-
 export function SimulationPanel() {
+  const { t } = useI18n();
   const activeModule = useSimulationStore((state) => state.activeModule);
   const mode = useSimulationStore((state) => state.mode);
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
-  const meta = getPanelMeta(activeModule);
+  // assembly-workshop 不在 moduleMetas 里，回退 meta 的文案走 i18n
+  const fallbackMeta = useMemo<ModuleMeta>(
+    () => ({
+      ...ASSEMBLY_MODULE_META,
+      title: t('shell.assemblyTitle'),
+      shortTitle: t('shell.assemblyShortTitle'),
+      subtitle: t('shell.assemblySubtitle'),
+    }),
+    [t],
+  );
+  const meta = moduleMetas.find((item) => item.id === activeModule) ?? fallbackMeta;
   // currentView: 'module' | 'curriculum' | 'insights'
   // 三种顶层视图互斥；仅顶层 if 决定渲染哪一支，不破坏现有 16+1 模块渲染。
   if (simPanelView === 'curriculum') {
     return (
       <section
         className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4"
-        aria-label="课程主线视图"
+        aria-label={t('shell.simViewCurriculumAria')}
       >
         <CurriculumPanel onLeaveCurriculum={() => setSimPanelView('module')} />
       </section>
@@ -44,7 +54,7 @@ export function SimulationPanel() {
     return (
       <section
         className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4"
-        aria-label="学习洞察视图"
+        aria-label={t('shell.simViewInsightsAria')}
       >
         <InsightsView />
       </section>

@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import {
   analyzeResonance,
   frequencyResponse,
@@ -15,21 +16,21 @@ import { formatNumber } from '../../utils/format';
 /** 典型联轴器 / 皮带预设：刚度把 NRF 从百赫兹压到十赫兹 */
 const COUPLING_PRESETS = {
   servoCoupling: {
-    label: '伺服弹性联轴器',
+    label: 'controlLoops.twoMassPresetServo' as TKey,
     j1: 0.0008,
     j2: 0.0012,
     shaftStiffness: 800,
     shaftDamping: 0.04,
   },
   compressorCoupling: {
-    label: '压缩机橡胶联轴器',
+    label: 'controlLoops.twoMassPresetCompressor' as TKey,
     j1: 0.003,
     j2: 0.012,
     shaftStiffness: 180,
     shaftDamping: 0.08,
   },
   beltFan: {
-    label: '皮带风机',
+    label: 'controlLoops.twoMassPresetBelt' as TKey,
     j1: 0.002,
     j2: 0.015,
     shaftStiffness: 60,
@@ -62,6 +63,7 @@ function downsampleBode(data: BodeSample[], maxPoints: number): BodeSample[] {
  * 把速度环带宽钉在 NRF 之下。时域相对转速见 MechanicalResonanceCard。
  */
 export function TwoMassBodeCard() {
+  const { t } = useI18n();
   const [presetKey, setPresetKey] = useState<PresetKey>('servoCoupling');
   const [shaftStiffness, setShaftStiffness] = useState<number>(COUPLING_PRESETS.servoCoupling.shaftStiffness);
   const [shaftDamping, setShaftDamping] = useState<number>(COUPLING_PRESETS.servoCoupling.shaftDamping);
@@ -113,25 +115,24 @@ export function TwoMassBodeCard() {
 
   return (
     <Card
-      title="双质量 Bode：反共振把速度环带宽钉死"
+      title={t('controlLoops.twoMassTitle')}
       eyebrow="two-mass · ARF / NRF"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="Ellis Ch.12；ω_ar=√(Ks/J2)，ω_r=√(Ks(J1+J2)/(J1 J2))；G(jω)=ω1/Te"
+          hint={t('controlLoops.twoMassFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        反共振是分子零点，电机侧几乎拧不动负载；共振是极点，轴扭振。
-        速度环穿越必须低于
-        <span className="formula text-accent-warn"> NRF</span>
-        ，否则 Kp 一加就啸叫。这就是为什么机械卡讲时域相对转速，本卡讲频域上限。
+        {t('controlLoops.twoMassIntroA')}
+        <span className="formula text-accent-warn">{t('controlLoops.twoMassIntroB')}</span>
+        {t('controlLoops.twoMassIntroC')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-secondary">联轴器预设：</span>
+        <span className="text-caption text-ink-secondary">{t('controlLoops.twoMassPresetLabel')}</span>
         {(Object.keys(COUPLING_PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -143,7 +144,7 @@ export function TwoMassBodeCard() {
                 : 'border-line-subtle bg-bg-base text-ink-secondary hover:text-ink'
             }`}
           >
-            {COUPLING_PRESETS[k].label}
+            {t(COUPLING_PRESETS[k].label)}
           </button>
         ))}
       </div>
@@ -156,55 +157,55 @@ export function TwoMassBodeCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>轴刚度 Ks（Nm/rad）</span>
+          <span>{t('controlLoops.twoMassStiffness')}</span>
           <span className="formula text-ink-primary">{formatNumber(shaftStiffness, 0)}</span>
         </span>
         <input
           type="range" value={shaftStiffness} min={30} max={2000} step={10}
           onChange={(e) => setShaftStiffness(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="shaft stiffness"
+          aria-label={t('controlLoops.twoMassStiffness')}
           aria-valuemin={30} aria-valuemax={2000} aria-valuenow={shaftStiffness}
         />
       </label>
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>轴阻尼 Cs（Nm·s/rad）</span>
+          <span>{t('controlLoops.twoMassDamping')}</span>
           <span className="formula text-ink-primary">{formatNumber(shaftDamping, 2)}</span>
         </span>
         <input
           type="range" value={shaftDamping} min={0.01} max={0.4} step={0.01}
           onChange={(e) => setShaftDamping(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="shaft damping"
+          aria-label={t('controlLoops.twoMassDamping')}
           aria-valuemin={0.01} aria-valuemax={0.4} aria-valuenow={shaftDamping}
         />
       </label>
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-secondary">
-          <span>负载惯量 J2（kg·m²）</span>
+          <span>{t('controlLoops.twoMassInertia')}</span>
           <span className="formula text-ink-primary">{formatNumber(j2, 4)}</span>
         </span>
         <input
           type="range" value={j2} min={0.0005} max={0.03} step={0.0005}
           onChange={(e) => setJ2(Number(e.target.value))}
           className="simulation-slider w-full"
-          aria-label="load inertia j2"
+          aria-label={t('controlLoops.twoMassInertia')}
           aria-valuemin={0.0005} aria-valuemax={0.03} aria-valuenow={j2}
         />
       </label>
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">反共振 NRF</p>
+          <p className="text-caption text-ink-secondary">{t('controlLoops.twoMassNrf')}</p>
           <p className="formula text-body text-accent-measure">
             {formatNumber(analysis.antiResonanceFreq, 1)} Hz
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">共振 ARF</p>
+          <p className="text-caption text-ink-secondary">{t('controlLoops.twoMassArf')}</p>
           <p className="formula text-body text-accent-primary">
             {formatNumber(analysis.resonanceFreq, 1)} Hz
           </p>
@@ -216,7 +217,7 @@ export function TwoMassBodeCard() {
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-secondary">建议速度环带宽</p>
+          <p className="text-caption text-ink-secondary">{t('controlLoops.twoMassBwLimit')}</p>
           <p className="formula text-body text-accent-warn">
             ≤ {formatNumber(bwLimitHz, 1)} Hz
           </p>
@@ -287,24 +288,25 @@ export function TwoMassBodeCard() {
         <div className="text-caption leading-snug">
           {warn ? (
             <span className="text-accent-warn">
-              {highQ ? 'Q > 8：陷波必须对准共振峰，否则残余增益会把速度环顶穿。' : ''}
+              {highQ ? t('controlLoops.twoMassWarnHighQ') : ''}
               {highQ && softShaft ? ' ' : ''}
-              {softShaft ? '刚度偏低（皮带量级）：反共振掉到十赫兹，速度环带宽被钉死。' : ''}
+              {softShaft ? t('controlLoops.twoMassWarnSoftShaft') : ''}
             </span>
           ) : (
             <span className="text-accent-measure">
-              峰值不尖、反共振够高：速度环可按 ≤ 0.3·f_ar 穿越，陷波作保险。
+              {t('controlLoops.twoMassOkMessage')}
             </span>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：陷波中心对准
-        <span className="formula"> ω_r</span>；
-        辨识用 chirp（上一张 AutoNotchCard）；
-        带宽经验
-        <span className="formula"> f_bw ≤ 0.25~0.3 f_ar</span>。
+        <span className="text-accent-warn">{t('controlLoops.twoMassPortingTitle')}</span>
+        {t('controlLoops.twoMassPortingA')}
+        <span className="formula"> ω_r</span>
+        {t('controlLoops.twoMassPortingB')}
+        <span className="formula"> f_bw ≤ 0.25~0.3 f_ar</span>
+        {t('controlLoops.twoMassPortingC')}
       </p>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { GraduationCap, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { useProgressStore } from '../../store/progressStore';
 import { ProgressModal } from './ProgressModal';
@@ -11,6 +12,7 @@ import { ProgressModal } from './ProgressModal';
  * 集成方式：在 TopBar.tsx 里加 `<ProgressBadge />` 即可。
  */
 export function ProgressBadge() {
+  const { t } = useI18n();
   const perModule = useProgressStore((s) => s.perModule);
   const reset = useProgressStore((s) => s.reset);
   const [open, setOpen] = useState(false);
@@ -38,7 +40,7 @@ export function ProgressBadge() {
 
   const handleReset = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (typeof window !== 'undefined' && window.confirm('确认重置全部学习进度？该操作不可撤销。')) {
+    if (typeof window !== 'undefined' && window.confirm(t('shell.progressResetConfirm'))) {
       reset();
     }
   };
@@ -54,15 +56,15 @@ export function ProgressBadge() {
           type="button"
           onClick={() => setOpen(true)}
           className="group inline-flex items-center gap-2 rounded-lg border border-line-subtle bg-bg-base px-2.5 py-1.5 text-caption text-ink-secondary transition-colors hover:border-accent-measure/60 hover:text-ink-primary"
-          aria-label="查看学习进度"
+          aria-label={t('shell.progressOpenAria')}
         >
           <GraduationCap className="h-4 w-4 text-accent-measure" />
           <span className="tabular-nums">
-            访问 <span className="text-ink-primary">{visitedCount}/{total}</span>
+            {t('shell.progressStatVisited')} <span className="text-ink-primary">{visitedCount}/{total}</span>
             <span className="mx-1 text-ink-muted">·</span>
-            通关 <span className="text-accent-measure">{completedCount}/{total}</span>
+            {t('shell.progressStatCompleted')} <span className="text-accent-measure">{completedCount}/{total}</span>
             <span className="mx-1 text-ink-muted">·</span>
-            答对 <span className="text-ink-primary">{quizCorrect}</span>
+            {t('shell.progressStatCorrect')} <span className="text-ink-primary">{quizCorrect}</span>
           </span>
           {/* 进度条：mint 渐变 */}
           <span
@@ -79,8 +81,8 @@ export function ProgressBadge() {
         <button
           type="button"
           onClick={handleReset}
-          title="重置进度"
-          aria-label="重置进度"
+          title={t('curriculum.resetProgress')}
+          aria-label={t('curriculum.resetProgress')}
           className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full border border-line-subtle bg-bg-surface text-ink-muted shadow transition-colors hover:border-accent-fault/50 hover:text-accent-fault"
         >
           <RotateCcw className="h-3 w-3" />
@@ -93,8 +95,8 @@ export function ProgressBadge() {
             className="absolute right-0 top-full z-50 mt-2 w-72 rounded-lg border border-line-subtle bg-bg-surface p-2 shadow-xl"
           >
             <div className="mb-1.5 flex items-center justify-between border-b border-line-subtle pb-1.5 text-caption">
-              <span className="text-ink-primary">学习进度</span>
-              <span className="text-ink-muted">点击徽章查看详情</span>
+              <span className="text-ink-primary">{t('shell.progressTitle')}</span>
+              <span className="text-ink-muted">{t('shell.progressTooltipHint')}</span>
             </div>
             <ul className="max-h-64 space-y-0.5 overflow-y-auto pr-1">
               {moduleMetas.map((m) => {
@@ -117,7 +119,7 @@ export function ProgressBadge() {
                       <span className="truncate text-ink-secondary">{m.shortTitle}</span>
                     </span>
                     <span className="shrink-0 tabular-nums text-ink-muted">
-                      {visited ? `${visits} 次` : '未访问'}
+                      {visited ? t('shell.progressVisitsCount').replace('{n}', String(visits)) : t('shell.progressNeverVisited')}
                       {correct > 0 && (
                         <span className="ml-1 text-accent-measure">·{correct}</span>
                       )}

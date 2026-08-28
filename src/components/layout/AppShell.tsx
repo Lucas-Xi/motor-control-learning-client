@@ -5,6 +5,7 @@ import { TopBar } from './TopBar';
 import { SimulationPanel } from './SimulationPanel';
 import { ParameterPanel } from './ParameterPanel';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * WaveformPanel 拖入 lazy 边界（performance audit R2）：
@@ -19,6 +20,7 @@ const WaveformPanel = lazy(() =>
 export function AppShell() {
   const fullScreen = useSimulationStore((state) => state.fullScreen);
   const activeModule = useSimulationStore((state) => state.activeModule);
+  const { t } = useI18n();
   const last = useRef<number | null>(null);
   // 移动端参数抽屉开关：默认折叠，节省主区面积；切模块自动关闭，避免遮当前内容
   const [paramsOpen, setParamsOpen] = useState(false);
@@ -65,10 +67,10 @@ export function AppShell() {
                   type="button"
                   onClick={() => setParamsOpen(true)}
                   className="mobile-touch-target flex w-full items-center justify-center gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-3 text-body font-medium text-ink-secondary hover:border-accent-primary/40 hover:text-ink-primary"
-                  aria-label="打开参数控制台抽屉"
+                  aria-label={t('shell.openParamsDrawerAria')}
                 >
                   <Sliders className="h-4 w-4" />
-                  打开参数控制台
+                  {t('shell.openParamsConsole')}
                 </button>
               </div>
             </div>
@@ -94,6 +96,7 @@ export function AppShell() {
  * 半透明遮罩点击 / Esc 键关闭 / 顶部抓手关闭。CSS transform 动画，零依赖。
  */
 function MobileParamsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   // 关闭时直接 unmount ParameterPanel：避免 `aside input[type="range"]` 在桌面端误中
   // 隐藏的 drawer ParameterPanel（4 个 slider 而不是 2 个）导致 e2e .nth(2) 找到不可见输入。
   if (!open) {
@@ -110,7 +113,7 @@ function MobileParamsDrawer({ open, onClose }: { open: boolean; onClose: () => v
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="参数控制台抽屉"
+        aria-label={t('shell.paramsDrawerAria')}
         className={`mobile-drawer-slide fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-2xl border-t border-line-subtle bg-bg-surface shadow-2xl ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
@@ -118,12 +121,12 @@ function MobileParamsDrawer({ open, onClose }: { open: boolean; onClose: () => v
         {/* 抓手 + 关闭按钮 */}
         <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-3 pb-2 pt-2">
           <span className="h-1 w-10 rounded-full bg-line-strong" aria-hidden />
-          <div className="flex-1 text-center text-caption uppercase tracking-[0.18em] text-ink-muted">参数控制台</div>
+          <div className="flex-1 text-center text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramPanelTitle')}</div>
           <button
             type="button"
             onClick={onClose}
             className="mobile-touch-target inline-flex items-center justify-center rounded-lg border border-line-subtle p-1.5 text-ink-secondary hover:text-ink-primary"
-            aria-label="关闭参数抽屉"
+            aria-label={t('shell.closeParamsDrawerAria')}
           >
             <X className="h-4 w-4" />
           </button>

@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { type BoostPfcResult } from '../../simulation/math/boostPfc';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -17,6 +18,7 @@ import { formatNumber } from '../../utils/format';
 type Mode = 'pfc' | 'noPfc';
 
 export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
+  const { t } = useI18n();
   const apf = useSimulationStore((s) => s.apf);
   const [mode, setMode] = useState<Mode>('pfc');
 
@@ -48,12 +50,12 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
 
   return (
     <Card
-      title={mode === 'pfc' ? 'PFC 双环：i_grid 贴合电网电压' : '无 PFC：尖峰整流电流'}
+      title={mode === 'pfc' ? t('apfFrontend.waveformTitlePfc') : t('apfFrontend.waveformTitleNoPfc')}
       eyebrow="grid waveform"
       density="compact"
       action={
         <div className="flex flex-wrap items-center gap-2">
-          <FidelityBadge level="simplified" hint="Boost 平均模型（CCM），不仿真 PWM 开关动作；适合看双环控制效果，不适合看 di/dt 纹波" />
+          <FidelityBadge level="simplified" hint={t('apfFrontend.waveformFidelityHint')} />
           <span className={`rounded-md border px-2 py-0.5 text-caption font-medium ${tone(pfTone)}`}>PF {formatNumber(pf, 3)}</span>
           <span className={`rounded-md border px-2 py-0.5 text-caption font-medium ${tone(thdTone)}`}>THD {formatNumber(thd, 1)}%</span>
         </div>
@@ -67,7 +69,7 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
             mode === 'pfc' ? 'bg-accent-primary/15 text-accent-primary' : 'text-ink-secondary hover:text-ink-primary'
           }`}
         >
-          Boost PFC 双环
+          {t('apfFrontend.waveformModePfc')}
         </button>
         <button
           type="button"
@@ -76,7 +78,7 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
             mode === 'noPfc' ? 'bg-accent-warn/15 text-accent-warn' : 'text-ink-secondary hover:text-ink-primary'
           }`}
         >
-          无 PFC（裸整流 + 大电容）
+          {t('apfFrontend.waveformModeNoPfc')}
         </button>
       </div>
 
@@ -90,7 +92,7 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
             <Legend wrapperStyle={{ fontSize: 11, color: '#9eb5cb' }} />
             <ReferenceLine yAxisId="v" y={0} stroke="#1e2a3d" />
-            <Line yAxisId="v" type="monotone" dataKey="vGrid" dot={false} stroke="#34d6ff" strokeWidth={2} name="电网电压 V" isAnimationActive={false} />
+            <Line yAxisId="v" type="monotone" dataKey="vGrid" dot={false} stroke="#34d6ff" strokeWidth={2} name={t('apfFrontend.waveformLegendVGrid')} isAnimationActive={false} />
             <Line
               yAxisId="i"
               type="monotone"
@@ -98,10 +100,10 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
               dot={false}
               stroke={mode === 'pfc' ? '#43f7b5' : '#ffb84d'}
               strokeWidth={2}
-              name={mode === 'pfc' ? '输入电流 A (PFC)' : '输入电流 A (尖峰)'}
+              name={mode === 'pfc' ? t('apfFrontend.waveformLegendIGridPfc') : t('apfFrontend.waveformLegendIGridPeak')}
               isAnimationActive={false}
             />
-            <Line yAxisId="v" type="monotone" dataKey="Udc" dot={false} stroke="#ff5d8a" strokeWidth={1.4} strokeDasharray="4 4" name="母线 Udc V" isAnimationActive={false} />
+            <Line yAxisId="v" type="monotone" dataKey="Udc" dot={false} stroke="#ff5d8a" strokeWidth={1.4} strokeDasharray="4 4" name={t('apfFrontend.waveformLegendUdc')} isAnimationActive={false} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
@@ -109,11 +111,13 @@ export function PfcWaveformCard({ result }: { result: BoostPfcResult }) {
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
         {mode === 'pfc' ? (
           <>
-            <span className="text-accent-measure">i_grid 跟随电网电压同相位</span>，PF 趋近 1、THD 显著下降；母线 Udc 在 {formatNumber(apf.udcRef, 0)} V 上下小范围波动（100 Hz 母线纹波由 C 决定）。这是符合 IEC 61000-3-2 Class A/D 谐波限值的工业 PFC 行为。
+            <span className="text-accent-measure">{t('apfFrontend.waveformPfcHighlight')}</span>
+            {t('apfFrontend.waveformPfcHintA')}{formatNumber(apf.udcRef, 0)}{t('apfFrontend.waveformPfcHintB')}
           </>
         ) : (
           <>
-            <span className="text-accent-warn">仅在电网峰值附近的尖窄区间从电网取电</span>，i_grid 是典型脉冲，THD 通常 100%+、PF ≈ 0.6。家电不带 PFC 过不了 GB/T 17625.1 谐波认证。
+            <span className="text-accent-warn">{t('apfFrontend.waveformNoPfcHighlight')}</span>
+            {t('apfFrontend.waveformNoPfcHint')}
           </>
         )}
       </p>

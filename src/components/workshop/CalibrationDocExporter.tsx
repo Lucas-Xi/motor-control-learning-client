@@ -18,6 +18,7 @@ import { generateProject } from '../../content/stm32Export/projectGenerator';
 import { guessMcuFamily } from '../../content/stm32Export/mcuTemplate';
 import type { McuFamily } from '../../content/stm32Export/types';
 import { Button } from '../ui/Button';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 标定文档生成器（Phase C · 任务 4）。
@@ -216,7 +217,8 @@ function buildMarkdown(projectName: string, mcuFamily: McuFamily): string {
 }
 
 export function CalibrationDocExporter() {
-  const [projectName, setProjectName] = useState('压缩机变频器标定');
+  const { t } = useI18n();
+  const [projectName, setProjectName] = useState(() => t('assemblyWorkshop.calibDefaultProjectName'));
   const [mcuFamily, setMcuFamily] = useState<McuFamily>(() => {
     const last = resolveSlots();
     if (!last) return 'STM32G4';
@@ -286,27 +288,27 @@ export function CalibrationDocExporter() {
     <div className="rounded-2xl border border-line-subtle bg-bg-surface p-4">
       <div className="mb-3 flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
         <FileText className="h-3.5 w-3.5 text-accent-measure" />
-        <span>标定文档生成器 · Markdown + 真 .zip</span>
+        <span>{t('assemblyWorkshop.calibTitle')}</span>
       </div>
 
       <div className="mb-3 grid gap-2 sm:grid-cols-2">
         <label className="block text-caption">
-          <span className="mb-0.5 block text-ink-muted">项目名（出现在 .md 头部）</span>
+          <span className="mb-0.5 block text-ink-muted">{t('assemblyWorkshop.calibProjectNameLabel')}</span>
           <input
             type="text"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
-            aria-label="项目名"
+            aria-label={t('assemblyWorkshop.calibProjectNameAria')}
             maxLength={48}
             className="w-full rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-body text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
           />
         </label>
         <label className="block text-caption">
-          <span className="mb-0.5 block text-ink-muted">MCU 型号</span>
+          <span className="mb-0.5 block text-ink-muted">{t('assemblyWorkshop.calibMcuLabel')}</span>
           <select
             value={mcuFamily}
             onChange={(e) => setMcuFamily(e.target.value as McuFamily)}
-            aria-label="MCU 型号"
+            aria-label={t('assemblyWorkshop.calibMcuLabel')}
             className="w-full rounded-md border border-line-subtle bg-bg-base px-2 py-1 text-body text-ink-primary outline-none focus:ring-2 focus:ring-accent-primary"
           >
             <option value="STM32G4">STM32G4</option>
@@ -320,24 +322,24 @@ export function CalibrationDocExporter() {
         <Button
           variant="outline"
           onClick={handleDownloadMd}
-          aria-label="下载 Markdown 标定单"
+          aria-label={t('assemblyWorkshop.calibDownloadMdAria')}
         >
           <Download className="h-3.5 w-3.5" />
-          下载 .md 标定单
+          {t('assemblyWorkshop.calibDownloadMd')}
         </Button>
         <Button
           variant="primary"
           onClick={handleDownloadZip}
-          aria-label="把标定单 + STM32 工程打成 真 zip 一键下载"
+          aria-label={t('assemblyWorkshop.calibDownloadZipAria')}
         >
           <Archive className="h-3.5 w-3.5" />
-          下载 .zip（标定单 + STM32 工程）
+          {t('assemblyWorkshop.calibDownloadZip')}
         </Button>
       </div>
 
       <p className="mt-2 text-[10px] text-ink-muted">
-        .md 含：头部信息 / 9 个 slice × 全参数表（推荐范围对照） / 当前组合 verdict / 挑战通关记录。
-        .zip 是用浏览器原生 API 写的 **真 ZIP（STORE 模式，无压缩）**，Windows 资源管理器 / 7-Zip 都能直接打开。
+        {t('assemblyWorkshop.calibHintMd')}
+        {t('assemblyWorkshop.calibHintZip')}
       </p>
     </div>
   );

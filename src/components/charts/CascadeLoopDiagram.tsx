@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   positionTarget: number;
@@ -111,6 +112,7 @@ export function CascadeLoopDiagram({
   currentKi = 0,
   paused = false,
 }: Props) {
+  const { t } = useI18n();
   // 三个脉冲的相位（0..1），用 RAF 推进
   const [phase, setPhase] = useState({ pos: 0, spd: 0, cur: 0 });
   const lastTsRef = useRef<number | null>(null);
@@ -177,12 +179,12 @@ export function CascadeLoopDiagram({
       viewBox={`0 0 ${VB_W} ${VB_H}`}
       className="w-full h-full"
       role="img"
-      aria-label="三闭环级联控制信号流框图"
+      aria-label={t('charts.caAria')}
     >
       {/* 三层嵌套外框 */}
-      <NestedFrame box={POS_BOX} color={C_POS} label="位置环" sub={`BW≈${positionBw.toFixed(0)}Hz`} />
-      <NestedFrame box={SPD_BOX} color={C_SPD} label="速度环" sub={`BW≈${speedBw.toFixed(0)}Hz`} />
-      <NestedFrame box={CUR_BOX} color={C_CUR} label="电流环" sub={`BW≈${currentBw.toFixed(0)}Hz`} />
+      <NestedFrame box={POS_BOX} color={C_POS} label={t('charts.caPositionLoop')} sub={`BW≈${positionBw.toFixed(0)}Hz`} />
+      <NestedFrame box={SPD_BOX} color={C_SPD} label={t('charts.caSpeedLoop')} sub={`BW≈${speedBw.toFixed(0)}Hz`} />
+      <NestedFrame box={CUR_BOX} color={C_CUR} label={t('charts.caCurrentLoop')} sub={`BW≈${currentBw.toFixed(0)}Hz`} />
 
       {/* 三条信号路径（虚线轨迹，用于动画 motion path） */}
       <path id="cascade-pos-path" d={positionLoopPath} fill="none" stroke={C_POS} strokeOpacity={0.35} strokeWidth={1.2} strokeDasharray="3 5" />
@@ -195,14 +197,14 @@ export function CascadeLoopDiagram({
       <SumNode cx={CUR_SUM.cx} cy={CUR_SUM.cy} r={CUR_SUM.r} color={C_CUR} intensity={curErr} label="i" />
 
       {/* PI 控制器 */}
-      <PIBlock x={POS_PI.x} y={POS_PI.y} w={POS_PI.w} h={POS_PI.h} color={C_POS} title="PI 位置" kp={positionKp} ki={positionKi} />
-      <PIBlock x={SPD_PI.x} y={SPD_PI.y} w={SPD_PI.w} h={SPD_PI.h} color={C_SPD} title="PI 速度" kp={speedKp} ki={speedKi} />
-      <PIBlock x={CUR_PI.x} y={CUR_PI.y} w={CUR_PI.w} h={CUR_PI.h} color={C_CUR} title="PI 电流" kp={currentKp} ki={currentKi} />
+      <PIBlock x={POS_PI.x} y={POS_PI.y} w={POS_PI.w} h={POS_PI.h} color={C_POS} title={t('charts.caPiPosition')} kp={positionKp} ki={positionKi} />
+      <PIBlock x={SPD_PI.x} y={SPD_PI.y} w={SPD_PI.w} h={SPD_PI.h} color={C_SPD} title={t('charts.caPiSpeed')} kp={speedKp} ki={speedKi} />
+      <PIBlock x={CUR_PI.x} y={CUR_PI.y} w={CUR_PI.w} h={CUR_PI.h} color={C_CUR} title={t('charts.caPiCurrent')} kp={currentKp} ki={currentKi} />
 
       {/* 被控对象（逆变器 + 电机） */}
       <g>
         <rect x={PLANT.x} y={PLANT.y} width={PLANT.w} height={PLANT.h} rx={6} fill="#11203b" stroke={C_LINE} />
-        <text x={PLANT.x + PLANT.w / 2} y={PLANT.y + 14} textAnchor="middle" fill={C_INK} fontSize={11} fontFamily="Bahnschrift, sans-serif">逆变器+电机</text>
+        <text x={PLANT.x + PLANT.w / 2} y={PLANT.y + 14} textAnchor="middle" fill={C_INK} fontSize={11} fontFamily="Bahnschrift, sans-serif">{t('charts.caPlant')}</text>
         <text x={PLANT.x + PLANT.w / 2} y={PLANT.y + 26} textAnchor="middle" fill={C_INK_SUB} fontSize={9}>plant</text>
       </g>
 
@@ -225,9 +227,9 @@ export function CascadeLoopDiagram({
       {/* 图例 */}
       <g transform={`translate(${VB_W - 168}, ${VB_H - 36})`}>
         <rect x={0} y={0} width={160} height={28} rx={6} fill="#0d1929" stroke={C_LINE} />
-        <LegendDot x={10} cy={14} color={C_POS} text="位置(慢)" />
-        <LegendDot x={62} cy={14} color={C_SPD} text="速度" />
-        <LegendDot x={108} cy={14} color={C_CUR} text="电流(快)" />
+        <LegendDot x={10} cy={14} color={C_POS} text={t('charts.caLegendPos')} />
+        <LegendDot x={62} cy={14} color={C_SPD} text={t('charts.caLegendSpd')} />
+        <LegendDot x={108} cy={14} color={C_CUR} text={t('charts.caLegendCur')} />
       </g>
     </svg>
   );

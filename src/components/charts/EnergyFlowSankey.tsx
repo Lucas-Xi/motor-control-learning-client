@@ -14,6 +14,7 @@
  *
  * 纯 SVG，viewBox 0 0 720 380，外层用 padding-top 比例 hack 自适应宽度。
  */
+import { useI18n } from '../../i18n/useI18n';
 
 interface FlowNode {
   id: string;
@@ -122,6 +123,7 @@ export function EnergyFlowSankey({
   coolingKw,
   cop,
 }: Props) {
+  const { t } = useI18n();
   // 各级功率
   const pfcOutKw = gridPowerKw * pfcEfficiency;
   const mechPowerKw = pfcOutKw * focEfficiency;
@@ -147,21 +149,21 @@ export function EnergyFlowSankey({
 
   // 节点定义（用于渲染）
   const nodes: Array<FlowNode & { power: number; sub?: string }> = [
-    { id: 'grid', label: '电网', side: 'left', level: 0, yPosition: 0.6, power: gridPowerKw },
-    { id: 'pfcOut', label: 'PFC 输出', side: 'middle', level: 1, yPosition: 0.6, power: pfcOutKw },
-    { id: 'mech', label: 'FOC 机械功', side: 'middle', level: 2, yPosition: 0.6, power: mechPowerKw },
+    { id: 'grid', label: t('charts.enGrid'), side: 'left', level: 0, yPosition: 0.6, power: gridPowerKw },
+    { id: 'pfcOut', label: t('charts.enPfcOut'), side: 'middle', level: 1, yPosition: 0.6, power: pfcOutKw },
+    { id: 'mech', label: t('charts.enFocMech'), side: 'middle', level: 2, yPosition: 0.6, power: mechPowerKw },
     {
       id: 'compressorWork',
-      label: '气动功',
+      label: t('charts.enAeroWork'),
       side: 'middle',
       level: 3,
       yPosition: 0.6,
       power: compressorWorkKw,
     },
-    { id: 'cooling', label: '制冷量 Q_c', side: 'right', level: 4, yPosition: 0.6, power: coolingKw },
-    { id: 'pfcLoss', label: 'PFC 损耗', side: 'middle', level: 1, yPosition: 0.15, power: pfcLossKw },
-    { id: 'focLoss', label: 'FOC 损耗', side: 'middle', level: 2, yPosition: 0.15, power: focLossKw },
-    { id: 'compLoss', label: '压缩机损耗', side: 'middle', level: 3, yPosition: 0.15, power: compLossKw },
+    { id: 'cooling', label: t('charts.enCooling'), side: 'right', level: 4, yPosition: 0.6, power: coolingKw },
+    { id: 'pfcLoss', label: t('charts.enPfcLoss'), side: 'middle', level: 1, yPosition: 0.15, power: pfcLossKw },
+    { id: 'focLoss', label: t('charts.enFocLoss'), side: 'middle', level: 2, yPosition: 0.15, power: focLossKw },
+    { id: 'compLoss', label: t('charts.enCompLoss'), side: 'middle', level: 3, yPosition: 0.15, power: compLossKw },
   ];
 
   // 流量带
@@ -184,7 +186,7 @@ export function EnergyFlowSankey({
       height="100%"
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label="能量流 Sankey 图"
+      aria-label={t('charts.enAria')}
     >
       {/* 背景轻栅格 */}
       <rect x={0} y={0} width={VB_W} height={VB_H} fill="transparent" />
@@ -311,12 +313,12 @@ export function EnergyFlowSankey({
       <g transform={`translate(12, ${VB_H - 60})`}>
         <rect x={0} y={0} width={186} height={50} rx={6} ry={6} fill="rgba(13,17,23,0.55)" stroke="#2a323c" />
         <circle cx={12} cy={14} r={4} fill="#43f7b5" />
-        <text x={22} y={18} fill="#e6edf3" fontSize={10}>有效功传递</text>
+        <text x={22} y={18} fill="#e6edf3" fontSize={10}>{t('charts.enLegendUseful')}</text>
         <circle cx={12} cy={30} r={4} fill="#ff5c7a" />
-        <text x={22} y={34} fill="#e6edf3" fontSize={10}>损耗（→ 发热）</text>
+        <text x={22} y={34} fill="#e6edf3" fontSize={10}>{t('charts.enLegendLoss')}</text>
         <circle cx={108} cy={14} r={4} fill="#34d6ff" />
-        <text x={118} y={18} fill="#e6edf3" fontSize={10}>制冷量输出</text>
-        <text x={108} y={34} fill="#9aa7b4" fontSize={9}>带宽 ∝ 功率</text>
+        <text x={118} y={18} fill="#e6edf3" fontSize={10}>{t('charts.enLegendCooling')}</text>
+        <text x={108} y={34} fill="#9aa7b4" fontSize={9}>{t('charts.enLegendWidth')}</text>
       </g>
 
       {/* COP 一致性提示 */}
@@ -324,7 +326,7 @@ export function EnergyFlowSankey({
         <g transform={`translate(${VB_W - 220}, ${VB_H - 30})`}>
           <rect x={0} y={-14} width={210} height={22} rx={4} ry={4} fill="rgba(255,178,36,0.12)" stroke="#ffb224" />
           <text x={105} y={2} textAnchor="middle" fill="#ffb224" fontSize={10}>
-            COP 校验偏差 &gt; 5%（{copCheck.toFixed(2)} vs {cop.toFixed(2)}）
+            {t('charts.enCopMismatchPrefix')}{copCheck.toFixed(2)} vs {cop.toFixed(2)}{t('charts.enCopMismatchSuffix')}
           </text>
         </g>
       )}
@@ -332,7 +334,7 @@ export function EnergyFlowSankey({
       {/* 总效率 / 顶部摘要 */}
       <g transform="translate(360, 24)">
         <text textAnchor="middle" fill="#9aa7b4" fontSize={11}>
-          电网 → 制冷量 总效率（COP_sys）：
+          {t('charts.enOverallPrefix')}
           <tspan fill="#34d6ff" fontWeight={600}>
             {' '}
             {overallEff.toFixed(2)}

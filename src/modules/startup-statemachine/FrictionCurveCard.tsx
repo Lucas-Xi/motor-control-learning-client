@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import {
   compoundFriction,
   canOvercomeStatic,
@@ -14,10 +15,22 @@ import { formatNumber } from '../../utils/format';
 
 type PresetKey = keyof typeof sampleFrictionParams;
 
-const PRESET_META: Record<PresetKey, { label: string; color: string; tag: string }> = {
-  hitachi15HP: { label: '海立 1.5HP 压缩机', color: '#34d6ff', tag: '常见家用变频' },
-  servo: { label: '伺服电机（高精度轴承）', color: '#43f7b5', tag: '基本无 Stribeck 谷' },
-  agedCompressor: { label: '老化压缩机（油位低）', color: '#fb7185', tag: 'Stribeck 谷加深' },
+const PRESET_META: Record<PresetKey, { labelKey: TKey; tagKey: TKey; color: string }> = {
+  hitachi15HP: {
+    labelKey: 'startupStateMachine.frictionPresetHitachiLabel',
+    tagKey: 'startupStateMachine.frictionPresetHitachiTag',
+    color: '#34d6ff',
+  },
+  servo: {
+    labelKey: 'startupStateMachine.frictionPresetServoLabel',
+    tagKey: 'startupStateMachine.frictionPresetServoTag',
+    color: '#43f7b5',
+  },
+  agedCompressor: {
+    labelKey: 'startupStateMachine.frictionPresetAgedLabel',
+    tagKey: 'startupStateMachine.frictionPresetAgedTag',
+    color: '#fb7185',
+  },
 };
 
 const OMEGA_MAX = 30;  // rad/s ≈ 286 rpm，覆盖启动早期最关键的低速段
@@ -36,6 +49,7 @@ const N_POINTS = 121;
  *   - T_static 横线 + Coulomb 横线给出明确视觉参考
  */
 export function FrictionCurveCard() {
+  const { t } = useI18n();
   const [activePreset, setActivePreset] = useState<PresetKey>('hitachi15HP');
   const [Tdrive, setTdrive] = useState(0.20);  // N·m，初始略大于 hitachi 静摩擦
 
@@ -63,28 +77,34 @@ export function FrictionCurveCard() {
 
   return (
     <Card
-      title="Stribeck 摩擦谷：为啥启动卡死再突然窜出"
+      title={t('startupStateMachine.frictionTitle')}
       eyebrow="friction model · low-speed reality"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="Armstrong-Hélouvry 1991 复合摩擦：T = sign(ω)·[Tc + (Ts−Tc)·exp(−(ω/ωs)²)] + B·ω。低速段 Stribeck 谷是真实物理，不是仿真伪迹。"
+          hint={t('startupStateMachine.frictionFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        高中物理把摩擦写成"<span className="formula">T = B·ω</span>"——但真实电机轴承摩擦有三个组分：
-        <span className="text-accent-fault">静摩擦 T_static</span>（启动瞬间最大）+
-        <span className="text-accent-warn"> Coulomb T_c</span>（与方向同号但与速度无关的恒值）+
-        <span className="text-accent-primary"> 黏性 B·ω</span>。
-        极低速段（<span className="formula">0 &lt; ω &lt; ω_stribeck ≈ 5-10 rad/s</span>）总摩擦从 T_static 平滑下降到 T_coulomb，
-        形成"<span className="text-accent-fault">摩擦下凹谷</span>"——力矩越过 T_static 后突然只剩 T_coulomb，
-        转子立刻窜出。
+        {t('startupStateMachine.frictionIntroLead')}
+        <span className="formula">T = B·ω</span>
+        {t('startupStateMachine.frictionIntroMid1')}
+        <span className="text-accent-fault">{t('startupStateMachine.frictionStaticTerm')}</span>
+        {t('startupStateMachine.frictionIntroMid2')}
+        <span className="text-accent-warn"> Coulomb T_c</span>
+        {t('startupStateMachine.frictionIntroMid3')}
+        <span className="text-accent-primary">{t('startupStateMachine.frictionViscousTerm')}</span>
+        {t('startupStateMachine.frictionIntroMid4')}
+        <span className="formula">0 &lt; ω &lt; ω_stribeck ≈ 5-10 rad/s</span>
+        {t('startupStateMachine.frictionIntroMid5')}
+        <span className="text-accent-fault">{t('startupStateMachine.frictionValleyTerm')}</span>
+        {t('startupStateMachine.frictionIntroTail')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-2 text-caption">
-        <span className="text-ink-muted">突出显示：</span>
+        <span className="text-ink-muted">{t('startupStateMachine.frictionHighlightLabel')}</span>
         {presets.map((k) => (
           <button
             key={k}
@@ -96,7 +116,7 @@ export function FrictionCurveCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {PRESET_META[k].label}
+            {t(PRESET_META[k].labelKey)}
           </button>
         ))}
       </div>
@@ -119,7 +139,7 @@ export function FrictionCurveCard() {
             <Tooltip
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
               labelFormatter={(v) => `ω = ${Number(v).toFixed(1)} rad/s`}
-              formatter={(v, n) => [`${Number(v).toFixed(3)} N·m`, PRESET_META[String(n) as PresetKey]?.label ?? String(n)]}
+              formatter={(v, n) => [`${Number(v).toFixed(3)} N·m`, t(PRESET_META[String(n) as PresetKey]?.labelKey ?? 'startupStateMachine.frictionHighlightLabel')]}
             />
             <Legend wrapperStyle={{ fontSize: 10, color: '#9eb5cb' }} />
             {/* Stribeck 谷阴影：0 → ω_stribeck of active preset */}
@@ -130,7 +150,7 @@ export function FrictionCurveCard() {
             <ReferenceLine y={active.Tcoulomb} stroke="#ffb84d" strokeDasharray="3 3"
               label={{ value: `T_c = ${active.Tcoulomb.toFixed(3)}`, fill: '#ffb84d', fontSize: 9, position: 'insideTopRight' }} />
             <ReferenceLine y={Tdrive} stroke="#7dd3fc" strokeWidth={1.5}
-              label={{ value: `驱动 ${Tdrive.toFixed(2)}`, fill: '#7dd3fc', fontSize: 9, position: 'insideBottomRight' }} />
+              label={{ value: t('startupStateMachine.frictionDriveLine').replace('{v}', Tdrive.toFixed(2)), fill: '#7dd3fc', fontSize: 9, position: 'insideBottomRight' }} />
             {presets.map((k) => (
               <Line
                 key={k}
@@ -141,7 +161,7 @@ export function FrictionCurveCard() {
                 strokeOpacity={k === activePreset ? 1 : 0.55}
                 dot={false}
                 isAnimationActive={false}
-                name={PRESET_META[k].label}
+                name={t(PRESET_META[k].labelKey)}
               />
             ))}
           </LineChart>
@@ -151,7 +171,7 @@ export function FrictionCurveCard() {
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>电机驱动力矩 T_drive</span>
+            <span>{t('startupStateMachine.frictionDriveTorque')}</span>
             <span className="formula text-ink-primary">{formatNumber(Tdrive, 3)} N·m</span>
           </span>
           <input
@@ -178,13 +198,19 @@ export function FrictionCurveCard() {
             {overcome
               ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               : <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
-            <span>{overcome ? '✓ 转子启动' : '✗ 卡死（启动失歩）'}</span>
+            <span>
+              {overcome
+                ? t('startupStateMachine.frictionOvercomeOk')
+                : t('startupStateMachine.frictionOvercomeStuck')}
+            </span>
           </div>
           <p className="mt-1 text-[11px] leading-snug opacity-90">
-            T_drive 是当前预设 T_static 的 <span className="formula">{formatNumber(driveVsStatic, 2)}×</span>。
+            {t('startupStateMachine.frictionRatioLead')}
+            <span className="formula">{formatNumber(driveVsStatic, 2)}×</span>
+            {t('startupStateMachine.frictionRatioTail')}
             {overcome
-              ? ' 越过静摩擦阈值后摩擦突降到 T_coulomb，剩余力矩全部加速转子。'
-              : ' 力矩不够，转子原地卡死；STM32 上需要前馈一个估计的 T_static 或加大启动 Iq。'}
+              ? ` ${t('startupStateMachine.frictionOvercomeNote')}`
+              : ` ${t('startupStateMachine.frictionStuckNote')}`}
           </p>
         </div>
       </div>
@@ -204,7 +230,7 @@ export function FrictionCurveCard() {
             >
               <div className="mb-1 flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: PRESET_META[k].color }} />
-                <span className="text-ink-primary font-medium">{PRESET_META[k].label}</span>
+                <span className="text-ink-primary font-medium">{t(PRESET_META[k].labelKey)}</span>
               </div>
               <div className="text-ink-muted leading-relaxed">
                 T_s = <span className="formula text-accent-fault">{p.Tstatic.toFixed(3)}</span> ·
@@ -212,7 +238,7 @@ export function FrictionCurveCard() {
                 <br />
                 ω_s = <span className="formula text-ink-primary">{p.omegaStribeck.toFixed(0)}</span> rad/s ·
                 B = <span className="formula text-ink-primary">{p.B.toExponential(1)}</span>
-                <div className="mt-0.5 text-[10px] opacity-75">{PRESET_META[k].tag}</div>
+                <div className="mt-0.5 text-[10px] opacity-75">{t(PRESET_META[k].tagKey)}</div>
               </div>
             </div>
           );

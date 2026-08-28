@@ -9,6 +9,7 @@ import {
   type SerialTimebase,
 } from '../../components/lab/SerialCompareCardShell';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { mockMotorBasicsSample } from '../../utils/serialMockGenerators';
@@ -40,6 +41,7 @@ const ENCODER_OFFSET_THRESHOLD_RAD = 0.05;
 const ENCODER_OFFSET_DRIFT_TOL = 0.08; // Δθ 累积小于该值时认为是常数偏移而非角度漂移
 
 export function SerialCompareThetaCard() {
+  const { t } = useI18n();
   const buffer = useSerialStore((s) => s.buffer);
   const motorBasics = useSimulationStore((s) => s.motorBasics);
   const [timebase, setTimebase] = useState<SerialTimebase>('100ms');
@@ -122,8 +124,8 @@ export function SerialCompareThetaCard() {
 
   return (
     <SerialCompareCardShell
-      title="θe 实测 vs 理论（rpm × p × t）"
-      eyebrow="encoder alignment"
+      title={t('motorBasics.thetaCompareTitle')}
+      eyebrow={t('motorBasics.thetaCompareEyebrow')}
       timebase={timebase}
       onTimebaseChange={setTimebase}
       paused={paused}
@@ -131,23 +133,23 @@ export function SerialCompareThetaCard() {
       onExportCsv={onExportCsv}
     >
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <ThetaChart title="θ_real vs θ_theory（rad）" rows={displayRows} />
-        <ErrorChart title="角度误差 Δθ（rad，包到 ±π）" rows={displayRows} />
+        <ThetaChart title={t('motorBasics.thetaChartTitle')} rows={displayRows} />
+        <ErrorChart title={t('motorBasics.thetaErrorChartTitle')} rows={displayRows} />
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="|Δθ| 均值"
+          label={t('motorBasics.thetaKpiMeanAbs')}
           value={`${formatNumber(diagnose.meanErr, 4)} rad`}
           tone={diagnose.meanErr > 0.1 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="|Δθ| 峰值"
+          label={t('motorBasics.thetaKpiPeak')}
           value={`${formatNumber(diagnose.peakErr, 4)} rad`}
           tone={diagnose.suspectPolePairs ? 'fault' : diagnose.peakErr > 0.3 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="估算零位偏差"
+          label={t('motorBasics.thetaKpiEncoderOffset')}
           value={`${formatNumber(diagnose.encoderOffsetRad, 4)} rad`}
           tone={diagnose.suspectEncoderOffset ? 'warn' : 'measure'}
         />
@@ -158,8 +160,9 @@ export function SerialCompareThetaCard() {
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议：t_us, ia, ib, ic, iq, id, <span className="text-accent-measure">theta_e</span> ·
-        缺 theta_e 字段时实测由 mock 合成（参数面板的 rpm + polePairs）
+        {t('motorBasics.thetaProtocolLead')}
+        <span className="text-accent-measure">theta_e</span>
+        {t('motorBasics.thetaProtocolTail')}
       </p>
     </SerialCompareCardShell>
   );
@@ -291,18 +294,19 @@ function DiagnosisTile({
   suspectPolePairs: boolean;
   suspectEncoderOffset: boolean;
 }) {
+  const { t } = useI18n();
   const tone: 'measure' | 'warn' | 'fault' = suspectPolePairs ? 'fault' : suspectEncoderOffset ? 'warn' : 'measure';
   const color =
     tone === 'fault' ? 'var(--accent-fault)' : tone === 'warn' ? 'var(--accent-warn)' : 'var(--accent-measure)';
   const Icon = tone === 'measure' ? CheckCircle2 : AlertTriangle;
   const msg = suspectPolePairs
-    ? '极对数可能错'
+    ? t('motorBasics.thetaDiagPolePairs')
     : suspectEncoderOffset
-      ? '检测到零位偏移'
-      : '理论与实测一致';
+      ? t('motorBasics.thetaDiagEncoderOffset')
+      : t('motorBasics.thetaDiagConsistent');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-      <p className="text-caption text-ink-muted">诊断</p>
+      <p className="text-caption text-ink-muted">{t('motorBasics.thetaDiagLabel')}</p>
       <p className="flex items-center gap-1.5 text-body font-medium" style={{ color }}>
         <Icon className="h-4 w-4" aria-hidden />
         {msg}

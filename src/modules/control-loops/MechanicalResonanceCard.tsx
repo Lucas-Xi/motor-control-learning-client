@@ -21,8 +21,7 @@ type Preset = keyof typeof sampleComplianceParams;
  * + 速度环 Kp 上限提示。学员把"皮带传动调高 Kp 就啸叫"的现象量化看清楚。
  */
 export function MechanicalResonanceCard() {
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [preset, setPreset] = useState<Preset>('industrialFanBelt');
   const [TemStep, setTemStep] = useState(0.5);
@@ -75,34 +74,21 @@ export function MechanicalResonanceCard() {
       ? 'border-accent-warn/40 bg-accent-warn/10 text-accent-warn'
       : 'border-accent-fault/40 bg-accent-fault/10 text-accent-fault';
 
-  const PRESETS: Array<{ id: Preset; zh: string; en: string }> = [
-    { id: 'directDriveCompressor', zh: '直驱压缩机', en: 'Direct-drive' },
-    { id: 'industrialFanBelt', zh: '皮带传动', en: 'Belt drive' },
-    { id: 'roboticJoint', zh: '关节谐波减速器', en: 'Robotic joint' },
-    { id: 'agedDrive', zh: '老化设备', en: 'Aged drive' },
+  const PRESETS: Array<{ id: Preset; labelKey: 'controlLoops.mechResPresetDirect' | 'controlLoops.mechResPresetBelt' | 'controlLoops.mechResPresetJoint' | 'controlLoops.mechResPresetAged' }> = [
+    { id: 'directDriveCompressor', labelKey: 'controlLoops.mechResPresetDirect' },
+    { id: 'industrialFanBelt', labelKey: 'controlLoops.mechResPresetBelt' },
+    { id: 'roboticJoint', labelKey: 'controlLoops.mechResPresetJoint' },
+    { id: 'agedDrive', labelKey: 'controlLoops.mechResPresetAged' },
   ];
 
   return (
     <Card
-      title={isEn ? 'Two-Mass Mechanical Resonance' : '双质量传动共振'}
-      eyebrow={isEn ? 'why your speed loop screams' : '速度环啸叫的根源'}
+      title={t('controlLoops.mechResTitle')}
+      eyebrow={t('controlLoops.mechResEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="physical"
-          hint={
-            isEn
-              ? 'Schäfer-Brandenburg two-mass model + Ks/Ds spring + backlash dead-zone + adaptive sub-stepping for stiff ODE.'
-              : 'Schäfer-Brandenburg 双质量模型 + Ks/Ds 弹性轴 + backlash 死区 + 自适应子步长稳定刚性 ODE。'
-          }
-        />
-      }
+      action={<FidelityBadge level="physical" hint={t('controlLoops.mechResFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Real drivetrains are not single inertia. Motor + spring (shaft / belt) + load mass means a resonance peak. Push speed-loop Kp past anti-resonance / 5 and the system screams. Pick a preset, see the resonance, find your max Kp.'
-          : '真实传动链不是单质量——电机 + 弹性轴 / 皮带 / 谐波减速器 + 负载形成共振峰。速度环 Kp 一过反共振 / 5 就啸叫。选预设看共振峰、确定可调 Kp 上限。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('controlLoops.mechResIntro')}</p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {PRESETS.map((p) => (
@@ -120,7 +106,7 @@ export function MechanicalResonanceCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink-secondary'
             }`}
           >
-            {isEn ? p.en : p.zh}
+            {t(p.labelKey)}
           </button>
         ))}
       </div>
@@ -128,7 +114,7 @@ export function MechanicalResonanceCard() {
       <div className="mb-3 grid grid-cols-2 gap-3">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Step Tem (N·m)' : 'Tem 阶跃 (N·m)'}</span>
+            <span>{t('controlLoops.mechResTemStep')}</span>
             <span className="formula text-ink-primary">{formatNumber(TemStep, 2)}</span>
           </span>
           <input type="range" value={TemStep} min={0.05} max={5} step={0.05}
@@ -140,7 +126,7 @@ export function MechanicalResonanceCard() {
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Damping Ds' : '阻尼 Ds'}</span>
+            <span>{t('controlLoops.mechResDamping')}</span>
             <span className="formula text-ink-primary">{formatNumber(Ds, 3)}</span>
           </span>
           <input type="range" value={Ds} min={0.01} max={Math.max(5, dCrit)} step={0.01}
@@ -162,7 +148,7 @@ export function MechanicalResonanceCard() {
           <p className="formula text-body text-accent-measure">{formatNumber(freqs.antiResonanceHz, 0)} Hz</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Max Kp BW' : 'Kp 上限带宽'}</p>
+          <p className="text-caption text-ink-muted">{t('controlLoops.mechResKpBw')}</p>
           <p className="formula text-body text-accent-warn">{formatNumber(kpMax, 0)} Hz</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(dampingTone)}`}>
@@ -180,27 +166,16 @@ export function MechanicalResonanceCard() {
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <ReferenceLine y={0} stroke="#5d7793" strokeDasharray="2 4" />
-            <Line type="monotone" dataKey="dOmega" stroke="#ffb84d" strokeWidth={1.6} dot={false} isAnimationActive={false} name={isEn ? 'ω_m − ω_l' : 'Δω 电机相对负载'} />
+            <Line type="monotone" dataKey="dOmega" stroke="#ffb84d" strokeWidth={1.6} dot={false} isAnimationActive={false} name={t('controlLoops.mechResSeriesDOmega')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
 
       <p className="text-caption leading-relaxed text-ink-secondary">
-        {isEn ? (
-          <>
-            Resonance peak at <span className="formula text-accent-primary">{formatNumber(freqs.resonanceHz, 0)} Hz</span>;
-            speed-loop bandwidth must stay below <span className="formula text-accent-warn">{formatNumber(kpMax, 0)} Hz</span> (anti-res/5 rule).
-            Peak Δω amplitude during step: <span className="formula">{formatNumber(peakRipple, 2)} rad/s</span>.
-            Boost Ds to add damping (real-world = oil bearing / belt loss).
-          </>
-        ) : (
-          <>
-            共振峰 <span className="formula text-accent-primary">{formatNumber(freqs.resonanceHz, 0)} Hz</span>；
-            速度环带宽必须 {'<'} <span className="formula text-accent-warn">{formatNumber(kpMax, 0)} Hz</span>（反共振/5 经验法则）。
-            阶跃下 Δω 峰值：<span className="formula">{formatNumber(peakRipple, 2)} rad/s</span>。
-            调高 Ds 加阻尼（真实对应 = 油润轴承 / 皮带粘损耗）。
-          </>
-        )}
+        {t('controlLoops.mechResNoteA')} <span className="formula text-accent-primary">{formatNumber(freqs.resonanceHz, 0)} Hz</span>
+        {t('controlLoops.mechResNoteB')} <span className="formula text-accent-warn">{formatNumber(kpMax, 0)} Hz</span>
+        {t('controlLoops.mechResNoteC')} <span className="formula">{formatNumber(peakRipple, 2)} rad/s</span>
+        {t('controlLoops.mechResNoteD')}
       </p>
     </Card>
   );

@@ -35,6 +35,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { useAssemblyProgressStore, type AssemblyHistoryEntry, type AssemblySnapshot } from '../../store/assemblyProgressStore';
 import { useReplayStore } from '../../store/replayStore';
 import { downloadText, timestamp } from '../../utils/download';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
 interface Props {
   /** 模态浮层模式：受控显示/关闭。embedded 时这俩字段可不传 */
@@ -55,6 +56,7 @@ interface Props {
  *  - 嵌入式（17 号模块页）：embedded=true 跳过 modal 壳
  */
 export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
+  const { t } = useI18n();
   const isVisible = embedded || open;
   // 4 槽位的当前选择 —— 默认用第一个压缩机 bundle 的搭配
   const defaultBundle = compressorBundles[0];
@@ -162,7 +164,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
 
   const handleSaveSnapshot = () => {
     const defaultName = `${compressor.brand.split('（')[0]} ${compressor.hp}HP · ${strategy.id.split('-')[0].toUpperCase()} · ${load.name.split('·')[0].trim()}`;
-    const name = window.prompt('为此组合命名（同名覆盖；最多 5 个）：', defaultName);
+    const name = window.prompt(t('assemblyWorkshop.promptSnapshotName'), defaultName);
     if (!name) return;
     saveSnapshot(name.slice(0, 60), currentSlotIds);
   };
@@ -276,13 +278,13 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
         <header className="flex items-center justify-between gap-3 border-b border-line-subtle bg-bg-raised px-5 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-caption uppercase tracking-[0.22em] text-ink-muted">Assembly Workshop</p>
-            <h2 className="font-display text-title text-ink-primary">整机搭建工作台</h2>
+            <h2 className="font-display text-title text-ink-primary">{t('assemblyWorkshop.workshopTitle')}</h2>
             <p className="mt-0.5 truncate text-caption text-ink-muted">
-              {mode === 'sandbox' ? '自由搭建：选 4 个积木 → 一键诊断' : '挑战模式：给定错配，调到通过'}
+              {mode === 'sandbox' ? t('assemblyWorkshop.subtitleSandbox') : t('assemblyWorkshop.subtitleChallenge')}
             </p>
           </div>
           {/* 模式 tab strip */}
-          <div role="tablist" aria-label="工作台模式" className="flex shrink-0 rounded-md border border-line-subtle bg-bg-base p-0.5 text-caption">
+          <div role="tablist" aria-label={t('assemblyWorkshop.modeTabsAria')} className="flex shrink-0 rounded-md border border-line-subtle bg-bg-base p-0.5 text-caption">
             <button
               type="button"
               role="tab"
@@ -290,7 +292,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               onClick={() => { setMode('sandbox'); setChallengeId(null); setJustCompleted(false); }}
               className={`rounded px-2.5 py-1 transition-colors ${mode === 'sandbox' ? 'bg-accent-primary/15 text-accent-primary' : 'text-ink-muted hover:text-ink-primary'}`}
             >
-              自由搭建
+              {t('assemblyWorkshop.modeSandbox')}
             </button>
             <button
               type="button"
@@ -299,7 +301,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               onClick={() => { setMode('challenge'); if (!challengeId) loadChallenge(assemblyChallenges[0].id); }}
               className={`rounded px-2.5 py-1 transition-colors ${mode === 'challenge' ? 'bg-accent-measure/15 text-accent-measure' : 'text-ink-muted hover:text-ink-primary'}`}
             >
-              挑战模式（{completedChallenges.size}/{assemblyChallenges.length}）
+              {t('assemblyWorkshop.modeChallengeCount').replace('{n}', String(completedChallenges.size)).replace('{m}', String(assemblyChallenges.length))}
             </button>
             <button
               type="button"
@@ -308,27 +310,27 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               onClick={() => setMode('history')}
               className={`rounded px-2.5 py-1 transition-colors ${mode === 'history' ? 'bg-accent-warn/15 text-accent-warn' : 'text-ink-muted hover:text-ink-primary'}`}
             >
-              历史会话（{history.length}）
+              {t('assemblyWorkshop.modeHistoryCount').replace('{n}', String(history.length))}
             </button>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSaveSnapshot}
-              title={`保存当前组合作快照（已存 ${snapshots.length}/5）`}
+              title={t('assemblyWorkshop.snapshotSaveTitle').replace('{n}', String(snapshots.length))}
               className="flex items-center gap-1.5 rounded-md border border-line-subtle bg-bg-base px-2 py-1.5 text-body text-ink-secondary transition-colors hover:bg-bg-raised hover:text-ink-primary"
             >
               <Save className="h-4 w-4" />
-              保存快照 {snapshots.length > 0 && <span className="font-mono text-caption text-ink-muted">{snapshots.length}/5</span>}
+              {t('assemblyWorkshop.saveSnapshot')} {snapshots.length > 0 && <span className="font-mono text-caption text-ink-muted">{snapshots.length}/5</span>}
             </button>
             <button
               type="button"
               onClick={handleExportC}
-              title="按当前组合导出 STM32 main.c 骨架"
+              title={t('assemblyWorkshop.exportCTitle')}
               className="flex items-center gap-1.5 rounded-md border border-line-subtle bg-bg-base px-2 py-1.5 text-body text-ink-secondary transition-colors hover:bg-bg-raised hover:text-ink-primary"
             >
               <FileCode className="h-4 w-4" />
-              导出 .c
+              {t('assemblyWorkshop.exportC')}
             </button>
             <button
               type="button"
@@ -336,12 +338,12 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               className="flex items-center gap-1.5 rounded-md border border-accent-primary/60 bg-accent-primary/15 px-3 py-1.5 text-body text-accent-primary transition-colors hover:bg-accent-primary/25"
             >
               <Play className="h-4 w-4" />
-              运行整机仿真
+              {t('assemblyWorkshop.runSimulation')}
             </button>
             {!embedded && onClose && (
               <button
                 type="button"
-                aria-label="关闭"
+                aria-label={t('common.close')}
                 onClick={onClose}
                 className="rounded-md border border-line-subtle p-1.5 text-ink-muted transition-colors hover:bg-bg-base hover:text-ink-primary"
               >
@@ -381,7 +383,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               <Suspense
                 fallback={
                   <div className="flex h-72 items-center justify-center rounded-2xl border border-line-subtle bg-bg-base text-caption text-ink-muted">
-                    系统拓扑图加载中…
+                    {t('assemblyWorkshop.schematicLoading')}
                   </div>
                 }
               >
@@ -406,7 +408,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
               <div className="grid gap-2 md:grid-cols-2">
                 <SlotPicker
                   icon={<Snowflake className="h-4 w-4" />}
-                  title="压缩机"
+                  title={t('assemblyWorkshop.slotCompressor')}
                   current={`${compressor.brand} ${compressor.partNo}`}
                   subtitle={`${compressor.type} · ${compressor.hp}HP · ${compressor.refrigerant}`}
                   options={compressorBundles.map((b, i) => ({ value: i, label: `${b.compressor.brand.split('（')[0]} ${b.compressor.partNo}` }))}
@@ -416,7 +418,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                 />
                 <SlotPicker
                   icon={<CircuitBoard className="h-4 w-4" />}
-                  title="变频器平台"
+                  title={t('assemblyWorkshop.slotInverterPlatform')}
                   current={`${inverter.ipmBrand} ${inverter.ipmPartNo}`}
                   subtitle={`${inverter.topology} · ${inverter.ratedCurrentA}A/${inverter.ratedBusV}V · MCU ${inverter.mcuPartNo}`}
                   options={inverterPlatforms.map((p, i) => ({ value: i, label: `${p.ipmBrand} ${p.ipmPartNo}` }))}
@@ -426,7 +428,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                 />
                 <SlotPicker
                   icon={<Cpu className="h-4 w-4" />}
-                  title="控制策略"
+                  title={t('assemblyWorkshop.slotStrategy')}
                   current={strategy.name}
                   subtitle={strategy.brief}
                   options={controlStrategies.map((s, i) => ({ value: i, label: s.name }))}
@@ -436,7 +438,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                 />
                 <SlotPicker
                   icon={<Wrench className="h-4 w-4" />}
-                  title="工况负载"
+                  title={t('assemblyWorkshop.slotLoadFull')}
                   current={load.name}
                   subtitle={load.brief}
                   options={loadConditions.map((l, i) => ({ value: i, label: l.name }))}
@@ -446,7 +448,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                 />
                 <SlotPicker
                   icon={<Zap className="h-4 w-4" />}
-                  title="PFC 前级"
+                  title={t('assemblyWorkshop.slotPfcFull')}
                   current={pfc.name}
                   subtitle={pfc.brief}
                   options={pfcPlatforms.map((p, i) => ({ value: i, label: p.name }))}
@@ -456,7 +458,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
                 />
                 <SlotPicker
                   icon={<Filter className="h-4 w-4" />}
-                  title="液气分离器"
+                  title={t('assemblyWorkshop.slotSeparatorFull')}
                   current={separator.name}
                   subtitle={separator.brief}
                   options={liquidSeparators.map((s, i) => ({ value: i, label: s.name }))}
@@ -498,7 +500,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="整机搭建工作台"
+      aria-label={t('assemblyWorkshop.workshopTitle')}
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
@@ -532,6 +534,7 @@ function SlotPicker<T extends number | string>({
   /** 拖拽 category 标识，与 TopologyDiagram BlockBox 的 acceptCategory 对应 */
   dragCategory: 'compressor' | 'inverter' | 'strategy' | 'load' | 'pfc' | 'separator';
 }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-line-subtle bg-bg-base p-3">
       <div className="mb-1.5 flex items-center justify-between gap-1.5 text-caption text-ink-muted">
@@ -539,10 +542,10 @@ function SlotPicker<T extends number | string>({
           {icon}
           <span className="uppercase tracking-[0.18em]">{title}</span>
         </div>
-        <span className="text-[10px] text-ink-muted">{options.length} 项 · 可拖至拓扑块</span>
+        <span className="text-[10px] text-ink-muted">{t('assemblyWorkshop.chipCountHint').replace('{n}', String(options.length))}</span>
       </div>
       {/* 横向滚动 chip 行 */}
-      <div className="scrollbar-thin flex gap-1 overflow-x-auto pb-1.5" role="listbox" aria-label={`${title} · 可拖拽到上方拓扑块`}>
+      <div className="scrollbar-thin flex gap-1 overflow-x-auto pb-1.5" role="listbox" aria-label={t('assemblyWorkshop.slotListboxAria').replace('{title}', title)}>
         {options.map((o) => {
           const active = o.value === value;
           return (
@@ -558,7 +561,7 @@ function SlotPicker<T extends number | string>({
                 e.dataTransfer.effectAllowed = 'copy';
               }}
               onClick={() => onChange(o.value)}
-              title={`点击或拖到上方拓扑块：${o.label}`}
+              title={t('assemblyWorkshop.chipDragTitle').replace('{label}', o.label)}
               className={`shrink-0 cursor-grab rounded border px-2 py-1 text-caption transition-colors active:cursor-grabbing ${
                 active
                   ? 'border-accent-primary/60 bg-accent-primary/15 text-accent-primary'
@@ -579,6 +582,7 @@ function SlotPicker<T extends number | string>({
 // ———————————————————— DiagnosticPanel ————————————————————
 
 function DiagnosticPanel({ result }: { result: AssemblyResult | null }) {
+  const { t } = useI18n();
   const verdictTone = useMemo(() => {
     if (!result) return null;
     if (result.verdict === 'fail') return { color: 'text-accent-fault', bg: 'bg-accent-fault/10', border: 'border-accent-fault/60', icon: <AlertTriangle className="h-4 w-4" /> };
@@ -589,7 +593,7 @@ function DiagnosticPanel({ result }: { result: AssemblyResult | null }) {
   if (!result || !verdictTone) {
     return (
       <div className="rounded-xl border border-line-subtle bg-bg-base p-6 text-center text-caption text-ink-muted">
-        点上方"运行整机仿真"开始诊断
+        {t('assemblyWorkshop.diagnoseHint')}
       </div>
     );
   }
@@ -600,29 +604,29 @@ function DiagnosticPanel({ result }: { result: AssemblyResult | null }) {
       <div className={`flex items-center gap-2 rounded-xl border ${verdictTone.border} ${verdictTone.bg} px-3 py-2 ${verdictTone.color}`}>
         {verdictTone.icon}
         <div className="flex-1">
-          <p className="text-body font-medium">{result.verdict === 'pass' ? '通过' : result.verdict === 'pass-warn' ? '通过 · 有告警' : '不通过'}</p>
+          <p className="text-body font-medium">{result.verdict === 'pass' ? t('assemblyWorkshop.verdictPass') : result.verdict === 'pass-warn' ? t('assemblyWorkshop.verdictPassWarn') : t('assemblyWorkshop.verdictFail')}</p>
           <p className="text-caption opacity-90">{result.summary}</p>
         </div>
       </div>
 
       {/* KPI 网格 */}
       <div className="rounded-xl border border-line-subtle bg-bg-base p-3">
-        <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">稳态指标</p>
+        <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.steadyMetrics')}</p>
         <div className="grid grid-cols-2 gap-2 text-caption">
-          <Kpi label="制冷量" value={`${(result.metrics.coolingW / 1000).toFixed(2)} kW`} tone="measure" />
-          <Kpi label="输入电功率" value={`${(result.metrics.inputW / 1000).toFixed(2)} kW`} tone="warn" />
+          <Kpi label={t('assemblyWorkshop.kpiCooling')} value={`${(result.metrics.coolingW / 1000).toFixed(2)} kW`} tone="measure" />
+          <Kpi label={t('assemblyWorkshop.kpiInputPower')} value={`${(result.metrics.inputW / 1000).toFixed(2)} kW`} tone="warn" />
           <Kpi label="COP" value={result.metrics.cop.toFixed(2)} tone={result.metrics.cop > 3.5 ? 'measure' : result.metrics.cop > 2.5 ? 'warn' : 'fault'} />
-          <Kpi label="排气温度" value={`${result.metrics.Tdischarge.toFixed(1)} °C`} tone={result.metrics.Tdischarge > 90 ? 'fault' : result.metrics.Tdischarge > 80 ? 'warn' : 'measure'} />
-          <Kpi label="压比" value={result.metrics.pressureRatio.toFixed(2)} />
-          <Kpi label="目标转速" value={`${result.metrics.targetRpm} rpm`} />
-          <Kpi label="稳态 Iq" value={`${result.metrics.requiredIqA.toFixed(2)} A`} />
-          <Kpi label="母线余量" value={`${result.metrics.busHeadroomPct.toFixed(0)}%`} tone={result.metrics.busHeadroomPct < 5 ? 'fault' : result.metrics.busHeadroomPct < 15 ? 'warn' : 'measure'} />
+          <Kpi label={t('assemblyWorkshop.kpiDischargeTemp')} value={`${result.metrics.Tdischarge.toFixed(1)} °C`} tone={result.metrics.Tdischarge > 90 ? 'fault' : result.metrics.Tdischarge > 80 ? 'warn' : 'measure'} />
+          <Kpi label={t('assemblyWorkshop.kpiPressureRatio')} value={result.metrics.pressureRatio.toFixed(2)} />
+          <Kpi label={t('assemblyWorkshop.kpiTargetRpm')} value={`${result.metrics.targetRpm} rpm`} />
+          <Kpi label={t('assemblyWorkshop.kpiSteadyIq')} value={`${result.metrics.requiredIqA.toFixed(2)} A`} />
+          <Kpi label={t('assemblyWorkshop.kpiBusHeadroom')} value={`${result.metrics.busHeadroomPct.toFixed(0)}%`} tone={result.metrics.busHeadroomPct < 5 ? 'fault' : result.metrics.busHeadroomPct < 15 ? 'warn' : 'measure'} />
         </div>
       </div>
 
       {/* 诊断条目 */}
       <div className="rounded-xl border border-line-subtle bg-bg-base p-3">
-        <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">诊断清单（{result.items.length} 项）</p>
+        <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.diagnosticListCount').replace('{n}', String(result.items.length))}</p>
         <ul className="space-y-1.5">
           {result.items.map((item, i) => (
             <DiagnosticRow key={i} item={item} />
@@ -644,6 +648,7 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: 'mea
 }
 
 function DiagnosticRow({ item }: { item: { level: 'ok' | 'warn' | 'fault'; message: string; hintModule?: string } }) {
+  const { t } = useI18n();
   const Icon = item.level === 'ok' ? CheckCircle2 : item.level === 'warn' ? AlertCircle : AlertTriangle;
   const cls = item.level === 'ok' ? 'text-accent-measure' : item.level === 'warn' ? 'text-accent-warn' : 'text-accent-fault';
   return (
@@ -651,7 +656,7 @@ function DiagnosticRow({ item }: { item: { level: 'ok' | 'warn' | 'fault'; messa
       <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${cls}`} />
       <div className="min-w-0">
         <p className="text-ink-secondary">{item.message}</p>
-        {item.hintModule && <p className="mt-0.5 text-[10px] text-ink-muted">→ 去 {item.hintModule} 模块复习</p>}
+        {item.hintModule && <p className="mt-0.5 text-[10px] text-ink-muted">{t('assemblyWorkshop.reviewModulePrefix')}{item.hintModule}{t('assemblyWorkshop.reviewModuleSuffix')}</p>}
       </div>
     </li>
   );
@@ -669,6 +674,7 @@ const STATE_COLORS: Record<string, string> = {
 };
 
 function TimelineChart({ timeline, compressor }: { timeline: AssemblyTimeline; compressor: CompressorSpec }) {
+  const { t } = useI18n();
   // 本地游标：用 store.time 但 4 秒一周期把 0..1 映射到 0..8s
   const time = useSimulationStore((s) => s.time);
   const running = useSimulationStore((s) => s.running);
@@ -683,7 +689,7 @@ function TimelineChart({ timeline, compressor }: { timeline: AssemblyTimeline; c
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Activity className="h-3.5 w-3.5 text-accent-primary" />
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">8 秒启动+稳态时域仿真</p>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.timelineTitle')}</p>
         </div>
         <div className="flex gap-1 text-[10px]">
           {timeline.transitions.map((tr, i) => (
@@ -710,7 +716,7 @@ function TimelineChart({ timeline, compressor }: { timeline: AssemblyTimeline; c
               contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff', fontSize: 11 }}
               formatter={(v, name) => {
                 const num = Number(v ?? 0);
-                const label = name === 'rpm' ? '实际转速' : name === 'rpmRef' ? '目标' : name === 'iqA' ? 'Iq' : '母线利用';
+                const label = name === 'rpm' ? t('assemblyWorkshop.legendActualRpm') : name === 'rpmRef' ? t('assemblyWorkshop.legendTarget') : name === 'iqA' ? 'Iq' : t('assemblyWorkshop.legendBusUtil');
                 const display = name === 'rpm' || name === 'rpmRef' ? `${num.toFixed(0)} rpm` : name === 'iqA' ? `${num.toFixed(2)} A` : `${(num * 100).toFixed(0)}%`;
                 return [display, label];
               }}
@@ -719,7 +725,7 @@ function TimelineChart({ timeline, compressor }: { timeline: AssemblyTimeline; c
             <Line yAxisId="rpm" type="monotone" dataKey="rpmRef" dot={false} stroke="#9eb5cb" strokeWidth={1} strokeDasharray="4 4" isAnimationActive={false} />
             <Line yAxisId="rpm" type="monotone" dataKey="rpm" dot={false} stroke="#43f7b5" strokeWidth={1.8} isAnimationActive={false} />
             <Line yAxisId="iq" type="monotone" dataKey="iqA" dot={false} stroke="#34d6ff" strokeWidth={1.3} isAnimationActive={false} />
-            <ReferenceLine yAxisId="iq" y={compressor.ratedCurrentA} stroke="#ffb84d" strokeWidth={0.8} strokeDasharray="2 4" label={{ value: '额定 Iq', fill: '#ffb84d', fontSize: 10, position: 'right' }} />
+            <ReferenceLine yAxisId="iq" y={compressor.ratedCurrentA} stroke="#ffb84d" strokeWidth={0.8} strokeDasharray="2 4" label={{ value: t('assemblyWorkshop.ratedIq'), fill: '#ffb84d', fontSize: 10, position: 'right' }} />
             {/* 状态切换标线 */}
             {timeline.transitions.slice(1).map((tr, i) => (
               <ReferenceLine
@@ -739,16 +745,16 @@ function TimelineChart({ timeline, compressor }: { timeline: AssemblyTimeline; c
 
       {/* 游标读数 */}
       <div className="mt-2 grid grid-cols-2 gap-2 text-caption sm:grid-cols-4">
-        <Kpi label="当前时刻" value={`${cursorSec.toFixed(2)} s`} />
-        <Kpi label="当前状态" value={cur?.state ?? '-'} tone={cur?.faultActive ? 'fault' : 'measure'} />
-        <Kpi label="转速" value={`${(cur?.rpm ?? 0).toFixed(0)} rpm`} />
+        <Kpi label={t('assemblyWorkshop.cursorTime')} value={`${cursorSec.toFixed(2)} s`} />
+        <Kpi label={t('assemblyWorkshop.cursorState')} value={cur?.state ?? '-'} tone={cur?.faultActive ? 'fault' : 'measure'} />
+        <Kpi label={t('assemblyWorkshop.cursorRpm')} value={`${(cur?.rpm ?? 0).toFixed(0)} rpm`} />
         <Kpi label="Iq" value={`${(cur?.iqA ?? 0).toFixed(2)} A`} tone={(cur?.iqA ?? 0) > compressor.ratedCurrentA ? 'fault' : 'measure'} />
       </div>
 
       <div className="mt-2 grid grid-cols-3 gap-2 text-caption">
-        <Kpi label="50% 用时" value={timeline.rise50PctS === Infinity ? '未达' : `${timeline.rise50PctS.toFixed(2)} s`} />
-        <Kpi label="95% 收敛" value={timeline.settling95PctS === Infinity ? '未达' : `${timeline.settling95PctS.toFixed(2)} s`} tone={timeline.settling95PctS > 5 ? 'warn' : 'measure'} />
-        <Kpi label="目标达成" value={timeline.reachedTarget ? '✓ 到位' : '× 未达'} tone={timeline.reachedTarget ? 'measure' : 'fault'} />
+        <Kpi label={t('assemblyWorkshop.rise50')} value={timeline.rise50PctS === Infinity ? t('assemblyWorkshop.notReached') : `${timeline.rise50PctS.toFixed(2)} s`} />
+        <Kpi label={t('assemblyWorkshop.settling95')} value={timeline.settling95PctS === Infinity ? t('assemblyWorkshop.notReached') : `${timeline.settling95PctS.toFixed(2)} s`} tone={timeline.settling95PctS > 5 ? 'warn' : 'measure'} />
+        <Kpi label={t('assemblyWorkshop.targetReached')} value={timeline.reachedTarget ? t('assemblyWorkshop.reachedMark') : t('assemblyWorkshop.notReachedMark')} tone={timeline.reachedTarget ? 'measure' : 'fault'} />
       </div>
     </div>
   );
@@ -771,6 +777,7 @@ function ChallengeCard({
   onExit: () => void;
   onResetAll: () => void;
 }) {
+  const { t } = useI18n();
   const progress = challengeProgress(challenge, result);
   const passed = completedChallenges.has(challenge.id);
   const bestAttempts = challengeRecords[challenge.id]?.bestAttempts;
@@ -784,10 +791,10 @@ function ChallengeCard({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-caption">
             <Target className="h-3.5 w-3.5 text-accent-primary" />
-            <span className="uppercase tracking-[0.18em] text-ink-muted">挑战</span>
+            <span className="uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.challengeLabel')}</span>
             <span className={`font-mono ${levelColor}`}>{levelLabel}</span>
             {passed && (
-              <span className="flex items-center gap-0.5 text-accent-measure" title={`最少 ${bestAttempts} 次通关`}>
+              <span className="flex items-center gap-0.5 text-accent-measure" title={t('assemblyWorkshop.bestPassTitle').replace('{n}', String(bestAttempts))}>
                 <Trophy className="h-3.5 w-3.5" />
                 <span className="font-mono">{bestAttempts}</span>
               </span>
@@ -800,12 +807,12 @@ function ChallengeCard({
           <select
             value={challenge.id}
             onChange={(e) => onPickChallenge(e.target.value)}
-            aria-label="切换题目"
+            aria-label={t('assemblyWorkshop.pickChallengeAria')}
             className="appearance-none rounded-md border border-line-subtle bg-bg-surface px-2 py-1 pr-7 text-caption text-ink-primary focus:border-accent-primary focus:outline-none"
           >
             {assemblyChallenges.map((c) => {
               const rec = challengeRecords[c.id];
-              const prefix = rec ? `✓ ${rec.bestAttempts}次 · ` : '';
+              const prefix = rec ? t('assemblyWorkshop.optionSolvedPrefix').replace('{n}', String(rec.bestAttempts)) : '';
               return (
                 <option key={c.id} value={c.id}>{prefix}Lv.{c.level} · {c.title}</option>
               );
@@ -817,12 +824,12 @@ function ChallengeCard({
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">{challenge.brief}</p>
       <p className="mt-1 text-caption leading-relaxed text-ink-primary">
-        <span className="font-medium">目标：</span>{challenge.goal}
+        <span className="font-medium">{t('assemblyWorkshop.goalLabel')}</span>{challenge.goal}
       </p>
 
       {/* 进度条 */}
       <div className="mt-2 flex items-center gap-2 text-caption">
-        <span className="text-ink-muted">必修问题</span>
+        <span className="text-ink-muted">{t('assemblyWorkshop.requiredIssues')}</span>
         <div className="flex-1 overflow-hidden rounded-full border border-line-subtle bg-bg-base">
           <div
             className="h-2 bg-accent-measure transition-all duration-300"
@@ -831,11 +838,11 @@ function ChallengeCard({
             aria-valuenow={progress.resolved}
             aria-valuemin={0}
             aria-valuemax={progress.total}
-            aria-label={`已解决 ${progress.resolved} / ${progress.total} 个必修问题`}
+            aria-label={t('assemblyWorkshop.progressAria').replace('{n}', String(progress.resolved)).replace('{m}', String(progress.total))}
           />
         </div>
         <span className="font-mono text-ink-primary">{progress.resolved}/{progress.total}</span>
-        <span className="text-ink-muted">本次尝试 {attempts}</span>
+        <span className="text-ink-muted">{t('assemblyWorkshop.currentAttempts').replace('{n}', String(attempts))}</span>
       </div>
 
       {/* 提示按钮 + 提示文 */}
@@ -846,23 +853,23 @@ function ChallengeCard({
           className="flex items-center gap-1 rounded border border-line-subtle bg-bg-base px-2 py-0.5 text-ink-muted transition-colors hover:bg-bg-raised hover:text-ink-primary"
         >
           <Lightbulb className="h-3 w-3" />
-          {showHint ? '收起提示' : '看提示'}
+          {showHint ? t('assemblyWorkshop.hideHint') : t('assemblyWorkshop.showHint')}
         </button>
         <button
           type="button"
           onClick={onExit}
           className="rounded border border-line-subtle bg-bg-base px-2 py-0.5 text-ink-muted transition-colors hover:bg-bg-raised hover:text-ink-primary"
         >
-          回到自由搭建
+          {t('assemblyWorkshop.backToSandbox')}
         </button>
         <button
           type="button"
           onClick={() => {
-            if (window.confirm('确定重置所有挑战通关记录吗？此操作不可撤销。')) onResetAll();
+            if (window.confirm(t('assemblyWorkshop.resetRecordsConfirm'))) onResetAll();
           }}
           className="rounded border border-line-subtle bg-bg-base px-2 py-0.5 text-ink-muted transition-colors hover:bg-accent-fault/10 hover:text-accent-fault"
         >
-          重置通关记录
+          {t('assemblyWorkshop.resetRecords')}
         </button>
       </div>
       {showHint && (
@@ -876,7 +883,7 @@ function ChallengeCard({
         <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-accent-measure/60 bg-accent-measure/10 px-2 py-1.5 text-caption text-accent-measure">
           <Sparkles className="h-4 w-4" />
           <span>
-            <strong>通关！</strong>用 {attempts} 次尝试解决问题（已记入本机存档）。可在上方下拉换下一题，或回到自由搭建。
+            <strong>{t('assemblyWorkshop.challengeClearedLead')}</strong>{t('assemblyWorkshop.challengeClearedBody').replace('{n}', String(attempts))}
           </span>
         </div>
       )}
@@ -886,7 +893,7 @@ function ChallengeCard({
 
 // ———————————————————— SnapshotComparePanel ————————————————————
 
-const VERDICT_LABEL = { pass: '通过', 'pass-warn': '通过·告警', fail: '不通过' } as const;
+const VERDICT_LABEL: Record<'pass' | 'pass-warn' | 'fail', TKey> = { pass: 'assemblyWorkshop.verdictPass', 'pass-warn': 'assemblyWorkshop.verdictPassWarnShort', fail: 'assemblyWorkshop.verdictFail' };
 const VERDICT_TONE = { pass: 'measure', 'pass-warn': 'warn', fail: 'fault' } as const;
 
 function SnapshotComparePanel({
@@ -898,6 +905,7 @@ function SnapshotComparePanel({
   onApply: (snap: AssemblySnapshot) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useI18n();
   // 每个 snapshot 按其 slotIds 实时跑一次 runAssembly，得到对比数据
   const snapshotResults = useMemo(() => snapshots.map((snap) => {
     const c = compressorBundles.find((b) => b.id === snap.slotIds.compressorBundleId)?.compressor;
@@ -920,7 +928,7 @@ function SnapshotComparePanel({
 
   return (
     <div className="rounded-xl border border-line-subtle bg-bg-base p-3">
-      <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">快照对比（{snapshots.length}/5）</p>
+      <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.snapshotCompareCount').replace('{n}', String(snapshots.length))}</p>
       <div className="space-y-2">
         {snapshotResults.map(({ snap, result }) => (
           <SnapshotRow
@@ -948,11 +956,12 @@ function SnapshotRow({
   onApply: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   if (!result) {
     return (
       <div className="rounded-lg border border-accent-fault/40 bg-accent-fault/5 p-2 text-caption text-accent-fault">
-        ⚠ 快照「{snap.name}」引用的组件不存在（库可能已变更）
-        <button type="button" onClick={onDelete} className="float-right text-ink-muted hover:text-accent-fault">删除</button>
+        {t('assemblyWorkshop.snapshotMissing').replace('{name}', snap.name)}
+        <button type="button" onClick={onDelete} className="float-right text-ink-muted hover:text-accent-fault">{t('assemblyWorkshop.deleteAction')}</button>
       </div>
     );
   }
@@ -977,8 +986,8 @@ function SnapshotRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-caption">
-            {current && <span className="rounded border border-accent-primary/60 px-1 text-[10px] text-accent-primary">当前</span>}
-            <span className={`font-mono text-[10px] ${verdictTextCls}`}>{VERDICT_LABEL[result.verdict]}</span>
+            {current && <span className="rounded border border-accent-primary/60 px-1 text-[10px] text-accent-primary">{t('assemblyWorkshop.currentBadge')}</span>}
+            <span className={`font-mono text-[10px] ${verdictTextCls}`}>{t(VERDICT_LABEL[result.verdict])}</span>
             <span className="truncate text-ink-primary" title={snap.name}>{snap.name}</span>
           </div>
         </div>
@@ -987,7 +996,7 @@ function SnapshotRow({
             <button
               type="button"
               onClick={onApply}
-              title="应用此快照到画布"
+              title={t('assemblyWorkshop.applySnapshotTitle')}
               className="rounded border border-line-subtle bg-bg-surface p-1 text-ink-muted transition-colors hover:bg-accent-primary/10 hover:text-accent-primary"
             >
               <ArrowRightCircle className="h-3.5 w-3.5" />
@@ -996,7 +1005,7 @@ function SnapshotRow({
           <button
             type="button"
             onClick={onDelete}
-            title="删除快照"
+            title={t('assemblyWorkshop.deleteSnapshotTitle')}
             className="rounded border border-line-subtle bg-bg-surface p-1 text-ink-muted transition-colors hover:bg-accent-fault/10 hover:text-accent-fault"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -1007,7 +1016,7 @@ function SnapshotRow({
         <MiniKpi label="COP" value={result.metrics.cop.toFixed(2)} delta={diff?.cop} positiveBetter />
         <MiniKpi label="T_d" value={`${result.metrics.Tdischarge.toFixed(0)}°C`} delta={diff?.Td} positiveBetter={false} />
         <MiniKpi label="Iq" value={`${result.metrics.requiredIqA.toFixed(1)}A`} delta={diff?.iq} positiveBetter={false} />
-        <MiniKpi label="达标" value={result.timeline.reachedTarget ? '✓' : '×'} tone={result.timeline.reachedTarget ? 'measure' : 'fault'} />
+        <MiniKpi label={t('assemblyWorkshop.onTargetLabel')} value={result.timeline.reachedTarget ? '✓' : '×'} tone={result.timeline.reachedTarget ? 'measure' : 'fault'} />
       </div>
     </div>
   );
@@ -1015,17 +1024,17 @@ function SnapshotRow({
 
 // ———————————————————— SolutionPathPanel ————————————————————
 
-const SLOT_LABEL_MAP: Record<keyof AssemblySnapshot['slotIds'], string> = {
-  compressorBundleId: '压缩机',
-  inverterPartNo: '变频器',
-  strategyId: '控制策略',
-  loadId: '工况',
-  pfcId: 'PFC',
-  separatorId: '分离器',
+const SLOT_LABEL_MAP: Record<keyof AssemblySnapshot['slotIds'], TKey> = {
+  compressorBundleId: 'assemblyWorkshop.slotCompressor',
+  inverterPartNo: 'assemblyWorkshop.slotInverter',
+  strategyId: 'assemblyWorkshop.slotStrategy',
+  loadId: 'assemblyWorkshop.slotLoad',
+  pfcId: 'assemblyWorkshop.slotPfc',
+  separatorId: 'assemblyWorkshop.slotSeparator',
 };
 
-function slotsDiff(prev: AssemblySnapshot['slotIds'], next: AssemblySnapshot['slotIds']): Array<{ key: string; label: string; from: string; to: string }> {
-  const changes: Array<{ key: string; label: string; from: string; to: string }> = [];
+function slotsDiff(prev: AssemblySnapshot['slotIds'], next: AssemblySnapshot['slotIds']): Array<{ key: string; label: TKey; from: string; to: string }> {
+  const changes: Array<{ key: string; label: TKey; from: string; to: string }> = [];
   const keys = Object.keys(SLOT_LABEL_MAP) as Array<keyof AssemblySnapshot['slotIds']>;
   for (const k of keys) {
     if (prev[k] !== next[k]) {
@@ -1051,11 +1060,12 @@ function countFaults(result: AssemblyResult): number {
 }
 
 function SolutionPathPanel({ history }: { history: Array<{ slotIds: AssemblySnapshot['slotIds']; result: AssemblyResult; timestamp: number }> }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-line-subtle bg-bg-base p-3">
       <div className="mb-2 flex items-center gap-1.5">
         <History className="h-3.5 w-3.5 text-accent-primary" />
-        <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">解题路径（{history.length} 次尝试）</p>
+        <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.solutionPathCount').replace('{n}', String(history.length))}</p>
       </div>
       <ol className="space-y-1.5 text-caption">
         {history.map((entry, i) => {
@@ -1067,21 +1077,21 @@ function SolutionPathPanel({ history }: { history: Array<{ slotIds: AssemblySnap
           const verdictTone = entry.result.verdict === 'pass' ? 'text-accent-measure'
             : entry.result.verdict === 'pass-warn' ? 'text-accent-warn'
             : 'text-accent-fault';
-          const arrow = faultDelta < 0 ? <ArrowDown className="h-3 w-3 text-accent-measure" aria-label="fault 减少" />
-            : faultDelta > 0 ? <ArrowUp className="h-3 w-3 text-accent-fault" aria-label="fault 增加" />
-            : <Minus className="h-3 w-3 text-ink-muted" aria-label="fault 不变" />;
+          const arrow = faultDelta < 0 ? <ArrowDown className="h-3 w-3 text-accent-measure" aria-label={t('assemblyWorkshop.faultDownAria')} />
+            : faultDelta > 0 ? <ArrowUp className="h-3 w-3 text-accent-fault" aria-label={t('assemblyWorkshop.faultUpAria')} />
+            : <Minus className="h-3 w-3 text-ink-muted" aria-label={t('assemblyWorkshop.faultFlatAria')} />;
           return (
             <li key={i} className="flex items-start gap-2 rounded border border-line-subtle bg-bg-surface p-1.5">
               <span className="mt-0.5 inline-grid h-5 w-5 shrink-0 place-items-center rounded border border-line-subtle text-[10px] font-mono text-ink-muted">{i + 1}</span>
               <div className="min-w-0 flex-1">
-                {i === 0 && <p className="text-ink-muted">初始配置 · 跑诊断</p>}
-                {i > 0 && changes.length === 0 && <p className="text-ink-muted">未改 slot，仅重跑</p>}
+                {i === 0 && <p className="text-ink-muted">{t('assemblyWorkshop.initialConfig')}</p>}
+                {i > 0 && changes.length === 0 && <p className="text-ink-muted">{t('assemblyWorkshop.rerunOnly')}</p>}
                 {i > 0 && changes.length > 0 && (
                   <p className="text-ink-secondary">
                     {changes.map((c, j) => (
                       <span key={c.key}>
                         {j > 0 && <span className="text-ink-muted"> · </span>}
-                        <span className="text-ink-muted">{c.label}:</span>{' '}
+                        <span className="text-ink-muted">{t(c.label)}:</span>{' '}
                         <span className="line-through text-ink-muted">{shortName(c.key, c.from)}</span>
                         {' → '}
                         <span className="text-accent-primary">{shortName(c.key, c.to)}</span>
@@ -1091,7 +1101,7 @@ function SolutionPathPanel({ history }: { history: Array<{ slotIds: AssemblySnap
                 )}
                 <div className="mt-0.5 flex items-center gap-2 text-[10px]">
                   <span className={`font-medium ${verdictTone}`}>
-                    {entry.result.verdict === 'pass' ? '通过' : entry.result.verdict === 'pass-warn' ? '通过·告警' : '不通过'}
+                    {entry.result.verdict === 'pass' ? t('assemblyWorkshop.verdictPass') : entry.result.verdict === 'pass-warn' ? t('assemblyWorkshop.verdictPassWarnShort') : t('assemblyWorkshop.verdictFail')}
                   </span>
                   <span className="text-ink-muted">fault</span>
                   <span className="font-mono text-ink-primary">{curFaults}</span>
@@ -1114,15 +1124,15 @@ function SolutionPathPanel({ history }: { history: Array<{ slotIds: AssemblySnap
 
 // ———————————————————— HistoryPanel ————————————————————
 
-function relativeTime(timestamp: number): string {
+function relativeTime(t: (key: TKey) => string, timestamp: number): string {
   const dMs = Date.now() - timestamp;
   const m = Math.floor(dMs / 60_000);
-  if (m < 1) return '刚刚';
-  if (m < 60) return `${m} 分钟前`;
+  if (m < 1) return t('assemblyWorkshop.timeJustNow');
+  if (m < 60) return t('assemblyWorkshop.timeMinutesAgo').replace('{n}', String(m));
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
+  if (h < 24) return t('assemblyWorkshop.timeHoursAgo').replace('{n}', String(h));
   const days = Math.floor(h / 24);
-  return `${days} 天前`;
+  return t('assemblyWorkshop.timeDaysAgo').replace('{n}', String(days));
 }
 
 function HistoryPanel({
@@ -1132,6 +1142,7 @@ function HistoryPanel({
   onApply: (entry: AssemblyHistoryEntry) => void;
   onClear: () => void;
 }) {
+  const { t } = useI18n();
   // 多选对比：最多选 2 条
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -1151,8 +1162,8 @@ function HistoryPanel({
     return (
       <div className="p-8 text-center text-caption text-ink-muted">
         <History className="mx-auto mb-2 h-8 w-8 text-ink-muted" />
-        <p>暂无历史会话记录。</p>
-        <p className="mt-1">回到"自由搭建"或"挑战模式"点"运行整机仿真"，每次结果会自动归档（最多保留 20 条）。</p>
+        <p>{t('assemblyWorkshop.historyEmpty')}</p>
+        <p className="mt-1">{t('assemblyWorkshop.historyEmptyHint')}</p>
       </div>
     );
   }
@@ -1167,10 +1178,10 @@ function HistoryPanel({
     <div className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="font-display text-body text-ink-primary">历史会话归档</h3>
+          <h3 className="font-display text-body text-ink-primary">{t('assemblyWorkshop.historyArchiveTitle')}</h3>
           <p className="mt-0.5 text-caption text-ink-muted">
-            每次"运行整机仿真"自动存档（最多 20 条，跨刷新保留）。
-            <span className="ml-2">勾选 2 条做对比；点 → 把该配置载回画布。</span>
+            {t('assemblyWorkshop.historyArchiveHint')}
+            <span className="ml-2">{t('assemblyWorkshop.historyCompareHint')}</span>
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -1180,17 +1191,17 @@ function HistoryPanel({
               onClick={() => setSelectedIds(new Set())}
               className="rounded border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-muted transition-colors hover:bg-bg-raised hover:text-ink-primary"
             >
-              清空选择（{selectedIds.size}/2）
+              {t('assemblyWorkshop.clearSelection').replace('{n}', String(selectedIds.size))}
             </button>
           )}
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('确定清空所有历史会话？此操作不可撤销。')) onClear();
+              if (window.confirm(t('assemblyWorkshop.clearHistoryConfirm'))) onClear();
             }}
             className="rounded border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-muted transition-colors hover:bg-accent-fault/10 hover:text-accent-fault"
           >
-            清空历史
+            {t('assemblyWorkshop.clearHistory')}
           </button>
         </div>
       </div>
@@ -1216,6 +1227,7 @@ function HistoryPanel({
 // ———————————————————— CompareTwoHistory ————————————————————
 
 function CompareTwoHistory({ a, b }: { a: AssemblyHistoryEntry; b: AssemblyHistoryEntry }) {
+  const { t } = useI18n();
   const diff = slotsDiff(a.slotIds, b.slotIds);
   const Δcop = b.cop - a.cop;
   const ΔTd = b.Tdischarge - a.Tdischarge;
@@ -1227,18 +1239,18 @@ function CompareTwoHistory({ a, b }: { a: AssemblyHistoryEntry; b: AssemblyHisto
     <div className="mb-3 rounded-xl border border-accent-warn/60 bg-accent-warn/5 p-3">
       <div className="mb-2 flex items-center gap-1.5 text-caption">
         <Activity className="h-3.5 w-3.5 text-accent-warn" />
-        <p className="uppercase tracking-[0.18em] text-ink-muted">对比 · A 早 → B 晚</p>
-        <span className="text-ink-muted">{relativeTime(a.timestamp)} → {relativeTime(b.timestamp)}</span>
+        <p className="uppercase tracking-[0.18em] text-ink-muted">{t('assemblyWorkshop.compareTitle')}</p>
+        <span className="text-ink-muted">{relativeTime(t, a.timestamp)} → {relativeTime(t, b.timestamp)}</span>
       </div>
 
       {/* slot 差异列表 */}
       <div className="mb-2 space-y-0.5 text-caption">
         <p className="text-ink-muted">
-          {diff.length === 0 ? '6 个 slot 完全相同（仅 verdict/COP 因不同时间不同）' : `${diff.length} 处 slot 变化:`}
+          {diff.length === 0 ? t('assemblyWorkshop.compareIdentical') : t('assemblyWorkshop.compareChangedCount').replace('{n}', String(diff.length))}
         </p>
         {diff.map((d) => (
           <p key={d.key} className="text-ink-secondary">
-            <span className="text-ink-muted">{d.label}:</span>{' '}
+            <span className="text-ink-muted">{t(d.label)}:</span>{' '}
             <span className="text-accent-warn">{shortName(d.key, d.from)}</span>
             {' → '}
             <span className="text-accent-primary">{shortName(d.key, d.to)}</span>
@@ -1253,7 +1265,7 @@ function CompareTwoHistory({ a, b }: { a: AssemblyHistoryEntry; b: AssemblyHisto
           <div className={`font-mono font-medium ${verdictColor(a.verdict)}`}>
             {verdictShort(a.verdict)} → <span className={verdictColor(b.verdict)}>{verdictShort(b.verdict)}</span>
           </div>
-          {verdictChanged && <div className="font-mono text-ink-muted">变化</div>}
+          {verdictChanged && <div className="font-mono text-ink-muted">{t('assemblyWorkshop.verdictChanged')}</div>}
         </div>
         <MiniKpi label="COP" value={`${a.cop.toFixed(2)} → ${b.cop.toFixed(2)}`} delta={Δcop} positiveBetter />
         <MiniKpi label="T_d" value={`${a.Tdischarge.toFixed(0)} → ${b.Tdischarge.toFixed(0)}°C`} delta={ΔTd} positiveBetter={false} />
@@ -1280,6 +1292,7 @@ function HistoryRow({
   disabledForSelect: boolean;
   onToggleSelect: () => void;
 }) {
+  const { t } = useI18n();
   const verdictCls = entry.verdict === 'pass' ? 'text-accent-measure'
     : entry.verdict === 'pass-warn' ? 'text-accent-warn'
     : 'text-accent-fault';
@@ -1304,21 +1317,21 @@ function HistoryRow({
             checked={selected}
             disabled={disabledForSelect}
             onChange={onToggleSelect}
-            aria-label="选中此历史用于对比"
+            aria-label={t('assemblyWorkshop.selectForCompareAria')}
             className="h-3.5 w-3.5 accent-accent-primary"
           />
         </label>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-caption">
             <span className={`font-mono text-[10px] ${verdictCls}`}>
-              {entry.verdict === 'pass' ? '✓ 通过' : entry.verdict === 'pass-warn' ? '⚠ 通过·告警' : '✗ 不通过'}
+              {entry.verdict === 'pass' ? '✓ ' : entry.verdict === 'pass-warn' ? '⚠ ' : '✗ '}{t(VERDICT_LABEL[entry.verdict])}
             </span>
             {entry.mode === 'challenge' && entry.challengeId && (
               <span className="rounded border border-accent-measure/40 bg-accent-measure/10 px-1 text-[10px] text-accent-measure">
-                挑战 · {assemblyChallenges.find((c) => c.id === entry.challengeId)?.title.slice(0, 16) ?? entry.challengeId}
+                {t('assemblyWorkshop.challengeLabel')} · {assemblyChallenges.find((c) => c.id === entry.challengeId)?.title.slice(0, 16) ?? entry.challengeId}
               </span>
             )}
-            <span className="text-ink-muted">{relativeTime(entry.timestamp)}</span>
+            <span className="text-ink-muted">{relativeTime(t, entry.timestamp)}</span>
           </div>
           <p className="mt-0.5 truncate text-caption text-ink-primary">
             {compressor?.brand} {compressor?.partNo} · {strategy?.name} · {loadInfo?.name}
@@ -1326,7 +1339,7 @@ function HistoryRow({
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-ink-muted">
             <span>COP <span className="font-mono text-ink-primary">{entry.cop.toFixed(2)}</span></span>
             <span>T_d <span className="font-mono text-ink-primary">{entry.Tdischarge.toFixed(0)}°C</span></span>
-            <span>达标 <span className={`font-mono ${entry.reachedTarget ? 'text-accent-measure' : 'text-accent-fault'}`}>{entry.reachedTarget ? '✓' : '✗'}</span></span>
+            <span>{t('assemblyWorkshop.onTargetLabel')} <span className={`font-mono ${entry.reachedTarget ? 'text-accent-measure' : 'text-accent-fault'}`}>{entry.reachedTarget ? '✓' : '✗'}</span></span>
             <span>fault <span className={`font-mono ${entry.faultCount > 0 ? 'text-accent-fault' : 'text-accent-measure'}`}>{entry.faultCount}</span></span>
             <span>warn <span className="font-mono text-ink-primary">{entry.warnCount}</span></span>
             <span className="truncate">PFC <span className="font-mono text-ink-primary">{pfc?.vdcOutput}V</span></span>
@@ -1335,9 +1348,9 @@ function HistoryRow({
         <button
           type="button"
           onClick={onApply}
-          title="把此历史配置载回画布（切到自由搭建）"
+          title={t('assemblyWorkshop.loadBackTitle')}
           className="shrink-0 rounded border border-line-subtle bg-bg-surface p-1.5 text-ink-muted transition-colors hover:bg-accent-primary/10 hover:text-accent-primary"
-          aria-label="载回此配置"
+          aria-label={t('assemblyWorkshop.loadBackAria')}
         >
           <ArrowRightCircle className="h-4 w-4" />
         </button>

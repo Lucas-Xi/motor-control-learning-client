@@ -9,23 +9,25 @@ import {
   simulateSwitchingPfc,
   switchingRippleNearPeak,
 } from '../../simulation/math/switchingPfc';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { formatNumber } from '../../utils/format';
 
 const PFC_PRESETS = {
   appliance: {
-    label: '家电 1.5kW',
+    // label 为 TKey，渲染处经 tr() 翻译
+    label: 'apfFrontend.switchingPresetAppliance',
     lUh: 500,
     pwmFs: 20000,
     loadCurrent: 4,
   },
   compact: {
-    label: '紧凑高开关',
+    label: 'apfFrontend.switchingPresetCompact',
     lUh: 200,
     pwmFs: 40000,
     loadCurrent: 3,
   },
   heavy: {
-    label: '大电感低开关',
+    label: 'apfFrontend.switchingPresetHeavy',
     lUh: 1200,
     pwmFs: 10000,
     loadCurrent: 5,
@@ -59,6 +61,9 @@ function downsample<T>(data: T[], maxPoints: number): T[] {
  * 平均模型（PfcWaveformCard 等）只给 50Hz 电流；本卡回答 Δi_L、EMI 和 DCM。
  */
 export function SwitchingPfcCard() {
+  const { t } = useI18n();
+  // 预设 label 为 TKey 字面量，统一经此 helper 翻译
+  const tr = (s: string): string => t(s as TKey);
   const [presetKey, setPresetKey] = useState<PresetKey>('appliance');
   const [lUh, setLUh] = useState<number>(PFC_PRESETS.appliance.lUh);
   const [pwmFs, setPwmFs] = useState<number>(PFC_PRESETS.appliance.pwmFs);
@@ -117,26 +122,26 @@ export function SwitchingPfcCard() {
 
   return (
     <Card
-      title="开关级 PFC：平均模型看不见的电感纹波"
+      title={t('apfFrontend.switchingTitle')}
       eyebrow="switching boost · Δi_L"
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="Erickson；S 通 L 充电、S 断 L 向母线放电；Δi≈vRect·D·Ts/L"
+          hint={t('apfFrontend.switchingFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        平均模型只给 50Hz 电流；EMI 和磁芯损耗来自
-        <span className="formula"> fs</span> 锯齿。
-        L 小或 fs 低，
+        {t('apfFrontend.switchingIntroA')}
+        <span className="formula"> fs</span>
+        {t('apfFrontend.switchingIntroB')}
         <span className="formula">Δi ≈ vRect·D·Ts/L</span>
-        变大；轻载会掉进 DCM。
+        {t('apfFrontend.switchingIntroC')}
       </p>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-caption text-ink-muted">工况预设：</span>
+        <span className="text-caption text-ink-muted">{t('apfFrontend.switchingPresetLabel')}</span>
         {(Object.keys(PFC_PRESETS) as PresetKey[]).map((k) => (
           <button
             key={k}
@@ -148,7 +153,7 @@ export function SwitchingPfcCard() {
                 : 'border-line-subtle bg-bg-base text-ink-muted hover:text-ink'
             }`}
           >
-            {PFC_PRESETS[k].label}
+            {tr(PFC_PRESETS[k].label)}
           </button>
         ))}
       </div>
@@ -161,7 +166,7 @@ export function SwitchingPfcCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>电感 L（µH）</span>
+          <span>{t('apfFrontend.switchingInductanceLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(lUh, 0)} µH</span>
         </span>
         <input
@@ -175,7 +180,7 @@ export function SwitchingPfcCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>开关频率 fs（kHz）</span>
+          <span>{t('apfFrontend.switchingFrequencyLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(pwmFs / 1000, 1)} kHz</span>
         </span>
         <input
@@ -189,7 +194,7 @@ export function SwitchingPfcCard() {
 
       <label className="mb-3 block">
         <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-          <span>负载电流（A）</span>
+          <span>{t('apfFrontend.switchingLoadLabel')}</span>
           <span className="formula text-ink-primary">{formatNumber(loadCurrent, 1)} A</span>
         </span>
         <input
@@ -203,7 +208,7 @@ export function SwitchingPfcCard() {
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">开关纹波 Δi_L</p>
+          <p className="text-caption text-ink-muted">{t('apfFrontend.switchingMetricRipple')}</p>
           <p className={`formula text-body ${rippleRatio > 0.4 ? 'text-accent-warn' : 'text-accent-measure'}`}>
             {formatNumber(swRipple, 2)} A
           </p>
@@ -221,7 +226,7 @@ export function SwitchingPfcCard() {
           </p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">母线均值</p>
+          <p className="text-caption text-ink-muted">{t('apfFrontend.switchingMetricUdcAvg')}</p>
           <p className="formula text-body text-accent-primary">
             {formatNumber(result.udcAvg, 1)} V
           </p>
@@ -272,21 +277,21 @@ export function SwitchingPfcCard() {
         <div className="text-caption leading-snug">
           {warn ? (
             <span className="text-accent-warn">
-              {dcm ? '轻载 DCM，平均模型失效。' : ''}
+              {dcm ? t('apfFrontend.switchingWarnDcm') : ''}
               {dcm && rippleRatio > 0.4 ? ' ' : ''}
-              {rippleRatio > 0.4 ? '开关纹波 / iLRms > 0.4，磁芯/EMI 恶化。' : ''}
+              {rippleRatio > 0.4 ? t('apfFrontend.switchingWarnRipple') : ''}
             </span>
           ) : (
             <span className="text-accent-measure">
-              CCM 且开关纹波可控：平均模型仍可用，但 EMI 设计必须按 fs 锯齿而不是 50Hz 包络。
+              {t('apfFrontend.switchingOkCcm')}
             </span>
           )}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：电流环按载波同步更新；
-        CCM 用峰值/平均值控制；DCM 要换模型或加频率折返。
+        <span className="text-accent-warn">{t('apfFrontend.switchingStm32Title')}</span>
+        {t('apfFrontend.switchingStm32Hint')}
       </p>
     </Card>
   );

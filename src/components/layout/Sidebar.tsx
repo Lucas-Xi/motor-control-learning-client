@@ -21,7 +21,7 @@ export function Sidebar() {
   const isInsights = simPanelView === 'insights';
   const { t } = useI18n();
   return (
-    <aside aria-label="侧栏 · 模块列表与课程入口" className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-line-subtle bg-bg-surface p-3 xl:h-full">
+    <aside aria-label={t('shell.sidebarAria')} className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-line-subtle bg-bg-surface p-3 xl:h-full">
       {/* 移动端折叠 brand 头：保留行高，但去掉副标题段落避免占满 1/3 屏 */}
       <div className="mb-2 px-1 xl:mb-3">
         <p className="hidden text-caption uppercase tracking-[0.22em] text-ink-muted xl:block">{t('shell.brandEyebrow')}</p>
@@ -53,7 +53,7 @@ export function Sidebar() {
         type="button"
         onClick={() => setSimPanelView(isInsights ? 'module' : 'insights')}
         aria-pressed={isInsights}
-        aria-label={isInsights ? '返回当前模块' : '打开学习洞察（错题本 / 热力图 / 弱项推荐）'}
+        aria-label={isInsights ? t('shell.insightsBackAria') : t('shell.insightsEntryAria')}
         className={`mb-2 flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left transition-colors xl:mb-3 xl:gap-3 xl:px-3 xl:py-2 ${
           isInsights
             ? 'border-accent-primary/60 bg-accent-primary/10'
@@ -64,11 +64,11 @@ export function Sidebar() {
           <BarChart3 className="h-4 w-4" aria-hidden />
         </span>
         <span className="min-w-0">
-          <span className={`block truncate text-body font-medium ${isInsights ? 'text-ink-primary' : 'text-ink-secondary'}`}>学习洞察</span>
-          <span className="hidden truncate text-caption text-ink-muted xl:block">错题本 · 热力图 · 弱项推荐</span>
+          <span className={`block truncate text-body font-medium ${isInsights ? 'text-ink-primary' : 'text-ink-secondary'}`}>{t('insights.title')}</span>
+          <span className="hidden truncate text-caption text-ink-muted xl:block">{t('shell.insightsEntrySubtitle')}</span>
         </span>
       </button>
-      <nav aria-label="模块列表" className="scrollbar-thin mobile-snap-x flex gap-2 overflow-x-auto pb-1 xl:min-h-0 xl:flex-1 xl:flex-col xl:space-y-1 xl:overflow-auto xl:pr-1">
+      <nav aria-label={t('shell.sidebarNavAria')} className="scrollbar-thin mobile-snap-x flex gap-2 overflow-x-auto pb-1 xl:min-h-0 xl:flex-1 xl:flex-col xl:space-y-1 xl:overflow-auto xl:pr-1">
         {moduleMetas.map((module) => {
           const Icon = iconFor(module.id);
           const active = !isCurriculum && !isInsights && activeModule === module.id;

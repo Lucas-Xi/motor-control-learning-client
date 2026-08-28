@@ -4,6 +4,7 @@ import { AlertOctagon, AlertTriangle, CheckCircle2, Thermometer } from 'lucide-r
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import {
   compensateForTemperature,
   stepThermal,
@@ -38,6 +39,7 @@ interface RampPoint {
  *   - 红色危险带 100°C+ 退磁阈值 + 黄色警戒带 80-100°C 提前预警
  */
 export function ThermalDeratingCard() {
+  const { t } = useI18n();
   const [Tprobe, setTprobe] = useState(85);   // 仪表面板探针温度
   const [Ploss, setPloss] = useState(120);    // W 总损耗（满载典型值）
 
@@ -68,10 +70,25 @@ export function ThermalDeratingCard() {
   const hotExceedsDemag = ThotFinal > defaultThermalParams.TdemagC;
 
   const status = comp.demagAlarm
-    ? { tone: 'bad', label: '退磁告警', Icon: AlertOctagon, msg: `T = ${Tprobe.toFixed(0)}°C > ${defaultThermalParams.TdemagC}°C 阈值 → NdFeB 永磁不可逆退磁，电机损坏。主控必须立刻断电、停机降温。` }
+    ? {
+        tone: 'bad',
+        label: t('motorBasics.thermalDeratingStatusDemag'),
+        Icon: AlertOctagon,
+        msg: `${t('motorBasics.thermalDeratingMsgDemagPrefix')}${Tprobe.toFixed(0)}${t('motorBasics.thermalDeratingMsgDemagMid')}${defaultThermalParams.TdemagC}${t('motorBasics.thermalDeratingMsgDemagTail')}`,
+      }
     : comp.demagMarginK < 20
-    ? { tone: 'warn', label: '接近阈值', Icon: AlertTriangle, msg: `距退磁阈值仅剩 ${comp.demagMarginK.toFixed(0)} K，长时间满载 + 高环境温度会越界，建议降额或加强散热。` }
-    : { tone: 'good', label: '余量充足', Icon: CheckCircle2, msg: `距退磁阈值 ${comp.demagMarginK.toFixed(0)} K 余量，参数变化在补偿可处理范围内。` };
+    ? {
+        tone: 'warn',
+        label: t('motorBasics.thermalDeratingStatusNear'),
+        Icon: AlertTriangle,
+        msg: `${t('motorBasics.thermalDeratingMsgNearPrefix')}${comp.demagMarginK.toFixed(0)}${t('motorBasics.thermalDeratingMsgNearSuffix')}`,
+      }
+    : {
+        tone: 'good',
+        label: t('motorBasics.thermalDeratingStatusOk'),
+        Icon: CheckCircle2,
+        msg: `${t('motorBasics.thermalDeratingMsgOkPrefix')}${comp.demagMarginK.toFixed(0)}${t('motorBasics.thermalDeratingMsgOkSuffix')}`,
+      };
 
   const toneClass = (t: string) =>
     t === 'good'
@@ -82,27 +99,30 @@ export function ThermalDeratingCard() {
 
   return (
     <Card
-      title="温度对电机参数的影响：Rs(T) ↑ + ψf(T) ↓ + 退磁告警"
-      eyebrow="thermal derating · real motor reality"
+      title={t('motorBasics.thermalDeratingTitle')}
+      eyebrow={t('motorBasics.thermalDeratingEyebrow')}
       density="compact"
       action={
         <FidelityBadge
           level="physical"
-          hint="铜 PTC α=0.00393/K + NdFeB NTC β=0.0012/K + N50 退磁阈值 100°C + 一阶热模型 R_th=0.5 K/W / τ=600 s（IEC 60034-1）。"
+          hint={t('motorBasics.thermalDeratingFidelityHint')}
         />
       }
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        基准参数（25°C 冷机）<span className="formula">Rs = {RS_BASE} Ω</span>、
-        <span className="formula"> ψf = {FLUX_BASE} Wb</span>。
-        热起来之后铜电阻 PTC 上扬、永磁磁链 NTC 下降——FOC 不补偿就出现"冷机调好的 Iq 命令热机算少了"的偏差，
-        而真正致命的是 <span className="text-accent-fault">退磁阈值 ~100°C</span>：越过即 NdFeB 不可逆掉磁，电机永久损坏。
+        {t('motorBasics.thermalDeratingBaseLead')}
+        <span className="formula">Rs = {RS_BASE} Ω</span>
+        {t('motorBasics.thermalDeratingBaseSep')}
+        <span className="formula"> ψf = {FLUX_BASE} Wb</span>
+        {t('motorBasics.thermalDeratingIntroMid')}
+        <span className="text-accent-fault">{t('motorBasics.thermalDeratingDemagLabel')}</span>
+        {t('motorBasics.thermalDeratingIntroEnd')}
       </p>
 
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span className="flex items-center gap-1"><Thermometer className="h-3 w-3" />绕组温度 T_w</span>
+            <span className="flex items-center gap-1"><Thermometer className="h-3 w-3" />{t('motorBasics.thermalDeratingTwLabel')}</span>
             <span className="formula text-ink-primary">{formatNumber(Tprobe, 0)} °C</span>
           </span>
           <input
@@ -113,7 +133,7 @@ export function ThermalDeratingCard() {
             step={1}
             onChange={(e) => setTprobe(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="winding temperature"
+            aria-label={t('motorBasics.thermalDeratingTwAria')}
             aria-valuemin={25}
             aria-valuemax={150}
             aria-valuenow={Tprobe}
@@ -122,7 +142,7 @@ export function ThermalDeratingCard() {
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>持续损耗 P_loss（铜 + 铁）</span>
+            <span>{t('motorBasics.thermalDeratingPlossLabel')}</span>
             <span className="formula text-ink-primary">{formatNumber(Ploss, 0)} W</span>
           </span>
           <input
@@ -133,7 +153,7 @@ export function ThermalDeratingCard() {
             step={5}
             onChange={(e) => setPloss(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label="continuous loss"
+            aria-label={t('motorBasics.thermalDeratingPlossAria')}
             aria-valuemin={20}
             aria-valuemax={250}
             aria-valuenow={Ploss}
@@ -144,27 +164,27 @@ export function ThermalDeratingCard() {
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className={`rounded-lg border p-2 ${comp.rsRisePct > 30 ? toneClass('warn') : toneClass('good')}`}>
-          <p className="text-caption opacity-80">Rs（当前）</p>
+          <p className="text-caption opacity-80">{t('motorBasics.thermalDeratingRsNow')}</p>
           <p className="formula text-body">{formatNumber(comp.rs, 4)} Ω</p>
-          <p className="text-[10px] opacity-75">基准 +{formatNumber(comp.rsRisePct, 1)}%（PTC）</p>
+          <p className="text-[10px] opacity-75">{t('motorBasics.thermalDeratingRsSubPrefix')}{formatNumber(comp.rsRisePct, 1)}{t('motorBasics.thermalDeratingRsSubSuffix')}</p>
         </div>
         <div className={`rounded-lg border p-2 ${comp.fluxDropPct > 10 ? toneClass('warn') : toneClass('good')}`}>
-          <p className="text-caption opacity-80">ψf（当前）</p>
+          <p className="text-caption opacity-80">{t('motorBasics.thermalDeratingFluxNow')}</p>
           <p className="formula text-body">{formatNumber(comp.flux, 5)} Wb</p>
-          <p className="text-[10px] opacity-75">基准 −{formatNumber(comp.fluxDropPct, 1)}%（NTC）</p>
+          <p className="text-[10px] opacity-75">{t('motorBasics.thermalDeratingFluxSubPrefix')}{formatNumber(comp.fluxDropPct, 1)}{t('motorBasics.thermalDeratingFluxSubSuffix')}</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(status.tone)}`}>
           <div className="flex items-center gap-1.5 text-caption">
             <status.Icon className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{status.label}</span>
           </div>
-          <p className="formula text-body">余量 {formatNumber(comp.demagMarginK, 0)} K</p>
+          <p className="formula text-body">{t('motorBasics.thermalDeratingMarginLabel')} {formatNumber(comp.demagMarginK, 0)} K</p>
           <p className="text-[10px] leading-snug opacity-90">{status.msg}</p>
         </div>
       </div>
 
       <p className="mb-1 text-caption text-ink-muted">
-        一阶热模型 60 分钟爬升（满载 {Ploss} W，τ=600 s 时间常数）：冷启动 25°C 环境 vs 热环境 50°C
+        {t('motorBasics.thermalDeratingRampPrefix')}{Ploss}{t('motorBasics.thermalDeratingRampSuffix')}
       </p>
       <div className="h-44">
         <SafeResponsiveContainer>
@@ -197,31 +217,33 @@ export function ThermalDeratingCard() {
             {/* 危险带：100°C+ */}
             <Area type="monotone" dataKey={() => 150} fill="url(#thermal-danger)" stroke="none" baseValue={defaultThermalParams.TdemagC} isAnimationActive={false} legendType="none" />
             <ReferenceLine y={defaultThermalParams.TdemagC} stroke="#fb7185" strokeDasharray="3 3"
-              label={{ value: `退磁阈值 ${defaultThermalParams.TdemagC}°C`, fill: '#fb7185', fontSize: 9, position: 'insideTopRight' }} />
+              label={{ value: `${t('motorBasics.thermalDeratingDemagRefLabel')}${defaultThermalParams.TdemagC}°C`, fill: '#fb7185', fontSize: 9, position: 'insideTopRight' }} />
             <ReferenceLine y={80} stroke="#ffb84d" strokeDasharray="3 3"
-              label={{ value: '警戒 80°C', fill: '#ffb84d', fontSize: 9, position: 'insideTopRight' }} />
-            <Line type="monotone" dataKey="Tcool" stroke="#34d6ff" strokeWidth={1.8} dot={false} isAnimationActive={false} name="冷启动 25°C 环境" />
-            <Line type="monotone" dataKey="Thot" stroke="#fb7185" strokeWidth={1.8} dot={false} isAnimationActive={false} name="热环境 50°C 环境" />
+              label={{ value: `${t('motorBasics.thermalDeratingWarnRefLabel')}80°C`, fill: '#ffb84d', fontSize: 9, position: 'insideTopRight' }} />
+            <Line type="monotone" dataKey="Tcool" stroke="#34d6ff" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('motorBasics.thermalDeratingLegendCold')} />
+            <Line type="monotone" dataKey="Thot" stroke="#fb7185" strokeWidth={1.8} dot={false} isAnimationActive={false} name={t('motorBasics.thermalDeratingLegendHot')} />
           </ComposedChart>
         </SafeResponsiveContainer>
       </div>
 
       <div className="mt-2 grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2">
         <div className={`rounded border px-2 py-1.5 ${toneClass(TcoolFinal > defaultThermalParams.TdemagC ? 'bad' : TcoolFinal > 80 ? 'warn' : 'good')}`}>
-          冷启动 60 分钟稳态：<span className="formula font-bold">{formatNumber(TcoolFinal, 1)}°C</span>
-          {TcoolFinal > defaultThermalParams.TdemagC && '（已越退磁阈值）'}
+          {t('motorBasics.thermalDeratingColdSteady')}<span className="formula font-bold">{formatNumber(TcoolFinal, 1)}°C</span>
+          {TcoolFinal > defaultThermalParams.TdemagC && t('motorBasics.thermalDeratingExceededNote')}
         </div>
         <div className={`rounded border px-2 py-1.5 ${toneClass(hotExceedsDemag ? 'bad' : ThotFinal > 80 ? 'warn' : 'good')}`}>
-          热环境 60 分钟稳态：<span className="formula font-bold">{formatNumber(ThotFinal, 1)}°C</span>
-          {hotExceedsDemag && '（已越退磁阈值，必须降额或加强散热）'}
+          {t('motorBasics.thermalDeratingHotSteady')}<span className="formula font-bold">{formatNumber(ThotFinal, 1)}°C</span>
+          {hotExceedsDemag && t('motorBasics.thermalDeratingHotExceededNote')}
         </div>
       </div>
 
       <p className="mt-3 text-caption leading-relaxed text-ink-secondary">
-        <span className="text-accent-warn">STM32 移植要点</span>：温度从绕组 NTC 串口读到主控
-        → 用 <span className="formula">compensateForTemperature</span> 算出当前 Rs / ψf
-        → 灌进电流环 PI 解耦项 + BEMF 反算。退磁告警必须在
-        <span className="text-accent-fault"> ISR 内联硬件级断电</span>（晚 1 ms 都可能造成永久损坏）。
+        <span className="text-accent-warn">{t('motorBasics.thermalDeratingPortingTitle')}</span>
+        {t('motorBasics.thermalDeratingPortingMid')}
+        <span className="formula">compensateForTemperature</span>
+        {t('motorBasics.thermalDeratingPortingTail')}
+        <span className="text-accent-fault">{t('motorBasics.thermalDeratingPortingIsr')}</span>
+        {t('motorBasics.thermalDeratingPortingEnd')}
       </p>
     </Card>
   );

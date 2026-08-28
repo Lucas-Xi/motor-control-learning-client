@@ -58,7 +58,7 @@ function VectorSpace3DCard({
           >
             {enabled ? t('focFlow.toggleOn3D') : t('focFlow.toggleOff3D')}
           </button>
-          <FidelityBadge level="exact" hint="同一组 (Iα, Iβ, Id, Iq, θ_e) 三种几何呈现：αβ 平面合成磁通 + 旋转 dq 坐标轴" />
+          <FidelityBadge level="exact" hint={t('focFlow.vectorsFidelityHint')} />
         </div>
       }
     >
@@ -135,8 +135,7 @@ function useSnapshot() {
 
 function CurrentLoopView() {
   const foc = useSimulationStore((s) => s.foc);
-  const { t, locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
   const [hd, setHd] = useState(false);
   const [tempC, setTempC] = useState(25);
   return (
@@ -156,9 +155,9 @@ function CurrentLoopView() {
                 : 'border-line-subtle bg-bg-base text-ink-secondary hover:border-line-strong'
             }`}
           >
-            {hd ? (isEn ? 'HD physics ON' : '高保真物理 ON') : (isEn ? 'Simple model' : '简版模型')}
+            {hd ? t('focFlow.hdPhysicsOn') : t('focFlow.simpleModel')}
           </button>
-          <FidelityBadge level="physical" hint="完整 PMSM dq 微分方程 + PI + 限幅 + 角度误差 + 采样延迟，是工程级仿真" />
+          <FidelityBadge level="physical" hint={t('focFlow.loopFidelityHint')} />
         </div>
       }
     >
@@ -166,7 +165,7 @@ function CurrentLoopView() {
       {hd && (
         <label className="mb-3 block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Winding T (°C)' : '绕组温度 (°C)'}</span>
+            <span>{t('focFlow.windingTemp')}</span>
             <span className="formula text-ink-primary">{tempC}</span>
           </span>
           <input
@@ -177,7 +176,7 @@ function CurrentLoopView() {
             step={5}
             onChange={(e) => setTempC(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label={isEn ? 'winding temperature' : '绕组温度'}
+            aria-label={t('focFlow.windingTempAria')}
             aria-valuemin={-20}
             aria-valuemax={130}
             aria-valuenow={tempC}
@@ -207,7 +206,7 @@ function PipelineView({
       title={t('focFlow.pipelineTitle')}
       eyebrow={t('focFlow.pipelineEyebrow')}
       density="compact"
-      action={<FidelityBadge level="exact" hint="单周期快照展示 abc → Clarke → Park → PI → 反 Park → SVPWM 每一步的精确数值" />}
+      action={<FidelityBadge level="exact" hint={t('focFlow.pipelineFidelityHint')} />}
     >
       <div className="mb-2 flex items-center justify-between rounded-lg border border-line-subtle bg-bg-base px-3 py-1.5 text-caption text-ink-muted">
         <span>{t('focFlow.pipelineHint')}</span>

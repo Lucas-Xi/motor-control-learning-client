@@ -4,6 +4,7 @@ import { simulateFocCurrentLoop, evaluateFocLoop } from '../../simulation/math/f
 import type { FOCParams } from '../../simulation/engine/types';
 import { SafeResponsiveContainer } from './SafeResponsiveContainer';
 import { formatNumber } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   params: FOCParams;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function FocCurrentLoopChart({ params, highFidelity, windingTempC }: Props) {
+  const { t } = useI18n();
   const samples = useMemo(
     () => simulateFocCurrentLoop(params, { highFidelity, windingTempC }),
     [params, highFidelity, windingTempC],
@@ -34,19 +36,19 @@ export function FocCurrentLoopChart({ params, highFidelity, windingTempC }: Prop
             <Tooltip contentStyle={{ background: '#0d1929', border: '1px solid #1e2a3d', borderRadius: 8, color: '#e7f3ff' }} />
             <Legend wrapperStyle={{ fontSize: 11, color: '#9eb5cb' }} />
             <ReferenceLine y={0} stroke="#1e2a3d" strokeDasharray="2 4" />
-            <Line type="monotone" dataKey="iqRef" dot={false} stroke="#9eb5cb" strokeDasharray="4 4" name="Iq 指令" isAnimationActive={false} />
-            <Line type="monotone" dataKey="iq" dot={false} stroke="#43f7b5" strokeWidth={2} name="Iq 实际" isAnimationActive={false} />
-            <Line type="monotone" dataKey="idRef" dot={false} stroke="#5d7793" strokeDasharray="4 4" name="Id 指令" isAnimationActive={false} />
-            <Line type="monotone" dataKey="id" dot={false} stroke="#34d6ff" strokeWidth={2} name="Id 实际" isAnimationActive={false} />
+            <Line type="monotone" dataKey="iqRef" dot={false} stroke="#9eb5cb" strokeDasharray="4 4" name={`Iq ${t('charts.flCmd')}`} isAnimationActive={false} />
+            <Line type="monotone" dataKey="iq" dot={false} stroke="#43f7b5" strokeWidth={2} name={`Iq ${t('charts.flActual')}`} isAnimationActive={false} />
+            <Line type="monotone" dataKey="idRef" dot={false} stroke="#5d7793" strokeDasharray="4 4" name={`Id ${t('charts.flCmd')}`} isAnimationActive={false} />
+            <Line type="monotone" dataKey="id" dot={false} stroke="#34d6ff" strokeWidth={2} name={`Id ${t('charts.flActual')}`} isAnimationActive={false} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Metric label="Iq 上升时间" value={metrics.iqRiseTimeMs === null ? '--' : formatNumber(metrics.iqRiseTimeMs, 1)} unit=" ms" tone="primary" />
-        <Metric label="Iq 超调" value={formatNumber(overshoot, 1)} unit="%" tone={overshootTone} />
-        <Metric label="Iq 稳态误差" value={formatNumber(metrics.iqSteadyError, 3)} unit=" A"
+        <Metric label={t('charts.flIqRiseTime')} value={metrics.iqRiseTimeMs === null ? '--' : formatNumber(metrics.iqRiseTimeMs, 1)} unit=" ms" tone="primary" />
+        <Metric label={t('charts.flIqOvershoot')} value={formatNumber(overshoot, 1)} unit="%" tone={overshootTone} />
+        <Metric label={t('charts.flIqSteadyErr')} value={formatNumber(metrics.iqSteadyError, 3)} unit=" A"
           tone={Math.abs(metrics.iqSteadyError) > 0.1 ? 'warn' : 'measure'} />
-        <Metric label="Id 串扰峰值" value={formatNumber(metrics.idCrossTalkPeak, 3)} unit=" A" tone={crossTalkTone} />
+        <Metric label={t('charts.flIdCrossTalk')} value={formatNumber(metrics.idCrossTalkPeak, 3)} unit=" A" tone={crossTalkTone} />
       </div>
     </div>
   );

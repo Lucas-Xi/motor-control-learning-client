@@ -110,25 +110,16 @@ function MotorPresets() {
 
 function FocPresets() {
   const update = useSimulationStore((s) => s.updateFoc);
-  const { locale } = useI18n();
-  // FOC 调参 preset 标签：通用术语，按 locale 切。不进 translations.ts（仅这一处用到）。
-  const labels = locale === 'en-US'
-    ? {
-        slow: 'Slow (conservative)',
-        typical: 'Compressor typical',
-        overshoot: 'Aggressive / oscillation',
-        thetaErr: 'Angle error',
-        highSpeed: 'High speed 7200rpm',
-        lowSpeed: 'Low speed heavy load',
-      }
-    : {
-        slow: '慢响应（保守）',
-        typical: '压缩机典型',
-        overshoot: '过激振荡',
-        thetaErr: '观测器角度误差',
-        highSpeed: '高速 7200rpm',
-        lowSpeed: '低速重载',
-      };
+  const { t } = useI18n();
+  // FOC 调参 preset 标签：通用术语，走 parameters.* 翻译。
+  const labels = {
+    slow: t('parameters.focPresetSlow'),
+    typical: t('parameters.focPresetTypical'),
+    overshoot: t('parameters.focPresetOvershoot'),
+    thetaErr: t('parameters.focPresetThetaErr'),
+    highSpeed: t('parameters.focPresetHighSpeed'),
+    lowSpeed: t('parameters.focPresetLowSpeed'),
+  };
   return (
     <div className="grid grid-cols-2 gap-2">
       <Button variant="ghost" onClick={() => update({ iqRef: 8, kp: 0.5, ki: 50, thetaErrorDeg: 0, samplingDelaySamples: 1, electricalFreq: 100 })}>{labels.slow}</Button>
@@ -171,6 +162,7 @@ function PidPresets() {
 function SvpwmPolar() {
   const svpwm = useSimulationStore((s) => s.svpwm);
   const update = useSimulationStore((s) => s.updateSvpwm);
+  const { t } = useI18n();
   const updateByPolar = (electricalDeg: number, modulation: number, uDc = svpwm.uDc) => {
     const angle = (electricalDeg * Math.PI) / 180;
     const magnitude = (modulation * uDc) / Math.sqrt(3);
@@ -178,12 +170,12 @@ function SvpwmPolar() {
   };
   return (
     <div className="space-y-3">
-      <Slider label="母线 Udc" value={svpwm.uDc} min={60} max={600} step={5} unit=" V"
+      <Slider label={t('parameters.svpwmBusUdcLabel')} value={svpwm.uDc} min={60} max={600} step={5} unit=" V"
         onChange={(uDc) => updateByPolar(svpwm.electricalDeg, svpwm.modulation, uDc)} />
-      <Slider label="电角度" value={svpwm.electricalDeg} min={0} max={360} step={1} unit="°"
+      <Slider label={t('parameters.svpwmAngleLabel')} value={svpwm.electricalDeg} min={0} max={360} step={1} unit="°"
         onChange={(deg) => updateByPolar(deg, svpwm.modulation)} />
-      <Slider label="调制比" value={svpwm.modulation} min={0} max={1.15} step={0.01}
-        hint="m=1 附近到达 SVPWM 线性区边界；继续增大表示过调制风险。"
+      <Slider label={t('parameters.svpwmModulationLabel')} value={svpwm.modulation} min={0} max={1.15} step={0.01}
+        hint={t('parameters.svpwmModulationHint')}
         onChange={(m) => updateByPolar(svpwm.electricalDeg, m)} />
     </div>
   );
@@ -281,7 +273,7 @@ export function ParameterPanel() {
   const { t, locale } = useI18n();
 
   return (
-    <aside aria-label="参数控制台" className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
+    <aside aria-label={t('shell.paramPanelTitle')} className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramPanelEyebrow')}</p>

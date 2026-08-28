@@ -18,6 +18,7 @@ import { guessMcuFamily } from '../../content/stm32Export/mcuTemplate';
 import type { ExportFile, McuFamily, ProjectSlots, SimulationSnapshot } from '../../content/stm32Export/types';
 import { downloadBinary, downloadText, timestamp } from '../../utils/download';
 import { buildZip } from '../../utils/zipMinimal';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 
@@ -32,10 +33,10 @@ import { Card } from '../ui/Card';
  *   - 视觉令牌仅用 accent.primary / measure / warn / fault；不引入新依赖。
  */
 
-const MCU_OPTIONS: Array<{ value: McuFamily; label: string; brief: string }> = [
-  { value: 'STM32G4', label: 'STM32G4 (170MHz · CORDIC)', brief: '主流电机控制 MCU，G431/G474 等' },
-  { value: 'STM32F4', label: 'STM32F4 (168MHz)', brief: '存量工业方案，F407/F405 等' },
-  { value: 'STM32H7', label: 'STM32H7 (480MHz · DP-FPU)', brief: '高端多电机，H743/H723 等' },
+const MCU_OPTIONS: Array<{ value: McuFamily; label: string; brief: TKey }> = [
+  { value: 'STM32G4', label: 'STM32G4 (170MHz · CORDIC)', brief: 'lab.exporterMcuG4Brief' },
+  { value: 'STM32F4', label: 'STM32F4 (168MHz)', brief: 'lab.exporterMcuF4Brief' },
+  { value: 'STM32H7', label: 'STM32H7 (480MHz · DP-FPU)', brief: 'lab.exporterMcuH7Brief' },
 ];
 
 /** 把 store 拍成纯快照对象（不持有 store 引用） */
@@ -82,6 +83,7 @@ function resolveSlots(): ProjectSlots {
 }
 
 export function ProjectExporter() {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [mcuFamily, setMcuFamily] = useState<McuFamily>('STM32G4');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -146,17 +148,17 @@ export function ProjectExporter() {
         <Card density="compact" tone="measure">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-body font-semibold text-ink-primary">把当前组合带到 STM32</p>
+              <p className="text-body font-semibold text-ink-primary">{t('lab.exporterTeaserTitle')}</p>
               <p className="text-caption text-ink-secondary">
-                按当前 store 参数 + 6 槽位选型，一键生成 7 个文件的 C 工程骨架（main.c / foc_isr.c / motor_param.h / fault_codes.h / state_machine.c / CMakeLists.txt / README.md）。
+                {t('lab.exporterTeaserBody')}
               </p>
             </div>
             <Button
               variant="primary"
               onClick={() => setIsOpen(true)}
-              aria-label="打开 STM32 工程导出器"
+              aria-label={t('lab.exporterOpenAria')}
             >
-              导出 STM32 工程
+              {t('lab.exporterOpen')}
             </Button>
           </div>
         </Card>
@@ -169,25 +171,27 @@ export function ProjectExporter() {
       <Card
         density="default"
         tone="measure"
-        eyebrow="LAB · 工程导出器"
-        title="STM32 工程导出"
+        eyebrow={t('lab.exporterEyebrow')}
+        title={t('lab.exporterTitle')}
         action={
           <Button
             variant="ghost"
             onClick={() => setIsOpen(false)}
-            aria-label="关闭工程导出面板"
+            aria-label={t('lab.exporterCloseAria')}
           >
-            收起
+            {t('lab.exporterCollapse')}
           </Button>
         }
       >
         <div className="space-y-4">
           {/* 1. MCU 系列选择 */}
           <div>
-            <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">1. MCU 系列</p>
+            <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
+              {t('lab.exporterStepMcu')}
+            </p>
             <div
               role="radiogroup"
-              aria-label="选择 MCU 系列"
+              aria-label={t('lab.exporterMcuGroupAria')}
               className="grid grid-cols-1 gap-2 sm:grid-cols-3"
             >
               {MCU_OPTIONS.map((opt) => {
@@ -205,16 +209,16 @@ export function ProjectExporter() {
                     }`}
                   >
                     <p className="text-body font-medium">{opt.label}</p>
-                    <p className="text-caption text-ink-muted">{opt.brief}</p>
+                    <p className="text-caption text-ink-muted">{t(opt.brief)}</p>
                   </button>
                 );
               })}
             </div>
             {slots && (
               <p className="mt-2 text-caption text-ink-muted">
-                选型来源：{slots.compressorLabel} · {slots.strategyLabel} · MCU partNo
+                {t('lab.exporterSelectionSource')}{slots.compressorLabel} · {slots.strategyLabel} · MCU partNo
                 <span className="font-mono text-ink-secondary"> {slots.inverterMcuPartNo}</span>
-                （已默认匹配为 <span className="text-accent-measure">{mcuFamily}</span>）
+                {t('lab.exporterMatchedPrefix')}<span className="text-accent-measure">{mcuFamily}</span>{t('lab.exporterMatchedSuffix')}
               </p>
             )}
           </div>
@@ -222,7 +226,7 @@ export function ProjectExporter() {
           {/* 2. 文件清单 */}
           <div>
             <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
-              2. 包含的文件（{selectedFiles.length} / {files.length}）
+              {t('lab.exporterStepFilesPrefix')}{selectedFiles.length} / {files.length}{t('lab.exporterStepFilesSuffix')}
             </p>
             <ul className="space-y-1.5">
               {files.map((f) => {
@@ -234,7 +238,7 @@ export function ProjectExporter() {
                         type="checkbox"
                         checked={included}
                         onChange={() => toggleFile(f.path)}
-                        aria-label={`包含文件 ${f.path}`}
+                        aria-label={`${t('lab.exporterIncludeFileAria')} ${f.path}`}
                         className="mt-1 accent-accent-primary"
                       />
                       <span className="min-w-0 flex-1">
@@ -251,16 +255,16 @@ export function ProjectExporter() {
           {/* 3. 参数对照表预览 */}
           <div>
             <p className="mb-2 text-caption uppercase tracking-[0.18em] text-ink-muted">
-              3. 参数对照（{mappings.length} 项 store → #define）
+              {t('lab.exporterStepMappingsPrefix')}{mappings.length}{t('lab.exporterStepMappingsSuffix')}
             </p>
             <div className="max-h-64 overflow-auto rounded-lg border border-line-subtle">
               <table className="w-full text-caption">
                 <thead className="sticky top-0 bg-bg-surface text-ink-muted">
                   <tr>
-                    <th scope="col" className="px-2 py-1.5 text-left">store 字段</th>
-                    <th scope="col" className="px-2 py-1.5 text-right">值</th>
-                    <th scope="col" className="px-2 py-1.5 text-left">C 宏</th>
-                    <th scope="col" className="px-2 py-1.5 text-right">C 值</th>
+                    <th scope="col" className="px-2 py-1.5 text-left">{t('lab.exporterColStoreField')}</th>
+                    <th scope="col" className="px-2 py-1.5 text-right">{t('lab.exporterColValue')}</th>
+                    <th scope="col" className="px-2 py-1.5 text-left">{t('lab.exporterColCMacro')}</th>
+                    <th scope="col" className="px-2 py-1.5 text-right">{t('lab.exporterColCValue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,13 +283,13 @@ export function ProjectExporter() {
               </table>
             </div>
             <p className="mt-1 text-caption text-ink-muted">
-              你在 web 里调的就是 MCU 里的常量。修改后重新导出即可同步。
+              {t('lab.exporterMappingNote')}
             </p>
           </div>
 
           {/* 4. 下载形式 + 触发按钮 */}
           <div className="flex flex-col gap-3 border-t border-line-subtle pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <div role="radiogroup" aria-label="下载形式" className="flex flex-wrap gap-2">
+            <div role="radiogroup" aria-label={t('lab.exporterPackModeAria')} className="flex flex-wrap gap-2">
               <label className="flex cursor-pointer items-center gap-1.5 text-caption text-ink-secondary">
                 <input
                   type="radio"
@@ -294,7 +298,7 @@ export function ProjectExporter() {
                   onChange={() => setPackMode('zip')}
                   className="accent-accent-primary"
                 />
-                打成 真 .zip（推荐 · STORE 无压缩）
+                {t('lab.exporterPackZip')}
               </label>
               <label className="flex cursor-pointer items-center gap-1.5 text-caption text-ink-secondary">
                 <input
@@ -304,7 +308,7 @@ export function ProjectExporter() {
                   onChange={() => setPackMode('single-text')}
                   className="accent-accent-primary"
                 />
-                打包为单一 .txt
+                {t('lab.exporterPackSingleText')}
               </label>
               <label className="flex cursor-pointer items-center gap-1.5 text-caption text-ink-secondary">
                 <input
@@ -314,16 +318,16 @@ export function ProjectExporter() {
                   onChange={() => setPackMode('multi-file')}
                   className="accent-accent-primary"
                 />
-                逐文件下载（{selectedFiles.length} 次点击）
+                {t('lab.exporterPackMultiPrefix')}{selectedFiles.length}{t('lab.exporterPackMultiSuffix')}
               </label>
             </div>
             <Button
               variant="primary"
               onClick={handleDownload}
               disabled={selectedFiles.length === 0}
-              aria-label={`下载 ${selectedFiles.length} 个文件`}
+              aria-label={`${t('lab.exporterDownloadAriaPrefix')}${selectedFiles.length}${t('lab.exporterDownloadAriaSuffix')}`}
             >
-              下载（{selectedFiles.length} 个文件）
+              {t('lab.exporterDownloadPrefix')}{selectedFiles.length}{t('lab.exporterDownloadSuffix')}
             </Button>
           </div>
         </div>

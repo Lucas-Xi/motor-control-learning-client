@@ -7,6 +7,7 @@ import { CalibrationDocExporter } from '../../components/workshop/CalibrationDoc
 import { SerialBenchPanel } from '../../components/lab/SerialBenchPanel';
 import { ShareSnapshotPanel } from '../../components/share/ShareSnapshotPanel';
 import { Tabs } from '../../components/ui/Tabs';
+import { useI18n } from '../../i18n/useI18n';
 import { MotorAssembly3D } from '../../components/three/MotorAssembly3D';
 import { RotorEccentricityCard } from './RotorEccentricityCard';
 import { WindingDiagramCard } from './WindingDiagramCard';
@@ -29,6 +30,7 @@ type WorkshopTab = 'workshop' | 'serial';
  * 失衡，并且需要改 Sidebar / SimulationPanel / uiStore 三处 layout 壳层。
  */
 export function AssemblyWorkshopModule() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<WorkshopTab>('workshop');
   return (
     <div className="space-y-3">
@@ -36,8 +38,8 @@ export function AssemblyWorkshopModule() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: 'workshop', label: '虚拟搭建' },
-          { value: 'serial', label: '实测对照' },
+          { value: 'workshop', label: t('assemblyWorkshop.tabWorkshop') },
+          { value: 'serial', label: t('assemblyWorkshop.tabSerial') },
         ]}
       />
       {tab === 'workshop' ? (

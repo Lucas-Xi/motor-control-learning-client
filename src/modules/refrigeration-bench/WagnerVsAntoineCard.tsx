@@ -32,8 +32,7 @@ const REFRIGERANTS: Array<{ id: Refrigerant; label: string }> = [
  */
 export function WagnerVsAntoineCard() {
   const refrig = useSimulationStore((s) => s.refrigeration);
-  const { locale } = useI18n();
-  const isEn = locale === 'en-US';
+  const { t } = useI18n();
 
   const [selected, setSelected] = useState<Refrigerant>(refrig.refrigerant ?? 'R32');
   const [rpm, setRpm] = useState(3000);
@@ -96,25 +95,12 @@ export function WagnerVsAntoineCard() {
 
   return (
     <Card
-      title={isEn ? 'Wagner vs Antoine + Volumetric Efficiency 3D' : 'Wagner 方程 vs Antoine + 容积效率 3D'}
-      eyebrow={isEn ? 'high-precision refrigerant' : '高精度制冷剂'}
+      title={t('refrigerationBench.wagnerTitle')}
+      eyebrow={t('refrigerationBench.wagnerEyebrow')}
       density="compact"
-      action={
-        <FidelityBadge
-          level="exact"
-          hint={
-            isEn
-              ? 'Wagner 1973 with NIST REFPROP 10.0 coefficients (±1-2%) vs Antoine educational model (±5%); plus η_v 3D surface (clearance × rpm × T_suction).'
-              : 'Wagner 1973 + NIST REFPROP 10.0 系数（±1-2%）vs Antoine 教学模型（±5%）；附 η_v 3D 曲面（余隙 × 转速 × 吸气温度）。'
-          }
-        />
-      }
+      action={<FidelityBadge level="exact" hint={t('refrigerationBench.wagnerFidelityHint')} />}
     >
-      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? 'Antoine\'s 2-parameter equation is simple but error grows near critical temperature. Wagner with 4 NIST-fit coefficients holds ±2% across the full range. Pick a refrigerant, see where the simple model lies to you.'
-          : 'Antoine 双参数公式简单但临界温度附近误差大。Wagner 4 个 NIST 拟合系数全程 ±2%。选制冷剂看简版在哪些温区"说谎"。'}
-      </p>
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{t('refrigerationBench.wagnerIntro')}</p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {REFRIGERANTS.map((r) => (
@@ -136,11 +122,11 @@ export function WagnerVsAntoineCard() {
 
       <div className="mb-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
-          <p className="text-caption text-ink-muted">{isEn ? 'Mean error' : '平均偏差'}</p>
+          <p className="text-caption text-ink-muted">{t('refrigerationBench.wagnerKpiMean')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(meanErr, 1)} %</p>
         </div>
         <div className={`rounded-lg border p-2 ${toneClass(errTone)}`}>
-          <p className="text-caption opacity-80">{isEn ? 'Max error' : '最大偏差'}</p>
+          <p className="text-caption opacity-80">{t('refrigerationBench.wagnerKpiMax')}</p>
           <p className="formula text-body">{formatNumber(maxErr, 1)} %</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
@@ -160,7 +146,7 @@ export function WagnerVsAntoineCard() {
             <Legend wrapperStyle={{ fontSize: 10 }} />
             <Line yAxisId="left" type="monotone" dataKey="Wagner" stroke="#43f7b5" strokeWidth={1.8} dot={false} isAnimationActive={false} />
             <Line yAxisId="left" type="monotone" dataKey="Antoine" stroke="#34d6ff" strokeWidth={1.4} dot={false} isAnimationActive={false} strokeDasharray="4 3" />
-            <Bar yAxisId="right" dataKey="errPct" fill="#ffb84d" fillOpacity={0.45} name={isEn ? '|Δ| %' : '|偏差| %'} />
+            <Bar yAxisId="right" dataKey="errPct" fill="#ffb84d" fillOpacity={0.45} name={t('refrigerationBench.wagnerSeriesErr')} />
           </ComposedChart>
         </SafeResponsiveContainer>
       </div>
@@ -174,19 +160,19 @@ export function WagnerVsAntoineCard() {
           <input type="range" value={rpm} min={500} max={6000} step={100}
             onChange={(e) => setRpm(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label={isEn ? 'compressor speed' : '压缩机转速'}
+            aria-label={t('refrigerationBench.wagnerRpmAria')}
             aria-valuemin={500} aria-valuemax={6000} aria-valuenow={rpm} aria-valuetext={`${rpm} rpm`}
           />
         </label>
         <label className="block">
           <span className="mb-1 flex items-baseline justify-between text-caption text-ink-muted">
-            <span>{isEn ? 'Suction T' : '吸气温度'}</span>
+            <span>{t('refrigerationBench.wagnerSuctionT')}</span>
             <span className="formula text-ink-primary">{formatNumber(TsucC, 0)} °C</span>
           </span>
           <input type="range" value={TsucC} min={-10} max={70} step={2}
             onChange={(e) => setTsucC(Number(e.target.value))}
             className="simulation-slider w-full"
-            aria-label={isEn ? 'suction temperature' : '吸气温度'}
+            aria-label={t('refrigerationBench.wagnerSuctionTAria')}
             aria-valuemin={-10} aria-valuemax={70} aria-valuenow={TsucC} aria-valuetext={`${TsucC} °C`}
           />
         </label>
@@ -194,27 +180,26 @@ export function WagnerVsAntoineCard() {
 
       <div className="grid grid-cols-4 gap-2">
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2 text-center">
-          <p className="text-caption text-ink-muted">{isEn ? 'Base η_v' : '基础 η_v'}</p>
+          <p className="text-caption text-ink-muted">{t('refrigerationBench.wagnerEtaBase')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(eta.etaBase * 100, 1)}%</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2 text-center">
-          <p className="text-caption text-ink-muted">{isEn ? 'Speed' : '转速因子'}</p>
+          <p className="text-caption text-ink-muted">{t('refrigerationBench.wagnerEtaSpeed')}</p>
           <p className="formula text-body text-accent-measure">{formatNumber(eta.speedFactor, 3)}</p>
         </div>
         <div className="rounded-lg border border-line-subtle bg-bg-base p-2 text-center">
-          <p className="text-caption text-ink-muted">{isEn ? 'Temp' : '温度因子'}</p>
+          <p className="text-caption text-ink-muted">{t('refrigerationBench.wagnerEtaTemp')}</p>
           <p className="formula text-body text-accent-warn">{formatNumber(eta.tempFactor, 3)}</p>
         </div>
         <div className="rounded-lg border border-accent-primary/40 bg-accent-primary/10 p-2 text-center">
-          <p className="text-caption text-accent-primary">{isEn ? 'Total η_v' : '总 η_v'}</p>
+          <p className="text-caption text-accent-primary">{t('refrigerationBench.wagnerEtaTotal')}</p>
           <p className="formula text-body text-accent-primary">{formatNumber(eta.eta_v * 100, 1)}%</p>
         </div>
       </div>
 
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
-        {isEn
-          ? `η_v = base × speed × temp = ${formatNumber(eta.etaBase, 3)} × ${formatNumber(eta.speedFactor, 3)} × ${formatNumber(eta.tempFactor, 3)} = ${formatNumber(eta.eta_v, 3)}. The simple model only knew clearance × ratio — speed-low or hot-suction operation needs the full 3D map.`
-          : `η_v = 基础 × 转速 × 温度 = ${formatNumber(eta.etaBase, 3)} × ${formatNumber(eta.speedFactor, 3)} × ${formatNumber(eta.tempFactor, 3)} = ${formatNumber(eta.eta_v, 3)}。简版只看余隙 × 压比；低速 / 高吸气温度工况必须用完整 3D 曲面。`}
+        {t('refrigerationBench.wagnerNoteFormula')} {formatNumber(eta.etaBase, 3)} × {formatNumber(eta.speedFactor, 3)} ×{' '}
+        {formatNumber(eta.tempFactor, 3)} = {formatNumber(eta.eta_v, 3)}{t('refrigerationBench.wagnerNoteTail')}
       </p>
     </Card>
   );

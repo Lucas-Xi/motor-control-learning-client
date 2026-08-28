@@ -13,6 +13,7 @@ import {
 import { Award, Gauge } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import {
   calculateSeasonalPerformance,
@@ -20,18 +21,12 @@ import {
 } from '../../simulation/math/seasonalPerformance';
 import { formatNumber } from '../../utils/format';
 
-const RATING_COLOR: Record<SeasonalResult['rating'], string> = {
-  '一级': 'text-accent-measure',
-  '二级': 'text-accent-primary',
-  '三级': 'text-accent-warn',
-  '低于三级': 'text-accent-fault',
-};
-
-const RATING_GLYPH: Record<SeasonalResult['rating'], string> = {
-  '一级': '★★★',
-  '二级': '★★',
-  '三级': '★',
-  '低于三级': '⚠',
+// rating 键为 simulation 侧类型联合字面量（'一级' 等），仅作查表键，不直接渲染
+const RATING_META: Record<SeasonalResult['rating'], { color: string; glyph: string; key: TKey }> = {
+  '一级': { color: 'text-accent-measure', glyph: '★★★', key: 'refrigerationBench.ratingGrade1' },
+  '二级': { color: 'text-accent-primary', glyph: '★★', key: 'refrigerationBench.ratingGrade2' },
+  '三级': { color: 'text-accent-warn', glyph: '★', key: 'refrigerationBench.ratingGrade3' },
+  '低于三级': { color: 'text-accent-fault', glyph: '⚠', key: 'refrigerationBench.ratingBelowGrade3' },
 };
 
 /**
@@ -45,6 +40,7 @@ const RATING_GLYPH: Record<SeasonalResult['rating'], string> = {
  * 产线工程师视角：变频空调铭牌上的 SEER 不是测一个点，而是按 EU EN 14825/中国 GB 21455 在 11 个温度 bin 上做加权。
  */
 export function SeasonalCopCard() {
+  const { t } = useI18n();
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
   const [partLoadBoost, setPartLoadBoost] = useState(0.18);
@@ -80,7 +76,7 @@ export function SeasonalCopCard() {
   );
 
   return (
-    <Card density="compact" title="季节能效 SEER / SCOP" eyebrow="seasonal performance">
+    <Card density="compact" title={t('refrigerationBench.seasonalTitle')} eyebrow="seasonal performance">
       {/* 顶部：SEER + SCOP + APF + Rating */}
       <div className="mb-3 grid grid-cols-4 gap-2">
         <MetricLarge label="SEER" value={result.seer} unit="" color="text-accent-measure" />
@@ -89,11 +85,11 @@ export function SeasonalCopCard() {
         <div className="rounded-md border border-line-subtle bg-bg-base px-2 py-2">
           <div className="text-caption text-ink-muted flex items-center gap-1">
             <Award className="h-3 w-3" aria-hidden="true" />
-            <span>能效等级</span>
+            <span>{t('refrigerationBench.ratingGradeLabel')}</span>
           </div>
-          <div className={`font-display text-title leading-tight ${RATING_COLOR[result.rating]}`}>
-            <span aria-hidden="true" className="mr-1">{RATING_GLYPH[result.rating]}</span>
-            {result.rating}
+          <div className={`font-display text-title leading-tight ${RATING_META[result.rating].color}`}>
+            <span aria-hidden="true" className="mr-1">{RATING_META[result.rating].glyph}</span>
+            {t(RATING_META[result.rating].key)}
           </div>
         </div>
       </div>
@@ -101,17 +97,17 @@ export function SeasonalCopCard() {
       {/* 滑块：变频电机最小转速 + 部分负荷增益 */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <AriaSlider
-          label="变频最小转速 N_min"
+          label={t('refrigerationBench.seasonalMinRpmLabel')}
           unit=" rpm"
           value={minRpm}
           min={600}
           max={3000}
           step={100}
           onChange={setMinRpm}
-          hint="部分负荷下电机的最小可行转速；越低 → 低 PLR 下 COP 越高"
+          hint={t('refrigerationBench.seasonalMinRpmHint')}
         />
         <AriaSlider
-          label="部分负荷增益 η_PL"
+          label={t('refrigerationBench.seasonalPlBoostLabel')}
           unit=""
           value={partLoadBoost}
           min={0.05}
@@ -119,7 +115,7 @@ export function SeasonalCopCard() {
           step={0.01}
           digits={2}
           onChange={setPartLoadBoost}
-          hint="部分负荷下 COP 相对满载的提升系数 (0.05..0.30)"
+          hint={t('refrigerationBench.seasonalPlBoostHint')}
         />
       </div>
 
@@ -155,7 +151,7 @@ export function SeasonalCopCard() {
               formatter={((value: unknown, name: unknown) => {
                 const n = String(name ?? '');
                 if (n === 'COP') return [`${Number(value).toFixed(2)}`, 'COP'];
-                if (n === 'h/year') return [`${Number(value).toFixed(0)} h`, '权重'];
+                if (n === 'h/year') return [`${Number(value).toFixed(0)} h`, t('refrigerationBench.seasonalWeightLabel')];
                 return [value, n];
               }) as never}
             />
@@ -183,9 +179,9 @@ export function SeasonalCopCard() {
       <div className="mt-2 flex items-start gap-2 rounded-md border border-line-subtle bg-bg-base px-2 py-1.5 text-caption text-ink-muted leading-relaxed">
         <Gauge className="h-3.5 w-3.5 shrink-0 text-accent-primary" aria-hidden="true" />
         <span>
-          标定 COP=<span className="font-mono text-accent-warn">{formatNumber(result.designCop, 2)}</span>
-          {' '}（仅 35°C 单点）→ 加权 11 个温度 bin 得 SEER=<span className="font-mono text-accent-measure">{formatNumber(result.seer, 2)}</span>。
-          变频空调铭牌写的就是这条曲线下的面积，不是某一个工况点。
+          {t('refrigerationBench.seasonalInsightA')}<span className="font-mono text-accent-warn">{formatNumber(result.designCop, 2)}</span>
+          {' '}{t('refrigerationBench.seasonalInsightB')}<span className="font-mono text-accent-measure">{formatNumber(result.seer, 2)}</span>
+          {t('refrigerationBench.seasonalInsightC')}
         </span>
       </div>
     </Card>

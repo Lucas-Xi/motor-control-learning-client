@@ -14,6 +14,7 @@ import {
   type PfcPlatform,
 } from '../../content/assemblyLibraries';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * 整机系统真图形示意图 ——
@@ -87,6 +88,7 @@ export function SystemSchematic({
   compressor, inverter, strategy, load, pfc, separator, refrigerantMismatch, result,
   onSwapCompressor, onSwapInverter, onSwapStrategy, onSwapLoad, onSwapPfc, onSwapSeparator,
 }: Props) {
+  const { t } = useI18n();
   const time = useSimulationStore((s) => s.time);
   const running = useSimulationStore((s) => s.running);
   const [openSlot, setOpenSlot] = useState<SlotKey | null>(null);
@@ -107,15 +109,15 @@ export function SystemSchematic({
   return (
     <div className="relative rounded-xl border border-line-subtle bg-bg-base p-3">
       <div className="mb-1 flex items-center justify-between">
-        <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">System Schematic · 点 / 拖 chip 至积木</p>
+        <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">System Schematic · {t('assemblyWorkshop.schematicHint')}</p>
         {refrigerantMismatch && (
           <span className="flex items-center gap-1 rounded border border-accent-fault/60 bg-accent-fault/10 px-1.5 py-0.5 text-caption text-accent-fault">
-            <AlertTriangle className="h-3 w-3" />冷媒不匹配
+            <AlertTriangle className="h-3 w-3" />{t('assemblyWorkshop.refrigerantMismatch')}
           </span>
         )}
       </div>
 
-      <svg viewBox="0 0 720 420" className="w-full" aria-label="整机系统原理图">
+      <svg viewBox="0 0 720 420" className="w-full" aria-label={t('assemblyWorkshop.schematicAria')}>
         <defs>
           {/* 箭头 marker */}
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -132,26 +134,26 @@ export function SystemSchematic({
         </defs>
 
         {/* 区域分隔标签 */}
-        <text x="14" y="16" fontSize="9" fill="#9eb5cb" fontFamily="ui-monospace, monospace">制冷链路 · 工质流向（4 状态点闭环）</text>
-        <text x="14" y="268" fontSize="9" fill="#9eb5cb" fontFamily="ui-monospace, monospace">电气链路 · 电流方向</text>
+        <text x="14" y="16" fontSize="9" fill="#9eb5cb" fontFamily="ui-monospace, monospace">{t('assemblyWorkshop.coolingLoopLabel')}</text>
+        <text x="14" y="268" fontSize="9" fill="#9eb5cb" fontFamily="ui-monospace, monospace">{t('assemblyWorkshop.electricLoopLabel')}</text>
 
         {/* —— 制冷链路：完整 4 状态点闭环 —— */}
         <LoadBlock x={20} y={30} load={load} active={openSlot === 'load'} onClick={() => setOpenSlot(openSlot === 'load' ? null : 'load')} onSwap={onSwapLoad} faultLevel={faultMap.load} />
         <DashedFlow from={[140, 80]} to={[200, 80]} label="τ_load" sub="N·m" />
         <SeparatorBlock x={200} y={30} separator={separator} active={openSlot === 'separator'} onClick={() => setOpenSlot(openSlot === 'separator' ? null : 'separator')} onSwap={onSwapSeparator} faultLevel={faultMap.separator} />
         {/* [1] 吸气过热气 → 压缩机 */}
-        <RefrigerantPipe from={[320, 80]} to={[380, 80]} stateLabel="[1]" stateName="吸气过热气" hint="P_s 低压" phase={phase} running={running} />
+        <RefrigerantPipe from={[320, 80]} to={[380, 80]} stateLabel="[1]" stateName={t('assemblyWorkshop.pipeSuctionGas')} hint={t('assemblyWorkshop.pipeSuctionHint')} phase={phase} running={running} />
         <CompressorBlock x={380} y={20} compressor={compressor} active={openSlot === 'compressor'} onClick={() => setOpenSlot(openSlot === 'compressor' ? null : 'compressor')} onSwap={onSwapCompressor} time={time} running={running} faultLevel={faultMap.compressor} />
         {/* [2] 排气高温高压气 → 冷凝器 */}
-        <RefrigerantPipe from={[540, 80]} to={[600, 80]} stateLabel="[2]" stateName="排气" hint="P_d 高压热气" phase={phase} running={running} hot />
+        <RefrigerantPipe from={[540, 80]} to={[600, 80]} stateLabel="[2]" stateName={t('assemblyWorkshop.pipeDischarge')} hint={t('assemblyWorkshop.pipeDischargeHint')} phase={phase} running={running} hot />
         <CondenserSchematic x={600} y={30} />
 
         {/* [3] 冷凝过冷液 → EEV 节流阀（从冷凝器底部沿管路向下再向左） */}
         <RefrigerantPipeBent
           waypoints={[[650, 130], [650, 195], [380, 195], [380, 220]]}
           stateLabel="[3]"
-          stateName="冷凝过冷液"
-          hint="高压过冷"
+          stateName={t('assemblyWorkshop.pipeSubcooledLiquid')}
+          hint={t('assemblyWorkshop.pipeSubcooledHint')}
           phase={phase}
           running={running}
         />
@@ -160,8 +162,8 @@ export function SystemSchematic({
         <RefrigerantPipeBent
           waypoints={[[340, 195], [220, 195]]}
           stateLabel="[4]"
-          stateName="节流后两相"
-          hint="低压两相"
+          stateName={t('assemblyWorkshop.pipeTwoPhase')}
+          hint={t('assemblyWorkshop.pipeTwoPhaseHint')}
           phase={phase}
           running={running}
           cold
@@ -177,9 +179,9 @@ export function SystemSchematic({
           running={running}
         />
         {/* 室内热负荷箭头：工况室内温度 → 蒸发器 */}
-        <text x="155" y="215" fontSize="8" fill="#ffb84d">← 室内吸热</text>
+        <text x="155" y="215" fontSize="8" fill="#ffb84d">{t('assemblyWorkshop.indoorHeat')}</text>
         {/* 室外散热箭头：冷凝器 → 室外 */}
-        <text x="610" y="148" fontSize="8" fill="#ff5c7a">→ 室外放热</text>
+        <text x="610" y="148" fontSize="8" fill="#ff5c7a">{t('assemblyWorkshop.outdoorHeat')}</text>
 
         {/* —— 电气链路 —— */}
         <PfcBlock x={20} y={280} pfc={pfc} active={openSlot === 'pfc'} onClick={() => setOpenSlot(openSlot === 'pfc' ? null : 'pfc')} onSwap={onSwapPfc} faultLevel={faultMap.pfc} />
@@ -241,6 +243,7 @@ interface BlockShellProps {
 }
 
 function BlockShell({ x, y, w, h, active, toneStroke, toneFill, acceptCategory, faultLevel = 'none', onClick, onSwap, children, title }: BlockShellProps) {
+  const { t } = useI18n();
   const [hover, setHover] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const highlight = active || hover || dragOver;
@@ -286,7 +289,7 @@ function BlockShell({ x, y, w, h, active, toneStroke, toneFill, acceptCategory, 
     }
   };
   // 给 SR 用户的状态语义：active / fault / warn 都需要文本读出
-  const statusSr = active ? '已展开' : faultLevel === 'fault' ? '故障' : faultLevel === 'warn' ? '警告' : '可点击';
+  const statusSr = active ? t('assemblyWorkshop.blockExpanded') : faultLevel === 'fault' ? t('assemblyWorkshop.blockFault') : faultLevel === 'warn' ? t('assemblyWorkshop.blockWarn') : t('assemblyWorkshop.blockClickable');
   return (
     <g
       transform={`translate(${x}, ${y})`}
@@ -365,8 +368,9 @@ function BlockShell({ x, y, w, h, active, toneStroke, toneFill, acceptCategory, 
 // ———————————————————— 各积木的视觉绘制 ————————————————————
 
 function LoadBlock({ x, y, load, active, onClick, onSwap, faultLevel }: { x: number; y: number; load: LoadCondition; active: boolean; onClick: () => void; onSwap: (i: number) => void; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   return (
-    <BlockShell x={x} y={y} w={120} h={100} active={active} toneStroke="rgb(255 184 77 / 0.7)" toneFill="rgb(255 184 77 / 0.06)" acceptCategory="load" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`工况：${load.name}`}>
+    <BlockShell x={x} y={y} w={120} h={100} active={active} toneStroke="rgb(255 184 77 / 0.7)" toneFill="rgb(255 184 77 / 0.06)" acceptCategory="load" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitleLoad')}${load.name}`}>
       {/* 温度计 */}
       <g transform="translate(12, 10)">
         <rect x="0" y="0" width="6" height="32" rx="3" fill="none" stroke="#ffb84d" strokeWidth="1.4" />
@@ -384,7 +388,7 @@ function LoadBlock({ x, y, load, active, onClick, onSwap, faultLevel }: { x: num
         <path d="M 0 12 L 12 0 L 24 12 L 24 28 L 0 28 Z" />
         <text x="12" y="22" fontSize="7" fill="#9eb5cb" textAnchor="middle">In</text>
       </g>
-      <text x="8" y="62" fontSize="11" fill="#ffb84d" fontWeight="600">工况</text>
+      <text x="8" y="62" fontSize="11" fill="#ffb84d" fontWeight="600">{t('assemblyWorkshop.slotLoad')}</text>
       <text x="8" y="78" fontSize="9" fill="#e7f3ff">T_e={load.Te}°C / T_c={load.Tc}°C</text>
       <text x="8" y="92" fontSize="9" fill="#9eb5cb">target {load.targetRpm} rpm</text>
     </BlockShell>
@@ -392,11 +396,12 @@ function LoadBlock({ x, y, load, active, onClick, onSwap, faultLevel }: { x: num
 }
 
 function SeparatorBlock({ x, y, separator, active, onClick, onSwap, faultLevel }: { x: number; y: number; separator: LiquidSeparator; active: boolean; onClick: () => void; onSwap: (i: number) => void; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   const none = separator.id === 'none';
   const stroke = none ? 'rgb(255 184 77 / 0.7)' : 'rgb(67 247 181 / 0.7)';
   const fill = none ? 'rgb(255 184 77 / 0.06)' : 'rgb(67 247 181 / 0.06)';
   return (
-    <BlockShell x={x} y={y} w={120} h={100} active={active} toneStroke={stroke} toneFill={fill} acceptCategory="separator" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`分离器：${separator.name}`}>
+    <BlockShell x={x} y={y} w={120} h={100} active={active} toneStroke={stroke} toneFill={fill} acceptCategory="separator" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitleSeparator')}${separator.name}`}>
       {/* U 型管 + 液滴示意 */}
       <g transform="translate(15, 12)" stroke={none ? '#ffb84d' : '#43f7b5'} strokeWidth="2" fill="none">
         <path d="M 5 0 L 5 30 Q 5 42 15 42 Q 25 42 25 30 L 25 0" />
@@ -413,24 +418,25 @@ function SeparatorBlock({ x, y, separator, active, onClick, onSwap, faultLevel }
       </g>
       <g transform="translate(58, 16)" stroke="#9eb5cb" strokeWidth="1" fill="none">
         <line x1="0" y1="14" x2="50" y2="14" strokeDasharray="3 3" />
-        <text x="0" y="10" fontSize="7" fill="#9eb5cb">气↑</text>
-        <text x="0" y="26" fontSize="7" fill="#9eb5cb">液↓</text>
+        <text x="0" y="10" fontSize="7" fill="#9eb5cb">{t('assemblyWorkshop.separatorGasUp')}</text>
+        <text x="0" y="26" fontSize="7" fill="#9eb5cb">{t('assemblyWorkshop.separatorLiquidDown')}</text>
       </g>
-      <text x="8" y="68" fontSize="11" fill={none ? '#ffb84d' : '#43f7b5'} fontWeight="600">液气分离器</text>
-      <text x="8" y="82" fontSize="9" fill="#e7f3ff">{none ? '无（吸气直入）' : separator.name.replace(/\（[^)]+\）/, '').trim()}</text>
-      <text x="8" y="94" fontSize="9" fill="#9eb5cb">承载 {separator.maxRampRpmS} rpm/s</text>
+      <text x="8" y="68" fontSize="11" fill={none ? '#ffb84d' : '#43f7b5'} fontWeight="600">{t('assemblyWorkshop.slotSeparatorFull')}</text>
+      <text x="8" y="82" fontSize="9" fill="#e7f3ff">{none ? t('assemblyWorkshop.noSeparatorInline') : separator.name.replace(/\（[^)]+\）/, '').trim()}</text>
+      <text x="8" y="94" fontSize="9" fill="#9eb5cb">{t('assemblyWorkshop.rampCapacity').replace('{n}', String(separator.maxRampRpmS))}</text>
     </BlockShell>
   );
 }
 
 function CompressorBlock({ x, y, compressor, active, onClick, onSwap, time, running, faultLevel }: { x: number; y: number; compressor: CompressorSpec; active: boolean; onClick: () => void; onSwap: (i: number) => void; time: number; running: boolean; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   // 转子旋转角（机械角）：真实 rpm 太快会糊成圈（5400rpm = 90rev/s），
   // 用一个可视化降速比让用户看清转子方向（约 maxRpm 时 1 转 / 2-3s）
   const VISUAL_SCALE = 0.005;
   const rps = (compressor.maxRpm * 0.6) / 60;
   const rotorDeg = running ? (time * rps * 360 * VISUAL_SCALE * 100) % 360 : 0;
   return (
-    <BlockShell x={x} y={y} w={160} h={120} active={active} toneStroke="rgb(67 247 181 / 0.7)" toneFill="rgb(67 247 181 / 0.06)" acceptCategory="compressor" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`压缩机：${compressor.brand} ${compressor.partNo}`}>
+    <BlockShell x={x} y={y} w={160} h={120} active={active} toneStroke="rgb(67 247 181 / 0.7)" toneFill="rgb(67 247 181 / 0.06)" acceptCategory="compressor" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitleCompressor')}${compressor.brand} ${compressor.partNo}`}>
       {/* 外壳（静态定子边框）*/}
       <rect x="10" y="8" width="100" height="70" rx="6" fill="none" stroke="#43f7b5" strokeWidth="1.4" />
       {/* 定子绕组槽（静态，三相分布 U-V-W）*/}
@@ -461,7 +467,7 @@ function CompressorBlock({ x, y, compressor, active, onClick, onSwap, time, runn
         <circle cx="0" cy="20" r="3" fill="#43f7b5" /><text x="6" y="23" fontSize="9" fill="#43f7b5">B</text>
         <circle cx="0" cy="40" r="3" fill="#ffb84d" /><text x="6" y="43" fontSize="9" fill="#ffb84d">C</text>
       </g>
-      <text x="8" y="92" fontSize="11" fill="#43f7b5" fontWeight="600">{compressor.brand.split('（')[0]} 压缩机</text>
+      <text x="8" y="92" fontSize="11" fill="#43f7b5" fontWeight="600">{compressor.brand.split('（')[0]} {t('assemblyWorkshop.slotCompressor')}</text>
       <text x="8" y="106" fontSize="9" fill="#e7f3ff">{compressor.partNo} · {compressor.hp}HP · {compressor.refrigerant}</text>
       <text x="8" y="116" fontSize="8" fill="#9eb5cb">p={compressor.polePairs}, Lq/Ld={(compressor.lqMh / compressor.ldMh).toFixed(2)}</text>
     </BlockShell>
@@ -469,38 +475,41 @@ function CompressorBlock({ x, y, compressor, active, onClick, onSwap, time, runn
 }
 
 function CondenserSchematic({ x, y }: { x: number; y: number }) {
+  const { t } = useI18n();
   return (
     <g transform={`translate(${x}, ${y})`}>
       <rect width="100" height="100" rx="8" fill="rgb(255 92 122 / 0.08)" stroke="#ff5c7a80" strokeWidth="1" strokeDasharray="3 3" />
       {/* 冷凝盘管（蛇形）—— 暖色表示放热 */}
       <path d="M 10 16 Q 30 16 30 28 Q 30 40 50 40 Q 70 40 70 52 Q 70 64 90 64 L 90 80" fill="none" stroke="#ff5c7a" strokeWidth="2" />
-      <text x="8" y="14" fontSize="9" fill="#ff5c7a" fontWeight="600">冷凝器</text>
-      <text x="8" y="96" fontSize="8" fill="#9eb5cb">高压气 → 高压液</text>
+      <text x="8" y="14" fontSize="9" fill="#ff5c7a" fontWeight="600">{t('assemblyWorkshop.condenser')}</text>
+      <text x="8" y="96" fontSize="8" fill="#9eb5cb">{t('assemblyWorkshop.condenserFlow')}</text>
     </g>
   );
 }
 
 function EvaporatorSchematic({ x, y }: { x: number; y: number }) {
+  const { t } = useI18n();
   return (
     <g transform={`translate(${x}, ${y})`}>
       <rect width="90" height="50" rx="6" fill="url(#evapGrad)" stroke="#34d6ff80" strokeWidth="1" strokeDasharray="3 3" />
       {/* 蒸发盘管（蛇形）—— 冷色表示吸热 */}
       <path d="M 8 12 Q 20 12 20 22 Q 20 32 35 32 Q 50 32 50 22 Q 50 12 65 12 Q 80 12 80 22 Q 80 32 88 32" fill="none" stroke="#34d6ff" strokeWidth="2" />
-      <text x="6" y="46" fontSize="8" fill="#34d6ff" fontWeight="600">蒸发器</text>
-      <text x="38" y="46" fontSize="7" fill="#9eb5cb">低压两相 → 低压气</text>
+      <text x="6" y="46" fontSize="8" fill="#34d6ff" fontWeight="600">{t('assemblyWorkshop.evaporator')}</text>
+      <text x="38" y="46" fontSize="7" fill="#9eb5cb">{t('assemblyWorkshop.evaporatorFlow')}</text>
     </g>
   );
 }
 
 function EEVBlock({ x, y }: { x: number; y: number }) {
+  const { t } = useI18n();
   return (
     <g transform={`translate(${x}, ${y})`}>
       {/* 节流阀符号：两个三角形对顶 */}
       <rect width="60" height="32" rx="4" fill="rgb(167 139 250 / 0.08)" stroke="#a78bfa80" strokeWidth="1" />
       <polygon points="20,8 20,24 30,16" fill="#a78bfa" />
       <polygon points="40,8 40,24 30,16" fill="#a78bfa" />
-      <text x="30" y="44" fontSize="8" fill="#a78bfa" textAnchor="middle" fontWeight="600">EEV 节流阀</text>
-      <text x="30" y="-2" fontSize="7" fill="#9eb5cb" textAnchor="middle">等焓降压</text>
+      <text x="30" y="44" fontSize="8" fill="#a78bfa" textAnchor="middle" fontWeight="600">{t('assemblyWorkshop.eevLabel')}</text>
+      <text x="30" y="-2" fontSize="7" fill="#9eb5cb" textAnchor="middle">{t('assemblyWorkshop.eevHint')}</text>
     </g>
   );
 }
@@ -613,11 +622,12 @@ function RefrigerantPipeBent({ waypoints, stateLabel, stateName, hint, phase, ru
 }
 
 function PfcBlock({ x, y, pfc, active, onClick, onSwap, faultLevel }: { x: number; y: number; pfc: PfcPlatform; active: boolean; onClick: () => void; onSwap: (i: number) => void; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   const ok = pfc.meetsHarmonicStandard;
   const tone = ok ? 'rgb(52 214 255 / 0.7)' : 'rgb(255 184 77 / 0.7)';
   const fill = ok ? 'rgb(52 214 255 / 0.06)' : 'rgb(255 184 77 / 0.06)';
   return (
-    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke={tone} toneFill={fill} acceptCategory="pfc" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`PFC 前级：${pfc.name}`}>
+    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke={tone} toneFill={fill} acceptCategory="pfc" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitlePfc')}${pfc.name}`}>
       {/* 电感 L 符号 + 二极管 + 电容 */}
       <g stroke={ok ? '#34d6ff' : '#ffb84d'} strokeWidth="1.5" fill="none">
         {/* 输入 ~ 整流桥 */}
@@ -638,14 +648,15 @@ function PfcBlock({ x, y, pfc, active, onClick, onSwap, faultLevel }: { x: numbe
         <line x1="55" y1="36" x2="55" y2="42" />
         <line x1="55" y1="54" x2="55" y2="62" />
       </g>
-      <text x="6" y="82" fontSize="11" fill={ok ? '#34d6ff' : '#ffb84d'} fontWeight="600">{pfc.id === 'none' ? '⚠ 无 PFC' : pfc.id === 'vienna-3phase' ? 'Vienna 三相' : pfc.id === 'sic-boost' ? 'SiC Boost' : 'Boost PFC'}</text>
-      <text x="6" y="96" fontSize="9" fill="#e7f3ff">输出 {pfc.vdcOutput}V · PF {pfc.pf}</text>
-      <text x="6" y="108" fontSize="8" fill={ok ? '#43f7b5' : '#ff5c7a'}>THD {pfc.inputThdPct}%{!ok && ' · 超 GB17625'}</text>
+      <text x="6" y="82" fontSize="11" fill={ok ? '#34d6ff' : '#ffb84d'} fontWeight="600">{pfc.id === 'none' ? t('assemblyWorkshop.noPfc') : pfc.id === 'vienna-3phase' ? t('assemblyWorkshop.viennaPfc') : pfc.id === 'sic-boost' ? 'SiC Boost' : 'Boost PFC'}</text>
+      <text x="6" y="96" fontSize="9" fill="#e7f3ff">{t('assemblyWorkshop.pfcOutput').replace('{v}', String(pfc.vdcOutput)).replace('{pf}', String(pfc.pf))}</text>
+      <text x="6" y="108" fontSize="8" fill={ok ? '#43f7b5' : '#ff5c7a'}>THD {pfc.inputThdPct}%{!ok && ` · ${t('assemblyWorkshop.exceedGb')}`}</text>
     </BlockShell>
   );
 }
 
 function InverterBlock({ x, y, inverter, active, onClick, onSwap, time, running, faultLevel }: { x: number; y: number; inverter: InverterPlatform; active: boolean; onClick: () => void; onSwap: (i: number) => void; time: number; running: boolean; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   // 三相 PWM 模拟：让 A/B/C 三相的上桥占空比按正弦相位轮流升降，
   // 用低视觉频率 (1.5Hz，1 周期 ~ 0.67s) 让用户看清三相依次"占主导"
   const f = 1.5;
@@ -656,7 +667,7 @@ function InverterBlock({ x, y, inverter, active, onClick, onSwap, time, running,
   };
   const duties = [computeDuty(0), computeDuty(-120), computeDuty(120)];
   return (
-    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke="rgb(52 214 255 / 0.7)" toneFill="rgb(52 214 255 / 0.06)" acceptCategory="inverter" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`变频器：${inverter.ipmBrand} ${inverter.ipmPartNo}`}>
+    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke="rgb(52 214 255 / 0.7)" toneFill="rgb(52 214 255 / 0.06)" acceptCategory="inverter" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitleInverter')}${inverter.ipmBrand} ${inverter.ipmPartNo}`}>
       {/* IPM 外框 */}
       <rect x="10" y="10" width="100" height="60" rx="4" fill="rgb(7 17 31)" stroke="#34d6ff" strokeWidth="1.4" />
       {/* 6 个 IGBT 开关：上桥亮度跟 duty，下桥亮度跟 1-duty（互补 PWM）*/}
@@ -689,9 +700,10 @@ function InverterBlock({ x, y, inverter, active, onClick, onSwap, time, running,
 }
 
 function ControllerBlock({ x, y, strategy, mcuPartNo, active, onClick, onSwap, faultLevel }: { x: number; y: number; strategy: ControlStrategy; mcuPartNo: string; active: boolean; onClick: () => void; onSwap: (i: number) => void; faultLevel: 'none' | 'warn' | 'fault' }) {
+  const { t } = useI18n();
   const vendor = /STM32/i.test(mcuPartNo) ? 'STM32' : /RX|Renesas/i.test(mcuPartNo) ? 'Renesas RX' : /TMS320|TI/i.test(mcuPartNo) ? 'TI C2000' : 'MCU';
   return (
-    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke="rgb(52 214 255 / 0.7)" toneFill="rgb(52 214 255 / 0.06)" acceptCategory="strategy" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`控制器：${strategy.name}`}>
+    <BlockShell x={x} y={y} w={120} h={120} active={active} toneStroke="rgb(52 214 255 / 0.7)" toneFill="rgb(52 214 255 / 0.06)" acceptCategory="strategy" onClick={onClick} onSwap={onSwap} faultLevel={faultLevel} title={`${t('assemblyWorkshop.blockTitleController')}${strategy.name}`}>
       {/* MCU 芯片 + 引脚 */}
       <rect x="22" y="14" width="76" height="56" rx="3" fill="rgb(7 17 31)" stroke="#34d6ff" strokeWidth="1.4" />
       {/* 左右各 6 引脚 */}
@@ -704,7 +716,7 @@ function ControllerBlock({ x, y, strategy, mcuPartNo, active, onClick, onSwap, f
       <text x="60" y="38" fontSize="8" fill="#34d6ff" textAnchor="middle" fontWeight="600">{vendor}</text>
       <text x="60" y="50" fontSize="7" fill="#e7f3ff" textAnchor="middle">{strategy.id.includes('hfi') ? 'HFI+BEMF' : strategy.id.includes('bemf') ? 'BEMF' : strategy.id.includes('encoder') ? 'ENC' : 'V/f'}</text>
       <text x="60" y="62" fontSize="7" fill="#9eb5cb" textAnchor="middle">FOC fast loop</text>
-      <text x="6" y="92" fontSize="11" fill="#34d6ff" fontWeight="600">主控 + 算法</text>
+      <text x="6" y="92" fontSize="11" fill="#34d6ff" fontWeight="600">{t('assemblyWorkshop.mainControlLabel')}</text>
       <text x="6" y="106" fontSize="8" fill="#e7f3ff">{mcuPartNo}</text>
       <text x="6" y="116" fontSize="8" fill="#9eb5cb">{strategy.name.length > 18 ? strategy.name.slice(0, 18) + '…' : strategy.name}</text>
     </BlockShell>
@@ -736,16 +748,18 @@ function VdcFlow({ from, to, label, value }: { from: [number, number]; to: [numb
 }
 
 function DutyFlow({ from, to, label }: { from: [number, number]; to: [number, number]; label: string }) {
+  const { t } = useI18n();
   return (
     <g>
       <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke="rgb(52 214 255)" strokeWidth="1.5" strokeDasharray="6 2" markerEnd="url(#arrowPrim)" />
       <text x={(from[0] + to[0]) / 2} y={from[1] - 6} fontSize="8" fill="#34d6ff" textAnchor="middle">{label}</text>
-      <text x={(from[0] + to[0]) / 2} y={from[1] + 12} fontSize="7" fill="#9eb5cb" textAnchor="middle">0..1 / 3 相 PWM</text>
+      <text x={(from[0] + to[0]) / 2} y={from[1] + 12} fontSize="7" fill="#9eb5cb" textAnchor="middle">{t('assemblyWorkshop.dutyPwmHint')}</text>
     </g>
   );
 }
 
 function ThreePhaseLines({ from, to, phase, running }: { from: [number, number]; to: [number, number]; phase: number; running: boolean }) {
+  const { t } = useI18n();
   const colors = ['#34d6ff', '#43f7b5', '#ffb84d'];
   const offsets = [-4, 0, 4];
   return (
@@ -758,17 +772,17 @@ function ThreePhaseLines({ from, to, phase, running }: { from: [number, number];
         const midX = (fromX + toX) / 2;
         const d = `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`;
         // 粒子位置（用 phase * pathLength 模拟，简单线性插值）
-        const t = (phase + i * 0.33) % 1;
-        const dotX = fromX + (toX - fromX) * t;
-        const dotY = fromY + (toY - fromY) * t;
+        const tp = (phase + i * 0.33) % 1;
+        const dotX = fromX + (toX - fromX) * tp;
+        const dotY = fromY + (toY - fromY) * tp;
         return (
           <g key={i}>
             <path d={d} stroke={color} strokeWidth="1.8" fill="none" opacity="0.8" />
-            {running && <circle cx={dotX} cy={dotY} r="3" fill={color}><title>Iabc 三相电流粒子</title></circle>}
+            {running && <circle cx={dotX} cy={dotY} r="3" fill={color}><title>{t('assemblyWorkshop.iabcParticles')}</title></circle>}
           </g>
         );
       })}
-      <text x={(from[0] + to[0]) / 2} y={from[1] - 14} fontSize="8" fill="#34d6ff" textAnchor="middle" fontWeight="600">Iabc 三相</text>
+      <text x={(from[0] + to[0]) / 2} y={from[1] - 14} fontSize="8" fill="#34d6ff" textAnchor="middle" fontWeight="600">{t('assemblyWorkshop.iabcLabel')}</text>
     </g>
   );
 }
@@ -804,13 +818,14 @@ function SlotPopover({
   onPick: (slot: SlotKey, idx: number) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const config = {
-    load: { title: '切换工况', options: loadConditions.map((l) => ({ key: l.id, label: l.name, sub: l.brief })), currentKey: load.id },
-    separator: { title: '切换液气分离器', options: liquidSeparators.map((s) => ({ key: s.id, label: s.name, sub: s.brief })), currentKey: separator.id },
-    compressor: { title: '切换压缩机', options: compressorBundles.map((b) => ({ key: b.id, label: `${b.compressor.brand} ${b.compressor.partNo}`, sub: `${b.compressor.type} · ${b.compressor.hp}HP · ${b.compressor.refrigerant}` })), currentKey: compressorBundles.find((b) => b.compressor.partNo === compressor.partNo)?.id ?? '' },
-    pfc: { title: '切换 PFC 前级', options: pfcPlatforms.map((p) => ({ key: p.id, label: p.name, sub: p.brief })), currentKey: pfc.id },
-    inverter: { title: '切换变频器平台', options: inverterPlatforms.map((p) => ({ key: p.ipmPartNo, label: `${p.ipmBrand} ${p.ipmPartNo}`, sub: `${p.topology} · ${p.ratedCurrentA}A / ${p.ratedBusV}V · MCU ${p.mcuPartNo}` })), currentKey: inverter.ipmPartNo },
-    strategy: { title: '切换控制策略', options: controlStrategies.map((s) => ({ key: s.id, label: s.name, sub: s.brief })), currentKey: strategy.id },
+    load: { title: t('assemblyWorkshop.popSwitchLoad'), options: loadConditions.map((l) => ({ key: l.id, label: l.name, sub: l.brief })), currentKey: load.id },
+    separator: { title: t('assemblyWorkshop.popSwitchSeparator'), options: liquidSeparators.map((s) => ({ key: s.id, label: s.name, sub: s.brief })), currentKey: separator.id },
+    compressor: { title: t('assemblyWorkshop.popSwitchCompressor'), options: compressorBundles.map((b) => ({ key: b.id, label: `${b.compressor.brand} ${b.compressor.partNo}`, sub: `${b.compressor.type} · ${b.compressor.hp}HP · ${b.compressor.refrigerant}` })), currentKey: compressorBundles.find((b) => b.compressor.partNo === compressor.partNo)?.id ?? '' },
+    pfc: { title: t('assemblyWorkshop.popSwitchPfc'), options: pfcPlatforms.map((p) => ({ key: p.id, label: p.name, sub: p.brief })), currentKey: pfc.id },
+    inverter: { title: t('assemblyWorkshop.popSwitchInverter'), options: inverterPlatforms.map((p) => ({ key: p.ipmPartNo, label: `${p.ipmBrand} ${p.ipmPartNo}`, sub: `${p.topology} · ${p.ratedCurrentA}A / ${p.ratedBusV}V · MCU ${p.mcuPartNo}` })), currentKey: inverter.ipmPartNo },
+    strategy: { title: t('assemblyWorkshop.popSwitchStrategy'), options: controlStrategies.map((s) => ({ key: s.id, label: s.name, sub: s.brief })), currentKey: strategy.id },
   }[slot];
 
   return (
@@ -819,7 +834,7 @@ function SlotPopover({
       <div role="dialog" aria-label={config.title} className="absolute left-1/2 top-1/2 z-20 max-h-[70%] w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-accent-primary/60 bg-bg-raised p-3 shadow-xl">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{config.title}</p>
-          <button type="button" onClick={onClose} className="rounded border border-line-subtle bg-bg-base p-0.5 text-ink-muted hover:text-ink-primary" aria-label="关闭弹窗">
+          <button type="button" onClick={onClose} className="rounded border border-line-subtle bg-bg-base p-0.5 text-ink-muted hover:text-ink-primary" aria-label={t('assemblyWorkshop.closePopoverAria')}>
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -838,7 +853,7 @@ function SlotPopover({
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
-                    {active && <CheckCircle2 className="h-3 w-3 text-accent-primary" aria-label="当前选中" />}
+                    {active && <CheckCircle2 className="h-3 w-3 text-accent-primary" aria-label={t('assemblyWorkshop.currentSelectedAria')} />}
                     <span className="font-medium text-ink-primary">{opt.label}</span>
                   </div>
                   <div className="mt-0.5 text-[10px] text-ink-muted">{opt.sub}</div>

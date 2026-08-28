@@ -10,6 +10,7 @@ import {
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
 import { useSerialStore } from '../../store/serialStore';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n } from '../../i18n/useI18n';
 import { mockSpeedLoopSample } from '../../utils/serialMockGenerators';
 import { computeSingleSidedSpectrum } from '../../components/charts/dft';
 import { toCsv } from '../../utils/download';
@@ -75,6 +76,7 @@ function estimateRiseTimeMs(times: number[], values: number[], target: number): 
 export function SerialCompareSpeedLoopCard() {
   const buffer = useSerialStore((s) => s.buffer);
   const controlLoop = useSimulationStore((s) => s.controlLoop);
+  const { t } = useI18n();
   const [timebase, setTimebase] = useState<SerialTimebase>('1s');
   const [paused, setPaused] = useState(false);
   const windowMs = timebaseToWindowMs(timebase);
@@ -180,7 +182,7 @@ export function SerialCompareSpeedLoopCard() {
 
   return (
     <SerialCompareCardShell
-      title="速度环阶跃 + 带宽分离"
+      title={t('controlLoops.serialSpeedTitle')}
       eyebrow="speed loop step response"
       timebase={timebase}
       onTimebaseChange={setTimebase}
@@ -195,40 +197,41 @@ export function SerialCompareSpeedLoopCard() {
 
       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiTile
-          label="上升时间 tr (10-90%)"
+          label={t('controlLoops.serialKpiRise')}
           value={Number.isFinite(kpi.riseMs) ? `${formatNumber(kpi.riseMs, 0)} ms` : '--'}
           tone="measure"
         />
         <KpiTile
-          label="超调 Mp"
+          label={t('controlLoops.serialKpiOvershoot')}
           value={Number.isFinite(kpi.overshootPct) ? `${formatNumber(kpi.overshootPct, 1)} %` : '--'}
           tone={kpi.overshootPct > 25 ? 'fault' : kpi.overshootPct > 10 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="稳态静差"
+          label={t('controlLoops.serialKpiSteadyErr')}
           value={Number.isFinite(kpi.steadyErrRpm) ? `${formatNumber(kpi.steadyErrRpm, 1)} rpm` : '--'}
           tone={Math.abs(kpi.steadyErrRpm) > 30 ? 'warn' : 'measure'}
         />
         <KpiTile
-          label="内/外环带宽比"
+          label={t('controlLoops.serialKpiBwRatio')}
           value={bwRatio > 0 ? `${formatNumber(bwRatio, 1)}×` : '--'}
           tone={bwRatio < 10 ? 'warn' : 'measure'}
         />
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-muted">
-        板端协议（推荐扩展）：t_us, ia, ib, ic,{' '}
-        <span className="text-accent-warn">rpm_ref(f32), rpm_meas(f32), iq_ref(f32), iq_meas(f32)</span> ·
-        速度环带宽 = 频谱主峰；电流环带宽 ≈ Ki / (2π·Kp) = {formatNumber(currentBwHz, 1)} Hz · 双环带宽比 ≥ 10× 为工程红线
+        {t('controlLoops.serialProtoNoteLead')}t_us, ia, ib, ic,{' '}
+        <span className="text-accent-warn">rpm_ref(f32), rpm_meas(f32), iq_ref(f32), iq_meas(f32)</span>
+        {t('controlLoops.serialProtoNoteBw')}{formatNumber(currentBwHz, 1)} Hz{t('controlLoops.serialProtoNoteTail')}
       </p>
     </SerialCompareCardShell>
   );
 }
 
 function SpeedChart({ rows, target }: { rows: Row[]; target: number }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>转速阶跃响应（rpm）</span>
+        <span>{t('controlLoops.serialChartSpeedTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-warn)" label="ref" dashed />
           <Legend color="var(--accent-primary)" label="sim" />
@@ -270,10 +273,11 @@ function SpectrumChart({
   speedBwHz: number;
   currentBwHz: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1 rounded-lg border border-line-subtle bg-bg-base p-2">
       <header className="flex items-center justify-between text-caption text-ink-muted">
-        <span>转速频谱 + 双环带宽</span>
+        <span>{t('controlLoops.serialChartSpectrumTitle')}</span>
         <span className="flex items-center gap-2">
           <Legend color="var(--accent-measure)" label="rpm" />
           <span className="flex items-center gap-1 text-accent-primary">
@@ -306,7 +310,7 @@ function SpectrumChart({
               x={currentBwHz}
               stroke="var(--accent-primary)"
               strokeDasharray="3 3"
-              label={{ value: 'fc 内环', fill: '#34d6ff', fontSize: 10, position: 'insideTopLeft' }}
+              label={{ value: t('controlLoops.serialLabelFcInner'), fill: '#34d6ff', fontSize: 10, position: 'insideTopLeft' }}
             />
             <Bar dataKey="mag" isAnimationActive={false}>
               {rows.map((_, i) => (
@@ -341,6 +345,7 @@ function KpiTile({
   value: string;
   tone: 'measure' | 'primary' | 'warn' | 'fault';
 }) {
+  const { t } = useI18n();
   const color =
     tone === 'fault'
       ? 'var(--accent-fault)'
@@ -350,7 +355,11 @@ function KpiTile({
           ? 'var(--accent-primary)'
           : 'var(--accent-measure)';
   const shape = tone === 'fault' ? '▲' : tone === 'warn' ? '◆' : '●';
-  const sr = tone === 'fault' ? '严重' : tone === 'warn' ? '警告' : '正常';
+  const sr = tone === 'fault'
+    ? t('controlLoops.serialSrFault')
+    : tone === 'warn'
+      ? t('controlLoops.serialSrWarn')
+      : t('controlLoops.serialSrOk');
   return (
     <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
       <p className="text-caption text-ink-muted">{label}</p>

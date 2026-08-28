@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Line, LineChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { SafeResponsiveContainer } from '../../components/charts/SafeResponsiveContainer';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -12,6 +13,7 @@ import { formatNumber } from '../../utils/format';
  * 叠加工作点轨迹，警示不可逆退磁风险。
  */
 export function DemagnetizationCurveCard() {
+  const { t } = useI18n();
   const motor = useSimulationStore((s) => s.motorBasics);
   const updateMotor = useSimulationStore((s) => s.updateMotorBasics);
 
@@ -47,14 +49,14 @@ export function DemagnetizationCurveCard() {
   const toneClass = demagPct < 10 ? 'measure' : demagPct < 30 ? 'warn' : 'fault';
 
   return (
-    <Card title="退磁曲线" eyebrow="B-H · 永磁体特性" density="compact"
+    <Card title={t('motorBasics.demagCurveTitle')} eyebrow={t('motorBasics.demagCurveEyebrow')} density="compact"
       action={
         <span className={`rounded-md border px-2 py-0.5 text-caption font-medium ${
           toneClass === 'measure' ? 'border-accent-measure/30 bg-accent-measure/10 text-accent-measure'
             : toneClass === 'warn' ? 'border-accent-warn/30 bg-accent-warn/10 text-accent-warn'
               : 'border-accent-fault/30 bg-accent-fault/10 text-accent-fault'
         }`}>
-          退磁 {formatNumber(demagPct, 0)}%
+          {t('motorBasics.demagCurveBadgePrefix')}{formatNumber(demagPct, 0)}%
         </span>
       }
     >
@@ -64,7 +66,7 @@ export function DemagnetizationCurveCard() {
           type="range" min="0" max="100" value={demagPct}
           onChange={(e) => updateMotor({ demagnetizationRatio: Number(e.target.value) / 100 })}
           className="flex-1 accent-accent-primary"
-          aria-label="退磁程度"
+          aria-label={t('motorBasics.demagCurveSliderAria')}
           aria-valuetext={`${formatNumber(demagPct, 0)}%`}
         />
         <span className="w-10 text-right text-caption text-ink-muted">{formatNumber(demagPct, 0)}%</span>
@@ -91,7 +93,7 @@ export function DemagnetizationCurveCard() {
             {/* 工作点 */}
             <Line data={[operatingPoint]} type="monotone" dataKey="B"
               stroke="#fff" strokeWidth={0} dot={{ r: 6, fill: '#fff', stroke: '#ff5c7a', strokeWidth: 2 }}
-              isAnimationActive={false} name="工作点" />
+              isAnimationActive={false} name={t('motorBasics.demagCurveOperatingPoint')} />
           </LineChart>
         </SafeResponsiveContainer>
       </div>
@@ -100,11 +102,11 @@ export function DemagnetizationCurveCard() {
         <span><span style={{ color: '#43f7b5' }}>━</span> 80°C</span>
         <span><span style={{ color: '#ffb84d' }}>━</span> 120°C</span>
         <span><span style={{ color: '#ff5c7a' }}>━</span> 150°C</span>
-        <span className="text-ink-primary">● 工作点</span>
+        <span className="text-ink-primary">● {t('motorBasics.demagCurveOperatingPoint')}</span>
       </div>
       {demagPct > 20 && (
         <p className="mt-2 rounded border border-accent-fault/20 bg-accent-fault/8 px-2 py-1 text-caption text-accent-fault">
-          警告：退磁 &gt; 20%，电机效率显著下降，转矩能力减弱，建议更换磁钢。
+          {t('motorBasics.demagCurveWarning')}
         </p>
       )}
     </Card>

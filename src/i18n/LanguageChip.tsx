@@ -28,7 +28,7 @@ export function LanguageChip({ className = '' }: { className?: string }) {
     >
       <Languages className="h-3.5 w-3.5" aria-hidden />
       <span className="font-mono font-medium">
-        {isZh ? '中 / EN' : 'EN / 中'}
+        {t('common.languageChip')} / {t('common.languageChipOther')}
       </span>
     </button>
   );

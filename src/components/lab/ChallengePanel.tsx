@@ -10,6 +10,7 @@ import {
 import { useChallengeStore, type ComparatorSemantic } from '../../store/challengeStore';
 import { useInsightsStore } from '../../store/insightsStore';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 import type { ModuleId } from '../../simulation/engine/types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -62,11 +63,19 @@ function difficultyTone(d: ChallengeDefinition['difficulty']) {
   }
 }
 
+/** 数据层难度枚举值（中文，来自 content/challenges）→ 展示文案 TKey。 */
+const DIFFICULTY_LABEL: Record<ChallengeDefinition['difficulty'], TKey> = {
+  '入门': 'lab.challengeDifficultyBeginner',
+  '进阶': 'lab.challengeDifficultyIntermediate',
+  '硬核': 'lab.challengeDifficultyHardcore',
+};
+
 interface Props {
   moduleId: ModuleId;
 }
 
 export function ChallengePanel({ moduleId }: Props) {
+  const { t } = useI18n();
   const challenges = getChallengesFor(moduleId);
   const [activeIdx, setActiveIdx] = useState(0);
   const records = useChallengeStore((s) => s.records);
@@ -132,7 +141,7 @@ export function ChallengePanel({ moduleId }: Props) {
 
   return (
     <Card
-      title="实验挑战"
+      title={t('lab.challengeTitle')}
       eyebrow="lab challenges"
       density="compact"
       tone={passed ? 'measure' : 'default'}
@@ -155,7 +164,7 @@ export function ChallengePanel({ moduleId }: Props) {
           <span
             className={`shrink-0 rounded-md border px-1.5 py-0.5 text-caption font-medium ${tone.border} ${tone.bg} ${tone.text}`}
           >
-            {active.difficulty}
+            {t(DIFFICULTY_LABEL[active.difficulty])}
           </span>
         </div>
 
@@ -179,7 +188,7 @@ export function ChallengePanel({ moduleId }: Props) {
                   title={c.title}
                 >
                   <span className="font-mono">{idx + 1}</span>
-                  {solved && <CheckCircle2 className="ml-1 inline h-3 w-3 text-accent-measure" aria-label="已通关" />}
+                  {solved && <CheckCircle2 className="ml-1 inline h-3 w-3 text-accent-measure" aria-label={t('lab.challengeSolvedAria')} />}
                 </button>
               );
             })}
@@ -191,7 +200,7 @@ export function ChallengePanel({ moduleId }: Props) {
           <div className="rounded-lg border border-line-subtle bg-bg-base p-2">
             <div className="flex items-center gap-1 text-caption text-ink-muted">
               <Target className="h-3.5 w-3.5" aria-hidden="true" />
-              目标
+              {t('lab.challengeTargetLabel')}
             </div>
             <p className="mt-1 font-mono text-body text-ink-primary">{formatTarget(active.target)}</p>
           </div>
@@ -202,7 +211,7 @@ export function ChallengePanel({ moduleId }: Props) {
           >
             <div className={`flex items-center gap-1 text-caption ${passed ? 'text-accent-measure' : 'text-ink-muted'}`}>
               {passed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-              {passed ? '已通过' : '当前值'}
+              {passed ? t('lab.challengePassed') : t('lab.challengeCurrent')}
             </div>
             <p className={`mt-1 font-mono text-body ${passed ? 'text-accent-measure' : 'text-ink-primary'}`}>
               {Number.isFinite(currentValue) ? formatNumber(currentValue, 2) : '—'}
@@ -214,12 +223,12 @@ export function ChallengePanel({ moduleId }: Props) {
         {/* 可调参数提示 */}
         <div className="rounded-lg border border-line-subtle bg-bg-base/40 p-2">
           <p className="text-caption text-ink-muted">
-            可调参数：
+            {t('lab.challengeEditableParams')}
             <span className="ml-1 font-mono text-ink-secondary">
               {active.editableParams.join(' · ')}
             </span>
           </p>
-          <p className="mt-1 text-caption text-ink-muted">在右侧参数面板里调即可，本卡片实时跟踪结果。</p>
+          <p className="mt-1 text-caption text-ink-muted">{t('lab.challengeEditableHint')}</p>
         </div>
 
         {/* 提示 / 解析（解析仅通关后展开） */}
@@ -230,7 +239,7 @@ export function ChallengePanel({ moduleId }: Props) {
           </p>
           {passed && (
             <p className="text-ink-secondary">
-              <strong className="text-accent-measure">原理：</strong>
+              <strong className="text-accent-measure">{t('lab.challengePrincipleLabel')}</strong>
               {active.solutionExplain}
             </p>
           )}
@@ -239,14 +248,15 @@ export function ChallengePanel({ moduleId }: Props) {
         {/* 操作行 */}
         <div className="flex items-center justify-between gap-2 text-caption">
           <span className="text-ink-muted">
-            尝试 {rec?.attempts ?? 0} 次{rec?.bestValue !== null && rec?.bestValue !== undefined ? ` · 最佳 ${formatNumber(rec.bestValue, 2)}${active.target.unit ? ' ' + active.target.unit : ''}` : ''}
+            {t('lab.challengeAttemptsPrefix')}{rec?.attempts ?? 0}{t('lab.challengeAttemptsSuffix')}
+            {rec?.bestValue !== null && rec?.bestValue !== undefined ? `${t('lab.challengeBestPrefix')}${formatNumber(rec.bestValue, 2)}${active.target.unit ? ' ' + active.target.unit : ''}` : ''}
           </span>
           <div className="flex gap-1.5">
-            <Button variant="ghost" onClick={onStartAttempt} aria-label="标记一次尝试">
-              <Play className="h-3.5 w-3.5" /> 开始尝试
+            <Button variant="ghost" onClick={onStartAttempt} aria-label={t('lab.challengeStartAttemptAria')}>
+              <Play className="h-3.5 w-3.5" /> {t('lab.challengeStartAttempt')}
             </Button>
             {rec?.solved && (
-              <Button variant="ghost" onClick={() => resetOne(active.id)} aria-label="重置本题记录">
+              <Button variant="ghost" onClick={() => resetOne(active.id)} aria-label={t('lab.challengeResetAria')}>
                 <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             )}

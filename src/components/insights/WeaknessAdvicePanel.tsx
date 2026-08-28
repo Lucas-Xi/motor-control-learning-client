@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight, Lightbulb, RotateCcw, Sparkles, TrendingDown } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import { computeWeaknessScores, useInsightsStore } from '../../store/insightsStore';
 import { moduleMetas } from '../../simulation/engine/presets';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -30,6 +31,7 @@ function fullTitle(id: string): string {
 }
 
 export function WeaknessAdvicePanel() {
+  const { t } = useI18n();
   const quizMistakes = useInsightsStore((s) => s.quizMistakes);
   const stepRevisits = useInsightsStore((s) => s.stepRevisits);
   const challengeAttempts = useInsightsStore((s) => s.challengeAttempts);
@@ -60,17 +62,17 @@ export function WeaknessAdvicePanel() {
   const pathSuggestion = useMemo(() => {
     if (ranked.length === 0) return null;
     if (ranked.length === 1) {
-      return `建议先回到「${shortTitle(ranked[0].moduleId)}」把 walkthrough 重做一遍。`;
+      return `${t('insights.pathOneLead')}${shortTitle(ranked[0].moduleId)}${t('insights.pathOneTail')}`;
     }
     if (ranked.length === 2) {
-      return `建议先复习「${shortTitle(ranked[0].moduleId)}」，再回到「${shortTitle(ranked[1].moduleId)}」做一次实验挑战。`;
+      return `${t('insights.pathTwoLead')}${shortTitle(ranked[0].moduleId)}${t('insights.pathTwoMid')}${shortTitle(ranked[1].moduleId)}${t('insights.pathTwoTail')}`;
     }
-    return `建议先复习「${shortTitle(ranked[0].moduleId)}」，再做「${shortTitle(ranked[1].moduleId)}」的挑战，最后回到「${shortTitle(ranked[2].moduleId)}」串一遍 walkthrough。`;
-  }, [ranked]);
+    return `${t('insights.pathThreeLead')}${shortTitle(ranked[0].moduleId)}${t('insights.pathThreeMid')}${shortTitle(ranked[1].moduleId)}${t('insights.pathThreeLast')}${shortTitle(ranked[2].moduleId)}${t('insights.pathThreeTail')}`;
+  }, [ranked, t]);
 
   return (
     <Card
-      title="弱项推荐"
+      title={t('insights.weaknessTitle')}
       eyebrow="recommended review"
       tone="default"
       action={
@@ -86,23 +88,21 @@ export function WeaknessAdvicePanel() {
           role="status"
         >
           <TrendingDown className="h-6 w-6 text-ink-muted" aria-hidden />
-          <p className="text-body text-ink-primary">还没有可识别的弱项</p>
-          <p className="text-caption text-ink-muted">
-            做几次 walkthrough 小测、参加几次实验挑战后，会自动给出推荐
-          </p>
+          <p className="text-body text-ink-primary">{t('insights.weaknessEmptyTitle')}</p>
+          <p className="text-caption text-ink-muted">{t('insights.weaknessEmptyHint')}</p>
         </div>
       ) : (
         <>
           {pathSuggestion && (
             <div
               className="mb-3 flex items-start gap-2 rounded-xl border border-accent-primary/40 bg-accent-primary/[0.08] p-3"
-              aria-label="学习路径推荐"
+              aria-label={t('insights.pathAria')}
             >
               <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary" aria-hidden />
               <p className="text-body text-ink-primary">{pathSuggestion}</p>
             </div>
           )}
-          <ol className="space-y-2" aria-label="弱项模块列表">
+          <ol className="space-y-2" aria-label={t('insights.weakListAria')}>
             {ranked.map((row, i) => {
               const isPrimary = i === 0;
               return (
@@ -127,23 +127,27 @@ export function WeaknessAdvicePanel() {
                   <div className="min-w-0 flex-1">
                     <p className="text-body font-medium text-ink-primary">{fullTitle(row.moduleId)}</p>
                     <p className="mt-0.5 text-caption text-ink-muted">
-                      错题 <span className="text-accent-fault">{row.mistakeCount}</span>
+                      {t('insights.statMistakes')}
+                      <span className="text-accent-fault">{row.mistakeCount}</span>
                       <span className="mx-1">·</span>
-                      回看 <span className="text-accent-warn">{row.revisitCount}</span>
+                      {t('insights.statRevisits')}
+                      <span className="text-accent-warn">{row.revisitCount}</span>
                       <span className="mx-1">·</span>
-                      挑战失败 <span className="text-accent-fault">{row.challengeFailures}</span>
+                      {t('insights.statChallengeFailures')}
+                      <span className="text-accent-fault">{row.challengeFailures}</span>
                       <span className="mx-1">·</span>
-                      综合分 <span className="font-mono text-ink-primary">{row.score}</span>
+                      {t('insights.statScore')}
+                      <span className="font-mono text-ink-primary">{row.score}</span>
                     </p>
                   </div>
                   <Button
                     variant="primary"
                     onClick={() => goReview(row.moduleId)}
-                    aria-label={`去重学 ${fullTitle(row.moduleId)}（重置 walkthrough 进度）`}
+                    aria-label={`${t('insights.reviewAriaLead')}${fullTitle(row.moduleId)}${t('insights.reviewAriaTail')}`}
                     className="shrink-0"
                   >
                     <RotateCcw className="h-4 w-4" aria-hidden />
-                    去重学
+                    {t('insights.reviewButton')}
                     <ChevronRight className="h-4 w-4" aria-hidden />
                   </Button>
                 </li>
@@ -152,9 +156,7 @@ export function WeaknessAdvicePanel() {
           </ol>
         </>
       )}
-      <footer className="mt-3 text-caption text-ink-muted">
-        排序权重：错题 × 3 + 回看 × 1 + 挑战失败 × 4
-      </footer>
+      <footer className="mt-3 text-caption text-ink-muted">{t('insights.weightNote')}</footer>
     </Card>
   );
 }

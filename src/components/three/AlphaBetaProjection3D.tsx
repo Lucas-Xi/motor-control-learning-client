@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { PHASE_COLORS, THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 import { VectorArrow } from './VectorArrow';
@@ -14,12 +15,15 @@ interface Props {
 }
 
 export function AlphaBetaProjection3D({ ia, ib, ic, alpha, beta, amplitude = 8, ariaLabel }: Props) {
+  const { t } = useI18n();
   const phaseCurrents = [ia, ib, ic];
   const phaseAngles = useMemo(() => [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3], []);
   const mag = Math.hypot(alpha, beta);
   const angle = mag > 1e-4 ? Math.atan2(beta, alpha) : 0;
   const length = 0.35 + Math.min(1.25, mag / Math.max(amplitude, 0.1)) * 0.9;
-  const label = ariaLabel ?? `三维 Clarke 投影：Iα=${alpha.toFixed(2)} A，Iβ=${beta.toFixed(2)} A，零序由三相不平衡决定。`;
+  const label =
+    ariaLabel ??
+    `${t('three.clarkeAriaLead')}${alpha.toFixed(2)}${t('three.clarkeAriaIbeta')}${beta.toFixed(2)}${t('three.clarkeAriaTail')}`;
 
   return (
     <SceneFrame

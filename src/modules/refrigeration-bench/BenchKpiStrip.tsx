@@ -7,14 +7,14 @@ import { useBenchComplianceStore, type ComplianceKey } from '../../store/benchCo
 import { formatNumber } from '../../utils/format';
 import { useBenchCycle } from './useBenchCycle';
 import { useCycleHistory } from './useCycleHistory';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n, type TKey } from '../../i18n/useI18n';
 
-// 4 个传动预设的简短中文显示名（key 与 sampleComplianceParams 一致）
-const COMPLIANCE_PRESET_LABELS: Record<ComplianceKey, string> = {
-  directDriveCompressor: '直驱压缩机',
-  industrialFanBelt: '工业风机皮带',
-  roboticJoint: '谐波减速器',
-  agedDrive: '老化传动',
+// 4 个传动预设的翻译 key（key 与 sampleComplianceParams 一致）
+const COMPLIANCE_PRESET_LABEL_KEYS: Record<ComplianceKey, TKey> = {
+  directDriveCompressor: 'refrigerationBench.complianceDirect',
+  industrialFanBelt: 'refrigerationBench.complianceFanBelt',
+  roboticJoint: 'refrigerationBench.complianceRobotJoint',
+  agedDrive: 'refrigerationBench.complianceAged',
 };
 
 /**
@@ -108,7 +108,7 @@ export function BenchKpiStrip() {
     }`}>
       <span className="flex items-center gap-1.5">
         <Cog className={`h-3.5 w-3.5 ${mechEnabled ? '' : 'text-ink-muted'}`} aria-hidden="true" />
-        机械柔性
+        {t('refrigerationBench.mechFlexTitle')}
       </span>
       <button
         type="button"
@@ -118,35 +118,35 @@ export function BenchKpiStrip() {
             ? 'border-current/60 bg-current/10'
             : 'border-line bg-bg-elev hover:text-ink'
         }`}
-        title="开启后用 stepCompliance 仿真反液击瞬态：稳态扭矩 → 5ms 翻倍脉冲 → 看轴扭簧峰值"
+        title={t('refrigerationBench.mechFlexToggleTitle')}
       >
-        {mechEnabled ? '已启用' : '关闭'}
+        {mechEnabled ? t('refrigerationBench.mechFlexOn') : t('refrigerationBench.mechFlexOff')}
       </button>
       {mechEnabled && (
         <>
           <label className="flex items-center gap-1.5">
-            <span>传动</span>
+            <span>{t('refrigerationBench.mechFlexDrive')}</span>
             <select
               value={mechPreset}
               onChange={(e) => setMechPreset(e.target.value as ComplianceKey)}
               className="rounded border border-line bg-bg-elev px-1.5 py-[1px] text-[11px] text-ink-primary focus:border-accent-primary focus:outline-none"
-              aria-label="选择传动预设"
+              aria-label={t('refrigerationBench.mechFlexDriveAria')}
             >
               {(Object.keys(sampleComplianceParams) as ComplianceKey[]).map((k) => (
-                <option key={k} value={k}>{COMPLIANCE_PRESET_LABELS[k]}</option>
+                <option key={k} value={k}>{t(COMPLIANCE_PRESET_LABEL_KEYS[k])}</option>
               ))}
             </select>
           </label>
           {mech && (
             <>
               <span className="font-mono">
-                瞬态峰值 <span className="font-bold">{formatNumber(mech.peakTorqueNm, 2)}</span> N·m
+                {t('refrigerationBench.mechFlexPeak')} <span className="font-bold">{formatNumber(mech.peakTorqueNm, 2)}</span> N·m
                 <span className="ml-1 text-[10px] opacity-75">
-                  （×{formatNumber(overshootRatio, 2)} 稳态）
+                  {t('refrigerationBench.mechFlexPeakXPre')}{formatNumber(overshootRatio, 2)} {t('refrigerationBench.mechFlexSteady')}{t('refrigerationBench.mechFlexPeakXPost')}
                 </span>
               </span>
               <span className="font-mono text-[10px] opacity-75">
-                共振 {formatNumber(mech.resonanceHz, 0)} Hz · 反共振 {formatNumber(mech.antiResonanceHz, 0)} Hz
+                {t('refrigerationBench.mechFlexResonance')} {formatNumber(mech.resonanceHz, 0)} Hz · {t('refrigerationBench.mechFlexAntiResonance')} {formatNumber(mech.antiResonanceHz, 0)} Hz
               </span>
             </>
           )}

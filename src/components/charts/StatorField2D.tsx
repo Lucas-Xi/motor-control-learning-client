@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { formatNumber } from '../../utils/format';
+import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
   ia: number;
@@ -20,6 +21,7 @@ interface Props {
  *   - 之前若干采样的箭头位置以淡淡轨迹拖影呈现，让"旋转"直观可见
  */
 export function StatorField2D({ ia, ib, ic, amplitude, alpha, beta, size = 360 }: Props) {
+  const { t } = useI18n();
   const cx = size / 2;
   const cy = size / 2;
   const statorR = size * 0.42;
@@ -133,7 +135,7 @@ export function StatorField2D({ ia, ib, ic, amplitude, alpha, beta, size = 360 }
 
         {/* 图例 */}
         <text x={size - 12} y={size - 14} textAnchor="end" fill="#5d7793" fontSize="11">
-          ⊙ 电流流出 / ⊗ 流入 · 箭头 = 合成磁场
+          {t('charts.sfLegend')}
         </text>
       </svg>
     </div>

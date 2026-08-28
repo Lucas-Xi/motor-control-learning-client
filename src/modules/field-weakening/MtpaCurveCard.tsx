@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { MtpaCurve } from '../../components/charts/MtpaCurve';
+import { useI18n } from '../../i18n/useI18n';
 import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 
@@ -10,6 +11,7 @@ import { formatNumber } from '../../utils/format';
  *   绘制 IPM 工程级操作图，附 4 列指标（转矩 / 电流余量 / 电压利用率 / MTPA 状态）。
  */
 export function MtpaCurveCard() {
+  const { t } = useI18n();
   const id = useSimulationStore((s) => s.weakField.id);
   const iq = useSimulationStore((s) => s.weakField.iq);
   const uDc = useSimulationStore((s) => s.weakField.uDc);
@@ -62,7 +64,7 @@ export function MtpaCurveCard() {
   }, [id, iq, uDc, targetRpm, polePairs, ldMh, lqMh, flux, ratedCurrent]);
 
   return (
-    <Card title="MTPA / 电压电流极限" eyebrow="ipm operating map" density="compact">
+    <Card title={t('weakField.mtpaCurveTitle')} eyebrow="ipm operating map" density="compact">
       {/* padding-top hack 维持 4:3 (480 / 360 = 4/3) */}
       <div className="relative w-full overflow-hidden" style={{ paddingTop: `${(360 / 480) * 100}%` }}>
         <div className="absolute inset-0">
@@ -82,15 +84,15 @@ export function MtpaCurveCard() {
 
       <div className="mt-3 grid grid-cols-4 gap-2 text-caption">
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">转矩 τ</p>
+          <p className="text-ink-muted">{t('weakField.mtpaCurveMetricTorque')}</p>
           <p className="font-mono text-ink-primary">{formatNumber(metrics.torque, 2)} Nm</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">电流余量</p>
+          <p className="text-ink-muted">{t('weakField.mtpaCurveMetricCurrentReserve')}</p>
           <p className="font-mono text-ink-primary">{formatNumber(metrics.currentReserve, 1)} A</p>
         </div>
         <div className="rounded border border-line-subtle bg-bg-base p-2">
-          <p className="text-ink-muted">电压利用率</p>
+          <p className="text-ink-muted">{t('weakField.mtpaCurveMetricVoltageUtilisation')}</p>
           <p className={`font-mono ${metrics.utilisation > 1 ? 'text-accent-warn' : 'text-ink-primary'}`}>
             {formatNumber(metrics.utilisation * 100, 0)}%
           </p>
@@ -98,7 +100,7 @@ export function MtpaCurveCard() {
         <div className="rounded border border-line-subtle bg-bg-base p-2">
           <p className="text-ink-muted">MTPA</p>
           <p className={`font-mono ${metrics.onMtpa ? 'text-accent-measure' : 'text-accent-warn'}`}>
-            {metrics.onMtpa ? '是' : '偏离'}
+            {metrics.onMtpa ? t('weakField.mtpaCurveOnMtpa') : t('weakField.mtpaCurveOffMtpa')}
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n/useI18n';
 import { THREE_COLORS } from './colors';
 import { SceneFrame } from './SceneFrame';
 import { VectorArrow } from './VectorArrow';
@@ -10,15 +11,20 @@ interface Props {
 }
 
 export function SensorlessAngleScene3D({ trueDeg, estimatedDeg, errorDeg, ariaLabel }: Props) {
+  const { t } = useI18n();
   const trueRad = (trueDeg * Math.PI) / 180;
   const estRad = (estimatedDeg * Math.PI) / 180;
   const risky = Math.abs(errorDeg) > 10;
-  const label = ariaLabel ?? `三维无感角度对比：真实角 ${trueDeg.toFixed(1)}°，估算角 ${estimatedDeg.toFixed(1)}°，误差 ${errorDeg.toFixed(1)}°。`;
+  const label =
+    ariaLabel ??
+    `${t('three.sensorlessAriaLead')}${trueDeg.toFixed(1)}°` +
+      `${t('three.sensorlessAriaEstimated')}${estimatedDeg.toFixed(1)}°` +
+      `${t('three.sensorlessAriaError')}${errorDeg.toFixed(1)}°${t('three.ariaPeriod')}`;
 
   return (
     <SceneFrame
       ariaLabel={label}
-      badge="真实 θ · 估算 θ"
+      badge={t('three.sensorlessBadge')}
       camera={{ position: [0, -3.35, 2.18], fov: 48 }}
       className="relative h-[260px] overflow-hidden rounded-2xl border border-line-subtle bg-bg-base"
       controls={{ enablePan: false, enableZoom: false, minDistance: 2.7, maxDistance: 5 }}
