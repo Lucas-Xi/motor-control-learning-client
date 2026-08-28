@@ -71,8 +71,8 @@
     },
     "asar": true,
     "compression": "maximum",
-    "win": {
-      "icon": "public/favicon.ico",
+  "win": {
+    "icon": "build/icon.png",
       "artifactName": "电机控制学习客户端-${version}-${arch}.${ext}",
       "target": [
         {
@@ -106,7 +106,7 @@
         "ext": "compbench",
         "name": "压缩机工况快照",
         "description": "压缩机变频器控制学习客户端工况文件",
-        "icon": "public/favicon.ico",
+        "icon": "build/icon.png",
         "role": "Editor"
       }
     ],
