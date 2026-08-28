@@ -4,6 +4,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { AssetHero } from '../../components/layout/AssetHero';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { Tabs } from '../../components/ui/Tabs';
@@ -305,6 +306,7 @@ function Probe({ manualStepIndex, view }: { manualStepIndex: number | null; view
           enabled={show3D}
           onToggle={() => setShow3D((v) => !v)}
         />
+        <CodeLabCard />
       </>
     );
   }
@@ -342,6 +344,7 @@ function Probe({ manualStepIndex, view }: { manualStepIndex: number | null; view
         enabled={show3D}
         onToggle={() => setShow3D((v) => !v)}
       />
+      <CodeLabCard />
     </>
   );
 }

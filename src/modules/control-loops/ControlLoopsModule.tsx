@@ -21,6 +21,7 @@ import { AutoNotchCard } from './AutoNotchCard';
 import { ServoPositionCard } from './ServoPositionCard';
 import { TwoMassBodeCard } from './TwoMassBodeCard';
 import { makeAntiWindupPI } from '../../simulation/math/antiwindup';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 /**
  * 使用带反计算抗饱和（back-calculation anti-windup）的 PI 控制器模拟三环级联。
@@ -176,6 +177,8 @@ function Probe() {
       <AutoNotchCard />
       {/* 伺服 S 曲线加减速规划 */}
       <ServoPositionCard />
+      {/* Code Lab：陷波器 biquad 系数（配套上方共振陷波卡片） */}
+      <CodeLabCard />
     </>
   );
 }

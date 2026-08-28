@@ -1,0 +1,202 @@
+import { useMemo, useState } from 'react';
+import { CheckCircle2, XCircle, Lightbulb, Play, RotateCcw, KeyRound, Terminal } from 'lucide-react';
+import { Card } from '../ui/Card';
+import { CodeBlock } from '../layout/CodeBlock';
+import { useI18n } from '../../i18n/useI18n';
+import { usePersistentState } from '../../utils/usePersistentState';
+import { runChallenge, type RunResult } from '../../simulation/codelab/runner';
+import { codeChallenges } from '../../content/codelab/index';
+import { codeLabSolutions } from '../../content/codelab/solutions';
+import { useSimulationStore } from '../../store/simulationStore';
+
+/**
+ * 编程实验室卡：当前模块的动手编程挑战。
+ *
+ * 学员在编辑器里实现算法函数 → 浏览器内判题（期望值由 src/simulation/math
+ * 参考实现冻结）→ 全过后解锁 STM32 C 参考实现。代码 / 通过状态按题持久化。
+ */
+export function CodeLabCard() {
+  const moduleId = useSimulationStore((s) => s.activeModule);
+  const challenges = useMemo(() => codeChallenges.filter((c) => c.moduleId === moduleId), [moduleId]);
+  const { t, locale } = useI18n();
+
+  if (challenges.length === 0) return null;
+
+  return (
+    <>
+      {challenges.map((ch) => (
+        <SingleChallenge key={ch.id} challengeId={ch.id} t={t} locale={locale} />
+      ))}
+    </>
+  );
+}
+
+function SingleChallenge({
+  challengeId,
+  t,
+  locale,
+}: {
+  challengeId: string;
+  t: (key: Parameters<ReturnType<typeof useI18n>['t']>[0]) => string;
+  locale: 'zh-CN' | 'en-US';
+}) {
+  const challenge = useMemo(() => codeChallenges.find((c) => c.id === challengeId), [challengeId]);
+  const [code, setCode] = usePersistentState(`codelab.code.${challengeId}`, challenge?.starter ?? '');
+  const [result, setResult] = useState<RunResult | null>(null);
+  const [hintsShown, setHintsShown] = usePersistentState(`codelab.hints.${challengeId}`, 0);
+  const [solved, setSolved] = usePersistentState(`codelab.solved.${challengeId}`, false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [showCRef, setShowCRef] = useState(false);
+
+  if (!challenge) return null;
+
+  const run = () => {
+    const r = runChallenge(challenge, code);
+    setResult(r);
+    if (r.ok) setSolved(true);
+  };
+
+  const fmt = (v: number) => (Math.abs(v) >= 1000 ? v.toFixed(1) : v.toFixed(4));
+  const pick = (entry: { 'zh-CN': string; 'en-US': string }) => entry[locale] ?? entry['zh-CN'];
+
+  return (
+    <Card
+      title={pick(challenge.title)}
+      eyebrow={`code lab · difficulty ${'★'.repeat(challenge.difficulty)}`}
+      density="compact"
+      action={
+        solved ? (
+          <span className="inline-flex items-center gap-1 rounded border border-accent-measure/40 bg-accent-measure/10 px-2 py-0.5 text-caption text-accent-measure">
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+            {t('lab.codeLabSolved')}
+          </span>
+        ) : undefined
+      }
+    >
+      <p className="mb-3 text-caption leading-relaxed text-ink-secondary">{pick(challenge.statement)}</p>
+
+      <label className="block">
+        <span className="sr-only">{t('lab.codeLabEditorAria')}</span>
+        <textarea
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          spellCheck={false}
+          rows={Math.min(14, Math.max(6, code.split('\n').length + 1))}
+          aria-label={t('lab.codeLabEditorAria')}
+          className="w-full resize-y rounded-lg border border-line-subtle bg-bg-base p-3 font-mono text-[12px] leading-relaxed text-ink-primary focus:border-accent-primary/50 focus:outline-none"
+        />
+      </label>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={run}
+          className="inline-flex items-center gap-1.5 rounded border border-accent-primary/50 bg-accent-primary/15 px-3 py-1 text-caption text-accent-primary transition-colors hover:bg-accent-primary/25"
+        >
+          <Play className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('lab.codeLabRun')}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setCode(challenge.starter); setResult(null); }}
+          className="inline-flex items-center gap-1.5 rounded border border-line-subtle bg-bg-base px-3 py-1 text-caption text-ink-muted transition-colors hover:text-ink"
+        >
+          <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('lab.codeLabReset')}
+        </button>
+        {challenge.hints.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setHintsShown(Math.min(challenge.hints.length, hintsShown + 1))}
+            disabled={hintsShown >= challenge.hints.length}
+            className="inline-flex items-center gap-1.5 rounded border border-accent-warn/40 bg-accent-warn/10 px-3 py-1 text-caption text-accent-warn transition-colors hover:bg-accent-warn/20 disabled:opacity-40"
+          >
+            <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
+            {t('lab.codeLabHint')} {hintsShown}/{challenge.hints.length}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowCRef((v) => !v)}
+          className="ml-auto inline-flex items-center gap-1.5 rounded border border-line-subtle bg-bg-base px-3 py-1 text-caption text-ink-muted transition-colors hover:text-ink"
+        >
+          <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+          {showCRef ? t('lab.codeLabHideC') : t('lab.codeLabShowC')}
+        </button>
+      </div>
+
+      {hintsShown > 0 && (
+        <ul className="mt-2 space-y-1">
+          {challenge.hints.slice(0, hintsShown).map((h, i) => (
+            <li key={i} className="rounded border border-accent-warn/25 bg-accent-warn/[0.06] px-2 py-1 text-caption leading-relaxed text-ink-secondary">
+              <span className="mr-1 text-accent-warn">💡{i + 1}</span>{pick(h)}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {result && (
+        <div className="mt-3 rounded-lg border border-line-subtle bg-bg-base p-2">
+          {result.fatalError ? (
+            <p className="text-caption text-accent-fault">{t('lab.codeLabFatal')} {result.fatalError}</p>
+          ) : (
+            <>
+              <p className={`mb-2 text-caption font-medium ${result.ok ? 'text-accent-measure' : 'text-ink-secondary'}`}>
+                {result.ok ? t('lab.codeLabAllPass') : t('lab.codeLabPassedOf').replace('{p}', String(result.passed)).replace('{n}', String(result.total))}
+              </p>
+              <ul className="space-y-1">
+                {result.results.map((r, i) => (
+                  <li key={i} className="flex items-start gap-2 text-caption leading-snug">
+                    {r.pass
+                      ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-measure" aria-hidden="true" />
+                      : <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-fault" aria-hidden="true" />}
+                    <span className="text-ink-secondary">
+                      <span className="font-mono text-[11px] text-ink-primary">{challenge.cases[i].label}</span>
+                      {!r.pass && (
+                        <span className="ml-2 font-mono text-[11px]">
+                          {t('lab.codeLabGot')}
+                          {' '}
+                          {(r.actual.length ? r.actual : [NaN]).map(fmt).join(', ')}
+                          {' · '}
+                          {t('lab.codeLabExpected')}
+                          {' '}
+                          {r.expected.map(fmt).join(', ')}
+                          {r.message ? ` · ${r.message}` : ''}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {result?.ok && (
+        <p className="mt-2 text-caption text-accent-measure">🎉 {t('lab.codeLabCongrats')}</p>
+      )}
+
+      {(showCRef || solved) && (
+        <div className="mt-3">
+          <p className="mb-1 text-caption text-ink-muted">{solved ? t('lab.codeLabCUnlocked') : t('lab.codeLabCPreview')}</p>
+          <CodeBlock code={challenge.cReference} language="C" title="STM32 C" />
+        </div>
+      )}
+
+      {!solved && (
+        <button
+          type="button"
+          onClick={() => setShowSolution((v) => !v)}
+          className="mt-2 inline-flex items-center gap-1 text-[11px] text-ink-muted underline-offset-2 hover:text-ink-secondary hover:underline"
+        >
+          <KeyRound className="h-3 w-3" aria-hidden="true" />
+          {showSolution ? t('lab.codeLabHideSolution') : t('lab.codeLabShowSolution')}
+        </button>
+      )}
+      {showSolution && !solved && (
+        <CodeBlock code={codeLabSolutions[challenge.id] ?? ''} language="TS" title={t('lab.codeLabSolutionTitle')} />
+      )}
+    </Card>
+  );
+}

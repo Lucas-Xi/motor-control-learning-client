@@ -6,6 +6,7 @@ import { RotorFluxScene } from '../../components/three/RotorFluxScene';
 import { DQWaveform } from '../../components/charts/DQWaveform';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
@@ -72,6 +73,7 @@ function Probe() {
         ))}
       </div>
       <SerialCompareParkCard />
+      <CodeLabCard />
     </>
   );
 }

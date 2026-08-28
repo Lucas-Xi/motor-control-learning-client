@@ -157,6 +157,21 @@ const requiredFiles = [
   // round-25 电流环 PI 自整定：模最优法 + 一拍延时离散验证仿真
   'src/simulation/math/currentLoopTuning.ts',
   'src/modules/pid-control/CurrentLoopTuningCard.tsx',
+  // 编程实验室（Code Lab）：沙箱判题引擎 + 9 道动手编程挑战
+  'src/simulation/codelab/runner.ts',
+  'src/simulation/codelab/runner.test.ts',
+  'src/content/codelab/index.ts',
+  'src/content/codelab/solutions.ts',
+  'src/content/codelab/clarke.ts',
+  'src/content/codelab/park.ts',
+  'src/content/codelab/inversePark.ts',
+  'src/content/codelab/piStep.ts',
+  'src/content/codelab/svpwmDuty.ts',
+  'src/content/codelab/deadtimeVolt.ts',
+  'src/content/codelab/lpfStep.ts',
+  'src/content/codelab/notchCoeff.ts',
+  'src/content/codelab/mtpaId.ts',
+  'src/components/lab/CodeLabCard.tsx',
   // round-26 I/F 启动：负载角同步模型 × 开环电流-频率斜坡
   'src/simulation/math/ifStartup.ts',
   'src/modules/startup-statemachine/IFStartupCard.tsx',

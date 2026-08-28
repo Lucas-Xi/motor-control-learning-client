@@ -15,6 +15,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { DeadTimeCompensationCard } from './DeadTimeCompensationCard';
 import { SwitchingLossCompareCard } from './SwitchingLossCompareCard';
 import { PwmTransientCard } from './PwmTransientCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 function createVoltageSamples(uDc: number, dutyA: number, dutyB: number, dutyC: number, deadLoss: number) {
   return Array.from({ length: 160 }, (_, i) => {
@@ -99,6 +100,8 @@ function Probe() {
       <SwitchingLossCompareCard />
       {/* round-14 物理真实化：PWM 开关瞬态 + 死区可视化 + 频谱 */}
       <PwmTransientCard />
+      {/* 编程实验室：死区平均误差电压挑战 */}
+      <CodeLabCard />
     </>
   );
 }

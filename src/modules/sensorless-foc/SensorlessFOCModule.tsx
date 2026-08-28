@@ -15,6 +15,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareSensorlessCard } from './SerialCompareSensorlessCard';
 import { SensorNoiseCard } from './SensorNoiseCard';
 import { SmoTuningCard } from './SmoTuningCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 function useSamples() {
   const params = useSimulationStore((s) => s.sensorless);
@@ -157,6 +158,8 @@ function Probe() {
       <SensorNoiseCard />
       {/* round-31 SMO 整定：增益 / 边界层 / LPF × 锁定与抖振 */}
       <SmoTuningCard />
+      {/* 编程实验室：一阶低通滤波单步挑战 */}
+      <CodeLabCard />
     </>
   );
 }

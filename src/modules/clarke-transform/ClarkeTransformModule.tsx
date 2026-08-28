@@ -9,6 +9,7 @@ import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { SerialCompareClarkeCard } from './SerialCompareClarkeCard';
 
 function Primary() {
@@ -84,6 +85,7 @@ function Probe() {
 [ I0 ]   [ 1/3  1/3  1/3 ] [ Ic ]`}</pre>
       </Card>
       <SerialCompareClarkeCard />
+      <CodeLabCard />
     </>
   );
 }

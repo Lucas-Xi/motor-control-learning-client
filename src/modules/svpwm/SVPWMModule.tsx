@@ -10,6 +10,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { formatNumber, formatPercent } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { SvpwmMinMaxCard } from './SvpwmMinMaxCard';
 import { SerialCompareSvpwmCard } from './SerialCompareSvpwmCard';
 
@@ -96,6 +97,7 @@ function Probe() {
       )}
       <SvpwmMinMaxCard />
       <SerialCompareSvpwmCard />
+      <CodeLabCard />
     </>
   );
 }

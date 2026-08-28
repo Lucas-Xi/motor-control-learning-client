@@ -16,6 +16,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { MtpaTrajectoryCard } from './MtpaTrajectoryCard';
 import { LimitProjectionCard } from './LimitProjectionCard';
 import { SerialCompareFieldWeakeningCard } from './SerialCompareFieldWeakeningCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 function LimitMap({
   id, iq, currentLimit, voltageRatio, saturated, onPointChange,
@@ -237,6 +238,8 @@ function Probe() {
       <MtpaTrajectoryCard />
       <LimitProjectionCard />
       <SerialCompareFieldWeakeningCard />
+      {/* Code Lab：MTPA 的 d 轴电流指令（配套上方 MTPA 轨迹卡片） */}
+      <CodeLabCard />
     </>
   );
 }

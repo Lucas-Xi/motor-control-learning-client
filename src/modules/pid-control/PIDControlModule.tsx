@@ -10,6 +10,7 @@ import { useSimulationStore } from '../../store/simulationStore';
 import { formatNumber } from '../../utils/format';
 import { useI18n } from '../../i18n/useI18n';
 import { PidBodeChart } from '../../components/charts/PidBodeChart';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { AntiWindupCompareCard } from './AntiWindupCompareCard';
 import { CurrentLoopTuningCard } from './CurrentLoopTuningCard';
 import { SerialComparePIDCard } from './SerialComparePIDCard';
@@ -90,6 +91,7 @@ function Probe() {
       <CurrentLoopTuningCard />
       <AntiWindupCompareCard />
       <SerialComparePIDCard />
+      <CodeLabCard />
     </>
   );
 }
