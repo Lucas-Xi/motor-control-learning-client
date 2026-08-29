@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { MistakeBookPanel } from './MistakeBookPanel';
 import { HeatmapPanel } from './HeatmapPanel';
 import { WeaknessAdvicePanel } from './WeaknessAdvicePanel';
+import { CodeLabProgressPanel } from './CodeLabProgressPanel';
 
 /**
  * 学习洞察主视图：在 SimulationPanel 中央展示，简单的纵向 3 块面板布局：
@@ -59,6 +60,7 @@ export function InsightsView() {
       </header>
 
       <WeaknessAdvicePanel />
+      <CodeLabProgressPanel />
       <MistakeBookPanel />
       <HeatmapPanel />
     </section>

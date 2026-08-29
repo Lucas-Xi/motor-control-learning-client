@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { simulatePfcCycle } from '../../simulation/math/boostPfc';
@@ -61,6 +62,7 @@ export function APFFrontendModule() {
           <SwitchingPfcCard />
           <PfcControlTuningCard />
           <SerialComparePFCCard />
+          <CodeLabCard />
         </>
       }
       concept={<ConceptNotes moduleId="apf-frontend" />}

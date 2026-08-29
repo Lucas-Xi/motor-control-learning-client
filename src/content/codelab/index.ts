@@ -8,18 +8,32 @@ import { deadtimeVoltChallenge } from './deadtimeVolt';
 import { lpfStepChallenge } from './lpfStep';
 import { notchCoeffChallenge } from './notchCoeff';
 import { mtpaIdChallenge } from './mtpaId';
+import { elecAngleChallenge } from './elecAngle';
+import { threePhaseGenChallenge } from './threePhaseGen';
+import { saliencyRatioChallenge } from './saliencyRatio';
+import { vfRampChallenge } from './vfRamp';
+import { unbalanceChallenge } from './unbalance';
+import { thdChallenge } from './thd';
+import { copEerChallenge } from './copEer';
 
-/** 全部编程挑战（按模块序 03→11）。新增题目：单独文件 + 在此注册。 */
+/** 全部编程挑战（按模块序 01→16，16/16 模块全覆盖）。新增题目：单独文件 + 在此注册。 */
 export const codeChallenges: CodeChallenge[] = [
+  elecAngleChallenge,
+  threePhaseGenChallenge,
   clarkeChallenge,
   parkChallenge,
-  inverseParkChallenge,
   piStepChallenge,
+  inverseParkChallenge,
   svpwmDutyChallenge,
   deadtimeVoltChallenge,
-  lpfStepChallenge,
   notchCoeffChallenge,
+  lpfStepChallenge,
   mtpaIdChallenge,
+  unbalanceChallenge,
+  saliencyRatioChallenge,
+  vfRampChallenge,
+  thdChallenge,
+  copEerChallenge,
 ];
 
 export function challengesForModule(moduleId: string): CodeChallenge[] {

@@ -12,6 +12,7 @@ import { formatNumber } from '../../utils/format';
 import { SerialCompareHFICard } from './SerialCompareHFICard';
 import { HfiSignalChainCard } from './HfiSignalChainCard';
 import { ObserverBlendCard } from './ObserverBlendCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 function useHfiSamples() {
   const params = useSimulationStore((s) => s.hfi);
@@ -152,6 +153,8 @@ function Probe() {
       </Card>
       <ObserverBlendCard />
       <SerialCompareHFICard />
+      {/* 编程实验室：凸极比计算 */}
+      <CodeLabCard />
     </>
   );
 }

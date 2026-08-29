@@ -89,4 +89,10 @@ export const insights = {
     '排序权重：错题 × 3 + 回看 × 1 + 挑战失败 × 4',
     'Ranking weights: mistakes × 3 + revisits × 1 + failed challenges × 4',
   ),
+  codeLabPanelAria: e('编程实验室进度', 'Code Lab progress'),
+  codeLabPanelTitle: e('编程实验室 · 动手实现进度', 'Code Lab · hands-on progress'),
+  codeLabPanelHint: e(
+    '通关状态在各模块的编程挑战卡内更新；这里只做本地汇总，不上传任何数据。',
+    'Solved state updates on each module\'s code challenge card; this panel is a local summary only — nothing is uploaded.',
+  ),
 };

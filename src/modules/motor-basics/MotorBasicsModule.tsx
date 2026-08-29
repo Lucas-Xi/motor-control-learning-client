@@ -19,6 +19,7 @@ import { DemagnetizationCurveCard } from './DemagnetizationCurveCard';
 import { ModelComparisonCard } from './ModelComparisonCard';
 import { ThermalDeratingCard } from './ThermalDeratingCard';
 import { ThermalRunawayCard } from './ThermalRunawayCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 // 3D 视图独立 chunk（three.js 全家桶），首屏关键路径不受影响
 const Motor3D = lazy(() => import('../../components/three/Motor3D').then((m) => ({ default: m.Motor3D })));
@@ -182,6 +183,8 @@ export function MotorBasicsModule() {
           <DemagnetizationCurveCard />
           {/* round-11 高保真 A/B 对比 */}
           <ModelComparisonCard />
+          {/* 编程实验室：机械角→电角度换算 */}
+          <CodeLabCard />
         </>
       }
       concept={<ConceptNotes moduleId="motor-basics" />}

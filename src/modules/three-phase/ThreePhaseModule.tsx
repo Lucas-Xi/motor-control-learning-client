@@ -11,6 +11,7 @@ import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
 import { useI18n } from '../../i18n/useI18n';
 import { SerialCompareThreePhaseCard } from './SerialCompareThreePhaseCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 function useSnapshot() {
   const threePhase = useSimulationStore((s) => s.threePhase);
@@ -71,6 +72,8 @@ function Probe() {
         ))}
       </div>
       <SerialCompareThreePhaseCard />
+      {/* 编程实验室：对称三相电流生成 */}
+      <CodeLabCard />
     </>
   );
 }

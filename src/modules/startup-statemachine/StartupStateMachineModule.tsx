@@ -14,6 +14,7 @@ import { ObserverTransitionCard } from '../../components/charts/ObserverTransiti
 import { SerialCompareStartupCard } from './SerialCompareStartupCard';
 import { FrictionCurveCard } from './FrictionCurveCard';
 import { IFStartupCard } from './IFStartupCard';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 
 const STATES: StartupState[] = ['idle', 'precharge', 'align', 'open-loop', 'hfi', 'bemf', 'fieldweak'];
 
@@ -179,6 +180,8 @@ function Probe() {
       </Card>
       <ObserverTransitionCard />
       <SerialCompareStartupCard />
+      {/* 编程实验室：V/f 启动电压指令 */}
+      <CodeLabCard />
     </>
   );
 }

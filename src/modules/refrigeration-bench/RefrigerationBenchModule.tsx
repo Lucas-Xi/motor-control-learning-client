@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { AlertTriangle, Cpu, Snowflake, Thermometer, Wind, Zap } from 'lucide-react';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { FidelityBadge } from '../../components/ui/FidelityBadge';
@@ -361,6 +362,7 @@ export function RefrigerationBenchModule() {
         <Suspense fallback={<ProbeCardFallback label={t('refrigerationBench.probeTwoStage')} />}>
           <TwoStageCycleCard />
         </Suspense>
+        <CodeLabCard />
       </>}
       concept={<ConceptNotes moduleId="refrigeration-bench" />}
     />

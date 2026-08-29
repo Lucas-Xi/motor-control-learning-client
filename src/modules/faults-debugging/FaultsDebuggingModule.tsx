@@ -2,6 +2,7 @@ import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
 import { AlertTriangle, CheckCircle2, Stethoscope } from 'lucide-react';
 import { useMemo } from 'react';
 import { AssetHero } from '../../components/layout/AssetHero';
+import { CodeLabCard } from '../../components/lab/CodeLabCard';
 import { ConceptNotes } from '../../components/layout/ConceptNotes';
 import { ModuleLayout } from '../../components/layout/ModuleLayout';
 import { Card } from '../../components/ui/Card';
@@ -112,6 +113,7 @@ function Probe() {
       <ListBlock title={t('faultsDebugging.fixTitle')} items={fix} icon="ok" />
       <BiquadFilterCard />
       <SerialFaultInjectionCard />
+      <CodeLabCard />
     </>
   );
 }

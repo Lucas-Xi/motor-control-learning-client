@@ -15,6 +15,13 @@ import { deadtimeVoltSolution } from './deadtimeVolt';
 import { lpfStepSolution } from './lpfStep';
 import { notchCoeffSolution } from './notchCoeff';
 import { mtpaIdSolution } from './mtpaId';
+import { elecAngleSolution } from './elecAngle';
+import { threePhaseGenSolution } from './threePhaseGen';
+import { saliencyRatioSolution } from './saliencyRatio';
+import { vfRampSolution } from './vfRamp';
+import { unbalanceSolution } from './unbalance';
+import { thdSolution } from './thd';
+import { copEerSolution } from './copEer';
 
 export const codeLabSolutions: Record<string, string> = {
   'clarke-transform': clarkeSolution,
@@ -26,4 +33,11 @@ export const codeLabSolutions: Record<string, string> = {
   'lpf-step': lpfStepSolution,
   'notch-coeff': notchCoeffSolution,
   'mtpa-id': mtpaIdSolution,
+  'elec-angle': elecAngleSolution,
+  'three-phase-gen': threePhaseGenSolution,
+  'saliency-ratio': saliencyRatioSolution,
+  'vf-ramp': vfRampSolution,
+  'current-unbalance': unbalanceSolution,
+  'current-thd': thdSolution,
+  'cop-eer': copEerSolution,
 };
