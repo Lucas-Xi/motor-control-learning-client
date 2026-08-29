@@ -33,7 +33,11 @@
 | 15 | APF 前级 PFC | 单相整流 → Boost PFC、开关级仿真、谐波抑制与功率因数校正 |
 | 16 | 制冷系统台架 | 蒸气压缩循环、双级压缩、能流桑基图，与 FOC 闭环耦合的整机仿真 |
 
-每个模块配套：中文讲义（`ConceptNotes` 折叠区）、实验预设一键加载、挑战题（Quiz）、桌面/移动双端适配。
+每个模块配套：中英双语讲义（`ConceptNotes` 折叠区）、引导实验条、实验预设一键加载、挑战题（Quiz）、**动手编程挑战**、桌面/移动双端适配；界面顶栏可一键切换中英文。
+
+## 编程实验室（Code Lab）
+
+16 个模块各配一道编程挑战：在浏览器里实现算法函数（Clarke/Park/PI 抗饱和/SVPWM 扇区/死区电压/陷波系数/MTPA/THD…），即时判题（期望值由参考实现冻结生成）、分级提示，通关后解锁 STM32 C 参考实现（Q15 定点、ISR 内联风格）。学员代码跑在自研教学子集解释器上（无 eval、步数预算可中断），零注入面。通关进度在学习洞察面板汇总。
 
 ![三闭环模块](output/screenshots/desktop-09-control-loops.png)
 
@@ -52,9 +56,9 @@ npm run dev          # http://127.0.0.1:5173
 npm run dev              # Vite 开发服务器
 npm run build            # 生产构建（vite build）
 npm run typecheck        # tsc -b --noEmit 独立类型检查
-npm run test             # vitest 全量单测（83 文件 / 867 用例）
+npm run test             # vitest 全量单测（86 文件 / 886 用例）
 npm run coverage         # v8 覆盖率报告
-npm run verify           # 静态守护：224 个必需文件 + 关键 import 校验
+npm run verify           # 静态守护：246 个必需文件 + 关键 import 校验
 npm run e2e              # Playwright 冒烟测试（自动起 dev server）
 npm run qa:screenshots   # 16 模块桌面/移动双端截图 → output/screenshots/
 npm run release:audit    # 发布审计：verify → build → e2e → screenshots
@@ -118,8 +122,8 @@ release/win-unpacked/电机控制学习客户端.exe
 
 ## 测试与 CI
 
-- **单元测试**：vitest，83 个文件 / 867 个用例，覆盖全部算法模块的收敛性、单调性、单位一致性与 q15 可移植前提。
-- **静态守护**：`scripts/verify-project.mjs` 检查 224 个必需文件与关键 import，防止模块回退到泛化 fallback。
+- **单元测试**：vitest，86 个文件 / 886 个用例，覆盖全部算法模块的收敛性、单调性、单位一致性与 q15 可移植前提。
+- **静态守护**：`scripts/verify-project.mjs` 检查 246 个必需文件与关键 import，防止模块回退到泛化 fallback。
 - **E2E**：Playwright 冒烟 + 全量可访问性（a11y）扫描。
 - **GitHub Actions**（`.github/workflows/`）：
   - `pr.yml` — PR 触发：verify + fault-waves + typecheck + vitest + build

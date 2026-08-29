@@ -35,7 +35,11 @@ Every algorithm is a pure function under `src/simulation/math/` — explicit sta
 | 15 | APF Front-End PFC | Single-phase rectification → Boost PFC, switching-level simulation, harmonic mitigation and power-factor correction |
 | 16 | Refrigeration Bench | Vapor-compression cycle, two-stage compression, energy-flow Sankey, coupled with FOC in a system-level simulation |
 
-Each module ships with Chinese lesson notes (collapsible `ConceptNotes`), one-click experiment presets, quiz challenges, and desktop + mobile responsive layouts.
+Each module ships with bilingual lesson notes (collapsible `ConceptNotes`, full English translation included), a guided experiment bar, one-click experiment presets, quiz challenges, a **hands-on coding challenge**, and desktop + mobile responsive layouts. The top bar switches the whole UI between Chinese and English instantly.
+
+## Code Lab
+
+Every module includes a coding challenge: implement the algorithm function in the browser (Clarke / Park / PI anti-windup / SVPWM sector / dead-time voltage / notch coefficients / MTPA / THD …), get auto-graded against test vectors frozen from the reference implementation, unlock progressive hints, and earn the STM32 C reference (Q15 fixed-point, ISR-inline style) once solved. Learner code runs on a custom teaching-subset interpreter — no eval, step-budget interruptible, zero injection surface. Progress is summarized in the Learning Insights panel.
 
 ![Control loops module](output/screenshots-en/desktop-09-control-loops.png)
 
@@ -54,9 +58,9 @@ npm run dev          # http://127.0.0.1:5173
 npm run dev              # Vite dev server
 npm run build            # production build (vite build)
 npm run typecheck        # standalone tsc -b --noEmit type check
-npm run test             # full vitest suite (83 files / 867 tests)
+npm run test             # full vitest suite (86 files / 886 tests)
 npm run coverage         # v8 coverage report
-npm run verify           # static guard: 224 required files + key imports
+npm run verify           # static guard: 246 required files + key imports
 npm run e2e              # Playwright smoke tests (auto-starts dev server)
 npm run qa:screenshots   # desktop + mobile screenshots of all 16 modules → output/screenshots/
 npm run release:audit    # release audit: verify → build → e2e → screenshots
@@ -120,8 +124,8 @@ Shell layout: `AppShell` = Sidebar (navigation) + TopBar (run controls) + Simula
 
 ## Testing & CI
 
-- **Unit tests**: vitest, 83 files / 867 tests, covering convergence, monotonicity, unit consistency, and fixed-point (q15) portability preconditions for every algorithm module.
-- **Static guard**: `scripts/verify-project.mjs` checks 224 required files and key imports so modules can't silently regress to a generic fallback.
+- **Unit tests**: vitest, 86 files / 886 tests, covering convergence, monotonicity, unit consistency, and fixed-point (q15) portability preconditions for every algorithm module.
+- **Static guard**: `scripts/verify-project.mjs` checks 246 required files and key imports so modules can't silently regress to a generic fallback.
 - **E2E**: Playwright smoke suite plus a full accessibility (a11y) scan.
 - **GitHub Actions** (`.github/workflows/`):
   - `pr.yml` — on PRs: verify + fault-waves + typecheck + vitest + build
