@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { ModuleRenderer } from '../../modules/ModuleRenderer';
 import { useI18n } from '../../i18n/useI18n';
-import { moduleMetas } from '../../simulation/engine/presets';
+import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleMeta } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
@@ -22,7 +22,7 @@ const ASSEMBLY_MODULE_META: ModuleMeta = {
 };
 
 export function SimulationPanel() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const activeModule = useSimulationStore((state) => state.activeModule);
   const mode = useSimulationStore((state) => state.mode);
   const simPanelView = useUIStore((state) => state.simPanelView);
@@ -64,8 +64,8 @@ export function SimulationPanel() {
     <section className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="font-mono text-caption text-ink-muted">{meta.stage}</span>
-        <h1 className="font-display text-display text-ink-primary">{meta.title}</h1>
-        <p className="text-body text-ink-secondary">{meta.subtitle}</p>
+        <h1 className="font-display text-display text-ink-primary">{localizeModuleMeta(meta, locale).title}</h1>
+        <p className="text-body text-ink-secondary">{localizeModuleMeta(meta, locale).subtitle}</p>
       </header>
       {mode === 'teach' && <GuidedExperimentBar moduleId={activeModule} />}
       {/*

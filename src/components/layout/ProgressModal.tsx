@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Award, CheckCircle2, Clock, GraduationCap, RotateCcw, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useI18n, type TKey } from '../../i18n/useI18n';
-import { moduleMetas } from '../../simulation/engine/presets';
+import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
 import { useProgressStore } from '../../store/progressStore';
 
 interface Props {
@@ -218,7 +218,7 @@ export function ProgressModal({ open, onClose }: Props) {
                           )}
                         </div>
                         <h3 className="truncate text-body font-medium text-ink-primary">
-                          {m.title}
+                          {localizeModuleMeta(m, locale).title}
                         </h3>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 import { GraduationCap, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
-import { moduleMetas } from '../../simulation/engine/presets';
+import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
 import { useProgressStore } from '../../store/progressStore';
 import { ProgressModal } from './ProgressModal';
 
@@ -12,7 +12,7 @@ import { ProgressModal } from './ProgressModal';
  * 集成方式：在 TopBar.tsx 里加 `<ProgressBadge />` 即可。
  */
 export function ProgressBadge() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const perModule = useProgressStore((s) => s.perModule);
   const reset = useProgressStore((s) => s.reset);
   const [open, setOpen] = useState(false);
@@ -116,7 +116,7 @@ export function ProgressBadge() {
                         }`}
                       />
                       <span className="text-ink-muted tabular-nums">{m.stage}</span>
-                      <span className="truncate text-ink-secondary">{m.shortTitle}</span>
+                      <span className="truncate text-ink-secondary">{localizeModuleMeta(m, locale).shortTitle}</span>
                     </span>
                     <span className="shrink-0 tabular-nums text-ink-muted">
                       {visited ? t('shell.progressVisitsCount').replace('{n}', String(visits)) : t('shell.progressNeverVisited')}

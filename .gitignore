@@ -17,6 +17,8 @@ tmp/*
 output/*
 # 截图基线要留在版本库里：scripts/qa-diff-screenshots.mjs 用 git ls-files 读基线
 !output/screenshots/
+# 英文界面截图基线（README_EN 引用）
+!output/screenshots-en/
 # 素材管线的提示词清单要入库：docs/ASSET_PIPELINE.md 引用
 !tmp/imagegen/
 

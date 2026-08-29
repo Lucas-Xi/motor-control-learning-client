@@ -12,7 +12,7 @@ Every algorithm is a pure function under `src/simulation/math/` — explicit sta
 
 > **Note on language**: the in-app teaching content, UI copy, lesson notes, and quizzes are in Chinese (the primary audience is Chinese-speaking embedded engineers). Source code identifiers, this README, and code comments mixing English/Chinese are designed to stay approachable for international readers.
 
-![Motor Basics module](output/screenshots/desktop-01-motor-basics.png)
+![Motor Basics module](output/screenshots-en/desktop-01-motor-basics.png)
 
 ## Feature Overview: 16 Learning Modules
 
@@ -37,7 +37,7 @@ Every algorithm is a pure function under `src/simulation/math/` — explicit sta
 
 Each module ships with Chinese lesson notes (collapsible `ConceptNotes`), one-click experiment presets, quiz challenges, and desktop + mobile responsive layouts.
 
-![Control loops module](output/screenshots/desktop-09-control-loops.png)
+![Control loops module](output/screenshots-en/desktop-09-control-loops.png)
 
 ## Getting Started
 

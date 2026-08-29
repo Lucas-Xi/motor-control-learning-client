@@ -1,0 +1,377 @@
+{
+  "generatedAt": "2026-08-29T02:07:52.942Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "locale": "en-US",
+  "screenshots": [
+    {
+      "viewport": "desktop",
+      "module": "motor-basics",
+      "title": "Motor Basics",
+      "path": "output/screenshots-en/desktop-01-motor-basics.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "three-phase",
+      "title": "Three-Phase Sine & Rotating Field",
+      "path": "output/screenshots-en/desktop-02-three-phase.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "clarke-transform",
+      "title": "Clarke Transform",
+      "path": "output/screenshots-en/desktop-03-clarke-transform.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "park-transform",
+      "title": "Park Transform",
+      "path": "output/screenshots-en/desktop-04-park-transform.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "pid-control",
+      "title": "PID Control",
+      "path": "output/screenshots-en/desktop-05-pid-control.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "foc-flow",
+      "title": "FOC Pipeline",
+      "path": "output/screenshots-en/desktop-06-foc-flow.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "svpwm",
+      "title": "SVPWM",
+      "path": "output/screenshots-en/desktop-07-svpwm.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "inverter",
+      "title": "Three-Phase Inverter",
+      "path": "output/screenshots-en/desktop-08-inverter.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "control-loops",
+      "title": "Current / Speed / Position Loops",
+      "path": "output/screenshots-en/desktop-09-control-loops.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "sensorless-foc",
+      "title": "Sensorless FOC / Observers",
+      "path": "output/screenshots-en/desktop-10-sensorless-foc.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "field-weakening",
+      "title": "Field Weakening",
+      "path": "output/screenshots-en/desktop-11-field-weakening.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "faults-debugging",
+      "title": "Faults & Debugging",
+      "path": "output/screenshots-en/desktop-12-faults-debugging.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "hfi-sensorless",
+      "title": "HFI Low-Speed Sensorless",
+      "path": "output/screenshots-en/desktop-13-hfi-sensorless.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "startup-statemachine",
+      "title": "Compressor Startup State Machine",
+      "path": "output/screenshots-en/desktop-14-startup-statemachine.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "apf-frontend",
+      "title": "APF Front-End PFC",
+      "path": "output/screenshots-en/desktop-15-apf-frontend.png"
+    },
+    {
+      "viewport": "desktop",
+      "module": "refrigeration-bench",
+      "title": "Refrigeration Bench",
+      "path": "output/screenshots-en/desktop-16-refrigeration-bench.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "motor-basics",
+      "title": "Motor Basics",
+      "path": "output/screenshots-en/mobile-01-motor-basics.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "three-phase",
+      "title": "Three-Phase Sine & Rotating Field",
+      "path": "output/screenshots-en/mobile-02-three-phase.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "clarke-transform",
+      "title": "Clarke Transform",
+      "path": "output/screenshots-en/mobile-03-clarke-transform.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "park-transform",
+      "title": "Park Transform",
+      "path": "output/screenshots-en/mobile-04-park-transform.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "pid-control",
+      "title": "PID Control",
+      "path": "output/screenshots-en/mobile-05-pid-control.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "foc-flow",
+      "title": "FOC Pipeline",
+      "path": "output/screenshots-en/mobile-06-foc-flow.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "svpwm",
+      "title": "SVPWM",
+      "path": "output/screenshots-en/mobile-07-svpwm.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "inverter",
+      "title": "Three-Phase Inverter",
+      "path": "output/screenshots-en/mobile-08-inverter.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "control-loops",
+      "title": "Current / Speed / Position Loops",
+      "path": "output/screenshots-en/mobile-09-control-loops.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "sensorless-foc",
+      "title": "Sensorless FOC / Observers",
+      "path": "output/screenshots-en/mobile-10-sensorless-foc.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "field-weakening",
+      "title": "Field Weakening",
+      "path": "output/screenshots-en/mobile-11-field-weakening.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "faults-debugging",
+      "title": "Faults & Debugging",
+      "path": "output/screenshots-en/mobile-12-faults-debugging.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "hfi-sensorless",
+      "title": "HFI Low-Speed Sensorless",
+      "path": "output/screenshots-en/mobile-13-hfi-sensorless.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "startup-statemachine",
+      "title": "Compressor Startup State Machine",
+      "path": "output/screenshots-en/mobile-14-startup-statemachine.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "apf-frontend",
+      "title": "APF Front-End PFC",
+      "path": "output/screenshots-en/mobile-15-apf-frontend.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "refrigeration-bench",
+      "title": "Refrigeration Bench",
+      "path": "output/screenshots-en/mobile-16-refrigeration-bench.png"
+    }
+  ],
+  "canvasChecks": [
+    {
+      "viewport": "desktop",
+      "module": "three-phase",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 384,
+      "height": 255,
+      "sampledPixels": 12240,
+      "uniqueColors": 92,
+      "dominantRatio": 0.8824
+    },
+    {
+      "viewport": "desktop",
+      "module": "clarke-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 384,
+      "height": 299,
+      "sampledPixels": 12758,
+      "uniqueColors": 53,
+      "dominantRatio": 0.9102
+    },
+    {
+      "viewport": "desktop",
+      "module": "park-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 410,
+      "height": 319,
+      "sampledPixels": 13079,
+      "uniqueColors": 58,
+      "dominantRatio": 0.9114
+    },
+    {
+      "viewport": "desktop",
+      "module": "svpwm",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 188,
+      "height": 299,
+      "sampledPixels": 14053,
+      "uniqueColors": 72,
+      "dominantRatio": 0.802
+    },
+    {
+      "viewport": "desktop",
+      "module": "inverter",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 384,
+      "height": 255,
+      "sampledPixels": 12240,
+      "uniqueColors": 86,
+      "dominantRatio": 0.8643
+    },
+    {
+      "viewport": "desktop",
+      "module": "sensorless-foc",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 384,
+      "height": 259,
+      "sampledPixels": 12432,
+      "uniqueColors": 36,
+      "dominantRatio": 0.9045
+    },
+    {
+      "viewport": "desktop",
+      "module": "field-weakening",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 176,
+      "height": 299,
+      "sampledPixels": 13156,
+      "uniqueColors": 77,
+      "dominantRatio": 0.8077
+    },
+    {
+      "viewport": "mobile",
+      "module": "three-phase",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 304,
+      "height": 255,
+      "sampledPixels": 12920,
+      "uniqueColors": 66,
+      "dominantRatio": 0.8668
+    },
+    {
+      "viewport": "mobile",
+      "module": "clarke-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 304,
+      "height": 299,
+      "sampledPixels": 12986,
+      "uniqueColors": 49,
+      "dominantRatio": 0.8902
+    },
+    {
+      "viewport": "mobile",
+      "module": "park-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 330,
+      "height": 319,
+      "sampledPixels": 13159,
+      "uniqueColors": 39,
+      "dominantRatio": 0.8987
+    },
+    {
+      "viewport": "mobile",
+      "module": "svpwm",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 330,
+      "height": 299,
+      "sampledPixels": 12334,
+      "uniqueColors": 38,
+      "dominantRatio": 0.889
+    },
+    {
+      "viewport": "mobile",
+      "module": "inverter",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 304,
+      "height": 255,
+      "sampledPixels": 12920,
+      "uniqueColors": 86,
+      "dominantRatio": 0.8389
+    },
+    {
+      "viewport": "mobile",
+      "module": "sensorless-foc",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 304,
+      "height": 259,
+      "sampledPixels": 13123,
+      "uniqueColors": 39,
+      "dominantRatio": 0.8881
+    },
+    {
+      "viewport": "mobile",
+      "module": "field-weakening",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 304,
+      "height": 299,
+      "sampledPixels": 12986,
+      "uniqueColors": 39,
+      "dominantRatio": 0.8889
+    }
+  ],
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "ignoredConsoleWarnings": [
+    "[.WebGL-0x74fc0331f000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x74fc0331f000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x74fc0331f000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x74fc0331f000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
+}

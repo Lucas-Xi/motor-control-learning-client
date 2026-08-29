@@ -24,6 +24,10 @@ export interface ModuleMeta {
   subtitle: string;
   stage: string;
   accent: string;
+  /** 英文界面文案（zh 走默认字段，en 经 localizeModuleMeta 取用，缺失回退中文） */
+  titleEn?: string;
+  shortTitleEn?: string;
+  subtitleEn?: string;
 }
 
 export interface ThreePhaseParams {

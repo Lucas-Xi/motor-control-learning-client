@@ -19,23 +19,54 @@ import type {
 } from './types';
 
 export const moduleMetas: ModuleMeta[] = [
-  { id: 'motor-basics', title: '电机基础', shortTitle: '基础', subtitle: '结构、极对数、电角度与机械角度', stage: '01', accent: '#34d6ff' },
-  { id: 'three-phase', title: '三相正弦波与旋转磁场', shortTitle: '三相磁场', subtitle: '观察三相电流如何合成旋转磁场', stage: '02', accent: '#43f7b5' },
-  { id: 'clarke-transform', title: 'Clarke 变换', shortTitle: 'Clarke', subtitle: 'abc 到 alpha-beta 的投影', stage: '03', accent: '#ffb84d' },
-  { id: 'park-transform', title: 'Park 变换', shortTitle: 'Park', subtitle: 'alpha-beta 到 dq 同步旋转坐标', stage: '04', accent: '#7dd3fc' },
-  { id: 'pid-control', title: 'PID 控制', shortTitle: 'PID', subtitle: 'P/I/D、限幅和抗积分饱和', stage: '05', accent: '#fb7185' },
-  { id: 'foc-flow', title: 'FOC 总体流程', shortTitle: 'FOC 流程', subtitle: '采样、变换、电流环、SVPWM 闭环链路', stage: '06', accent: '#22d3ee' },
-  { id: 'svpwm', title: 'SVPWM', shortTitle: 'SVPWM', subtitle: '空间电压矢量、扇区、T1/T2/T0', stage: '07', accent: '#a3e635' },
-  { id: 'inverter', title: '三相逆变器', shortTitle: '逆变器', subtitle: '桥臂、PWM、死区和线电压', stage: '08', accent: '#f97316' },
-  { id: 'control-loops', title: '电流环 / 速度环 / 位置环', shortTitle: '三闭环', subtitle: '内环快、外环慢和参数整定', stage: '09', accent: '#60a5fa' },
-  { id: 'sensorless-foc', title: '无感 FOC / 观测器', shortTitle: '无感', subtitle: '反电动势、SMO、PLL 与开闭环切换', stage: '10', accent: '#c084fc' },
-  { id: 'field-weakening', title: '弱磁控制', shortTitle: '弱磁', subtitle: '电压极限、负 Id、恒功率区', stage: '11', accent: '#2dd4bf' },
-  { id: 'faults-debugging', title: '故障与调试', shortTitle: '调试', subtitle: '波形现象、原因定位与 STM32 排查路径', stage: '12', accent: '#ff5c7a' },
-  { id: 'hfi-sensorless', title: 'HFI 高频注入低速无感', shortTitle: 'HFI', subtitle: '凸极比解调 + 零速启动的压缩机标配方案', stage: '13', accent: '#a3e635' },
-  { id: 'startup-statemachine', title: '压缩机启动状态机', shortTitle: '启动机', subtitle: 'V/f 启动 → HFI → BEMF → 弱磁全过程', stage: '14', accent: '#22d3ee' },
-  { id: 'apf-frontend', title: 'APF 前级 PFC', shortTitle: 'APF', subtitle: '单相 220V → Boost PFC → 直流母线，谐波抑制 + 功率因数', stage: '15', accent: '#fb7185' },
-  { id: 'refrigeration-bench', title: '制冷系统台架', shortTitle: '台架', subtitle: '蒸气压缩循环 + 工况输入 + 与 FOC 闭环耦合', stage: '16', accent: '#7dd3fc' },
+  { id: 'motor-basics', title: '电机基础', shortTitle: '基础', subtitle: '结构、极对数、电角度与机械角度', stage: '01', accent: '#34d6ff',
+    titleEn: 'Motor Basics', shortTitleEn: 'Basics', subtitleEn: 'Construction, pole pairs, electrical vs mechanical angle' },
+  { id: 'three-phase', title: '三相正弦波与旋转磁场', shortTitle: '三相磁场', subtitle: '观察三相电流如何合成旋转磁场', stage: '02', accent: '#43f7b5',
+    titleEn: 'Three-Phase Sine & Rotating Field', shortTitleEn: '3-Phase', subtitleEn: 'Watch three-phase currents build a rotating field' },
+  { id: 'clarke-transform', title: 'Clarke 变换', shortTitle: 'Clarke', subtitle: 'abc 到 alpha-beta 的投影', stage: '03', accent: '#ffb84d',
+    titleEn: 'Clarke Transform', shortTitleEn: 'Clarke', subtitleEn: 'Projecting abc onto the alpha-beta frame' },
+  { id: 'park-transform', title: 'Park 变换', shortTitle: 'Park', subtitle: 'alpha-beta 到 dq 同步旋转坐标', stage: '04', accent: '#7dd3fc',
+    titleEn: 'Park Transform', shortTitleEn: 'Park', subtitleEn: 'From alpha-beta to the rotating dq frame' },
+  { id: 'pid-control', title: 'PID 控制', shortTitle: 'PID', subtitle: 'P/I/D、限幅和抗积分饱和', stage: '05', accent: '#fb7185',
+    titleEn: 'PID Control', shortTitleEn: 'PID', subtitleEn: 'P/I/D, output limits and anti-windup' },
+  { id: 'foc-flow', title: 'FOC 总体流程', shortTitle: 'FOC 流程', subtitle: '采样、变换、电流环、SVPWM 闭环链路', stage: '06', accent: '#22d3ee',
+    titleEn: 'FOC Pipeline', shortTitleEn: 'FOC Flow', subtitleEn: 'Sampling, transforms, current loop and SVPWM chain' },
+  { id: 'svpwm', title: 'SVPWM', shortTitle: 'SVPWM', subtitle: '空间电压矢量、扇区、T1/T2/T0', stage: '07', accent: '#a3e635',
+    titleEn: 'SVPWM', shortTitleEn: 'SVPWM', subtitleEn: 'Space vectors, sectors, T1/T2/T0' },
+  { id: 'inverter', title: '三相逆变器', shortTitle: '逆变器', subtitle: '桥臂、PWM、死区和线电压', stage: '08', accent: '#f97316',
+    titleEn: 'Three-Phase Inverter', shortTitleEn: 'Inverter', subtitleEn: 'Bridge legs, PWM, dead time, line voltages' },
+  { id: 'control-loops', title: '电流环 / 速度环 / 位置环', shortTitle: '三闭环', subtitle: '内环快、外环慢和参数整定', stage: '09', accent: '#60a5fa',
+    titleEn: 'Current / Speed / Position Loops', shortTitleEn: 'Loops', subtitleEn: 'Inner loops fast, outer loops slow, tuning' },
+  { id: 'sensorless-foc', title: '无感 FOC / 观测器', shortTitle: '无感', subtitle: '反电动势、SMO、PLL 与开闭环切换', stage: '10', accent: '#c084fc',
+    titleEn: 'Sensorless FOC / Observers', shortTitleEn: 'Sensorless', subtitleEn: 'Back-EMF, SMO, PLL and open/closed-loop handover' },
+  { id: 'field-weakening', title: '弱磁控制', shortTitle: '弱磁', subtitle: '电压极限、负 Id、恒功率区', stage: '11', accent: '#2dd4bf',
+    titleEn: 'Field Weakening', shortTitleEn: 'FW', subtitleEn: 'Voltage limit, negative Id, constant-power region' },
+  { id: 'faults-debugging', title: '故障与调试', shortTitle: '调试', subtitle: '波形现象、原因定位与 STM32 排查路径', stage: '12', accent: '#ff5c7a',
+    titleEn: 'Faults & Debugging', shortTitleEn: 'Debug', subtitleEn: 'Waveform symptoms, root-cause triage, STM32 paths' },
+  { id: 'hfi-sensorless', title: 'HFI 高频注入低速无感', shortTitle: 'HFI', subtitle: '凸极比解调 + 零速启动的压缩机标配方案', stage: '13', accent: '#a3e635',
+    titleEn: 'HFI Low-Speed Sensorless', shortTitleEn: 'HFI', subtitleEn: 'Saliency demodulation + zero-speed start for compressors' },
+  { id: 'startup-statemachine', title: '压缩机启动状态机', shortTitle: '启动机', subtitle: 'V/f 启动 → HFI → BEMF → 弱磁全过程', stage: '14', accent: '#22d3ee',
+    titleEn: 'Compressor Startup State Machine', shortTitleEn: 'Startup', subtitleEn: 'V/f → HFI → BEMF → field weakening, end to end' },
+  { id: 'apf-frontend', title: 'APF 前级 PFC', shortTitle: 'APF', subtitle: '单相 220V → Boost PFC → 直流母线，谐波抑制 + 功率因数', stage: '15', accent: '#fb7185',
+    titleEn: 'APF Front-End PFC', shortTitleEn: 'PFC', subtitleEn: 'Single-phase 220 V → Boost PFC → DC bus, THD + PF' },
+  { id: 'refrigeration-bench', title: '制冷系统台架', shortTitle: '台架', subtitle: '蒸气压缩循环 + 工况输入 + 与 FOC 闭环耦合', stage: '16', accent: '#7dd3fc',
+    titleEn: 'Refrigeration Bench', shortTitleEn: 'Bench', subtitleEn: 'Vapor-compression cycle coupled with the FOC loop' },
 ];
+
+/** 按 locale 取模块元数据文案；en 缺字段时回退中文。 */
+export function localizeModuleMeta(
+  meta: ModuleMeta,
+  locale: 'zh-CN' | 'en-US',
+): { title: string; shortTitle: string; subtitle: string } {
+  if (locale !== 'en-US') {
+    return { title: meta.title, shortTitle: meta.shortTitle, subtitle: meta.subtitle };
+  }
+  return {
+    title: meta.titleEn ?? meta.title,
+    shortTitle: meta.shortTitleEn ?? meta.shortTitle,
+    subtitle: meta.subtitleEn ?? meta.subtitle,
+  };
+}
 
 export const threePhaseDefault: ThreePhaseParams = {
   amplitude: 6,

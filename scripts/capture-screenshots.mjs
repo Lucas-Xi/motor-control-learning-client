@@ -6,25 +6,28 @@ import { inflateSync } from 'node:zlib';
 
 const root = process.cwd();
 const baseUrl = process.env.QA_BASE_URL || 'http://127.0.0.1:4173';
-const outDir = process.env.QA_SCREENSHOT_DIR || 'output/screenshots';
+// QA_LOCALE=en → 英文界面截图（注入 localStorage locale，等待英文标题），输出到 output/screenshots-en/
+const localeMode = (process.env.QA_LOCALE || 'zh').toLowerCase();
+const isEn = localeMode === 'en';
+const outDir = process.env.QA_SCREENSHOT_DIR || (isEn ? 'output/screenshots-en' : 'output/screenshots');
 const distDir = join(root, 'dist');
 const modules = [
-  ['01', 'motor-basics', '电机基础'],
-  ['02', 'three-phase', '三相正弦波与旋转磁场'],
-  ['03', 'clarke-transform', 'Clarke 变换'],
-  ['04', 'park-transform', 'Park 变换'],
-  ['05', 'pid-control', 'PID 控制'],
-  ['06', 'foc-flow', 'FOC 总体流程'],
-  ['07', 'svpwm', 'SVPWM'],
-  ['08', 'inverter', '三相逆变器'],
-  ['09', 'control-loops', '电流环 / 速度环 / 位置环'],
-  ['10', 'sensorless-foc', '无感 FOC / 观测器'],
-  ['11', 'field-weakening', '弱磁控制'],
-  ['12', 'faults-debugging', '故障与调试'],
-  ['13', 'hfi-sensorless', 'HFI 高频注入低速无感'],
-  ['14', 'startup-statemachine', '压缩机启动状态机'],
-  ['15', 'apf-frontend', 'APF 前级 PFC'],
-  ['16', 'refrigeration-bench', '制冷系统台架'],
+  ['01', 'motor-basics', '电机基础', 'Motor Basics'],
+  ['02', 'three-phase', '三相正弦波与旋转磁场', 'Three-Phase Sine & Rotating Field'],
+  ['03', 'clarke-transform', 'Clarke 变换', 'Clarke Transform'],
+  ['04', 'park-transform', 'Park 变换', 'Park Transform'],
+  ['05', 'pid-control', 'PID 控制', 'PID Control'],
+  ['06', 'foc-flow', 'FOC 总体流程', 'FOC Pipeline'],
+  ['07', 'svpwm', 'SVPWM', 'SVPWM'],
+  ['08', 'inverter', '三相逆变器', 'Three-Phase Inverter'],
+  ['09', 'control-loops', '电流环 / 速度环 / 位置环', 'Current / Speed / Position Loops'],
+  ['10', 'sensorless-foc', '无感 FOC / 观测器', 'Sensorless FOC / Observers'],
+  ['11', 'field-weakening', '弱磁控制', 'Field Weakening'],
+  ['12', 'faults-debugging', '故障与调试', 'Faults & Debugging'],
+  ['13', 'hfi-sensorless', 'HFI 高频注入低速无感', 'HFI Low-Speed Sensorless'],
+  ['14', 'startup-statemachine', '压缩机启动状态机', 'Compressor Startup State Machine'],
+  ['15', 'apf-frontend', 'APF 前级 PFC', 'APF Front-End PFC'],
+  ['16', 'refrigeration-bench', '制冷系统台架', 'Refrigeration Bench'],
 ];
 const assemblyModule = ['17', 'assembly-workshop', '整机搭建工作台'];
 const viewports = [
@@ -121,7 +124,7 @@ async function ensureServer() {
 }
 
 async function pauseSimulation(page) {
-  const pause = page.getByRole('button', { name: /暂停/ });
+  const pause = page.getByRole('button', { name: isEn ? /Pause/ : /暂停/ });
   if (await pause.count()) {
     await pause.first().click();
   }
@@ -129,8 +132,8 @@ async function pauseSimulation(page) {
 
 async function openModule(page, stage) {
   await page.locator('aside button').filter({ hasText: `${stage} ·` }).click();
-  // 等待 lazy 模块完成加载（Suspense fallback "模块加载中…" 消失）
-  await page.locator('text=模块加载中').first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+  // 等待 lazy 模块完成加载（Suspense fallback 消失；EN 模式等待英文 fallback）
+  await page.getByText(isEn ? 'Loading module' : '模块加载中').first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(450);
 }
 
@@ -332,6 +335,7 @@ const browser = await chromium.launch();
 const manifest = {
   generatedAt: new Date().toISOString(),
   baseUrl,
+  locale: isEn ? 'en-US' : 'zh-CN',
   screenshots: [],
   canvasChecks: [],
   consoleErrors: [],
@@ -342,6 +346,12 @@ const manifest = {
 try {
   for (const [viewportName, viewport] of viewports) {
     const page = await browser.newPage({ viewport });
+    if (isEn) {
+      // 英文界面截图：zustand persist 的 localStorage 形状是 {state:{locale},version}
+      await page.addInitScript(() => {
+        localStorage.setItem('compressor-bench-locale', '{"state":{"locale":"en-US"},"version":1}');
+      });
+    }
     page.on('console', (message) => {
       if (message.type() === 'error') manifest.consoleErrors.push(message.text());
       if (message.type() === 'warning') {
@@ -356,15 +366,19 @@ try {
     await page.goto(baseUrl, { waitUntil: 'networkidle' });
     await pauseSimulation(page);
 
-    for (const [stage, slug, title] of modules) {
+    for (const [stage, slug, , titleEn] of modules) {
+      const headingName = isEn ? titleEn : modules.find((m) => m[0] === stage)[2];
       await openModule(page, stage);
-      await page.getByRole('heading', { name: title }).first().waitFor({ state: 'visible' });
-      await captureModule(page, viewportName, stage, slug, title);
+      await page.getByRole('heading', { name: headingName }).first().waitFor({ state: 'visible' });
+      await captureModule(page, viewportName, stage, slug, headingName);
     }
 
-    const [assemblyStage, assemblySlug, assemblyTitle] = assemblyModule;
-    await openAssemblyWorkshop(page);
-    await captureModule(page, viewportName, assemblyStage, assemblySlug, assemblyTitle);
+    // 装配车间入口走中文课程主线导航，EN 模式暂不采集该页
+    if (!isEn) {
+      const [assemblyStage, assemblySlug, assemblyTitle] = assemblyModule;
+      await openAssemblyWorkshop(page);
+      await captureModule(page, viewportName, assemblyStage, assemblySlug, assemblyTitle);
+    }
     await page.close();
   }
 

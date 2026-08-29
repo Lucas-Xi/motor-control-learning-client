@@ -1,5 +1,5 @@
 import { BarChart3, BookOpen, Cpu, Gauge, Target, Waves } from 'lucide-react';
-import { moduleMetas } from '../../simulation/engine/presets';
+import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
 import type { ModuleId } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
@@ -19,7 +19,7 @@ export function Sidebar() {
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
   const isCurriculum = simPanelView === 'curriculum';
   const isInsights = simPanelView === 'insights';
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <aside aria-label={t('shell.sidebarAria')} className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-line-subtle bg-bg-surface p-3 xl:h-full">
       {/* 移动端折叠 brand 头：保留行高，但去掉副标题段落避免占满 1/3 屏 */}
@@ -93,9 +93,9 @@ export function Sidebar() {
                 </span>
                 <span className="min-w-0">
                   <span className={`block truncate text-body font-medium ${active ? 'text-ink-primary' : 'text-ink-secondary'}`}>
-                    {module.shortTitle}
+                    {localizeModuleMeta(module, locale).shortTitle}
                   </span>
-                  <span className="block truncate text-caption text-ink-muted">{module.stage}<span className="hidden xl:inline"> · {module.subtitle}</span></span>
+                  <span className="block truncate text-caption text-ink-muted">{module.stage}<span className="hidden xl:inline"> · {localizeModuleMeta(module, locale).subtitle}</span></span>
                 </span>
               </div>
             </button>
