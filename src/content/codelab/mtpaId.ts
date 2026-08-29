@@ -34,6 +34,14 @@ function mtpaId(iqReq, psiF, ldMh, lqMh) {
   return [idRef];
 }
 return mtpaId;`,
+  starterEn: `// TODO: return [idRef] (MTPA d-axis current command, A)
+// dL = (lqMh - ldMh) / 1000 converts mH to H first; idRef = (psiF - Math.sqrt(psiF*psiF + 8*dL*dL*iq*iq)) / (4*dL)
+// When dL is 0 (SPM) or iqReq is 0, idRef = 0
+function mtpaId(iqReq, psiF, ldMh, lqMh) {
+  const idRef = 0;
+  return [idRef];
+}
+return mtpaId;`,
   cases: [
     {
       label: 'iq=0 A, ψf=0.012 Wb, Ld=2.5, Lq=3.5 mH（零转矩 → id*=0）',

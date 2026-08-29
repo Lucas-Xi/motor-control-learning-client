@@ -36,6 +36,15 @@ function svpwmCore(valpha, vbeta, vdc) {
   return [sector, t1, t2];
 }
 return svpwmCore;`,
+  starterEn: `// TODO: return [sector, t1, t2] (carrier period normalized to 1)
+// Hint: m = Math.sqrt(3) * Math.hypot(valpha, vbeta) / vdc
+function svpwmCore(valpha, vbeta, vdc) {
+  const sector = 1;
+  const t1 = 0;
+  const t2 = 0;
+  return [sector, t1, t2];
+}
+return svpwmCore;`,
   cases: [
     { label: 'Vα=0, Vβ=0, Vdc=100（零矢量→扇区 1）', args: [0, 0, 100], expected: [1, 0, 0] },
     { label: 'Vα=50, Vβ=10（扇区 1 典型）', args: [50, 10, 100], expected: [1, 0.6633974596, 0.1732050808] },

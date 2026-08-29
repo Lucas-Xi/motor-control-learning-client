@@ -4,6 +4,12 @@ import { e } from '../entries';
 export const refrigerationBench = {
   phTitle: e('P-h 焓压图：蒸气压缩循环', 'P-h diagram: vapour compression cycle'),
   phEyebrow: e('pressure-enthalpy diagram', 'pressure-enthalpy diagram'),
+  // P-h 面板下方 4 状态点 KPI 的标签：vaporCycle.ts 的 label 是中文（simulation 层禁改），
+  // 组件侧用中文 label → TKey 映射后走 t() 本地化。
+  phStateSuctionSuperheat: e('吸气过热', 'Superheated suction'),
+  phStateDischarge: e('排气', 'Discharge'),
+  phStateSubcool: e('冷凝过冷', 'Condenser subcool'),
+  phStateTwoPhase: e('节流后两相', 'Two-phase after throttle'),
   schematicTitle: e('制冷系统管路', 'Refrigeration system schematic'),
   schematicEyebrow: e('system schematic', 'system schematic'),
   metricsTitle: e('工况实测面板', 'Working-condition readouts'),

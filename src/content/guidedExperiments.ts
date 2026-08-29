@@ -7,6 +7,11 @@ export interface GuidedStep {
   observe: string;
   expected: string;
   presetId?: string;
+  /** 英文文案（en 经 localizeGuidedExperiment 取用，缺失回退中文） */
+  titleEn?: string;
+  actionEn?: string;
+  observeEn?: string;
+  expectedEn?: string;
 }
 
 export interface GuidedExperiment {
@@ -14,6 +19,25 @@ export interface GuidedExperiment {
   title: string;
   focus: string;
   steps: GuidedStep[];
+  /** 英文文案（en 经 localizeGuidedExperiment 取用，缺失回退中文） */
+  titleEn?: string;
+  focusEn?: string;
+}
+
+/** localizeGuidedExperiment 的输出：字段名与 GuidedStep 一致，便于组件直接渲染。 */
+export interface LocalizedGuidedStep {
+  id: string;
+  title: string;
+  action: string;
+  observe: string;
+  expected: string;
+  presetId?: string;
+}
+
+export interface LocalizedGuidedExperiment {
+  title: string;
+  focus: string;
+  steps: LocalizedGuidedStep[];
 }
 
 const sharedFallbackSteps: GuidedStep[] = [
@@ -23,6 +47,10 @@ const sharedFallbackSteps: GuidedStep[] = [
     action: '先使用默认参数运行 3 秒，观察波形和矢量是否稳定。',
     observe: '看关键变量是否处于绿色/蓝色安全区。',
     expected: '得到一个可对比的正常工作状态。',
+    titleEn: 'Establish a baseline',
+    actionEn: 'Run for 3 seconds with the default parameters, then check whether the waveforms and vectors are stable.',
+    observeEn: 'Check whether the key variables stay inside the green/blue safe zones.',
+    expectedEn: 'You now have a normal operating point to compare against.',
   },
   {
     id: 'stress',
@@ -30,6 +58,10 @@ const sharedFallbackSteps: GuidedStep[] = [
     action: '逐步增大右侧一个关键参数，不要一次拖到极限。',
     observe: '观察图表、3D 方向和现象提示是否同步变化。',
     expected: '理解该参数对控制链路的主导影响。',
+    titleEn: 'Apply a disturbance',
+    actionEn: 'Increase one key parameter on the right panel gradually; do not slam it to the limit in a single drag.',
+    observeEn: 'Watch the charts, the 3D view and the symptom hints change together.',
+    expectedEn: 'Understand that parameter\'s dominant effect on the control chain.',
   },
   {
     id: 'recover',
@@ -37,6 +69,10 @@ const sharedFallbackSteps: GuidedStep[] = [
     action: '点击重置或加载正常预设，对比恢复前后的差异。',
     observe: '记录哪个信号先异常，哪个信号后异常。',
     expected: '建立真实调试中的排查顺序。',
+    titleEn: 'Recover and summarize',
+    actionEn: 'Click Reset or load a normal preset, then compare the state before and after recovery.',
+    observeEn: 'Note which signal misbehaves first and which one follows.',
+    expectedEn: 'Build a triage order you can reuse in real debugging.',
   },
 ];
 
@@ -45,6 +81,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'three-phase',
     title: '旋转磁场三步观察',
     focus: '幅值决定磁场半径，频率决定旋转速度，不平衡/谐波会让轨迹变脏。',
+    titleEn: 'Rotating field in three steps',
+    focusEn: 'Amplitude sets the field radius and frequency sets the rotation speed; imbalance and harmonics dirty the trajectory.',
     steps: [
       {
         id: 'three-phase-clean',
@@ -52,6 +90,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载 6A / 50Hz / 平衡三相，先观察圆形旋转磁场。',
         observe: '看 3D 定子磁场、αβ 矢量和三相波形是否同步转动。',
         expected: '合成磁场幅值稳定，Ia+Ib+Ic 接近 0。',
+        titleEn: 'Clean three-phase',
+        actionEn: 'Load 6 A / 50 Hz balanced three-phase and watch the circular rotating field first.',
+        observeEn: 'Check that the 3D stator field, the αβ vector and the phase waveforms all rotate in sync.',
+        expectedEn: 'The resulting field amplitude stays constant and Ia+Ib+Ic stays close to 0.',
         presetId: 'rotating-field',
       },
       {
@@ -60,6 +102,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '把频率提高到 120Hz，同时保持幅值不变。',
         observe: '矢量角速度加快，但幅值半径基本不变。',
         expected: '频率影响磁场转速，不直接改变磁场强度。',
+        titleEn: 'Raise the frequency',
+        actionEn: 'Raise the frequency to 120 Hz while keeping the amplitude unchanged.',
+        observeEn: 'The vector spins faster but its radius barely changes.',
+        expectedEn: 'Frequency sets field speed, not field strength.',
         presetId: 'three-phase-fast',
       },
       {
@@ -68,6 +114,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加入三相不平衡、5 次谐波和采样噪声。',
         observe: '波形出现毛刺，αβ 轨迹从圆变成椭圆/抖动。',
         expected: '真实采样偏置、相阻不一致和谐波会直接污染 FOC 输入。',
+        titleEn: 'Inject distortion',
+        actionEn: 'Add three-phase imbalance, 5th harmonic and sampling noise.',
+        observeEn: 'The waveforms grow glitches and the αβ trace turns from a circle into an ellipse with jitter.',
+        expectedEn: 'Real sampling offsets, uneven phase resistance and harmonics pollute the FOC inputs directly.',
         presetId: 'three-phase-distort',
       },
     ],
@@ -76,6 +126,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'clarke-transform',
     title: 'abc 投影到 αβ',
     focus: 'Clarke 的价值不是“公式变换”，而是把三相电流压缩成可控的二维矢量。',
+    titleEn: 'Projecting abc onto αβ',
+    focusEn: 'The value of Clarke is not the formula itself, but compressing three phase currents into one controllable 2-D vector.',
     steps: [
       {
         id: 'clarke-balanced',
@@ -83,6 +135,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '使用平衡三相电流，观察零序分量 I0。',
         observe: 'I0 应接近 0，αβ 矢量长度稳定。',
         expected: '平衡三相只需要两个自由度表示。',
+        titleEn: 'Balanced input',
+        actionEn: 'Use balanced three-phase currents and watch the zero-sequence component I0.',
+        observeEn: 'I0 stays near 0 and the αβ vector length stays steady.',
+        expectedEn: 'Balanced three-phase quantities need only two degrees of freedom.',
         presetId: 'clarke-balanced',
       },
       {
@@ -91,6 +147,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '切换到手动 Ia/Ib/Ic，并让三相和不为 0。',
         observe: 'I0 变大，提示采样偏置或缺相风险。',
         expected: '零序分量是判断三相异常的重要线索。',
+        titleEn: 'Break the balance manually',
+        actionEn: 'Switch to manual Ia/Ib/Ic and make the three-phase sum non-zero.',
+        observeEn: 'I0 grows, hinting at a sampling offset or a lost phase.',
+        expectedEn: 'The zero-sequence component is a key clue for spotting three-phase anomalies.',
         presetId: 'clarke-manual',
       },
       {
@@ -99,6 +159,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '回到平衡三相并改变相位。',
         observe: 'αβ 矢量在平面内旋转。',
         expected: 'abc 正弦交流量被转换成静止平面中的旋转矢量。',
+        titleEn: 'Change the phase',
+        actionEn: 'Return to balanced three-phase and shift the phase.',
+        observeEn: 'The αβ vector rotates within the stationary plane.',
+        expectedEn: 'Sinusoidal abc quantities become a single rotating vector in the stationary plane.',
         presetId: 'clarke-phase',
       },
     ],
@@ -107,6 +171,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'park-transform',
     title: '交流量变直流量',
     focus: 'Park 变换能否成功，关键在于电角度 θ 是否与转子磁链同步。',
+    titleEn: 'Turning AC quantities into DC',
+    focusEn: 'Park only succeeds when the electrical angle θ stays synchronized with the rotor flux.',
     steps: [
       {
         id: 'park-align',
@@ -114,6 +180,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '设置中等转速和合理 θ，让 dq 轴跟随转子。',
         observe: 'Id/Iq 投影稳定，q 轴代表转矩方向。',
         expected: '同步旋转坐标中，控制器看到的是近似直流量。',
+        titleEn: 'Align with the flux',
+        actionEn: 'Set a medium speed and a sensible θ so the dq frame follows the rotor.',
+        observeEn: 'The Id/Iq projections hold steady, with the q axis pointing along torque.',
+        expectedEn: 'In the synchronously rotating frame the controller sees near-DC quantities.',
         presetId: 'park-align',
       },
       {
@@ -122,6 +192,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '改变 θ，让 dq 轴偏离真实电流矢量。',
         observe: 'Id/Iq 互相串扰，Id 不再接近目标。',
         expected: '角度错误会让磁链电流和转矩电流互相污染。',
+        titleEn: 'Create an angle error',
+        actionEn: 'Shift θ so the dq frame drifts off the true current vector.',
+        observeEn: 'Id and Iq contaminate each other and Id no longer tracks its target.',
+        expectedEn: 'An angle error lets flux current and torque current pollute each other.',
         presetId: 'park-angle-error',
       },
       {
@@ -130,6 +204,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '提高 Iq 参考，保持 Id 接近 0。',
         observe: '转矩方向矢量变强，磁链方向保持稳定。',
         expected: 'PMSM 常规 FOC 中 Id 管磁链、Iq 管转矩。',
+        titleEn: 'Raise Iq',
+        actionEn: 'Raise the Iq reference while keeping Id near 0.',
+        observeEn: 'The torque-axis vector strengthens while the flux axis stays put.',
+        expectedEn: 'In standard PMSM FOC, Id handles flux and Iq handles torque.',
         presetId: 'park-torque',
       },
     ],
@@ -138,6 +216,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'pid-control',
     title: 'PID 调参手感训练',
     focus: '先调 P 得响应，再加 I 消误差，最后只在必要时加 D 抑制趋势。',
+    titleEn: 'Building PID tuning intuition',
+    focusEn: 'Start with P for response, add I to erase the error, and add D only when the trend needs damping.',
     steps: [
       {
         id: 'pid-slow-guide',
@@ -145,6 +225,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载低 Kp / Ki，观察阶跃响应。',
         observe: '上升时间长，稳态误差消除慢。',
         expected: '参数过小不会炸机，但动态跟随能力差。',
+        titleEn: 'Slow response',
+        actionEn: 'Load low Kp / Ki and watch the step response.',
+        observeEn: 'Rise time is long and the steady-state error decays slowly.',
+        expectedEn: 'Under-sized gains will not wreck the drive, but dynamic tracking is poor.',
         presetId: 'pi-slow',
       },
       {
@@ -153,6 +237,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载高 Kp / Ki，关闭或降低抗积分饱和效果。',
         observe: '超调和振荡明显，输出更容易撞限幅。',
         expected: '采样延迟和执行器限幅会把高增益变成振荡源。',
+        titleEn: 'Excessive gain',
+        actionEn: 'Load high Kp / Ki and disable or weaken the anti-windup action.',
+        observeEn: 'Overshoot and oscillation become obvious, and the output hits its limit more often.',
+        expectedEn: 'Sampling delay plus actuator limits turn high gain into an oscillator.',
         presetId: 'pi-oscillate',
       },
       {
@@ -161,6 +249,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '启用抗积分饱和，回到中等 Kp/Ki。',
         observe: '上升速度、超调和稳态误差达到折中。',
         expected: '工程调参通常追求稳定裕量，不追求最快单次响应。',
+        titleEn: 'Balanced tuning',
+        actionEn: 'Enable anti-windup and return to medium Kp/Ki.',
+        observeEn: 'Rise speed, overshoot and steady-state error reach a compromise.',
+        expectedEn: 'Field tuning targets stability margin, not the fastest single response.',
         presetId: 'pi-balanced',
       },
     ],
@@ -169,6 +261,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'svpwm',
     title: '扇区与占空比联动',
     focus: 'SVPWM 的交互重点是：矢量角度决定扇区，幅值/母线决定是否饱和。',
+    titleEn: 'Sectors and duty cycle in lockstep',
+    focusEn: 'The SVPWM interaction essentials: vector angle picks the sector, while amplitude and bus voltage decide saturation.',
     steps: [
       {
         id: 'svpwm-sector-guide',
@@ -176,6 +270,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '旋转电角度，让电压矢量穿过 60° 边界。',
         observe: '高亮扇区、T1/T2 分配和三相 duty 同步跳变。',
         expected: '扇区判断是 SVPWM 时序排列的入口。',
+        titleEn: 'Sector switching',
+        actionEn: 'Rotate the electrical angle so the voltage vector crosses a 60° boundary.',
+        observeEn: 'The highlighted sector, the T1/T2 split and the three-phase duties jump together.',
+        expectedEn: 'Sector detection is the entry point of SVPWM timing.',
         presetId: 'svpwm-sector',
       },
       {
@@ -184,6 +282,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '提高调制比到 0.95 附近。',
         observe: 'T0 缩短，母线利用率接近极限。',
         expected: '线性区末端可用电压更高，但控制裕量变小。',
+        titleEn: 'Near the linear limit',
+        actionEn: 'Push the modulation index toward 0.95.',
+        observeEn: 'T0 shrinks and bus utilization approaches its ceiling.',
+        expectedEn: 'The end of the linear region delivers more usable voltage but less control margin.',
         presetId: 'svpwm-high-mod',
       },
       {
@@ -192,6 +294,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '降低 Udc 或提高调制比到 1 以上。',
         observe: '现象提示显示饱和，duty 更贴近 0/1 边界。',
         expected: '电压饱和会让电流环输出“给不出来”。',
+        titleEn: 'Into overmodulation',
+        actionEn: 'Lower Udc or push the modulation index above 1.',
+        observeEn: 'A saturation symptom appears and the duties hug the 0/1 rails.',
+        expectedEn: 'Voltage saturation means the current loop can no longer deliver what it demands.',
         presetId: 'svpwm-saturation',
       },
     ],
@@ -200,6 +306,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'sensorless-foc',
     title: '无感 PLL 锁相观察',
     focus: '无感不是没有反馈，而是把电压/电流里的反电动势当作角度反馈。',
+    titleEn: 'Watching a sensorless PLL lock',
+    focusEn: 'Sensorless does not mean no feedback; the back-EMF hidden in the voltages and currents serves as the angle feedback.',
     steps: [
       {
         id: 'sensorless-lock',
@@ -207,6 +315,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '设置 900rpm 左右，噪声较低。',
         observe: '真实角度、估算角度逐步贴合，误差减小。',
         expected: '反电动势足够大时 PLL 可以稳定锁相。',
+        titleEn: 'Lock at medium speed',
+        actionEn: 'Set around 900 rpm with low noise.',
+        observeEn: 'True and estimated angles gradually converge and the error shrinks.',
+        expectedEn: 'With enough back-EMF the PLL locks reliably.',
         presetId: 'sensorless-lock',
       },
       {
@@ -215,6 +327,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '降到 80rpm，并加入噪声。',
         observe: '角度误差放大，估算角度抖动。',
         expected: '低速反电势太小，是无感启动困难的根因。',
+        titleEn: 'Failure at low speed',
+        actionEn: 'Drop to 80 rpm and add noise.',
+        observeEn: 'The angle error blows up and the estimated angle jitters.',
+        expectedEn: 'Too little back-EMF at low speed is the root cause of hard sensorless starts.',
         presetId: 'sensorless-low-speed',
       },
       {
@@ -223,6 +339,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '提高 PLL Kp/Ki 后观察跟踪速度和噪声放大。',
         observe: '锁相变快，但估算角更容易抖。',
         expected: '观测器调参本质是带宽和抗噪的折中。',
+        titleEn: 'Tune the PLL gains',
+        actionEn: 'Raise PLL Kp/Ki, then compare tracking speed against noise amplification.',
+        observeEn: 'Locking gets faster but the estimated angle jitters more.',
+        expectedEn: 'Observer tuning is ultimately a bandwidth-versus-noise trade-off.',
         presetId: 'sensorless-gain',
       },
     ],
@@ -231,6 +351,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'field-weakening',
     title: '弱磁极限圆实验',
     focus: '弱磁不是单纯追高速，而是在电流圆和电压圆交集里找还能工作的点。',
+    titleEn: 'The field-weakening limit circles',
+    focusEn: 'Field weakening is not just chasing speed; it is finding a workable point inside the overlap of the current circle and the voltage circle.',
     steps: [
       {
         id: 'weak-normal',
@@ -238,6 +360,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '中等转速下保持 Id 接近 0。',
         observe: '工作点在电流圆内，电压仍有余量。',
         expected: '低中速通常不需要负 Id。',
+        titleEn: 'Constant-torque region',
+        actionEn: 'Hold Id near 0 at medium speed.',
+        observeEn: 'The operating point sits inside the current circle with voltage margin to spare.',
+        expectedEn: 'Low and medium speeds normally need no negative Id.',
         presetId: 'weak-normal',
       },
       {
@@ -246,6 +372,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '提高转速或降低母线电压。',
         observe: '电压极限提示变红，工作点被电压圆挤压。',
         expected: '高速反电动势吃掉母线电压，电流环失去余量。',
+        titleEn: 'Create voltage saturation',
+        actionEn: 'Raise the speed or lower the bus voltage.',
+        observeEn: 'The voltage-limit indicator turns red and the operating point is squeezed by the voltage circle.',
+        expectedEn: 'At high speed the back-EMF eats the bus voltage and the current loop loses headroom.',
         presetId: 'weak-saturation',
       },
       {
@@ -254,6 +384,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '给定负 Id，同时保留一定 Iq。',
         observe: '工作点向负 d 轴移动，电压余量恢复但转矩下降。',
         expected: '弱磁用转矩换高速，适合压缩机等高速场景。',
+        titleEn: 'Inject negative Id',
+        actionEn: 'Command a negative Id while keeping some Iq.',
+        observeEn: 'The operating point slides toward the negative d axis; voltage margin recovers but torque drops.',
+        expectedEn: 'Field weakening trades torque for speed, a good fit for compressors and other high-speed loads.',
         presetId: 'weak-negative-id',
       },
     ],
@@ -262,6 +396,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'motor-basics',
     title: '电角度与机械角实验',
     focus: '极对数越多，同样一圈机械旋转对应的电角度循环次数越多。',
+    titleEn: 'Electrical angle vs mechanical angle',
+    focusEn: 'More pole pairs mean more electrical-angle cycles for the same single mechanical revolution.',
     steps: [
       {
         id: 'motor-angle',
@@ -269,6 +405,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '设定 4 极对，把机械角从 0° 拖到 360°。',
         observe: '电角度会循环 4 圈，而机械角只走 1 圈。',
         expected: 'FOC 使用电角度，不是机械角度。',
+        titleEn: 'Angle mapping',
+        actionEn: 'Set 4 pole pairs and sweep the mechanical angle from 0° to 360°.',
+        observeEn: 'The electrical angle cycles 4 times while the mechanical angle goes around once.',
+        expectedEn: 'FOC runs on electrical angle, not mechanical angle.',
         presetId: 'motor-angle',
       },
       {
@@ -277,6 +417,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '把极对数提高到 6 或 8。',
         observe: '同样机械角下，电角度变化更快。',
         expected: '极对数错误会直接导致 dq 轴不同步。',
+        titleEn: 'Change the pole pairs',
+        actionEn: 'Raise the pole-pair count to 6 or 8.',
+        observeEn: 'For the same mechanical angle the electrical angle now advances faster.',
+        expectedEn: 'A wrong pole-pair count immediately desynchronizes the dq frame.',
         presetId: 'motor-poles',
       },
       {
@@ -285,6 +429,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '提高转速和额定电流，观察机械/电气指标。',
         observe: '参数卡片会显示更高的运行区间。',
         expected: '额定值决定调试安全边界。',
+        titleEn: 'Rated limits',
+        actionEn: 'Raise the speed and the rated current, then check the mechanical and electrical readouts.',
+        observeEn: 'The parameter card shows a wider operating range.',
+        expectedEn: 'Ratings define the safe envelope for debugging.',
         presetId: 'motor-rated',
       },
     ],
@@ -293,6 +441,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'foc-flow',
     title: 'FOC 中断流水线单步',
     focus: 'FOC 的每个 PWM 周期都是采样、变换、PI、电压合成、逆变器输出的闭环流水线。',
+    titleEn: 'Stepping through the FOC interrupt',
+    focusEn: 'Every PWM cycle runs the same closed pipeline: sample, transform, PI, voltage synthesis, inverter output.',
     steps: [
       {
         id: 'foc-sample',
@@ -300,6 +450,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '暂停运行后单步执行，先看三相电流输入。',
         observe: '参数探针从采样端开始变化。',
         expected: '采样偏置会污染后面所有变换。',
+        titleEn: 'Sampling entry',
+        actionEn: 'Pause the run and single-step, starting from the three-phase current inputs.',
+        observeEn: 'Parameter probes begin changing at the sampling stage.',
+        expectedEn: 'A sampling offset contaminates every transform downstream.',
         presetId: 'foc-sample',
       },
       {
@@ -308,6 +462,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '观察 Id/Iq 误差进入两个 PI 控制器。',
         observe: 'PI 输出变成 Vd/Vq，再经过反 Park。',
         expected: 'FOC 本质上是把交流电流变成直流电流来控。',
+        titleEn: 'Current PI',
+        actionEn: 'Watch the Id/Iq errors feed the two PI controllers.',
+        observeEn: 'The PI outputs become Vd/Vq and then pass through inverse Park.',
+        expectedEn: 'FOC is essentially controlling AC currents as if they were DC.',
         presetId: 'foc-current-loop',
       },
       {
@@ -316,6 +474,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '连续运行，观察数据流走到 SVPWM 与逆变器。',
         observe: '流程轨道高亮从左到右循环。',
         expected: '角度反馈会在下一个周期重新进入 Park。',
+        titleEn: 'PWM output',
+        actionEn: 'Resume continuous run and follow the data flow into SVPWM and the inverter.',
+        observeEn: 'The pipeline track highlights sweep from left to right.',
+        expectedEn: 'Angle feedback re-enters Park on the next cycle.',
         presetId: 'foc-output',
       },
     ],
@@ -324,6 +486,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'inverter',
     title: '逆变器死区与占空比',
     focus: '逆变器交互要看桥臂状态、占空比和死区畸变三者是否同步。',
+    titleEn: 'Inverter dead time and duty',
+    focusEn: 'Watch the bridge states, the duties and the dead-time distortion to confirm they move together.',
     steps: [
       {
         id: 'inverter-clean',
@@ -331,6 +495,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '使用 48V 母线和中等占空比。',
         observe: '三相相电压/线电压保持对称。',
         expected: '互补导通是三相桥的基本安全规则。',
+        titleEn: 'Normal PWM',
+        actionEn: 'Use a 48 V bus with medium duties.',
+        observeEn: 'The three-phase and line voltages stay symmetric.',
+        expectedEn: 'Complementary switching is the baseline safety rule of a three-phase bridge.',
         presetId: 'inverter-clean',
       },
       {
@@ -339,6 +507,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '把死区提高到 3us 以上。',
         observe: '死区畸变提示增强，低速电流更容易变形。',
         expected: '死区保护开关管，但会带来电压误差。',
+        titleEn: 'Widen the dead time',
+        actionEn: 'Raise the dead time beyond 3 μs.',
+        observeEn: 'The dead-time distortion hint strengthens and low-speed currents deform more easily.',
+        expectedEn: 'Dead time protects the switches but introduces a voltage error.',
         presetId: 'inverter-deadtime',
       },
       {
@@ -347,6 +519,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '把 A/B/C 占空比拉到接近边界。',
         observe: '桥臂开关时间变窄，波形更容易削顶。',
         expected: '过调制和采样窗口不足都可能带来异常。',
+        titleEn: 'Extreme duties',
+        actionEn: 'Push the A/B/C duties toward their rails.',
+        observeEn: 'The bridge switching windows narrow and the waveforms clip more easily.',
+        expectedEn: 'Overmodulation and an insufficient sampling window can both cause anomalies.',
         presetId: 'inverter-overmod',
       },
     ],
@@ -355,6 +531,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'control-loops',
     title: '三闭环带宽层级',
     focus: '内环必须快，外环必须慢；速度环追着电流环跑就会振。',
+    titleEn: 'Three-loop bandwidth hierarchy',
+    focusEn: 'Inner loops must be fast and outer loops slow; a speed loop that chases the current loop will oscillate.',
     steps: [
       {
         id: 'loops-stable',
@@ -362,6 +540,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载温和的电流环、速度环、位置环参数。',
         observe: '电流先收敛，转速随后收敛，位置最后收敛。',
         expected: '三环带宽应该由内到外逐级降低。',
+        titleEn: 'Stable hierarchy',
+        actionEn: 'Load gentle current-, speed- and position-loop gains.',
+        observeEn: 'Current settles first, speed next and position last.',
+        expectedEn: 'Cascade bandwidths should step down from inner to outer.',
         presetId: 'loops-stable',
       },
       {
@@ -370,6 +552,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '降低速度环 PI。',
         observe: '转速跟踪慢但通常不振荡。',
         expected: '慢不是最优，但比失稳安全。',
+        titleEn: 'Too slow',
+        actionEn: 'Lower the speed-loop PI gains.',
+        observeEn: 'Speed tracking is slow but usually oscillation-free.',
+        expectedEn: 'Slow is suboptimal, but safer than instability.',
         presetId: 'loops-slow',
       },
       {
@@ -378,6 +564,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载过高速度环增益。',
         observe: '速度曲线来回摆动，转矩响应被放大。',
         expected: '外环过快会把内环当作理想执行器，最终失稳。',
+        titleEn: 'Speed oscillation',
+        actionEn: 'Load excessive speed-loop gain.',
+        observeEn: 'The speed curve swings back and forth and the torque response is amplified.',
+        expectedEn: 'An outer loop that is too fast treats the inner loop as ideal and eventually destabilizes.',
         presetId: 'speed-loop-osc',
       },
     ],
@@ -386,6 +576,8 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'faults-debugging',
     title: '故障现象到根因定位',
     focus: '调试不要先猜参数，先看波形现象，再按相序、采样、母线、电流环逐项排除。',
+    titleEn: 'From fault symptom to root cause',
+    focusEn: 'Do not guess parameters first; read the waveform symptoms, then eliminate phase order, sampling, bus and current loop one by one.',
     steps: [
       {
         id: 'fault-current',
@@ -393,6 +585,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载过流故障，观察电流尖峰和保护触发。',
         observe: '波形会出现突变，现象卡片给出排查路径。',
         expected: '先确认采样、死区、限流和负载冲击。',
+        titleEn: 'Over-current spikes',
+        actionEn: 'Load the over-current fault and watch the current spikes and protection trips.',
+        observeEn: 'The waveform jumps abruptly and the symptom card suggests a triage path.',
+        expectedEn: 'Confirm sampling, dead time, current limit and load shock first.',
         presetId: 'fault-over-current',
       },
       {
@@ -401,6 +597,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '切换缺相或相序错误。',
         observe: '三相波形不再对称，旋转方向或幅值异常。',
         expected: '相序错误会导致反转，缺相会导致转矩脉动。',
+        titleEn: 'Lost phase or wrong phase order',
+        actionEn: 'Switch to phase loss or wrong phase order.',
+        observeEn: 'The three-phase waveform loses symmetry; rotation direction or amplitudes go wrong.',
+        expectedEn: 'Wrong phase order reverses rotation, while a lost phase causes torque ripple.',
         presetId: 'phase-order-error',
       },
       {
@@ -409,6 +609,10 @@ export const guidedExperiments: GuidedExperiment[] = [
         action: '加载电流采样偏置。',
         observe: 'Id/Iq 出现固定偏差，零序分量异常。',
         expected: '上电零点校准和 ADC 偏置补偿是必查项。',
+        titleEn: 'Sampling offset',
+        actionEn: 'Load the current-sampling offset fault.',
+        observeEn: 'Id/Iq develop a fixed bias and the zero-sequence component goes abnormal.',
+        expectedEn: 'Power-on zero calibration and ADC offset compensation are mandatory checks.',
         presetId: 'current-offset',
       },
     ],
@@ -417,39 +621,170 @@ export const guidedExperiments: GuidedExperiment[] = [
     moduleId: 'hfi-sensorless',
     title: 'HFI 低速无感三步',
     focus: 'IPM 凸极注入 → 解调 → PLL，全过程低速 / 零速可用。',
+    titleEn: 'HFI low-speed sensorless in three steps',
+    focusEn: 'IPM saliency injection → demodulation → PLL, usable at low and even zero speed.',
     steps: [
-      { id: 'hfi-default', title: 'IPM 凸极典型', action: '默认参数：凸极比 2.18，转速 50 rpm。', observe: '估算角度快速锁相到真实角。', expected: '压缩机零启动可行。' },
-      { id: 'hfi-flat-rotor', title: '表贴式失效', action: '把凸极比拖到 1.05。', observe: '估算角度噪声放大、无法锁相。', expected: 'HFI 只对 IPM 有效。' },
-      { id: 'hfi-low-freq', title: '注入频率太低', action: '把注入频率降到 200Hz。', observe: '解调输出被低频噪声污染。', expected: '注入频率必须远高于电机基频。' },
+      {
+        id: 'hfi-default',
+        title: 'IPM 凸极典型',
+        action: '默认参数：凸极比 2.18，转速 50 rpm。',
+        observe: '估算角度快速锁相到真实角。',
+        expected: '压缩机零启动可行。',
+        titleEn: 'Typical IPM saliency',
+        actionEn: 'Keep the defaults: saliency ratio 2.18, speed 50 rpm.',
+        observeEn: 'The estimated angle locks onto the true angle quickly.',
+        expectedEn: 'Zero-speed compressor start is feasible.',
+      },
+      {
+        id: 'hfi-flat-rotor',
+        title: '表贴式失效',
+        action: '把凸极比拖到 1.05。',
+        observe: '估算角度噪声放大、无法锁相。',
+        expected: 'HFI 只对 IPM 有效。',
+        titleEn: 'SPMSM failure',
+        actionEn: 'Drag the saliency ratio down to 1.05.',
+        observeEn: 'The estimated angle gets noisy and fails to lock.',
+        expectedEn: 'HFI works only on IPM machines.',
+      },
+      {
+        id: 'hfi-low-freq',
+        title: '注入频率太低',
+        action: '把注入频率降到 200Hz。',
+        observe: '解调输出被低频噪声污染。',
+        expected: '注入频率必须远高于电机基频。',
+        titleEn: 'Injection frequency too low',
+        actionEn: 'Drop the injection frequency to 200 Hz.',
+        observeEn: 'The demodulated output is polluted by low-frequency noise.',
+        expectedEn: 'The injection frequency must sit far above the motor fundamental.',
+      },
     ],
   },
   {
     moduleId: 'startup-statemachine',
     title: '压缩机启动状态机三步',
     focus: 'idle → precharge → align → V/f → HFI → BEMF → 弱磁，每段都有进入/退出条件。',
+    titleEn: 'Compressor startup state machine in three steps',
+    focusEn: 'idle → precharge → align → V/f → HFI → BEMF → field weakening, each stage with entry and exit conditions.',
     steps: [
-      { id: 'startup-default', title: '正常启动序列', action: '默认 3000 rpm 目标，斜坡 600 rpm/s。', observe: '7 个状态依次激活，转速平滑爬升。', expected: '总耗时约 6 秒。' },
-      { id: 'startup-aggressive', title: '过激斜坡', action: '把斜坡拉到 2500 rpm/s。', observe: 'Iq 电流瞬间突变，启动应力大。', expected: '反液击是压缩机启动的硬约束。' },
-      { id: 'startup-fieldweak', title: '高速进入弱磁', action: '把目标转速拉到 8000 rpm。', observe: '状态机最后切到弱磁状态。', expected: '弱磁是 BEMF 状态的高速延伸。' },
+      {
+        id: 'startup-default',
+        title: '正常启动序列',
+        action: '默认 3000 rpm 目标，斜坡 600 rpm/s。',
+        observe: '7 个状态依次激活，转速平滑爬升。',
+        expected: '总耗时约 6 秒。',
+        titleEn: 'Normal startup sequence',
+        actionEn: 'Keep the defaults: 3000 rpm target with a 600 rpm/s ramp.',
+        observeEn: 'The 7 states activate in turn and the speed ramps smoothly.',
+        expectedEn: 'The whole sequence takes about 6 seconds.',
+      },
+      {
+        id: 'startup-aggressive',
+        title: '过激斜坡',
+        action: '把斜坡拉到 2500 rpm/s。',
+        observe: 'Iq 电流瞬间突变，启动应力大。',
+        expected: '反液击是压缩机启动的硬约束。',
+        titleEn: 'Aggressive ramp',
+        actionEn: 'Push the ramp to 2500 rpm/s.',
+        observeEn: 'Iq jumps abruptly and the startup stress spikes.',
+        expectedEn: 'Liquid slugging is the hard constraint on compressor starts.',
+      },
+      {
+        id: 'startup-fieldweak',
+        title: '高速进入弱磁',
+        action: '把目标转速拉到 8000 rpm。',
+        observe: '状态机最后切到弱磁状态。',
+        expected: '弱磁是 BEMF 状态的高速延伸。',
+        titleEn: 'Field weakening at high speed',
+        actionEn: 'Raise the target speed to 8000 rpm.',
+        observeEn: 'The state machine finally switches into the field-weakening state.',
+        expectedEn: 'Field weakening is the high-speed extension of the BEMF state.',
+      },
     ],
   },
   {
     moduleId: 'apf-frontend',
     title: 'PFC 前级三步观察',
     focus: '电网电压 + 电感电流跟踪 + 母线稳定 — 高 PF 低 THD 的工作机制。',
+    titleEn: 'PFC front end in three steps',
+    focusEn: 'Grid voltage + inductor current tracking + a stable bus — the working mechanism behind high PF and low THD.',
     steps: [
-      { id: 'apf-default', title: '正常工作点', action: '默认 220V/380V/4A 负载。', observe: '输入电流和电压几乎同相同形，PF > 0.99。', expected: 'Boost PFC 标准工作状态。' },
-      { id: 'apf-low-bus', title: '降低母线目标', action: '把 Udc 目标从 380 拉到 250V。', observe: 'PF 下降、THD 上升。', expected: '不升压时电流跟踪能力差，谐波恶化。' },
-      { id: 'apf-heavy-load', title: '负载突增', action: '负载电流从 4A 拉到 12A。', observe: '母线短时下沉、电流参考幅值上调。', expected: '电压环负反馈过程。' },
+      {
+        id: 'apf-default',
+        title: '正常工作点',
+        action: '默认 220V/380V/4A 负载。',
+        observe: '输入电流和电压几乎同相同形，PF > 0.99。',
+        expected: 'Boost PFC 标准工作状态。',
+        titleEn: 'Normal operating point',
+        actionEn: 'Keep the defaults: 220 V / 380 V bus / 4 A load.',
+        observeEn: 'Input current matches the voltage in shape and phase, with PF > 0.99.',
+        expectedEn: 'This is the standard operating state of a Boost PFC.',
+      },
+      {
+        id: 'apf-low-bus',
+        title: '降低母线目标',
+        action: '把 Udc 目标从 380 拉到 250V。',
+        observe: 'PF 下降、THD 上升。',
+        expected: '不升压时电流跟踪能力差，谐波恶化。',
+        titleEn: 'Lower the bus target',
+        actionEn: 'Drop the Udc target from 380 V to 250 V.',
+        observeEn: 'PF falls and THD rises.',
+        expectedEn: 'Without boost the current tracker struggles and harmonics worsen.',
+      },
+      {
+        id: 'apf-heavy-load',
+        title: '负载突增',
+        action: '负载电流从 4A 拉到 12A。',
+        observe: '母线短时下沉、电流参考幅值上调。',
+        expected: '电压环负反馈过程。',
+        titleEn: 'Sudden load step',
+        actionEn: 'Step the load current from 4 A to 12 A.',
+        observeEn: 'The bus dips briefly and the current-reference amplitude is raised.',
+        expectedEn: 'You are watching the voltage loop do its negative-feedback job.',
+      },
     ],
   },
 ];
+
+/** 按 locale 取实验文案；en 缺字段时回退中文，step 的 id/presetId 原样保留。 */
+export function localizeGuidedExperiment(
+  exp: GuidedExperiment,
+  locale: 'zh-CN' | 'en-US',
+): LocalizedGuidedExperiment {
+  if (locale !== 'en-US') {
+    return {
+      title: exp.title,
+      focus: exp.focus,
+      steps: exp.steps.map((step) => ({
+        id: step.id,
+        title: step.title,
+        action: step.action,
+        observe: step.observe,
+        expected: step.expected,
+        presetId: step.presetId,
+      })),
+    };
+  }
+  return {
+    title: exp.titleEn ?? exp.title,
+    focus: exp.focusEn ?? exp.focus,
+    steps: exp.steps.map((step) => ({
+      id: step.id,
+      title: step.titleEn ?? step.title,
+      action: step.actionEn ?? step.action,
+      observe: step.observeEn ?? step.observe,
+      expected: step.expectedEn ?? step.expected,
+      presetId: step.presetId,
+    })),
+  };
+}
 
 export function getGuidedExperiment(moduleId: ModuleId): GuidedExperiment {
   return guidedExperiments.find((item) => item.moduleId === moduleId) ?? {
     moduleId,
     title: '通用实验路径',
     focus: '先建立正常波形，再施加单一变量扰动，最后恢复并总结。',
+    titleEn: 'General experiment path',
+    focusEn: 'First establish a normal waveform, then perturb one variable at a time, and finally recover and summarize.',
     steps: sharedFallbackSteps,
   };
 }

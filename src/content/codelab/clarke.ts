@@ -28,6 +28,15 @@ function clarkeTransform(ia, ib, ic) {
   return [alpha, beta, zero];
 }
 return clarkeTransform;`,
+  starterEn: `// TODO: return [alpha, beta, zero]
+// Hint: alpha = ia; beta = (ia + 2*ib) / Math.sqrt(3); zero = (ia+ib+ic)/3
+function clarkeTransform(ia, ib, ic) {
+  const alpha = 0;
+  const beta = 0;
+  const zero = 0;
+  return [alpha, beta, zero];
+}
+return clarkeTransform;`,
   cases: [
     { label: 'Ia=1, Ib=0, Ic=-1（不平衡）', args: [1, 0, -1], expected: [1, 0.5773502692, 0] },
     { label: 'Ia=0.5, Ib=0.3, Ic=0.2（零序 0.33）', args: [0.5, 0.3, 0.2], expected: [0.5, 0.6350852961, 0.3333333333] },

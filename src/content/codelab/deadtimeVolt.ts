@@ -28,6 +28,13 @@ function deadtimeVolt(iLoad, dtSec, fsw, vdc) {
   return [dv];
 }
 return deadtimeVolt;`,
+  starterEn: `// TODO: return [dv] (dead-time average error voltage, V)
+// Hint: magnitude = vdc * dtSec * fsw; sign = polarity of iLoad (iLoad=0 -> dv=0)
+function deadtimeVolt(iLoad, dtSec, fsw, vdc) {
+  const dv = 0;
+  return [dv];
+}
+return deadtimeVolt;`,
   cases: [
     { label: 'i=+8A, Td=2μs, fsw=10kHz, Vdc=48V（正电流）', args: [8, 2e-6, 10e3, 48], expected: [0.9600000000] },
     { label: 'i=-8A, Td=2μs, fsw=10kHz, Vdc=48V（负电流反号）', args: [-8, 2e-6, 10e3, 48], expected: [-0.9600000000] },

@@ -36,6 +36,17 @@ function notchCoeff(f0Hz, fsHz, q) {
   return [b0, b1, b2, a1, a2];
 }
 return notchCoeff;`,
+  starterEn: `// TODO: return the normalized coefficients [b0, b1, b2, a1, a2]
+// w0 = 2*PI*f0Hz/fsHz, alpha = sin(w0)/(2*q), a0 = 1+alpha, divide all five by a0
+function notchCoeff(f0Hz, fsHz, q) {
+  const b0 = 0;
+  const b1 = 0;
+  const b2 = 0;
+  const a1 = 0;
+  const a2 = 0;
+  return [b0, b1, b2, a1, a2];
+}
+return notchCoeff;`,
   cases: [
     {
       label: 'f0=120 Hz, Q=2, fs=10 kHz（低速共振，宽陷波）',

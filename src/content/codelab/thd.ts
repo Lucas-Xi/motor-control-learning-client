@@ -33,6 +33,13 @@ function thd(h1, h3, h5, h7) {
   return [pct];
 }
 return thd;`,
+  starterEn: `// TODO: return [pct] (current total harmonic distortion, %)
+// Hint: harmonic RSS = Math.sqrt(h3*h3 + h5*h5 + h7*h7); then divide by h1 and multiply by 100; if h1 = 0 return [0]
+function thd(h1, h3, h5, h7) {
+  const pct = 0;
+  return [pct];
+}
+return thd;`,
   cases: [
     { label: 'h1=10, 谐波全 0（纯基波）', args: [10, 0, 0, 0], expected: [0] },
     { label: 'h1=10, h3=3, h5=1, h7=0.5（3 次主导）', args: [10, 3, 1, 0.5], expected: [32.0156211872] },

@@ -27,6 +27,14 @@ function parkTransform(iAlpha, iBeta, thetaRad) {
   return [d, q];
 }
 return parkTransform;`,
+  starterEn: `// TODO: return [d, q]
+// Hint: d = iAlpha*cos(theta) + iBeta*sin(theta); q = -iAlpha*sin(theta) + iBeta*cos(theta)
+function parkTransform(iAlpha, iBeta, thetaRad) {
+  const d = 0;
+  const q = 0;
+  return [d, q];
+}
+return parkTransform;`,
   cases: [
     { label: 'θ=0°（dq 与 αβ 重合）', args: [3, 1.5, 0], expected: [3, 1.5] },
     { label: 'θ=90°（d 对准 β）', args: [2, -1, 1.5707963267948966], expected: [-1, -2] },

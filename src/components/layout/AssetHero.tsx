@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Maximize2, X } from 'lucide-react';
 import type { ModuleId } from '../../simulation/engine/types';
-import { getVisualAssetForModule } from '../../content/visualAssets';
+import { getVisualAssetForModule, pickAssetTitle } from '../../content/visualAssets';
 import { useI18n } from '../../i18n/useI18n';
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
  * - 高度 120-180px，object-cover，不破坏现有模块卡片布局。
  */
 export function AssetHero({ moduleId, title, compact = false }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const asset = getVisualAssetForModule(moduleId);
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
@@ -36,7 +36,7 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
   if (!asset) return null;
 
   const heightCls = compact ? 'h-[120px]' : 'h-[160px] md:h-[180px]';
-  const caption = title ?? asset.title;
+  const caption = title ?? pickAssetTitle(asset, locale);
 
   return (
     <>
@@ -55,7 +55,7 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
           {asset.optimizedFilename && <source srcSet={asset.optimizedFilename} type="image/webp" />}
           <img
             src={asset.filename}
-            alt={asset.title}
+            alt={pickAssetTitle(asset, locale)}
             className="absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-300 group-hover:scale-[1.02]"
             loading="lazy"
             decoding="async"
@@ -94,7 +94,7 @@ export function AssetHero({ moduleId, title, compact = false }: Props) {
             {asset.optimizedFilename && <source srcSet={asset.optimizedFilename} type="image/webp" />}
             <img
               src={asset.filename}
-              alt={asset.title}
+              alt={pickAssetTitle(asset, locale)}
               className="max-h-[88vh] max-w-[92vw] rounded-2xl border border-line-subtle object-contain shadow-2xl"
             />
           </picture>

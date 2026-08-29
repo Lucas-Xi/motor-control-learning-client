@@ -29,6 +29,13 @@ function lpfStep(x, yPrev, alpha) {
   return [yNew];
 }
 return lpfStep;`,
+  starterEn: `// TODO: return [yNew] (the new filtered state)
+// Hint: yNew = yPrev + alpha * (x - yPrev); alpha=0 -> hold, alpha=1 -> pass-through
+function lpfStep(x, yPrev, alpha) {
+  const yNew = 0;
+  return [yNew];
+}
+return lpfStep;`,
   cases: [
     { label: 'x=3.2, y=1.0, α=0（完全保持）', args: [3.2, 1, 0], expected: [1.0000000000] },
     { label: 'x=-2.5, y=0.7, α=1（无滤波直通）', args: [-2.5, 0.7, 1], expected: [-2.5000000000] },

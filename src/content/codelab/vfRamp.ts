@@ -35,6 +35,13 @@ function vfRamp(fReqHz, fRatedHz, vRated) {
   return [vOut];
 }
 return vfRamp;`,
+  starterEn: `// TODO: return [vOut] (V/f voltage command, V)
+// Hint: clamp the frequency first, f = Math.max(0, Math.min(fReqHz, fRatedHz)), then vOut = vRated * f / fRatedHz
+function vfRamp(fReqHz, fRatedHz, vRated) {
+  const vOut = 0;
+  return [vOut];
+}
+return vfRamp;`,
   cases: [
     { label: 'f=0 Hz（静止 → 零压）', args: [0, 50, 310], expected: [0] },
     { label: 'f=25 Hz（半额 → 半压）', args: [25, 50, 310], expected: [155] },

@@ -61,6 +61,17 @@ function ProbeCardFallback({ label }: { label: string }) {
 const CP_V: Record<string, number> = { R32: 1.05, R410A: 0.97, R134a: 1.02 };
 const CP_L: Record<string, number> = { R32: 2.28, R410A: 1.78, R134a: 1.50 };
 
+/**
+ * 单级 4 状态点中文 label（vaporCycle.ts，simulation 层禁改）→ refrigerationBench ns 的 TKey。
+ * 未命中的 label（如两级覆盖的 9 点，只进 PhDiagram 不进 DOM）原样显示。
+ */
+const PH_STATE_LABEL_KEYS: Record<string, TKey> = {
+  吸气过热: 'refrigerationBench.phStateSuctionSuperheat',
+  排气: 'refrigerationBench.phStateDischarge',
+  冷凝过冷: 'refrigerationBench.phStateSubcool',
+  节流后两相: 'refrigerationBench.phStateTwoPhase',
+};
+
 function PhPanel() {
   const refrig = useSimulationStore((s) => s.refrigeration);
   const motor = useSimulationStore((s) => s.motorBasics);
@@ -158,7 +169,7 @@ function PhPanel() {
         {result.states.map((s) => (
           <div key={s.index} className="rounded-md border border-line-subtle bg-bg-base px-2 py-1.5">
             <div className="text-ink-primary">
-              <span className="text-accent-fault">[{s.index}]</span> {s.label}
+              <span className="text-accent-fault">[{s.index}]</span> {PH_STATE_LABEL_KEYS[s.label] ? t(PH_STATE_LABEL_KEYS[s.label]) : s.label}
             </div>
             <div>P = <span className="text-accent-primary">{formatNumber(s.P, 3)}</span> MPa</div>
             <div>T = <span className="text-accent-primary">{formatNumber(s.T, 1)}</span> °C</div>

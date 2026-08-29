@@ -4,6 +4,7 @@ import type {
   FOCParams,
   HFIParams,
   InverterParams,
+  ModuleId,
   ModuleMeta,
   MotorBasicsParams,
   SensorlessParams,
@@ -257,20 +258,46 @@ export const controlLoopDefault: ControlLoopParams = {
   targetPosition: 360,
 };
 
-export const experimentPresets = [
-  { id: 'rotating-field', title: '三相正弦电流形成旋转磁场', moduleId: 'three-phase' as const, description: '调节幅值和频率，观察合成磁场矢量的角速度与幅值。' },
-  { id: 'clarke-projection', title: 'Clarke 变换观察三相到 αβ', moduleId: 'clarke-transform' as const, description: '切换三相平衡/不平衡，观察零序分量和 αβ 矢量。' },
-  { id: 'park-dc', title: 'Park 变换观察交流量变直流量', moduleId: 'park-transform' as const, description: '改变电角度，观察 Id/Iq 如何随旋转坐标变化。' },
-  { id: 'pi-slow', title: 'PI 参数过小导致响应慢', moduleId: 'pid-control' as const, description: '低 Kp/Ki 下电流上升慢，稳态误差消除也慢。' },
-  { id: 'pi-oscillate', title: 'PI 参数过大导致振荡', moduleId: 'pid-control' as const, description: '过高增益会放大采样延迟，形成超调和振荡。' },
-  { id: 'svpwm-sector', title: 'SVPWM 扇区切换', moduleId: 'svpwm' as const, description: '旋转电压矢量，观察六个扇区依次点亮。' },
-  { id: 'vbus-drop', title: '母线电压降低导致电压饱和', moduleId: 'field-weakening' as const, description: '降低 Udc 后，电压极限圆缩小，电流环失去余量。' },
-  { id: 'negative-id', title: 'Id 负值注入实现弱磁', moduleId: 'field-weakening' as const, description: '给定负 Id，减小等效磁链以换取高速运行空间。' },
-  { id: 'speed-loop-osc', title: '速度环参数过大导致电机振荡', moduleId: 'control-loops' as const, description: '外环过快会追着电流环跑，造成转速摆动。' },
-  { id: 'low-speed-sensorless', title: '低速无感估算失败', moduleId: 'sensorless-foc' as const, description: '低速反电动势幅值小，角度估计受噪声影响明显。' },
-  { id: 'phase-order-error', title: '相序错误导致电机反转', moduleId: 'faults-debugging' as const, description: '调换任意两相后旋转磁场方向反转。' },
-  { id: 'current-offset', title: '电流采样偏置导致 Id/Iq 异常', moduleId: 'faults-debugging' as const, description: '采样零点漂移会让 dq 电流出现固定偏差。' },
-  { id: 'fridge-low-load', title: '空调冬季制冷工况（低负载）', moduleId: 'refrigeration-bench' as const, description: 'Te=12℃、Tc=38℃ 低压差，电机 Iq 需求小、COP 高。' },
-  { id: 'fridge-high-load', title: '空调极端高温工况（重载）', moduleId: 'refrigeration-bench' as const, description: 'Te=5℃、Tc=55℃ 大压差，排气温度逼近 110℃，COP 跌穿 2.5。' },
-  { id: 'fridge-frozen', title: '冷冻应用（R-134a 低蒸发）', moduleId: 'refrigeration-bench' as const, description: 'Te=-25℃、Tc=40℃ 模拟商用冰柜：质量流量小但单位功大。' },
+/** 实验预设（右侧"案例"卡片）。中文为默认文案，En 字段供 en-US 界面取用，缺失回退中文。 */
+export interface ExperimentPreset {
+  id: string;
+  moduleId: ModuleId;
+  title: string;
+  description: string;
+  /** 英文界面文案（消费方按 locale 取用） */
+  titleEn?: string;
+  descriptionEn?: string;
+}
+
+export const experimentPresets: ExperimentPreset[] = [
+  { id: 'rotating-field', title: '三相正弦电流形成旋转磁场', moduleId: 'three-phase', description: '调节幅值和频率，观察合成磁场矢量的角速度与幅值。',
+    titleEn: 'Three-phase sine currents build a rotating field', descriptionEn: 'Vary amplitude and frequency, then watch the angular speed and magnitude of the resulting field vector.' },
+  { id: 'clarke-projection', title: 'Clarke 变换观察三相到 αβ', moduleId: 'clarke-transform', description: '切换三相平衡/不平衡，观察零序分量和 αβ 矢量。',
+    titleEn: 'Clarke transform: from abc to αβ', descriptionEn: 'Toggle balanced/unbalanced three-phase and watch the zero-sequence component and the αβ vector.' },
+  { id: 'park-dc', title: 'Park 变换观察交流量变直流量', moduleId: 'park-transform', description: '改变电角度，观察 Id/Iq 如何随旋转坐标变化。',
+    titleEn: 'Park transform: AC quantities become DC', descriptionEn: 'Change the electrical angle and watch how Id/Iq follow the rotating frame.' },
+  { id: 'pi-slow', title: 'PI 参数过小导致响应慢', moduleId: 'pid-control', description: '低 Kp/Ki 下电流上升慢，稳态误差消除也慢。',
+    titleEn: 'Under-sized PI gains give a slow response', descriptionEn: 'With low Kp/Ki the current rises slowly and the steady-state error decays slowly too.' },
+  { id: 'pi-oscillate', title: 'PI 参数过大导致振荡', moduleId: 'pid-control', description: '过高增益会放大采样延迟，形成超调和振荡。',
+    titleEn: 'Over-sized PI gains cause oscillation', descriptionEn: 'Excessive gain amplifies sampling delay into overshoot and oscillation.' },
+  { id: 'svpwm-sector', title: 'SVPWM 扇区切换', moduleId: 'svpwm', description: '旋转电压矢量，观察六个扇区依次点亮。',
+    titleEn: 'SVPWM sector switching', descriptionEn: 'Rotate the voltage vector and watch the six sectors light up in turn.' },
+  { id: 'vbus-drop', title: '母线电压降低导致电压饱和', moduleId: 'field-weakening', description: '降低 Udc 后，电压极限圆缩小，电流环失去余量。',
+    titleEn: 'Bus voltage drop causes voltage saturation', descriptionEn: 'After lowering Udc the voltage-limit circle shrinks and the current loop loses headroom.' },
+  { id: 'negative-id', title: 'Id 负值注入实现弱磁', moduleId: 'field-weakening', description: '给定负 Id，减小等效磁链以换取高速运行空间。',
+    titleEn: 'Negative Id injection for field weakening', descriptionEn: 'Command a negative Id to reduce the effective flux and buy high-speed operating room.' },
+  { id: 'speed-loop-osc', title: '速度环参数过大导致电机振荡', moduleId: 'control-loops', description: '外环过快会追着电流环跑，造成转速摆动。',
+    titleEn: 'Over-gained speed loop makes the motor oscillate', descriptionEn: 'An outer loop that is too fast chases the current loop and makes the speed swing.' },
+  { id: 'low-speed-sensorless', title: '低速无感估算失败', moduleId: 'sensorless-foc', description: '低速反电动势幅值小，角度估计受噪声影响明显。',
+    titleEn: 'Low-speed sensorless estimation fails', descriptionEn: 'The low-speed back-EMF is tiny, so the angle estimate is clearly degraded by noise.' },
+  { id: 'phase-order-error', title: '相序错误导致电机反转', moduleId: 'faults-debugging', description: '调换任意两相后旋转磁场方向反转。',
+    titleEn: 'Wrong phase order reverses the motor', descriptionEn: 'Swap any two phases and the rotating field reverses direction.' },
+  { id: 'current-offset', title: '电流采样偏置导致 Id/Iq 异常', moduleId: 'faults-debugging', description: '采样零点漂移会让 dq 电流出现固定偏差。',
+    titleEn: 'Current sampling offset corrupts Id/Iq', descriptionEn: 'Sampling zero drift leaves a fixed bias on the dq currents.' },
+  { id: 'fridge-low-load', title: '空调冬季制冷工况（低负载）', moduleId: 'refrigeration-bench', description: 'Te=12℃、Tc=38℃ 低压差，电机 Iq 需求小、COP 高。',
+    titleEn: 'AC winter cooling condition (low load)', descriptionEn: 'Te=12°C, Tc=38°C with low pressure lift: small Iq demand and high COP.' },
+  { id: 'fridge-high-load', title: '空调极端高温工况（重载）', moduleId: 'refrigeration-bench', description: 'Te=5℃、Tc=55℃ 大压差，排气温度逼近 110℃，COP 跌穿 2.5。',
+    titleEn: 'AC extreme-heat condition (heavy load)', descriptionEn: 'Te=5°C, Tc=55°C with a large pressure lift: discharge temperature near 110°C and COP below 2.5.' },
+  { id: 'fridge-frozen', title: '冷冻应用（R-134a 低蒸发）', moduleId: 'refrigeration-bench', description: 'Te=-25℃、Tc=40℃ 模拟商用冰柜：质量流量小但单位功大。',
+    titleEn: 'Freezer application (R-134a low evaporation)', descriptionEn: 'Te=-25°C, Tc=40°C, mimicking a commercial freezer: small mass flow but high specific work.' },
 ];

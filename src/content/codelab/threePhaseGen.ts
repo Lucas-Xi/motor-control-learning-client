@@ -34,6 +34,15 @@ function threePhaseGen(amp, thetaRad) {
   return [ia, ib, ic];
 }
 return threePhaseGen;`,
+  starterEn: `// TODO: return [ia, ib, ic] (balanced three-phase, 2*pi/3 apart)
+// Hint: shift = (2 * Math.PI) / 3; ib uses Math.sin(thetaRad - shift), ic uses Math.sin(thetaRad + shift)
+function threePhaseGen(amp, thetaRad) {
+  const ia = 0;
+  const ib = 0;
+  const ic = 0;
+  return [ia, ib, ic];
+}
+return threePhaseGen;`,
   cases: [
     { label: 'amp=1, θ=0（A 相过零）', args: [1, 0], expected: [0, -0.8660254038, 0.8660254038] },
     { label: 'amp=1, θ=π/2（A 相峰值）', args: [1, 1.5707963267948966], expected: [1, -0.5, -0.5] },

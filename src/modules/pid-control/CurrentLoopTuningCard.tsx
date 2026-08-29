@@ -109,7 +109,7 @@ export function CurrentLoopTuningCard() {
     >
       <p className="mb-3 text-caption leading-relaxed text-ink-secondary">
         {t('pidControl.currentLoopIntroLead')} <span className="formula">Rs / L / fs</span>
-        {t('pidControl.currentLoopIntroGive')} <span className="formula text-accent-primary">Kp = α·L</span>、
+        {t('pidControl.currentLoopIntroGive')} <span className="formula text-accent-primary">Kp = α·L</span>{t('pidControl.currentLoopIntroSep')}
         <span className="formula text-accent-primary">Ki = α·Rs</span>{t('pidControl.currentLoopIntroAlpha')}
         {t('pidControl.currentLoopIntroSalient')} <span className="formula">Lq &gt; Ld</span>
         {t('pidControl.currentLoopIntroSalientTail')}
@@ -140,7 +140,7 @@ export function CurrentLoopTuningCard() {
         Ld <span className="formula">{formatNumber(preset.ldMh, 2)} mH</span> ·
         Lq <span className="formula">{formatNumber(preset.lqMh, 2)} mH</span> ·
         fs <span className="formula">{formatNumber(preset.fs / 1000, 0)} kHz</span> ·
-        {t('pidControl.currentLoopVoltageLimit')} <span className="formula">{formatNumber(vLimit, 0)} V</span>（Vdc/√3）
+        {t('pidControl.currentLoopVoltageLimit')} <span className="formula">{formatNumber(vLimit, 0)} V</span>{t('pidControl.currentLoopVoltageLimitParen')}
       </p>
 
       <label className="mb-3 block">

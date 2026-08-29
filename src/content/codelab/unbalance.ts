@@ -32,6 +32,14 @@ function unbalance(ia, ib, ic) {
   return [pct];
 }
 return unbalance;`,
+  starterEn: `// TODO: return [pct] (three-phase unbalance, %)
+// Hint: avg = (ia+ib+ic)/3; pct = (max-min)/|avg|*100; if |avg| < 1e-9 return [0]
+function unbalance(ia, ib, ic) {
+  const avg = (ia + ib + ic) / 3;
+  const pct = 0;
+  return [pct];
+}
+return unbalance;`,
   cases: [
     { label: 'Ia=10, Ib=10, Ic=10（完全平衡）', args: [10, 10, 10], expected: [0] },
     { label: 'Ia=10, Ib=5, Ic=10（单相跌落一半）', args: [10, 5, 10], expected: [60.0000000000] },

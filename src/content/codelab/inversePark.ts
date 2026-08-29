@@ -27,6 +27,14 @@ function inverseParkTransform(vd, vq, thetaRad) {
   return [vAlpha, vBeta];
 }
 return inverseParkTransform;`,
+  starterEn: `// TODO: return [vAlpha, vBeta]
+// Hint: vAlpha = vd*cos(theta) - vq*sin(theta); vBeta = vd*sin(theta) + vq*cos(theta)
+function inverseParkTransform(vd, vq, thetaRad) {
+  const vAlpha = 0;
+  const vBeta = 0;
+  return [vAlpha, vBeta];
+}
+return inverseParkTransform;`,
   cases: [
     { label: 'θ=0°（输出直通）', args: [2.5, 1.5, 0], expected: [2.5, 1.5] },
     { label: 'θ=90°（抓符号错误）', args: [3, 0.5, 1.5707963267948966], expected: [-0.5, 3] },

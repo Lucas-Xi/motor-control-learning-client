@@ -41,7 +41,11 @@ function SingleChallenge({
   locale: 'zh-CN' | 'en-US';
 }) {
   const challenge = useMemo(() => codeChallenges.find((c) => c.id === challengeId), [challengeId]);
-  const [code, setCode] = usePersistentState(`codelab.code.${challengeId}`, challenge?.starter ?? '');
+  // 起手代码按 locale 取：en-US 用 starterEn（缺失回退中文版）。
+  // 持久化 key 不含 locale——已保存的代码在切换语言后保持原样，不自动迁移（可接受）；
+  // 重置按钮会把编辑器刷回当前 locale 的起手代码。
+  const starter = locale === 'en-US' ? (challenge?.starterEn ?? challenge?.starter) : challenge?.starter;
+  const [code, setCode] = usePersistentState(`codelab.code.${challengeId}`, starter ?? '');
   const [result, setResult] = useState<RunResult | null>(null);
   const [hintsShown, setHintsShown] = usePersistentState(`codelab.hints.${challengeId}`, 0);
   const [solved, setSolved] = usePersistentState(`codelab.solved.${challengeId}`, false);
@@ -98,7 +102,7 @@ function SingleChallenge({
         </button>
         <button
           type="button"
-          onClick={() => { setCode(challenge.starter); setResult(null); }}
+          onClick={() => { setCode(starter ?? ''); setResult(null); }}
           className="inline-flex items-center gap-1.5 rounded border border-line-subtle bg-bg-base px-3 py-1 text-caption text-ink-muted transition-colors hover:text-ink"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />

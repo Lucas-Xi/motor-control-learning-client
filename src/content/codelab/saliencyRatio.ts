@@ -32,6 +32,13 @@ function saliencyRatio(ldMh, lqMh) {
   return [ratio];
 }
 return saliencyRatio;`,
+  starterEn: `// TODO: return [ratio] (saliency ratio Lq/Ld, dimensionless)
+// Hint: an IPM has Lq > Ld -> ratio > 1; an SPM has them equal -> 1
+function saliencyRatio(ldMh, lqMh) {
+  const ratio = 0;
+  return [ratio];
+}
+return saliencyRatio;`,
   cases: [
     { label: 'Ld=Lq=2.5 mH（SPM → ρ=1，HFI 失效）', args: [2.5, 2.5], expected: [1] },
     { label: 'Ld=4.0, Lq=6.5 mH（典型 IPM）', args: [4.0, 6.5], expected: [1.625] },

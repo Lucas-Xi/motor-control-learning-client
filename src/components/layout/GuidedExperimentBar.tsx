@@ -1,6 +1,6 @@
 import { Compass, Eye, PlayCircle, Target } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { getGuidedExperiment } from '../../content/guidedExperiments';
+import { getGuidedExperiment, localizeGuidedExperiment } from '../../content/guidedExperiments';
 import { getCachedWalkthrough, loadModuleWalkthrough, type ModuleWalkthrough } from '../../content/walkthroughs';
 import type { ModuleId } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
@@ -15,10 +15,11 @@ interface Props {
  * 实验引导条带——合并了原来的 ExperimentGuideCard、ModuleFlowRail、InteractionHud。
  * 一条横向布局：左半步骤选择，右半当前步骤详情。
  *
- * 双语：locale === 'en-US' 时优先从 ModuleWalkthrough.steps 取 titleEn/actionEn；
- * 缺失的步骤回退到中文 title/action 并附加 sr-only "(zh fallback)"。
- * 步骤选择条本身仍基于 guidedExperiments（简版 3-4 步），保证向后兼容；
- * walkthrough 提供更丰富的 titleEn/actionEn 用于英文显示。
+ * 双语：locale === 'en-US' 时步骤文案优先取 ModuleWalkthrough.steps 的
+ * titleEn/actionEn/observeEn（walkthrough 叙述更丰富）；
+ * 缺失时回退到 guidedExperiments 步骤的 titleEn/actionEn/observeEn/expectedEn
+ * （localizeGuidedExperiment 已按 locale 取好），两者都缺才落到中文并附加 sr-only "(zh fallback)"。
+ * 实验标题与 focus 直接用 localizeGuidedExperiment 的结果渲染。
  */
 export function GuidedExperimentBar({ moduleId }: Props) {
   const guideStepIndex = useSimulationStore((state) => state.guideStepIndex);
@@ -50,6 +51,9 @@ export function GuidedExperimentBar({ moduleId }: Props) {
 
   const activeIndex = Math.min(guide.steps.length - 1, guideStepIndex);
   const activeStep = guide.steps[activeIndex] ?? guide.steps[0];
+  // 当前 locale 下的实验文案（en 取 *En 字段，缺失回退中文；zh 直接原字段）
+  const localizedGuide = localizeGuidedExperiment(guide, locale);
+  const localizedActiveStep = localizedGuide.steps[activeIndex] ?? localizedGuide.steps[0];
 
   if (!activeStep) return null;
 
@@ -71,7 +75,8 @@ export function GuidedExperimentBar({ moduleId }: Props) {
     }
   };
 
-  // 用 walkthrough 同序号步骤的 titleEn/actionEn 覆盖 guidedExperiments 的中文。
+  // 步骤文案取值优先级（en）：walkthrough 同序号步骤的 *En > guidedExperiments 步骤的 *En
+  // （已含在 localizedGuide/stepTitle 里）> 中文原文 + sr-only fallback 标记。
   // walkthrough 步骤数通常比 guidedExperiments 多，按 index 取齐即可；若超界则用 undefined。
   const wtStep = walkthrough?.steps[activeIndex];
   const showEn = locale === 'en-US';
@@ -79,16 +84,25 @@ export function GuidedExperimentBar({ moduleId }: Props) {
     const wt = walkthrough?.steps[index];
     if (showEn) {
       if (wt?.titleEn) return wt.titleEn;
-      // walkthrough 缺英文备份 → 回退中文 + sr-only fallback marker
-      return guide.steps[index].title;
+      return localizedGuide.steps[index]?.title ?? guide.steps[index].title;
     }
     return guide.steps[index].title;
   };
-  const actionText = showEn ? (wtStep?.actionEn ?? activeStep.action) : activeStep.action;
-  const showActionFallback = showEn && !wtStep?.actionEn;
+  const actionText = showEn
+    ? (wtStep?.actionEn ?? localizedActiveStep?.action ?? activeStep.action)
+    : activeStep.action;
+  const observeText = showEn
+    ? (wtStep?.observeEn ?? localizedActiveStep?.observe ?? activeStep.observe)
+    : activeStep.observe;
+  const expectedText = showEn
+    ? (localizedActiveStep?.expected ?? activeStep.expected)
+    : activeStep.expected;
+  // 只有当英文来源（walkthrough 与 guidedExperiments）都缺失时才标记 zh fallback
+  const showActionFallback = showEn && !wtStep?.actionEn && !activeStep.actionEn;
   const showTitleFallbackFor = (index: number) => {
     if (!showEn) return false;
-    return !walkthrough?.steps[index]?.titleEn;
+    if (walkthrough?.steps[index]?.titleEn) return false;
+    return !guide.steps[index]?.titleEn;
   };
 
   return (
@@ -96,7 +110,7 @@ export function GuidedExperimentBar({ moduleId }: Props) {
       <header className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-2">
         <div className="flex items-baseline gap-2">
           <span className="text-caption uppercase tracking-[0.18em] text-ink-muted">{t('guidedLab.eyebrow')}</span>
-          <span className="text-body font-medium text-ink-primary">{guide.title}</span>
+          <span className="text-body font-medium text-ink-primary">{localizedGuide.title}</span>
         </div>
         <button
           onClick={() => setCollapsed((v) => !v)}
@@ -108,7 +122,7 @@ export function GuidedExperimentBar({ moduleId }: Props) {
       {!collapsed && (
         <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="space-y-1.5">
-            <p className="px-1 text-caption text-ink-muted">{guide.focus}</p>
+            <p className="px-1 text-caption text-ink-muted">{localizedGuide.focus}</p>
             {/* <lg: 横向 snap chips，节省垂直空间；lg+ 恢复纵向列表 */}
             <div className="scrollbar-thin mobile-snap-x -mx-1 flex gap-1.5 overflow-x-auto px-1 lg:mx-0 lg:grid lg:gap-1.5 lg:overflow-visible lg:px-0">
               {guide.steps.map((step, index) => {
@@ -150,13 +164,13 @@ export function GuidedExperimentBar({ moduleId }: Props) {
             <div className="flex items-start gap-2">
               <Eye className="mt-0.5 h-4 w-4 shrink-0 text-accent-measure" />
               <p className="text-caption leading-relaxed text-ink-secondary">
-                <span className="text-ink-primary">{t('guidedLab.observeLabel')}</span>{activeStep.observe}
+                <span className="text-ink-primary">{t('guidedLab.observeLabel')}</span>{observeText}
               </p>
             </div>
             <div className="flex items-start gap-2">
               <Target className="mt-0.5 h-4 w-4 shrink-0 text-accent-warn" />
               <p className="text-caption leading-relaxed text-ink-secondary">
-                <span className="text-ink-primary">{t('guidedLab.expectedLabel')}</span>{activeStep.expected}
+                <span className="text-ink-primary">{t('guidedLab.expectedLabel')}</span>{expectedText}
               </p>
             </div>
             {activeStep.presetId && (

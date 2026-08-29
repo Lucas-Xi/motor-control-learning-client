@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { experimentPresets } from '../../simulation/engine/presets';
-import { parameterSchemas, type ParameterSchema, type SliderItem } from '../../content/parameterSchemas';
+import { localizeParamSchema, parameterSchemas, type ParameterSchema, type SliderItem } from '../../content/parameterSchemas';
 import { useSimulationStore } from '../../store/simulationStore';
 import type { ModuleId } from '../../simulation/engine/types';
 import { Button } from '../ui/Button';
@@ -204,22 +204,25 @@ function FaultTypes() {
 function SchemaCard({ schema, moduleId }: { schema: ParameterSchema; moduleId: ModuleId }) {
   const slice = useSimulationStore((s) => (s as unknown as Record<string, Record<string, number | boolean | string>>)[schema.sliceKey]);
   const update = useSimulationStore((s) => (s as unknown as Record<string, (patch: Record<string, unknown>) => void>)[schema.updateKey]);
+  // 参数 schema 文案（标题 / label / hint / unit）按 locale 取：en-US 优先 En 字段
+  const { locale } = useI18n();
+  const localized = useMemo(() => localizeParamSchema(schema, locale), [schema, locale]);
 
   // Clarke 模块按 balanced 切换显示哪几个滑块
   const visibleSliders = useMemo(() => {
     if (moduleId === 'clarke-transform') {
       const balanced = (slice as { balanced: boolean }).balanced;
-      return schema.sliders.filter((item) =>
+      return localized.sliders.filter((item) =>
         balanced ? ['amplitude', 'phaseDeg'].includes(item.key) : ['ia', 'ib', 'ic'].includes(item.key),
       );
     }
-    return schema.sliders;
-  }, [moduleId, schema.sliders, slice]);
+    return localized.sliders;
+  }, [moduleId, localized.sliders, slice]);
 
   if (schema.sliders.length === 0 && !schema.customSlots) return null;
 
   return (
-    <Card title={schema.title} eyebrow={schema.eyebrow} density="compact">
+    <Card title={localized.title} eyebrow={schema.eyebrow} density="compact">
       <div className="space-y-3">
         {schema.customSlots?.map((slot) => <div key={slot}>{renderCustomSlot(slot)}</div>)}
         {visibleSliders.map((item: SliderItem) => (
@@ -242,7 +245,7 @@ function SchemaCard({ schema, moduleId }: { schema: ParameterSchema; moduleId: M
 
 function PresetGrid({ moduleId }: { moduleId: ModuleId }) {
   const apply = useSimulationStore((s) => s.applyExperimentPreset);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const items = useMemo(() => {
     const filtered = experimentPresets.filter((p) => p.moduleId === moduleId);
     return filtered.length ? filtered : experimentPresets.slice(0, 4);
@@ -256,8 +259,12 @@ function PresetGrid({ moduleId }: { moduleId: ModuleId }) {
             onClick={() => apply(item.id)}
             className="w-full rounded-lg border border-line-subtle bg-bg-base p-2.5 text-left transition-colors hover:border-accent-measure/40 hover:bg-accent-measure/[0.04]"
           >
-            <p className="text-body font-medium text-ink-primary">{item.title}</p>
-            <p className="mt-0.5 text-caption leading-relaxed text-ink-muted">{item.description}</p>
+            <p className="text-body font-medium text-ink-primary">
+              {locale === 'en-US' ? (item.titleEn ?? item.title) : item.title}
+            </p>
+            <p className="mt-0.5 text-caption leading-relaxed text-ink-muted">
+              {locale === 'en-US' ? (item.descriptionEn ?? item.description) : item.description}
+            </p>
           </button>
         ))}
       </div>
@@ -270,7 +277,7 @@ export function ParameterPanel() {
   const resetActiveParams = useSimulationStore((s) => s.resetActiveParams);
   const [tab, setTab] = useState<'params' | 'presets'>('params');
   const schema = parameterSchemas[activeModule];
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
 
   return (
     <aside aria-label={t('shell.paramPanelTitle')} className="scrollbar-thin min-h-0 space-y-3 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
@@ -289,13 +296,8 @@ export function ParameterPanel() {
           { value: 'presets', label: t('shell.paramTabPresets') },
         ]}
       />
-      {/* schema.title / item.label / preset.title 仍来自 parameterSchemas（中文）。
-          在 en-US locale 下加 "translation pending" 小字提示，避免被误以为是漏 i18n。 */}
-      {locale === 'en-US' && (
-        <p className="rounded-md border border-line-subtle/60 bg-bg-base px-2 py-1 text-[10px] text-ink-muted">
-          {t('common.translationPending')}
-        </p>
-      )}
+      {/* 参数 schema 的 title / label / hint 已走 localizeParamSchema 按 locale 取值；
+          preset 案例卡 title / description 在 PresetGrid 内按 locale 取 titleEn/descriptionEn。 */}
       {tab === 'params' && schema && <SchemaCard schema={schema} moduleId={activeModule} />}
       {tab === 'presets' && <PresetGrid moduleId={activeModule} />}
     </aside>

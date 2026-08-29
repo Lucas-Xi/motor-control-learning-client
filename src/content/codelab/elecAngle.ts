@@ -32,6 +32,13 @@ function elecAngle(mechRad, polePairs) {
   return [elecRad];
 }
 return elecAngle;`,
+  starterEn: `// TODO: return [elecRad] (electrical angle, wrapped into [0, 2*pi))
+// Hint: raw = polePairs * mechRad; elec = raw - Math.floor(raw / (2 * Math.PI)) * (2 * Math.PI)
+function elecAngle(mechRad, polePairs) {
+  const elecRad = 0;
+  return [elecRad];
+}
+return elecAngle;`,
   cases: [
     { label: 'θm=0, p=4（零机械角）', args: [0, 4], expected: [0] },
     { label: 'θm=π/2, p=1（单对极：电角=机械角）', args: [1.5707963267948966, 1], expected: [1.5707963268] },

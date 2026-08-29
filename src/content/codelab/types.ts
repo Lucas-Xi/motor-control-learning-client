@@ -33,6 +33,11 @@ export interface CodeChallenge {
   statement: TranslationEntry;
   /** 起手代码（含函数签名与 TODO 注释） */
   starter: string;
+  /**
+   * 起手代码英文版（注释译英文，代码骨架与 starter 完全一致）。
+   * en-US 下编辑器初始值 / 重置按钮用它；缺省回退 starter。
+   */
+  starterEn?: string;
   cases: CodeLabCase[];
   /** 分级提示（中英），按序解锁 */
   hints: TranslationEntry[];

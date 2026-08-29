@@ -1,13 +1,21 @@
+import type { Locale } from '../i18n/types';
 import type { ModuleId } from '../simulation/engine/types';
 
 export interface VisualAssetSpec {
   id: string;
   moduleId: ModuleId;
   title: string;
+  /** 图注 / alt 英文（en-US 下优先展示；缺失回退 title） */
+  titleEn?: string;
   filename: string;
   optimizedFilename?: string;
   status: 'fallback' | 'generated' | 'planned';
   prompt: string;
+}
+
+/** 按 locale 取素材图注（同时充当 img alt）：en-US 优先 titleEn，缺失回退中文。 */
+export function pickAssetTitle(asset: VisualAssetSpec, locale: Locale): string {
+  return locale === 'en-US' && asset.titleEn !== undefined ? asset.titleEn : asset.title;
 }
 
 const sharedStyle = 'dark engineering simulation software aesthetic, premium technical education product, cinematic 3D render blended with precise scientific diagram, cyan and mint instrument lighting, matte black graphite materials, no English UI text, no logos, no watermark';
@@ -17,6 +25,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'motor-exploded-cover',
     moduleId: 'motor-basics',
     title: 'PMSM 电机结构爆炸图',
+    titleEn: 'PMSM Motor Exploded View',
     filename: 'assets/generated/motor-exploded-cover.png',
     optimizedFilename: 'assets/generated/motor-exploded-cover.webp',
     status: 'generated',
@@ -26,6 +35,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'foc-flow-console',
     moduleId: 'foc-flow',
     title: 'FOC 控制流水线总览',
+    titleEn: 'FOC Control Pipeline Overview',
     filename: 'assets/generated/foc-flow-console.png',
     optimizedFilename: 'assets/generated/foc-flow-console.webp',
     status: 'generated',
@@ -35,6 +45,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'svpwm-sector-map',
     moduleId: 'svpwm',
     title: 'SVPWM 六扇区空间矢量图',
+    titleEn: 'SVPWM Six-Sector Space Vector Diagram',
     filename: 'assets/generated/svpwm-sector-map.png',
     optimizedFilename: 'assets/generated/svpwm-sector-map.webp',
     status: 'generated',
@@ -44,6 +55,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'inverter-power-stage',
     moduleId: 'inverter',
     title: '三相逆变器功率级',
+    titleEn: 'Three-Phase Inverter Power Stage',
     filename: 'assets/generated/inverter-power-stage.png',
     optimizedFilename: 'assets/generated/inverter-power-stage.webp',
     status: 'generated',
@@ -53,6 +65,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'sensorless-observer-console',
     moduleId: 'sensorless-foc',
     title: '无感观测器与 PLL 锁相',
+    titleEn: 'Sensorless Observer and PLL Lock',
     filename: 'assets/generated/sensorless-observer-console.png',
     optimizedFilename: 'assets/generated/sensorless-observer-console.webp',
     status: 'generated',
@@ -62,6 +75,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'field-weakening-limit-map',
     moduleId: 'field-weakening',
     title: '弱磁电压/电流极限圆',
+    titleEn: 'Field Weakening Voltage/Current Limit Circles',
     filename: 'assets/generated/field-weakening-limit-map.png',
     optimizedFilename: 'assets/generated/field-weakening-limit-map.webp',
     status: 'generated',
@@ -71,6 +85,7 @@ export const visualAssets: VisualAssetSpec[] = [
     id: 'fault-debug-board',
     moduleId: 'faults-debugging',
     title: '故障诊断波形看板',
+    titleEn: 'Fault Diagnosis Waveform Dashboard',
     filename: 'assets/generated/fault-debug-board.png',
     optimizedFilename: 'assets/generated/fault-debug-board.webp',
     status: 'generated',

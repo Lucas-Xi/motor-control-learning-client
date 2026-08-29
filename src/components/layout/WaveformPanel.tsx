@@ -97,10 +97,12 @@ function PIDBranch() {
 }
 
 function FaultBranch() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const fault = useSimulationStore((state) => state.fault);
   const data = useMemo(() => createFaultWaveform(fault.faultType, fault.severity, 200), [fault.faultType, fault.severity]);
-  const title = faultCases[fault.faultType]?.title ?? '';
+  const faultCase = faultCases[fault.faultType];
+  // en-US 优先 titleEn，缺失回退中文 title（与 FaultsDebuggingModule 一致）
+  const title = (locale === 'en-US' ? (faultCase?.titleEn ?? faultCase?.title) : faultCase?.title) ?? '';
   if (isStatusOnlyFault(fault.faultType)) {
     return (
       <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-xl border border-line-subtle bg-bg-base text-center">

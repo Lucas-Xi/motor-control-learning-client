@@ -33,6 +33,14 @@ function copEer(pCoolingKw, pElecKw) {
   return [cop, eerBtu];
 }
 return copEer;`,
+  starterEn: `// TODO: return [cop, eerBtu]
+// Hint: cop = pCoolingKw / pElecKw; eerBtu = cop * 3.412; if pElecKw = 0 return [0, 0]
+function copEer(pCoolingKw, pElecKw) {
+  const cop = 0;
+  const eerBtu = 0;
+  return [cop, eerBtu];
+}
+return copEer;`,
   cases: [
     { label: '制冷 3.5kW / 电 1.0kW（典型空调，COP=3.5）', args: [3.5, 1.0], expected: [3.5000000000, 11.9420000000] },
     { label: '电功率 0（停机/计量失效，防除零）', args: [3.5, 0], expected: [0, 0] },

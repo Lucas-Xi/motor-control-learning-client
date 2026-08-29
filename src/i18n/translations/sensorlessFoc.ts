@@ -18,6 +18,7 @@ export const sensorlessFoc = {
   legendErrorDeg: e('误差 °', 'Error (°)'),
   primaryFootnoteLow: e('< 500rpm 应切 HFI 模块（13）做低速无感', 'Below 500 rpm switch to HFI (module 13) for low-speed sensorless'),
   primaryFootnoteGood: e('BEMF 信号充足，SMO 锁相稳定', 'BEMF amplitude is sufficient; SMO stays locked'),
+  primaryFootnoteEnd: e('。', '.'),
   diagnosticTitle: e('观测器诊断', 'Observer diagnostics'),
   diagnosticEyebrow: e('observer readiness', 'observer readiness'),
   diagnosticLowSpeedWarn: e(

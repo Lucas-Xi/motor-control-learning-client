@@ -92,7 +92,7 @@ function Primary() {
       </div>
       <p className="mt-2 text-caption leading-relaxed text-ink-secondary">
         {t('sensorlessFoc.primaryPrinciple')}
-        {formatNumber(params.speedRpm, 0)} rpm {lowSpeed ? `— ${t('sensorlessFoc.primaryFootnoteLow')}` : `— ${t('sensorlessFoc.primaryFootnoteGood')}`}。
+        {formatNumber(params.speedRpm, 0)} rpm {lowSpeed ? `— ${t('sensorlessFoc.primaryFootnoteLow')}` : `— ${t('sensorlessFoc.primaryFootnoteGood')}`}{t('sensorlessFoc.primaryFootnoteEnd')}
       </p>
     </Card>
   );

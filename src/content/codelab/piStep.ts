@@ -41,6 +41,15 @@ function piStep(err, kp, ki, stateIn) {
   return [out, integralNew];
 }
 return piStep;`,
+  starterEn: `// TODO: return [out, integralNew]
+// Constants: TS = 0.001 s, LIMIT = 10; stateIn is integralPrev from the previous cycle
+function piStep(err, kp, ki, stateIn) {
+  const integralPrev = stateIn;
+  const out = 0;
+  const integralNew = integralPrev;
+  return [out, integralNew];
+}
+return piStep;`,
   cases: [
     { label: 'err=0, kp=2, ki=5, I=0（零输入）', args: [0, 2, 5, 0], expected: [0, 0] },
     { label: 'err=1, kp=2, ki=5, I=0.5（未饱和）', args: [1, 2, 5, 0.5], expected: [2.5, 0.505] },
