@@ -70,4 +70,29 @@ test('EN locale renders zero Chinese across all 16 modules', async ({ page }) =>
   // 顺带守护：EN 模式不应产生新的 console error
   const realErrors = consoleErrors.filter((e) => !e.includes('GL Driver Message'));
   expect(realErrors).toEqual([]);
+
+  // —— 课程主线视图（16 模块之外的扫描盲区补漏）——
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Curriculum' }).first().click();
+  await page.waitForTimeout(500);
+  const curriculumHits = await page.evaluate((reSrc) => {
+    const re = new RegExp(reSrc);
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const el of document.body.querySelectorAll('*')) {
+      const own = Array.from(el.childNodes)
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent.trim())
+        .join(' ');
+      if (!own || !re.test(own)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      const key = own.slice(0, 50);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(`[${el.tagName.toLowerCase()}] ${own.slice(0, 80)}`);
+    }
+    return out;
+  }, CJK_RE.source);
+  expect(curriculumHits, `课程视图 EN 中文残留:\n${curriculumHits.join('\n')}`).toEqual([]);
 });

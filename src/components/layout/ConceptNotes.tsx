@@ -89,24 +89,25 @@ export function ConceptNotes({ moduleId }: Props) {
 }
 
 function IntroPanel({ intro }: { intro: NonNullable<ReturnType<typeof getLesson>['introBeginner']> }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-3 text-body leading-relaxed text-ink-secondary">
       <div className="rounded-lg border border-accent-primary/30 bg-accent-primary/[0.06] p-3">
-        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-accent-primary">类比理解</p>
+        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-accent-primary">{t('shell.lessonMetaphor')}</p>
         <p className="text-ink-primary">{intro.metaphor}</p>
       </div>
       <div className="rounded-lg border border-line-subtle bg-bg-base p-3">
-        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-ink-muted">核心一句话</p>
+        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-ink-muted">{t('shell.lessonCoreIdea')}</p>
         <p className="text-ink-primary">{intro.coreIdea}</p>
       </div>
       <div>
-        <p className="mb-1.5 text-caption uppercase tracking-[0.18em] text-ink-muted">为什么需要学</p>
+        <p className="mb-1.5 text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.lessonWhyCare')}</p>
         <ul className="space-y-1.5">
           {intro.whyCare.map((w) => <li key={w}>· {w}</li>)}
         </ul>
       </div>
       <div className="rounded-lg border border-accent-measure/30 bg-accent-measure/[0.06] p-3">
-        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-accent-measure">现在做这一步</p>
+        <p className="mb-1 text-caption font-medium uppercase tracking-[0.18em] text-accent-measure">{t('shell.lessonFirstAction')}</p>
         <p className="text-ink-primary">{intro.firstAction}</p>
       </div>
     </div>
@@ -114,19 +115,20 @@ function IntroPanel({ intro }: { intro: NonNullable<ReturnType<typeof getLesson>
 }
 
 function DeepPanel({ lesson }: { lesson: ReturnType<typeof getLesson> }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4 text-body leading-relaxed text-ink-secondary">
-      <Section title="学习目标">
+      <Section title={t('shell.lessonSecGoals')}>
         <ul className="space-y-1.5">
           {lesson.learningGoals.map((g) => <li key={g}>· {g}</li>)}
         </ul>
       </Section>
-      <Section title="核心概念">
+      <Section title={t('shell.lessonSecConcepts')}>
         <ul className="space-y-1.5">
           {lesson.concepts.map((c) => <li key={c}>· {c}</li>)}
         </ul>
       </Section>
-      <Section title="数学公式">
+      <Section title={t('shell.lessonSecFormulas')}>
         <div className="space-y-2">
           {lesson.formulas.map((f) => (
             <div key={f.title} className="rounded-lg border border-line-subtle bg-bg-base p-3">
@@ -137,12 +139,12 @@ function DeepPanel({ lesson }: { lesson: ReturnType<typeof getLesson> }) {
           ))}
         </div>
       </Section>
-      <Section title="工程意义">
+      <Section title={t('shell.lessonSecEngineering')}>
         <ul className="space-y-1.5">
           {lesson.engineeringMeaning.map((m) => <li key={m}>· {m}</li>)}
         </ul>
       </Section>
-      <Section title="常见错误 / 调试">
+      <Section title={t('shell.lessonSecMistakes')}>
         <div className="grid gap-3 md:grid-cols-2">
           <ul className="space-y-1.5">
             {lesson.commonMistakes.map((m) => <li key={m} className="text-accent-fault/90">· {m}</li>)}
@@ -152,7 +154,7 @@ function DeepPanel({ lesson }: { lesson: ReturnType<typeof getLesson> }) {
           </ul>
         </div>
       </Section>
-      <Section title="本节总结">
+      <Section title={t('shell.lessonSecSummary')}>
         <p>{lesson.summary}</p>
       </Section>
     </div>
@@ -160,22 +162,23 @@ function DeepPanel({ lesson }: { lesson: ReturnType<typeof getLesson> }) {
 }
 
 function PracticePanel({ lesson }: { lesson: ReturnType<typeof getLesson> }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4 text-body leading-relaxed text-ink-secondary">
-      <Section title="STM32 / C 实战要点">
+      <Section title={t('shell.lessonSecStm32')}>
         <ul className="space-y-1.5">
           {lesson.stm32Guide.map((g) => <li key={g}>· {g}</li>)}
         </ul>
       </Section>
-      <Section title="代码骨架">
-        <CodeBlock code={lesson.codeExample} title={`${lesson.id}.c — 移植起点`} />
+      <Section title={t('shell.lessonSecCode')}>
+        <CodeBlock code={lesson.codeExample} title={`${lesson.id}.c — ${t('shell.lessonCodeTitleSuffix')}`} />
       </Section>
-      <Section title="实验建议">
+      <Section title={t('shell.lessonSecExperiments')}>
         <ul className="space-y-1.5">
           {lesson.experiments.map((e) => <li key={e}>· {e}</li>)}
         </ul>
       </Section>
-      <Section title="下一步">
+      <Section title={t('shell.lessonSecNext')}>
         <ul className="space-y-1.5">
           {lesson.nextSteps.map((n) => <li key={n}>→ {n}</li>)}
         </ul>

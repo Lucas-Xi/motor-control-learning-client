@@ -280,7 +280,7 @@ export function validateTuning(
   const warnings: string[] = [];
   const warningCodes: TuningWarning[] = [];
 
-  if (result.bandwidthDHz > fs / 3) {
+  if (result.bandwidthDHz > fs / 4) {
     warnings.push(`d 轴带宽 ${result.bandwidthDHz.toFixed(0)} Hz 超过 fs/4=${(fs / 4).toFixed(0)} Hz，可能不稳定`);
     warningCodes.push({ code: 'bwDTooHigh', value: result.bandwidthDHz, limit: fs / 4 });
   }

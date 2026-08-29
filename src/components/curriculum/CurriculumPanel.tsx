@@ -3,6 +3,9 @@ import { Award, CheckCircle2, ChevronRight, Circle, Download, RotateCcw, Target 
 import {
   checkpointKey,
   curriculumTracks,
+  localizeCheckpoint,
+  localizeRequirement,
+  localizeTrack,
   type CurriculumCheckpoint,
   type CurriculumTrack,
 } from '../../content/curriculum';
@@ -11,7 +14,7 @@ import {
 } from '../../store/curriculumStore';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
-import { moduleMetas } from '../../simulation/engine/presets';
+import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
 import { Button } from '../ui/Button';
 import { useI18n } from '../../i18n/useI18n';
 import { downloadText, timestamp } from '../../utils/download';
@@ -119,19 +122,24 @@ function ProgressRing({ ratio, tone }: { ratio: number; tone: CurriculumTrack['t
   );
 }
 
-function moduleTitle(id: string): string {
-  return moduleMetas.find((m) => m.id === id)?.shortTitle ?? id;
+function moduleTitle(id: string, locale: 'zh-CN' | 'en-US'): string {
+  const meta = moduleMetas.find((m) => m.id === id);
+  return meta ? localizeModuleMeta(meta, locale).shortTitle : id;
 }
 
 /**
  * 把当前路径进度生成 800×500 SVG 学习证书。
  * 没有外部依赖；纯字符串拼接 → downloadText 触发下载。
+ * locale 控制框架标签 / 路径与 checkpoint 标题 / 模块名双语。
  */
 function buildCertificateSvg(
   track: CurriculumTrack,
   completedKeys: Set<string>,
   ratio: number,
+  locale: 'zh-CN' | 'en-US',
 ): string {
+  const en = locale === 'en-US';
+  const trackLabels = localizeTrack(track, locale);
   const today = new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const completedCps = track.checkpoints.filter((c) =>
@@ -142,14 +150,21 @@ function buildCertificateSvg(
   const maxLines = 10;
   const lines = completedCps.slice(0, maxLines).map((cp, i) => {
     const y = startY + i * lineHeight;
-    const xml = `<text x="80" y="${y}" font-size="14" fill="#cbd5e1" font-family="ui-monospace, monospace">${escapeXml('✓ ' + cp.title + ' — ' + moduleTitle(cp.moduleId))}</text>`;
+    const xml = `<text x="80" y="${y}" font-size="14" fill="#cbd5e1" font-family="ui-monospace, monospace">${escapeXml('✓ ' + localizeCheckpoint(cp, locale).title + ' — ' + moduleTitle(cp.moduleId, locale))}</text>`;
     return xml;
   }).join('\n');
-  const more = completedCps.length > maxLines
-    ? `<text x="80" y="${startY + maxLines * lineHeight}" font-size="13" fill="#94a3b8" font-family="ui-monospace, monospace">… 还有 ${completedCps.length - maxLines} 个 checkpoint</text>`
+  const moreCount = completedCps.length - maxLines;
+  const more = moreCount > 0
+    ? `<text x="80" y="${startY + maxLines * lineHeight}" font-size="13" fill="#94a3b8" font-family="ui-monospace, monospace">${en ? `… ${moreCount} more checkpoints` : `… 还有 ${moreCount} 个 checkpoint`}</text>`
     : '';
   const totalCp = track.checkpoints.length;
   const accent = TONE_HEX[track.tone] ?? '#34d6ff';
+  const headerLabel = en ? 'Certificate of Completion' : '学习证书';
+  const completionLine = en
+    ? `Completion ${Math.round(ratio * 100)}% (${completedCps.length} / ${totalCp})  ·  Issued ${dateStr}`
+    : `完成度 ${Math.round(ratio * 100)}% （${completedCps.length} / ${totalCp}）  ·  颁发日期 ${dateStr}`;
+  const learnerLine = en ? 'Learner: compressor-bench student' : '学员：compressor-bench 学员';
+  const offlineLine = en ? 'Generated offline locally' : '本证书离线本地生成';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
   <defs>
@@ -160,14 +175,14 @@ function buildCertificateSvg(
   </defs>
   <rect width="800" height="500" fill="url(#bg)"/>
   <rect x="20" y="20" width="760" height="460" fill="none" stroke="${accent}" stroke-width="2" rx="14"/>
-  <text x="80" y="80" font-size="14" font-family="ui-monospace, monospace" fill="#94a3b8" letter-spacing="4">COMPRESSOR DRIVE LAB · 学习证书</text>
-  <text x="80" y="130" font-size="32" font-weight="700" font-family="ui-sans-serif, system-ui" fill="#f8fafc">${escapeXml(track.title)}</text>
-  <text x="80" y="162" font-size="15" font-family="ui-sans-serif, system-ui" fill="${accent}">${escapeXml(track.tagline)}</text>
-  <text x="80" y="195" font-size="14" font-family="ui-sans-serif, system-ui" fill="#cbd5e1">完成度 ${Math.round(ratio * 100)}% （${completedCps.length} / ${totalCp}）  ·  颁发日期 ${dateStr}</text>
+  <text x="80" y="80" font-size="14" font-family="ui-monospace, monospace" fill="#94a3b8" letter-spacing="4">COMPRESSOR DRIVE LAB · ${escapeXml(headerLabel)}</text>
+  <text x="80" y="130" font-size="32" font-weight="700" font-family="ui-sans-serif, system-ui" fill="#f8fafc">${escapeXml(trackLabels.title)}</text>
+  <text x="80" y="162" font-size="15" font-family="ui-sans-serif, system-ui" fill="${accent}">${escapeXml(trackLabels.tagline)}</text>
+  <text x="80" y="195" font-size="14" font-family="ui-sans-serif, system-ui" fill="#cbd5e1">${escapeXml(completionLine)}</text>
   ${lines}
   ${more}
-  <text x="80" y="450" font-size="13" font-family="ui-sans-serif, system-ui" fill="#94a3b8">学员：compressor-bench 学员</text>
-  <text x="720" y="450" font-size="13" font-family="ui-sans-serif, system-ui" fill="#94a3b8" text-anchor="end">本证书离线本地生成</text>
+  <text x="80" y="450" font-size="13" font-family="ui-sans-serif, system-ui" fill="#94a3b8">${escapeXml(learnerLine)}</text>
+  <text x="720" y="450" font-size="13" font-family="ui-sans-serif, system-ui" fill="#94a3b8" text-anchor="end">${escapeXml(offlineLine)}</text>
 </svg>
 `;
 }
@@ -188,7 +203,8 @@ interface TrackCardProps {
 }
 
 function TrackCard({ track, active, onSelect }: TrackCardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const trackLabels = localizeTrack(track, locale);
   // 切片选择器：只订阅本路径的进度对象引用，避免任意路径变更全卡片重渲
   const pathProgress = useCurriculumStore((s) => s.paths[track.id]);
   const ratio = useMemo(() => {
@@ -213,7 +229,7 @@ function TrackCard({ track, active, onSelect }: TrackCardProps) {
       onClick={onSelect}
       aria-pressed={active}
       aria-label={t('curriculum.trackCardAria')
-        .replace('{title}', track.title)
+        .replace('{title}', trackLabels.title)
         .replace('{n}', String(Math.round(ratio * 100)))}
       className={`group relative flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-colors ${
         active
@@ -224,9 +240,9 @@ function TrackCard({ track, active, onSelect }: TrackCardProps) {
       <div className="flex items-start gap-3">
         <ProgressRing ratio={ratio} tone={track.tone} />
         <div className="min-w-0 flex-1">
-          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{track.durationHint}</p>
-          <h3 className="mt-0.5 truncate font-display text-body text-ink-primary">{track.title}</h3>
-          <p className="mt-1 line-clamp-2 text-caption text-ink-secondary">{track.tagline}</p>
+          <p className="text-caption uppercase tracking-[0.18em] text-ink-muted">{trackLabels.durationHint}</p>
+          <h3 className="mt-0.5 truncate font-display text-body text-ink-primary">{trackLabels.title}</h3>
+          <p className="mt-1 line-clamp-2 text-caption text-ink-secondary">{trackLabels.tagline}</p>
         </div>
       </div>
       <div className="rounded-lg border border-line-subtle bg-bg-surface px-3 py-2">
@@ -234,7 +250,7 @@ function TrackCard({ track, active, onSelect }: TrackCardProps) {
           <div className="flex items-center gap-2 text-caption">
             <Target className="h-3.5 w-3.5 text-ink-muted" aria-hidden />
             <span className="text-ink-muted">{t('curriculum.nextStep')}</span>
-            <span className={`truncate text-ink-primary`}>{nextCp.title}</span>
+            <span className={`truncate text-ink-primary`}>{localizeCheckpoint(nextCp, locale).title}</span>
             <ChevronRight className="ml-auto h-3.5 w-3.5 text-ink-muted" aria-hidden />
           </div>
         ) : (
@@ -258,7 +274,8 @@ interface CheckpointRowProps {
 }
 
 function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: CheckpointRowProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const cpLabels = localizeCheckpoint(checkpoint, locale);
   const tone = TONE_STYLES[track.tone];
   return (
     <li
@@ -268,7 +285,7 @@ function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: Check
     >
       <button
         onClick={() => onToggle(checkpoint)}
-        aria-label={(done ? t('curriculum.unmarkAria') : t('curriculum.markDoneAria')).replace('{title}', checkpoint.title)}
+        aria-label={(done ? t('curriculum.unmarkAria') : t('curriculum.markDoneAria')).replace('{title}', cpLabels.title)}
         aria-pressed={done}
         className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line-subtle text-ink-muted transition-colors hover:border-line-strong hover:text-ink-primary"
       >
@@ -281,13 +298,13 @@ function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: Check
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="font-mono text-caption text-ink-muted">CP{String(index + 1).padStart(2, '0')}</span>
-          <h4 className="text-body font-medium text-ink-primary">{checkpoint.title}</h4>
-          <span className="text-caption text-ink-muted">→ {moduleTitle(checkpoint.moduleId)}</span>
+          <h4 className="text-body font-medium text-ink-primary">{cpLabels.title}</h4>
+          <span className="text-caption text-ink-muted">→ {moduleTitle(checkpoint.moduleId, locale)}</span>
         </div>
-        <p className="mt-1 text-caption text-ink-secondary">{checkpoint.goal}</p>
+        <p className="mt-1 text-caption text-ink-secondary">{cpLabels.goal}</p>
         <ul className="mt-2 space-y-1">
           {checkpoint.requirements.map((req, i) => (
-            <li key={i} className="text-caption text-ink-muted">· {req.label}</li>
+            <li key={i} className="text-caption text-ink-muted">· {localizeRequirement(req, locale)}</li>
           ))}
           {checkpoint.optionalWalkthroughStepRange && (
             <li className="text-caption text-ink-muted">
@@ -304,7 +321,7 @@ function CheckpointRow({ track, checkpoint, index, done, onGo, onToggle }: Check
       <Button
         variant={done ? 'ghost' : 'primary'}
         onClick={() => onGo(checkpoint)}
-        aria-label={t('curriculum.goAria').replace('{title}', moduleTitle(checkpoint.moduleId))}
+        aria-label={t('curriculum.goAria').replace('{title}', moduleTitle(checkpoint.moduleId, locale))}
         className="shrink-0 self-start"
       >
         {t('curriculum.goShort')}
@@ -337,6 +354,8 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
   const togglePanel = useUIStore((s) => s.togglePanel);
 
   const activeTrack = curriculumTracks.find((t) => t.id === activeId) ?? curriculumTracks[0];
+  // EN 模式下取 titleEn/taglineEn，缺失回退中文
+  const activeTrackLabels = localizeTrack(activeTrack, locale);
   // 订阅当前 active path 的进度切片
   const activePathProgress = useCurriculumStore((s) => s.paths[activeTrack.id]);
   const doneSet = useMemo(
@@ -377,13 +396,13 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
   };
 
   const handleExportCert = () => {
-    const svg = buildCertificateSvg(activeTrack, doneSet, ratio);
+    const svg = buildCertificateSvg(activeTrack, doneSet, ratio, locale);
     const filename = `compressor-bench-curriculum-${activeTrack.id}-${timestamp()}.svg`;
     downloadText(filename, svg, 'image/svg+xml;charset=utf-8');
   };
 
   const handleResetPath = () => {
-    if (window.confirm(t('curriculum.resetConfirm').replace('{title}', activeTrack.title))) {
+    if (window.confirm(t('curriculum.resetConfirm').replace('{title}', activeTrackLabels.title))) {
       resetPath(activeTrack.id);
     }
   };
@@ -407,7 +426,7 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
           <Button
             variant="ghost"
             onClick={handleResetPath}
-            aria-label={`${t('curriculum.resetProgress')} · ${activeTrack.title}`}
+            aria-label={`${t('curriculum.resetProgress')} · ${activeTrackLabels.title}`}
           >
             <RotateCcw className="h-4 w-4" aria-hidden />
             {t('curriculum.resetProgress')}
@@ -415,7 +434,7 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
           <Button
             variant="primary"
             onClick={handleExportCert}
-            aria-label={`${t('curriculum.exportCertificate')} · ${activeTrack.title}`}
+            aria-label={`${t('curriculum.exportCertificate')} · ${activeTrackLabels.title}`}
           >
             <Download className="h-4 w-4" aria-hidden />
             {t('curriculum.exportCertificate')}
@@ -439,10 +458,10 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-caption text-ink-muted">
               <Award className="h-3.5 w-3.5" aria-hidden />
-              <span>{activeTrack.audience}</span>
+              <span className="text-caption text-ink-muted">{activeTrackLabels.audience}</span>
             </div>
-            <h3 className="mt-1 font-display text-body text-ink-primary">{activeTrack.title}</h3>
-            <p className="mt-1 max-w-3xl text-caption text-ink-secondary">{activeTrack.description}</p>
+            <h3 className="mt-1 font-display text-body text-ink-primary">{activeTrackLabels.title}</h3>
+            <p className="mt-1 max-w-3xl text-caption text-ink-secondary">{activeTrackLabels.description}</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-caption text-ink-muted">{t('curriculum.completionLabel')}</p>
@@ -456,7 +475,7 @@ export function CurriculumPanel({ onLeaveCurriculum }: CurriculumPanelProps) {
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line-subtle bg-bg-surface px-3 py-2">
             <Target className="h-4 w-4 text-accent-primary" aria-hidden />
             <span className="text-caption text-ink-muted">{t('curriculum.nextStep')}</span>
-            <span className="text-body text-ink-primary">{nextCp.title}</span>
+            <span className="text-body text-ink-primary">{localizeCheckpoint(nextCp, locale).title}</span>
             <Button variant="primary" className="ml-auto" onClick={() => handleGo(nextCp)}>
               {t('curriculum.goNow')}
               <ChevronRight className="h-4 w-4" aria-hidden />

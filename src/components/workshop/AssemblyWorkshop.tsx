@@ -56,7 +56,7 @@ interface Props {
  *  - 嵌入式（17 号模块页）：embedded=true 跳过 modal 壳
  */
 export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const isVisible = embedded || open;
   // 4 槽位的当前选择 —— 默认用第一个压缩机 bundle 的搭配
   const defaultBundle = compressorBundles[0];
@@ -241,7 +241,7 @@ export function AssemblyWorkshop({ open, onClose, embedded = false }: Props) {
         requiredIqA: r.metrics.requiredIqA,
         pressureRatio: r.metrics.pressureRatio,
         Tdischarge: r.metrics.Tdischarge,
-        summary: r.summary,
+        summary: locale === 'en-US' ? r.summaryEn : r.summary,
       });
       if (checkChallengePass(challenge, r)) {
         const prevBest = challengeRecords[challenge.id]?.bestAttempts ?? Infinity;
@@ -582,7 +582,7 @@ function SlotPicker<T extends number | string>({
 // ———————————————————— DiagnosticPanel ————————————————————
 
 function DiagnosticPanel({ result }: { result: AssemblyResult | null }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const verdictTone = useMemo(() => {
     if (!result) return null;
     if (result.verdict === 'fail') return { color: 'text-accent-fault', bg: 'bg-accent-fault/10', border: 'border-accent-fault/60', icon: <AlertTriangle className="h-4 w-4" /> };
@@ -605,7 +605,7 @@ function DiagnosticPanel({ result }: { result: AssemblyResult | null }) {
         {verdictTone.icon}
         <div className="flex-1">
           <p className="text-body font-medium">{result.verdict === 'pass' ? t('assemblyWorkshop.verdictPass') : result.verdict === 'pass-warn' ? t('assemblyWorkshop.verdictPassWarn') : t('assemblyWorkshop.verdictFail')}</p>
-          <p className="text-caption opacity-90">{result.summary}</p>
+          <p className="text-caption opacity-90">{locale === 'en-US' ? result.summaryEn : result.summary}</p>
         </div>
       </div>
 

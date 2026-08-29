@@ -83,7 +83,7 @@ function resolveSlots(): ProjectSlots {
 }
 
 export function ProjectExporter() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [mcuFamily, setMcuFamily] = useState<McuFamily>('STM32G4');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -123,10 +123,14 @@ export function ProjectExporter() {
   const handleDownload = () => {
     if (selectedFiles.length === 0) return;
     const ts = timestamp();
+    // 索引头标签表：EN 用半角标点；文件路径 / purpose 来自 generator，保持原样
+    const L = locale === 'en-US'
+      ? { indexTitle: 'STM32 project export index', fileList: 'File list' }
+      : { indexTitle: 'STM32 工程导出索引', fileList: '文件清单' };
     if (packMode === 'single-text') {
       const text = packAsSingleText(selectedFiles);
       const indexLines = selectedFiles.map((f) => `  - ${f.path}  ${f.purpose}`).join('\n');
-      const header = `# STM32 工程导出索引\n# Generated: ${ts}\n# MCU Family: ${mcuFamily}\n# 文件清单 (${selectedFiles.length}):\n${indexLines}\n`;
+      const header = `# ${L.indexTitle}\n# Generated: ${ts}\n# MCU Family: ${mcuFamily}\n# ${L.fileList} (${selectedFiles.length}):\n${indexLines}\n`;
       downloadText(`stm32_${mcuFamily.toLowerCase()}_${ts}.txt`, header + text);
     } else if (packMode === 'zip') {
       // Phase C：用浏览器原生 + 自写 80 行 zip 头（STORE 模式）打成真 .zip

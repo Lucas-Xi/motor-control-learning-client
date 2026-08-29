@@ -286,8 +286,10 @@ export interface DiagnosticItem {
 
 export interface AssemblyResult {
   verdict: Verdict;
-  /** 一句话总结 */
+  /** 一句话总结（中文） */
   summary: string;
+  /** 一句话总结（英文，en-US 渲染侧使用） */
+  summaryEn: string;
   /** 关键稳态指标 */
   metrics: {
     coolingW: number;          // 实际制冷量 (W)
@@ -711,6 +713,11 @@ export function runAssembly(opts: {
     : hasWarn
       ? '整机可运行：存在告警但不阻断'
       : '整机全绿，可投运';
+  const summaryEn = hasFault
+    ? 'System blocked: a blocking issue is present'
+    : hasWarn
+      ? 'System operable: warnings present but non-blocking'
+      : 'All checks green, ready for deployment';
 
   const inputW = cycle.Wcomp * 1000;
   const coolingW = cycle.Qc * 1000;
@@ -718,6 +725,7 @@ export function runAssembly(opts: {
   return {
     verdict,
     summary,
+    summaryEn,
     metrics: {
       coolingW,
       inputW,
