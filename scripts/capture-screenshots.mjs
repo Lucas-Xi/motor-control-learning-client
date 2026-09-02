@@ -131,7 +131,8 @@ async function pauseSimulation(page) {
 }
 
 async function openModule(page, stage) {
-  await page.locator('aside button').filter({ hasText: `${stage} ·` }).click();
+  // v0.2 图标栏：按钮可见文本含 stage 号（"01"…）
+  await page.locator('nav button').filter({ hasText: stage }).first().click();
   // 等待 lazy 模块完成加载（Suspense fallback 消失；EN 模式等待英文 fallback）
   await page.getByText(isEn ? 'Loading module' : '模块加载中').first().waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(450);
@@ -352,6 +353,10 @@ try {
         localStorage.setItem('compressor-bench-locale', '{"state":{"locale":"en-US"},"version":1}');
       });
     }
+    // 新手引导不入镜
+    await page.addInitScript(() => {
+      localStorage.setItem('tour.done', 'true');
+    });
     page.on('console', (message) => {
       if (message.type() === 'error') manifest.consoleErrors.push(message.text());
       if (message.type() === 'warning') {

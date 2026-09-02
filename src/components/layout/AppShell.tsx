@@ -1,42 +1,77 @@
-import { lazy, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Sliders, X } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { SimulationPanel } from './SimulationPanel';
 import { ParameterPanel } from './ParameterPanel';
+import { CommandPalette } from './CommandPalette';
+import { OnboardingTour } from './OnboardingTour';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n/useI18n';
 
 /**
- * WaveformPanel 拖入 lazy 边界（performance audit R2）：
- * 它内部直接 import recharts + 一堆 chart 子组件（DQ/PWM/StepResponse/ThreePhase/BenchScope），
- * 直接渲染会把 charts chunk (gzip 120 KB) 拉进首屏关键路径。
- * 切成 lazy 后，charts chunk 只在浏览器空闲后或用户实际进入相关模块时才加载。
+ * 双栏沉浸壳层（v0.2）：
+ *
+ *  ┌─┬──────────────────────────┬─────┐
+ *  │栏│ TopBar（全局运行控制）      │ 参数│
+ *  │ │ ┌──────────────────────┐ │ 坞  │
+ *  │ │ │ SimulationPanel      │ │(默认│
+ *  │ │ │ （模块标题 + 内容）    │ │ 收起)│
+ *  │ │ └──────────────────────┘ │     │
+ *  │ │ WaveformPanel（可折叠）   │     │
+ *  └─┴──────────────────────────┴─────┘
+ *
+ * - 左：76px 图标栏（Sidebar，模块分组导航 + 课程/洞察）
+ * - 中：内容优先，参数坞默认收起；xl+ 时以推挤式 dock 展开（图表随
+ *   ResponsiveContainer 自适应重排），<xl 时为底部 slide-up 抽屉
+ * - 底部波形区可整体折叠（WaveformPanel 内聚实现）
+ * - Ctrl+K 命令面板 / 首次访问新手引导
  */
 const WaveformPanel = lazy(() =>
   import('./WaveformPanel').then((m) => ({ default: m.WaveformPanel })),
 );
 
+/** 断点探测：参数坞在 ≥1280px 走桌面 dock，否则走底部抽屉（二者只挂载其一）。 */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isDesktop;
+}
+
 export function AppShell() {
   const fullScreen = useSimulationStore((state) => state.fullScreen);
   const activeModule = useSimulationStore((state) => state.activeModule);
+  const paramsDockOpen = useUIStore((state) => state.paramsDockOpen);
+  const setParamsDockOpen = useUIStore((state) => state.setParamsDockOpen);
+  const isDesktop = useIsDesktop();
   const { t } = useI18n();
   const last = useRef<number | null>(null);
-  // 移动端参数抽屉开关：默认折叠，节省主区面积；切模块自动关闭，避免遮当前内容
-  const [paramsOpen, setParamsOpen] = useState(false);
+
+  // 切模块自动收起参数坞——仅小屏（底部抽屉会遮内容）；桌面 dock 保持展开，
+  // 方便对照滑块比较不同模块的响应
   useEffect(() => {
-    setParamsOpen(false);
-  }, [activeModule]);
-  // ESC 关闭抽屉
+    if (!isDesktop) setParamsDockOpen(false);
+  }, [activeModule, isDesktop, setParamsDockOpen]);
+
+  // Esc 收起参数坞
   useEffect(() => {
-    if (!paramsOpen) return;
+    if (!paramsDockOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setParamsOpen(false);
+      if (e.key === 'Escape') setParamsDockOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paramsOpen]);
+  }, [paramsDockOpen, setParamsDockOpen]);
 
+  // 仿真时钟：rAF 驱动 step(dt)
   useEffect(() => {
     let frame = 0;
     const tick = (now: number) => {
@@ -52,86 +87,96 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-bg-base p-3 text-ink-primary md:p-4">
-      <div className={`relative z-10 mx-auto grid max-w-[1880px] grid-cols-1 gap-4 ${fullScreen ? '' : 'xl:grid-cols-[280px_minmax(0,1fr)]'}`}>
+    <div className="relative min-h-screen bg-bg-base p-2 text-ink-primary md:p-3">
+      <div className="relative z-10 mx-auto flex max-w-[1880px] flex-col gap-2 xl:h-[calc(100vh-1.5rem)] xl:flex-row xl:gap-3">
         {!fullScreen && <Sidebar />}
-        <div className="grid min-h-[calc(100vh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-4">
+        <div className="flex min-h-[calc(100vh-1.5rem)] min-w-0 flex-col gap-2 xl:h-full xl:min-h-0 xl:flex-1 xl:gap-3">
           <TopBar />
-          <main id="main" tabIndex={-1} className={`grid min-h-0 grid-cols-1 gap-4 ${fullScreen ? '' : 'xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]'}`}>
-            <div className="min-h-0">
+          {/* 内容行：左内容 + 右参数坞（仅桌面 dock） */}
+          <main id="main" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 xl:flex-row xl:gap-3">
+            <div className="min-h-0 min-w-0 flex-1">
               <SimulationPanel />
-              <WaveformPanel />
-              {/* 移动端：在 SimulationPanel 与 WaveformPanel 之后插占位提示用户去打开抽屉拿参数 */}
-              <div className="mt-4 xl:hidden">
-                <button
-                  type="button"
-                  onClick={() => setParamsOpen(true)}
-                  className="mobile-touch-target flex w-full items-center justify-center gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-3 text-body font-medium text-ink-secondary hover:border-accent-primary/40 hover:text-ink-primary"
-                  aria-label={t('shell.openParamsDrawerAria')}
-                >
-                  <Sliders className="h-4 w-4" />
-                  {t('shell.openParamsConsole')}
-                </button>
-              </div>
+              <Suspense fallback={null}>
+                <WaveformPanel />
+              </Suspense>
+              {/* 移动端：内容下方提示打开参数坞 */}
+              <button
+                type="button"
+                onClick={() => setParamsDockOpen(true)}
+                className="mobile-touch-target mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-line-subtle bg-bg-surface px-3 py-3 text-body font-medium text-ink-secondary transition-colors hover:border-accent-primary/40 hover:text-ink-primary xl:hidden"
+                aria-label={t('shell.paramsDockShowAria')}
+              >
+                <Sliders className="h-4 w-4" aria-hidden />
+                {t('shell.paramsDockShow')}
+              </button>
             </div>
-            {!fullScreen && (
-              <>
-                {/* 桌面端：右侧粘性侧栏 */}
-                <div className="hidden xl:block">
-                  <ParameterPanel />
+            {/* 桌面参数坞：推挤式展开（宽度过渡），图表自动重排。
+                dock / 移动抽屉按断点只挂载其一，保证 ParameterPanel 单实例。 */}
+            {!fullScreen && isDesktop && paramsDockOpen && (
+              <div className="w-[360px] shrink-0 overflow-hidden 2xl:w-[400px]">
+                <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-line-subtle bg-bg-surface">
+                  <div className="flex h-10 items-center justify-between border-b border-line-subtle px-3">
+                    <span className="text-caption font-medium uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramsDockTitle')}</span>
+                    <button
+                      type="button"
+                      onClick={() => setParamsDockOpen(false)}
+                      aria-label={t('shell.paramsDockHideAria')}
+                      className="grid h-7 w-7 place-items-center rounded-lg border border-line-subtle text-ink-secondary transition-colors hover:text-ink-primary"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  </div>
+                  <div className="scrollbar-thin h-[calc(100%-2.5rem)] overflow-y-auto">
+                    <ParameterPanel />
+                  </div>
                 </div>
-                {/* 移动端：底部 slide-up 抽屉 */}
-                <MobileParamsDrawer open={paramsOpen} onClose={() => setParamsOpen(false)} />
-              </>
+              </div>
             )}
+            {/* 移动端底部抽屉 */}
+            {!fullScreen && !isDesktop && <MobileParamsDock open={paramsDockOpen} onClose={() => setParamsDockOpen(false)} />}
           </main>
         </div>
       </div>
+      <CommandPalette />
+      <OnboardingTour />
     </div>
   );
 }
 
 /**
- * 移动端参数抽屉：底部 slide-up 形式覆盖屏幕高度的 ~82%。
- * 半透明遮罩点击 / Esc 键关闭 / 顶部抓手关闭。CSS transform 动画，零依赖。
+ * 移动端参数坞：底部 slide-up 抽屉（<xl 生效）。
+ * 关闭时 unmount ParameterPanel，避免 e2e 的 `aside input[type="range"]`
+ * 在桌面 dock 关闭时命中隐藏输入（历史教训，见原 AppShell 注释）。
  */
-function MobileParamsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileParamsDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n();
-  // 关闭时直接 unmount ParameterPanel：避免 `aside input[type="range"]` 在桌面端误中
-  // 隐藏的 drawer ParameterPanel（4 个 slider 而不是 2 个）导致 e2e .nth(2) 找到不可见输入。
   if (!open) {
     return <div className="xl:hidden" aria-hidden="true" />;
   }
   return (
     <div className="xl:hidden" aria-hidden={!open}>
-      {/* 半透明遮罩 */}
       <div
-        className={`mobile-drawer-overlay fixed inset-0 z-40 bg-black/60 ${open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
+        className="mobile-drawer-overlay fixed inset-0 z-40 bg-black/60"
         onClick={onClose}
       />
-      {/* 抽屉本体 */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={t('shell.paramsDrawerAria')}
-        className={`mobile-drawer-slide fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-2xl border-t border-line-subtle bg-bg-surface shadow-2xl ${
-          open ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        aria-label={t('shell.paramsDockTitle')}
+        className="mobile-drawer-slide fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-2xl border-t border-line-subtle bg-bg-surface shadow-2xl"
       >
-        {/* 抓手 + 关闭按钮 */}
         <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-3 pb-2 pt-2">
           <span className="h-1 w-10 rounded-full bg-line-strong" aria-hidden />
-          <div className="flex-1 text-center text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramPanelTitle')}</div>
+          <div className="flex-1 text-center text-caption uppercase tracking-[0.18em] text-ink-muted">{t('shell.paramsDockTitle')}</div>
           <button
             type="button"
             onClick={onClose}
-            className="mobile-touch-target inline-flex items-center justify-center rounded-lg border border-line-subtle p-1.5 text-ink-secondary hover:text-ink-primary"
+            className="mobile-touch-target inline-flex items-center justify-center rounded-lg border border-line-subtle p-1.5 text-ink-secondary transition-colors hover:text-ink-primary"
             aria-label={t('shell.closeParamsDrawerAria')}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        {/* 抽屉内容区：滚动 */}
         <div className="scrollbar-thin max-h-[calc(82vh-48px)] overflow-auto">
           <ParameterPanel />
         </div>

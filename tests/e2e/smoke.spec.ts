@@ -26,7 +26,8 @@ function isBrowserDriverWarning(message: string) {
 }
 
 async function openModule(page: Page, stage: string) {
-  await page.locator('nav button').filter({ hasText: `${stage} ·` }).click();
+  // v0.2 图标栏：按钮可见文本含 stage 号（"01"…），aria-label 为 "01 · 标题"
+  await page.locator('nav button').filter({ hasText: stage }).first().click();
   // 让 Vite dev 完成按需 transform + lazy chunk 下载
   await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
   // 等 ModuleRenderer 的 Suspense fallback 真正消失（lazy chunk 已 resolve）。
@@ -37,7 +38,10 @@ async function openModule(page: Page, stage: string) {
 
 test('all learning modules render and controls remain usable', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText(APP_TITLE).first()).toBeVisible();
+  // v0.2：首屏断言模块头 h1 可见（默认恢复 three-phase 或上次访问模块，不定死名字）
+  await expect(page.locator('main h1').first()).toBeVisible();
+  // 参数坞断言前提：先展开（桌面保持展开，跨模块不收起）
+  await page.getByRole('button', { name: '参数', exact: true }).first().click();
 
   for (const [stage, title] of modules) {
     await openModule(page, stage);
@@ -62,9 +66,15 @@ test('module sliders update their displayed values without console errors', asyn
   });
 
   await page.goto('/');
+  // v0.2：首屏断言模块头 h1（默认恢复模块不定死名字）
+  await expect(page.locator('main h1').first()).toBeVisible();
+  // 打开右侧参数坞（桌面 dock；滑块所在 aside[aria-label=参数控制台]）
+  await page.getByRole('button', { name: '参数', exact: true }).first().click();
+  await expect(page.locator('aside[aria-label="参数控制台"]').first()).toBeVisible();
   for (const [stage] of modules) {
     await openModule(page, stage);
-    const sliders = page.locator('aside input[type="range"]');
+    // 滑块在右侧参数坞里，精确锁定避免命中隐藏实例
+    const sliders = page.locator('aside[aria-label="参数控制台"] input[type="range"]');
     const count = await sliders.count();
     for (let i = 0; i < Math.min(count, 3); i += 1) {
       const slider = sliders.nth(i);
@@ -86,20 +96,23 @@ test('module sliders update their displayed values without console errors', asyn
 test('desktop and mobile layouts render critical UI', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.goto('/');
-  // 用 heading 精确锁定，避免命中移动端 "打开参数控制台" 按钮触发 strict 模式。
-  await expect(page.getByRole('heading', { name: '参数控制台' }).first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: '底部波形观察区' }).first()).toBeVisible();
+  // v0.2：参数坞默认收起，通过 TopBar 的「参数」按钮展开后再断言
+  await page.getByRole('button', { name: '参数', exact: true }).first().click();
+  await expect(page.getByText('参数控制台').first()).toBeVisible();
+  await expect(page.getByText('底部波形观察区').first()).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByText(APP_TITLE).first()).toBeVisible();
-  // 移动端：抽屉默认收起，但顶部 "打开参数控制台" 按钮可见；用按钮 role 锁定。
-  await expect(page.getByRole('button', { name: '打开参数控制台抽屉' }).first()).toBeVisible();
+  await expect(page.locator('main h1').first()).toBeVisible();
+  // 移动端：抽屉默认收起，内容下方有「展开参数坞」入口按钮；用 role+aria 锁定。
+  await expect(page.getByRole('button', { name: '展开参数坞' }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /全屏/ })).toBeVisible();
 });
 
 test('guided experiment steps load real parameter presets', async ({ page }) => {
   await page.goto('/');
+  // v0.2：预设加载后的参数值在右侧参数坞中，先展开
+  await page.getByRole('button', { name: '参数', exact: true }).first().click();
   await openModule(page, '02');
   // 引导现在在 SimulationPanel 里的 GuidedExperimentBar，不在 aside
   await page.getByRole('button', { name: /注入畸变/ }).first().click();
@@ -137,9 +150,11 @@ async function dragOnSvg(page: Page, fromX: number, fromY: number, toX: number, 
 
 test('vector planes support direct drag interaction', async ({ page }) => {
   await page.goto('/');
+  // v0.2：拖拽验证的是滑块-图表联动，先展开参数坞并锁定其滑块
+  await page.getByRole('button', { name: '参数', exact: true }).first().click();
   await openModule(page, '03');
   await page.waitForTimeout(400);
-  const ia = page.locator('aside input[type="range"]').first();
+  const ia = page.locator('aside[aria-label="参数控制台"] input[type="range"]').first();
   const beforeIa = await ia.inputValue();
   await expect(page.locator('svg.cursor-crosshair').first()).toBeVisible();
   await dragOnSvg(page, 0.5, 0.5, 0.82, 0.28);
@@ -147,7 +162,7 @@ test('vector planes support direct drag interaction', async ({ page }) => {
 
   await openModule(page, '07');
   await page.waitForTimeout(400);
-  const sliders = page.locator('aside input[type="range"]');
+  const sliders = page.locator('aside[aria-label="参数控制台"] input[type="range"]');
   const beforeSliderValues = await Promise.all(
     Array.from({ length: await sliders.count() }, (_, i) => sliders.nth(i).inputValue()),
   );

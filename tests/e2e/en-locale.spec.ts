@@ -18,7 +18,8 @@ const MODULE_STAGES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10
 const CJK_RE = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/;
 
 async function openModuleEn(page: Page, stage: string) {
-  await page.locator('nav button').filter({ hasText: `${stage} ·` }).click();
+  // v0.2 图标栏：按钮可见文本含 stage 号
+  await page.locator('nav button').filter({ hasText: stage }).first().click();
   await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
   await page.getByText('Loading module').first().waitFor({ state: 'detached', timeout: 30_000 }).catch(() => {});
   await page.waitForTimeout(400);

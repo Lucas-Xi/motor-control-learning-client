@@ -102,7 +102,8 @@ const SIDEBAR_MODULES: Array<readonly [string, string]> = [
 const ASSEMBLY_LABEL = '整机搭建工作台';
 
 async function openSidebarModule(page: Page, stage: string) {
-  await page.locator('nav button').filter({ hasText: `${stage} ·` }).first().click();
+  // v0.2 图标栏：按钮可见文本含 stage 号（"01"…）
+  await page.locator('nav button').filter({ hasText: stage }).first().click();
   await page
     .locator('text=模块加载中')
     .first()

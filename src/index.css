@@ -14,16 +14,19 @@
 :root {
   color-scheme: dark;
 
-  --bg-base: #07111f;          --bg-base-rgb: 7 17 31;
-  --bg-surface: #0d1929;       --bg-surface-rgb: 13 25 41;
-  --bg-raised: #11203b;        --bg-raised-rgb: 17 32 59;
-  --line-subtle: #1e2a3d;      --line-subtle-rgb: 30 42 61;
-  --line-strong: #2c3d57;      --line-strong-rgb: 44 61 87;
-  --ink-primary: #e7f3ff;      --ink-primary-rgb: 231 243 255;
-  --ink-secondary: #9eb5cb;    --ink-secondary-rgb: 158 181 203;
-  --ink-muted: #7f98b3;        --ink-muted-rgb: 127 152 179;
-  --accent-primary: #34d6ff;   --accent-primary-rgb: 52 214 255;
-  --accent-measure: #43f7b5;   --accent-measure-rgb: 67 247 181;
+  /* —— v0.2 视觉系统：更深的底、更安静的面板、更强的内容对比 ——
+   * 阶梯 base(页面) → surface(面板) → raised(浮起卡片)层间拉开明度差；
+   * 线整体降一档存在感，让 accent 和数据本身成为视觉焦点。 */
+  --bg-base: #060d18;          --bg-base-rgb: 6 13 24;
+  --bg-surface: #0c1524;       --bg-surface-rgb: 12 21 36;
+  --bg-raised: #131e33;        --bg-raised-rgb: 19 30 51;
+  --line-subtle: #1b2740;      --line-subtle-rgb: 27 39 64;
+  --line-strong: #2a3c5c;      --line-strong-rgb: 42 60 92;
+  --ink-primary: #eaf3ff;      --ink-primary-rgb: 234 243 255;
+  --ink-secondary: #9db4cc;    --ink-secondary-rgb: 157 180 204;
+  --ink-muted: #7c96b2;        --ink-muted-rgb: 124 150 178;
+  --accent-primary: #3ec8ff;   --accent-primary-rgb: 62 200 255;
+  --accent-measure: #3df0b0;   --accent-measure-rgb: 61 240 176;
   --accent-warn: #ffb84d;      --accent-warn-rgb: 255 184 77;
   --accent-fault: #ff5c7a;     --accent-fault-rgb: 255 92 122;
 
@@ -35,6 +38,12 @@
   --lh-body: 1.5;
   --lh-title: 1.4;
   --lh-display: 1.25;
+
+  /* —— 动效时长（v0.2 抽屉 / 折叠 / 页签过渡共用） —— */
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 340ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --theme-border-width: 1px;
 }
@@ -355,4 +364,27 @@ button, input, select, textarea { font: inherit; }
 .touch-tooltip:focus-visible::after,
 .touch-tooltip[data-tip-open="true"]::after {
   opacity: 1;
+}
+
+/* ============================================================
+ * v0.2 布局动效（双栏沉浸壳层）
+ * ============================================================ */
+/* 桌面参数坞：宽度过渡（grid-template-columns 由内联样式控制） */
+.params-dock {
+  transition: width var(--dur-base) var(--ease-out);
+  will-change: width;
+}
+/* 波形区高度折叠 */
+.wave-collapse {
+  transition: height var(--dur-base) var(--ease-out);
+}
+/* 图标栏激活指示条 */
+.rail-indicator {
+  transition: top var(--dur-fast) var(--ease-out), height var(--dur-fast) var(--ease-out);
+}
+/* 尊重系统减弱动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .params-dock, .wave-collapse, .rail-indicator, .mobile-drawer-slide, .mobile-drawer-overlay {
+    transition: none !important;
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T02:34:41.359Z",
+  "generatedAt": "2026-09-02T17:57:45.756Z",
   "baseUrl": "http://127.0.0.1:4173",
   "locale": "en-US",
   "screenshots": [
@@ -203,11 +203,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 384,
+      "width": 711,
       "height": 255,
-      "sampledPixels": 12240,
-      "uniqueColors": 88,
-      "dominantRatio": 0.8837
+      "sampledPixels": 12087,
+      "uniqueColors": 79,
+      "dominantRatio": 0.9341
     },
     {
       "viewport": "desktop",
@@ -215,11 +215,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 384,
+      "width": 711,
       "height": 299,
-      "sampledPixels": 12758,
-      "uniqueColors": 55,
-      "dominantRatio": 0.9105
+      "sampledPixels": 12506,
+      "uniqueColors": 39,
+      "dominantRatio": 0.95
     },
     {
       "viewport": "desktop",
@@ -227,11 +227,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 410,
+      "width": 737,
       "height": 319,
-      "sampledPixels": 13079,
-      "uniqueColors": 60,
-      "dominantRatio": 0.912
+      "sampledPixels": 12374,
+      "uniqueColors": 41,
+      "dominantRatio": 0.951
     },
     {
       "viewport": "desktop",
@@ -239,11 +239,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 188,
+      "width": 344,
       "height": 299,
-      "sampledPixels": 14053,
-      "uniqueColors": 72,
-      "dominantRatio": 0.802
+      "sampledPixels": 12857,
+      "uniqueColors": 44,
+      "dominantRatio": 0.8904
     },
     {
       "viewport": "desktop",
@@ -251,11 +251,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 384,
+      "width": 711,
       "height": 255,
-      "sampledPixels": 12240,
-      "uniqueColors": 86,
-      "dominantRatio": 0.8643
+      "sampledPixels": 12087,
+      "uniqueColors": 99,
+      "dominantRatio": 0.9259
     },
     {
       "viewport": "desktop",
@@ -263,11 +263,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 384,
+      "width": 711,
       "height": 259,
-      "sampledPixels": 12432,
-      "uniqueColors": 36,
-      "dominantRatio": 0.9044
+      "sampledPixels": 12277,
+      "uniqueColors": 37,
+      "dominantRatio": 0.9479
     },
     {
       "viewport": "desktop",
@@ -275,11 +275,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 176,
+      "width": 331,
       "height": 299,
-      "sampledPixels": 13156,
-      "uniqueColors": 77,
-      "dominantRatio": 0.8043
+      "sampledPixels": 12372,
+      "uniqueColors": 64,
+      "dominantRatio": 0.8952
     },
     {
       "viewport": "mobile",
@@ -287,11 +287,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 304,
+      "width": 312,
       "height": 255,
-      "sampledPixels": 12920,
-      "uniqueColors": 67,
-      "dominantRatio": 0.8641
+      "sampledPixels": 13260,
+      "uniqueColors": 69,
+      "dominantRatio": 0.8692
     },
     {
       "viewport": "mobile",
@@ -299,11 +299,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 304,
+      "width": 312,
       "height": 299,
-      "sampledPixels": 12986,
-      "uniqueColors": 43,
-      "dominantRatio": 0.8931
+      "sampledPixels": 13327,
+      "uniqueColors": 42,
+      "dominantRatio": 0.8959
     },
     {
       "viewport": "mobile",
@@ -311,11 +311,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 330,
+      "width": 338,
       "height": 319,
-      "sampledPixels": 13159,
-      "uniqueColors": 38,
-      "dominantRatio": 0.8988
+      "sampledPixels": 13478,
+      "uniqueColors": 43,
+      "dominantRatio": 0.9017
     },
     {
       "viewport": "mobile",
@@ -323,11 +323,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 330,
+      "width": 338,
       "height": 299,
-      "sampledPixels": 12334,
-      "uniqueColors": 45,
-      "dominantRatio": 0.8891
+      "sampledPixels": 12633,
+      "uniqueColors": 54,
+      "dominantRatio": 0.8873
     },
     {
       "viewport": "mobile",
@@ -335,11 +335,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 304,
+      "width": 312,
       "height": 255,
-      "sampledPixels": 12920,
-      "uniqueColors": 91,
-      "dominantRatio": 0.8388
+      "sampledPixels": 13260,
+      "uniqueColors": 81,
+      "dominantRatio": 0.844
     },
     {
       "viewport": "mobile",
@@ -347,11 +347,11 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 304,
+      "width": 312,
       "height": 259,
-      "sampledPixels": 13123,
-      "uniqueColors": 36,
-      "dominantRatio": 0.8884
+      "sampledPixels": 13468,
+      "uniqueColors": 32,
+      "dominantRatio": 0.8897
     },
     {
       "viewport": "mobile",
@@ -359,19 +359,19 @@
       "canvas": 0,
       "ok": true,
       "reason": "ok",
-      "width": 304,
+      "width": 312,
       "height": 299,
-      "sampledPixels": 12986,
-      "uniqueColors": 39,
-      "dominantRatio": 0.8889
+      "sampledPixels": 13327,
+      "uniqueColors": 41,
+      "dominantRatio": 0.8924
     }
   ],
   "consoleErrors": [],
   "consoleWarnings": [],
   "ignoredConsoleWarnings": [
-    "[.WebGL-0x25ac03524000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
-    "[.WebGL-0x25ac03524000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
-    "[.WebGL-0x25ac03524000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
-    "[.WebGL-0x25ac03524000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    "[.WebGL-0x2fd403598000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x2fd403598000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x2fd403598000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x2fd403598000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
   ]
 }

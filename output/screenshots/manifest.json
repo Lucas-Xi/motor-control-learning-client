@@ -1,6 +1,7 @@
 {
-  "generatedAt": "2026-05-23T14:45:55.675Z",
+  "generatedAt": "2026-09-02T17:57:13.414Z",
   "baseUrl": "http://127.0.0.1:4173",
+  "locale": "zh-CN",
   "screenshots": [
     {
       "viewport": "desktop",
@@ -99,6 +100,12 @@
       "path": "output/screenshots/desktop-16-refrigeration-bench.png"
     },
     {
+      "viewport": "desktop",
+      "module": "assembly-workshop",
+      "title": "整机搭建工作台",
+      "path": "output/screenshots/desktop-17-assembly-workshop.png"
+    },
+    {
       "viewport": "mobile",
       "module": "motor-basics",
       "title": "电机基础",
@@ -193,9 +200,214 @@
       "module": "refrigeration-bench",
       "title": "制冷系统台架",
       "path": "output/screenshots/mobile-16-refrigeration-bench.png"
+    },
+    {
+      "viewport": "mobile",
+      "module": "assembly-workshop",
+      "title": "整机搭建工作台",
+      "path": "output/screenshots/mobile-17-assembly-workshop.png"
+    }
+  ],
+  "canvasChecks": [
+    {
+      "viewport": "desktop",
+      "module": "three-phase",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 711,
+      "height": 255,
+      "sampledPixels": 12087,
+      "uniqueColors": 82,
+      "dominantRatio": 0.9459
+    },
+    {
+      "viewport": "desktop",
+      "module": "clarke-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 711,
+      "height": 299,
+      "sampledPixels": 12506,
+      "uniqueColors": 39,
+      "dominantRatio": 0.95
+    },
+    {
+      "viewport": "desktop",
+      "module": "park-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 737,
+      "height": 319,
+      "sampledPixels": 12374,
+      "uniqueColors": 39,
+      "dominantRatio": 0.9509
+    },
+    {
+      "viewport": "desktop",
+      "module": "svpwm",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 344,
+      "height": 299,
+      "sampledPixels": 12857,
+      "uniqueColors": 44,
+      "dominantRatio": 0.8904
+    },
+    {
+      "viewport": "desktop",
+      "module": "inverter",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 711,
+      "height": 255,
+      "sampledPixels": 12087,
+      "uniqueColors": 99,
+      "dominantRatio": 0.9259
+    },
+    {
+      "viewport": "desktop",
+      "module": "sensorless-foc",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 711,
+      "height": 259,
+      "sampledPixels": 12277,
+      "uniqueColors": 34,
+      "dominantRatio": 0.9543
+    },
+    {
+      "viewport": "desktop",
+      "module": "field-weakening",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 331,
+      "height": 299,
+      "sampledPixels": 12372,
+      "uniqueColors": 70,
+      "dominantRatio": 0.8904
+    },
+    {
+      "viewport": "desktop",
+      "module": "assembly-workshop",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 1280,
+      "height": 299,
+      "sampledPixels": 12346,
+      "uniqueColors": 47,
+      "dominantRatio": 0.9608
+    },
+    {
+      "viewport": "mobile",
+      "module": "three-phase",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 312,
+      "height": 255,
+      "sampledPixels": 13260,
+      "uniqueColors": 84,
+      "dominantRatio": 0.8834
+    },
+    {
+      "viewport": "mobile",
+      "module": "clarke-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 312,
+      "height": 299,
+      "sampledPixels": 13327,
+      "uniqueColors": 57,
+      "dominantRatio": 0.8451
+    },
+    {
+      "viewport": "mobile",
+      "module": "park-transform",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 338,
+      "height": 319,
+      "sampledPixels": 13478,
+      "uniqueColors": 57,
+      "dominantRatio": 0.8486
+    },
+    {
+      "viewport": "mobile",
+      "module": "svpwm",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 338,
+      "height": 299,
+      "sampledPixels": 12633,
+      "uniqueColors": 43,
+      "dominantRatio": 0.8899
+    },
+    {
+      "viewport": "mobile",
+      "module": "inverter",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 312,
+      "height": 255,
+      "sampledPixels": 13260,
+      "uniqueColors": 81,
+      "dominantRatio": 0.844
+    },
+    {
+      "viewport": "mobile",
+      "module": "sensorless-foc",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 312,
+      "height": 259,
+      "sampledPixels": 13468,
+      "uniqueColors": 41,
+      "dominantRatio": 0.9051
+    },
+    {
+      "viewport": "mobile",
+      "module": "field-weakening",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 312,
+      "height": 299,
+      "sampledPixels": 13327,
+      "uniqueColors": 41,
+      "dominantRatio": 0.8924
+    },
+    {
+      "viewport": "mobile",
+      "module": "assembly-workshop",
+      "canvas": 0,
+      "ok": true,
+      "reason": "ok",
+      "width": 338,
+      "height": 299,
+      "sampledPixels": 12633,
+      "uniqueColors": 65,
+      "dominantRatio": 0.861
     }
   ],
   "consoleErrors": [],
   "consoleWarnings": [],
-  "ignoredConsoleWarnings": []
+  "ignoredConsoleWarnings": [
+    "[.WebGL-0x4924036f5800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x4924036f5800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x4924036f5800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "[.WebGL-0x4924036f5800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ]
 }

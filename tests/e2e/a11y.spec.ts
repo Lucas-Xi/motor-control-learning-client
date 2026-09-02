@@ -86,7 +86,8 @@ const MODULES_TO_AUDIT: Array<readonly [string, string]> = [
 ];
 
 async function openModule(page: Page, stage: string) {
-  await page.locator('nav button').filter({ hasText: `${stage} ·` }).first().click();
+  // v0.2 图标栏：按钮可见文本含 stage 号（"01"…）
+  await page.locator('nav button').filter({ hasText: stage }).first().click();
   await page.locator('text=模块加载中').first().waitFor({ state: 'detached', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
 }

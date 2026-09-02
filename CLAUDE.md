@@ -48,8 +48,8 @@ npm run desktop:dist     # 当前等价于 desktop:pack（稳定的免安装目�
 - 全局唯一 store 是 `useSimulationStore`（Zustand）。`activeModule` 决定渲染哪个页面，`mode: 'teach' | 'lab'` 区分教学 / 实验模式，`running` + `time` + `step()` 驱动仿真时钟。
 - Vite `base: './'` 是给 Electron `file://` 协议用的，不要改成 `/`。
 - Vite 构建已手动 chunk：`charts`（recharts）、`three`（three + R3F）、`motion`（framer-motion）。新加大依赖时考虑是否扩展 `manualChunks`。
-- 视觉令牌定义在 `tailwind.config.js` 的 `colors.bg/line/ink/accent` 与 `src/index.css` 的 CSS 变量中——`accent.primary`（cyan，交互主态）、`accent.measure`（mint，测量值/正确）、`accent.warn`（amber，警告）、`accent.fault`（rose，故障）。**禁止**重新引入 `shadow-neon` / `shadow-mint` 累积发光、`backdrop-blur`、`bg-radial-grid` 等装饰，也不要在每模块自己写入场动画 / AssetHero / 公式面板。
-- 布局壳层 `AppShell.tsx` 组合：`Sidebar`（导航）/ `TopBar`（运行控制）/ `SimulationPanel`（中央：模块标题 + `GuidedExperimentBar` + 模块内容）/ `ParameterPanel`（右侧两段：参数 schema 驱动 / 案例）/ `WaveformPanel`（底部波形）。`ModuleLayout` 是模块统一三槽外壳（primary / probe / concept），`ConceptNotes` 是教学讲义折叠区，`GuidedExperimentBar` 合并了原来的引导/流程/HUD 三处。
+- 视觉令牌定义在 `tailwind.config.js` 的 `colors.bg/line/ink/accent` 与 `src/index.css` 的 CSS 变量中——`accent.primary`（cyan，交互主态）、`accent.measure`（mint，测量值/正确）、`accent.warn`（amber，警告）、`accent.fault`（rose，故障）。**禁止**重新引入 `shadow-neon` / `shadow-mint` 累积发光、`backdrop-blur`、`bg-radial-grid` 等装饰，也不要在每模块自己写入场动画 / AssetHero / 公式面板。动效时长统一用 `--dur-fast/base/slow`。
+- 布局壳层（v0.2 双栏沉浸）`AppShell.tsx` 组合：`Sidebar`（76px 图标栏：三组模块 + 课程/洞察入口 + Ctrl+K 命令面板）/ `TopBar`（全局运行控制 + 参数坞开关）/ `SimulationPanel`（中央：模块标题 + `GuidedExperimentBar` + 模块内容）/ `ParameterPanel`（**默认收起**的参数坞：桌面 xl+ 推挤式 dock、小屏底部抽屉，按断点只挂载其一，e2e 用 `aside[aria-label="参数控制台"]` 定位）/ `WaveformPanel`（底部波形，可折叠，收起即卸载图表）。`ModuleLayout` 是模块统一三槽外壳（primary / probe / concept），`ConceptNotes` 是教学讲义折叠区，`GuidedExperimentBar` 合并了原来的引导/流程/HUD 三处。新模块图标在 `layout/moduleIcons.ts` 登记。
 - 组件订阅 store **必须用切片选择器** `useSimulationStore((s) => s.xxx)`，不要 `useSimulationStore()` 整把抓——会被每帧 `time` 推送拉爆重渲染。
 - 拖拽交互（SVPWM 矢量、Park αβ 矢量、弱磁 Id-Iq 工作点）的 pointermove 必须经 `useRafThrottle`，每帧最多一次 store 写入。
 - 模块页通过 `lazy()` 自动按模块拆分独立 chunk；`ModuleRenderer.tsx` 内保留 `moduleId === '<id>'` 字面（即使是注释）以满足 `verify-project.mjs` 静态校验。

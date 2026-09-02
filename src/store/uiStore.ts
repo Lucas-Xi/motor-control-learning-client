@@ -18,6 +18,21 @@ interface UIStore {
   togglePanel: (panel: PanelId) => void;
   simPanelView: SimPanelView;
   setSimPanelView: (view: SimPanelView) => void;
+
+  /* —— v0.2 双栏沉浸壳层状态 —— */
+  /** 参数坞（桌面右侧 dock / 移动端底部抽屉）是否展开；默认收起，内容优先 */
+  paramsDockOpen: boolean;
+  setParamsDockOpen: (open: boolean) => void;
+  toggleParamsDock: () => void;
+  /** 底部波形区是否展开；收起时保留一条可点击的摘要栏 */
+  waveformOpen: boolean;
+  toggleWaveform: () => void;
+  /** 命令面板（Ctrl+K 快速跳转模块 / 动作） */
+  paletteOpen: boolean;
+  setPaletteOpen: (open: boolean) => void;
+  /** 新手引导是否已完成（localStorage 持久化由组件侧负责） */
+  tourDone: boolean;
+  setTourDone: (done: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -25,4 +40,14 @@ export const useUIStore = create<UIStore>((set) => ({
   togglePanel: (panel) => set((state) => ({ expandedPanels: { ...state.expandedPanels, [panel]: !state.expandedPanels[panel] } })),
   simPanelView: 'module',
   setSimPanelView: (simPanelView) => set({ simPanelView }),
+
+  paramsDockOpen: false,
+  setParamsDockOpen: (paramsDockOpen) => set({ paramsDockOpen }),
+  toggleParamsDock: () => set((state) => ({ paramsDockOpen: !state.paramsDockOpen })),
+  waveformOpen: true,
+  toggleWaveform: () => set((state) => ({ waveformOpen: !state.waveformOpen })),
+  paletteOpen: false,
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  tourDone: false,
+  setTourDone: (tourDone) => set({ tourDone }),
 }));

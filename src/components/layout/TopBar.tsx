@@ -1,6 +1,7 @@
-import { Info, Maximize2, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
+import { Info, Maximize2, Pause, Play, RotateCcw, Sliders, StepForward } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n/useI18n';
 import { LanguageChip } from '../../i18n/LanguageChip';
 import { Button } from '../ui/Button';
@@ -82,6 +83,8 @@ export function TopBar() {
         <span className="uppercase tracking-[0.18em]">{running ? t('shell.runStateRun') : t('shell.runStateHold')}</span>
       </div>
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {/* 参数坞开关：双栏沉浸壳层的主入口（桌面 dock / 移动抽屉共用） */}
+        <ParamsDockToggle />
         <ThemeToggle />
         <LanguageChip />
         <Tabs
@@ -110,5 +113,22 @@ export function TopBar() {
       </div>
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </header>
+  );
+}
+
+/** 参数坞开关按钮：激活态高亮，桌面/移动共用（AppShell 决定呈现形态）。 */
+function ParamsDockToggle() {
+  const paramsDockOpen = useUIStore((s) => s.paramsDockOpen);
+  const toggleParamsDock = useUIStore((s) => s.toggleParamsDock);
+  const { t } = useI18n();
+  const label = t('shell.paramsDockShow');
+  return (
+    <IconBtn
+      label={label}
+      variant={paramsDockOpen ? 'primary' : 'ghost'}
+      onClick={toggleParamsDock}
+    >
+      <Sliders className="h-4 w-4" aria-hidden />
+    </IconBtn>
   );
 }

@@ -1,13 +1,13 @@
-import { useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useMemo } from 'react';
+import { Activity, ChevronDown, ChevronUp } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { calculateSvpwm } from '../../simulation/math/svpwm';
 import { createFaultWaveform, isStatusOnlyFault } from '../../simulation/math/faultWaveforms';
 import { BenchScope } from '../../modules/refrigeration-bench/BenchScope';
 import { usePersistentState } from '../../utils/usePersistentState';
 import { useSimulationStore } from '../../store/simulationStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n/useI18n';
-import { Card } from '../ui/Card';
 import { DQWaveform } from '../charts/DQWaveform';
 import { PWMChart } from '../charts/PWMChart';
 import { StepResponseChart } from '../charts/StepResponseChart';
@@ -151,19 +151,25 @@ function ControlLoopBranch() {
 }
 
 /**
- * 移动端折叠开关：<xl 默认折叠成 ~120px 高的预览，
- * 点 chevron 按钮展开 ~360px（与默认非折叠高度一致）。
- * 桌面端 ignore（按 xl: 媒体查询移除高度/可折叠 UI）。
+ * 底部波形区（v0.2）：全端统一的可折叠设计。
+ * 头部是一条 40px 的摘要栏（标题 + 折叠开关），收起时不挂载图表
+ * （recharts/R3F 全部卸载，滚动与内存零负担），展开恢复。
+ * 折叠偏好持久化到 localStorage，同时同步 uiStore.waveformOpen。
  */
 export function WaveformPanel() {
   const activeModule = useSimulationStore((state) => state.activeModule);
+  const waveformOpen = useUIStore((state) => state.waveformOpen);
+  const toggleWaveform = useUIStore((state) => state.toggleWaveform);
   const { t } = useI18n();
-  // 默认折叠：节约移动端首屏空间。用户主动点开后保持展开。
-  const [mobileExpanded, setMobileExpanded] = usePersistentState('waveform.mobileExpanded', false);
-  // 模块切换时回到折叠态，避免上一个模块用户展开后挤压新模块
-  useEffect(() => {
-    setMobileExpanded(false);
-  }, [activeModule]);
+  // 持久化偏好为唯一事实源；uiStore 同步一份供键盘快捷键等处读取
+  const [persistOpen, setPersistOpen] = usePersistentState('waveform.open', true);
+  const open = persistOpen;
+  const setOpen = (v: boolean | ((prev: boolean) => boolean)) => {
+    setPersistOpen(v);
+    useUIStore.setState({ waveformOpen: typeof v === 'function' ? v(open) : v });
+  };
+  void waveformOpen;
+  void toggleWaveform;
 
   const branch =
       activeModule === 'park-transform' ? <DQBranch />
@@ -178,31 +184,29 @@ export function WaveformPanel() {
       : <ThreePhaseBranch />;
 
   return (
-    <aside aria-label={t('shell.waveformCardTitle')} className="mt-4 block">
-    <Card
-      title={t('shell.waveformCardTitle')}
-      eyebrow={t('shell.waveformCardEyebrow')}
-      action={
+    <aside aria-label={t('shell.waveformCardTitle')} className="wave-collapse mt-4 block">
+      <div className="overflow-hidden rounded-2xl border border-line-subtle bg-bg-surface">
+        {/* 摘要栏：始终可见，折叠时即整个组件 */}
         <button
           type="button"
-          onClick={() => setMobileExpanded((v) => !v)}
-          className="mobile-touch-target inline-flex items-center gap-1 rounded-lg border border-line-subtle bg-bg-base px-2 py-1 text-caption text-ink-secondary hover:text-ink-primary xl:hidden"
-          aria-expanded={mobileExpanded}
-          aria-label={mobileExpanded ? t('shell.waveformCollapseAria') : t('shell.waveformExpandAria')}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? t('shell.waveHideAria') : t('shell.waveShowAria')}
+          className="flex h-10 w-full items-center justify-between px-3 text-left transition-colors hover:bg-bg-raised/60"
         >
-          {mobileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-          <span>{mobileExpanded ? t('shell.waveformCollapse') : t('shell.waveformExpand')}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <Activity className="h-3.5 w-3.5 shrink-0 text-accent-primary" aria-hidden />
+            <span className="truncate text-caption font-medium text-ink-primary">{t('shell.waveformCardTitle')}</span>
+            <span className="hidden truncate text-caption uppercase tracking-[0.18em] text-ink-muted sm:inline">{t('shell.waveformCardEyebrow')}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-caption text-ink-muted">
+            {!open && <span className="hidden md:inline">{t('shell.waveCollapsedHint')}</span>}
+            {open ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronUp className="h-4 w-4" aria-hidden />}
+          </span>
         </button>
-      }
-    >
-      <div
-        className={`overflow-hidden transition-[max-height] duration-300 xl:max-h-none ${
-          mobileExpanded ? 'max-h-[420px]' : 'max-h-[120px]'
-        }`}
-      >
-        {branch}
+        {/* 内容：收起即卸载（recharts 不挂载） */}
+        {open && <div className="px-3 pb-3">{branch}</div>}
       </div>
-    </Card>
     </aside>
   );
 }
