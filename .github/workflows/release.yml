@@ -76,4 +76,4 @@ jobs:
 #   - 若仓库 Settings → Secrets 里没配置代码签名证书，Windows SmartScreen
 #     首次安装会弹"未识别的发布者"，用户点"更多信息 → 仍要运行"即可继续。
 #   - electron-builder 上传目标由 package.json 的 build.publish 决定
-#     （当前指向 Lucas-Xi/motor-control-learning-client）。
+#     （当前指向 Vincent-Xi08/motor-control-learning-client）。

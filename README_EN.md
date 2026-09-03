@@ -1,8 +1,8 @@
 # Motor Control Learning Client (电机控制学习客户端)
 
-[![PR CI](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/pr.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/pr.yml)
-[![Release Audit](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/release-audit.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/release-audit.yml)
-[![Nightly Desktop](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/nightly-desktop.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/nightly-desktop.yml)
+[![PR CI](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/pr.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/pr.yml)
+[![Release Audit](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/release-audit.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/release-audit.yml)
+[![Nightly Desktop](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/nightly-desktop.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/nightly-desktop.yml)
 
 English | **[简体中文](README.md)**
 
@@ -14,7 +14,7 @@ Every algorithm is a pure function under `src/simulation/math/` — explicit sta
 
 ![Motor Basics module](output/screenshots-en/desktop-01-motor-basics.png)
 
-**UI showcase**: [lucas-xi.github.io/motor-control-learning-client/showcase](https://lucas-xi.github.io/motor-control-learning-client/showcase/) — interaction captures (parameter dock, command palette, onboarding, EN mobile) plus 32 bilingual module baselines, click to enlarge. Regenerate locally with `npm run showcase`.
+**UI showcase**: [vincent-xi08.github.io/motor-control-learning-client/showcase](https://vincent-xi08.github.io/motor-control-learning-client/showcase/) — interaction captures (parameter dock, command palette, onboarding, EN mobile) plus 32 bilingual module baselines, click to enlarge. Regenerate locally with `npm run showcase`.
 
 ## Feature Overview: 16 Learning Modules
 
@@ -48,7 +48,7 @@ Every module includes a coding challenge: implement the algorithm function in th
 ## Getting Started
 
 ```bash
-git clone https://github.com/Lucas-Xi/motor-control-learning-client.git
+git clone https://github.com/Vincent-Xi08/motor-control-learning-client.git
 cd motor-control-learning-client
 npm install
 npm run dev          # http://127.0.0.1:5173
@@ -148,7 +148,7 @@ To replay CI locally: `npm run ci:local`.
 | [docs/PRIVACY.md](docs/PRIVACY.md) | privacy statement: local-only, no telemetry (Chinese) |
 | [docs/SECTION_508_COMPLIANCE.md](docs/SECTION_508_COMPLIANCE.md) / [A11Y_AUDIT_R2.md](docs/A11Y_AUDIT_R2.md) | accessibility audits (Chinese) |
 | [docs/PERFORMANCE_AUDIT_R2.md](docs/PERFORMANCE_AUDIT_R2.md) | performance audit (Chinese) |
-| [docs/site/](https://lucas-xi.github.io/motor-control-learning-client/) | live doc site (regenerate with `npm run docsite`; auto-deployed on content changes) |
+| [docs/site/](https://vincent-xi08.github.io/motor-control-learning-client/) | live doc site (regenerate with `npm run docsite`; auto-deployed on content changes) |
 
 Deep-dive docs are written in Chinese to match the in-app teaching language; they are code-heavy and followable without fluent Chinese.
 

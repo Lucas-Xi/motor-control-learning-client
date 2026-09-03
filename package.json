@@ -114,7 +114,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Lucas-Xi",
+        "owner": "Vincent-Xi08",
         "repo": "motor-control-learning-client",
         "releaseType": "release"
       }

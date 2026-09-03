@@ -1,8 +1,8 @@
 # 电机控制学习客户端（Motor Control Learning Client）
 
-[![PR CI](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/pr.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/pr.yml)
-[![Release Audit](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/release-audit.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/release-audit.yml)
-[![Nightly Desktop](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/nightly-desktop.yml/badge.svg)](https://github.com/Lucas-Xi/motor-control-learning-client/actions/workflows/nightly-desktop.yml)
+[![PR CI](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/pr.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/pr.yml)
+[![Release Audit](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/release-audit.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/release-audit.yml)
+[![Nightly Desktop](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/nightly-desktop.yml/badge.svg)](https://github.com/Vincent-Xi08/motor-control-learning-client/actions/workflows/nightly-desktop.yml)
 
 **[English](README_EN.md)** | 简体中文
 
@@ -12,7 +12,7 @@
 
 ![电机基础模块](output/screenshots/desktop-01-motor-basics.png)
 
-**界面展示页**：[lucas-xi.github.io/motor-control-learning-client/showcase](https://lucas-xi.github.io/motor-control-learning-client/showcase/) —— 交互实拍（参数坞/命令面板/新手引导/英文移动端）+ 32 张双语模块基线，点击放大。本地生成：`npm run showcase`。
+**界面展示页**：[vincent-xi08.github.io/motor-control-learning-client/showcase](https://vincent-xi08.github.io/motor-control-learning-client/showcase/) —— 交互实拍（参数坞/命令面板/新手引导/英文移动端）+ 32 张双语模块基线，点击放大。本地生成：`npm run showcase`。
 
 ## 功能总览：16 个教学模块
 
@@ -46,7 +46,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/Lucas-Xi/motor-control-learning-client.git
+git clone https://github.com/Vincent-Xi08/motor-control-learning-client.git
 cd motor-control-learning-client
 npm install
 npm run dev          # http://127.0.0.1:5173
@@ -146,7 +146,7 @@ release/win-unpacked/电机控制学习客户端.exe
 | [docs/PRIVACY.md](docs/PRIVACY.md) | 隐私与数据采集说明（本地运行、无遥测） |
 | [docs/SECTION_508_COMPLIANCE.md](docs/SECTION_508_COMPLIANCE.md) / [A11Y_AUDIT_R2.md](docs/A11Y_AUDIT_R2.md) | 可访问性审计 |
 | [docs/PERFORMANCE_AUDIT_R2.md](docs/PERFORMANCE_AUDIT_R2.md) | 性能审计 |
-| [docs/site/](https://lucas-xi.github.io/motor-control-learning-client/) | 在线文档站点（`npm run docsite` 重新生成，内容变更自动部署） |
+| [docs/site/](https://vincent-xi08.github.io/motor-control-learning-client/) | 在线文档站点（`npm run docsite` 重新生成，内容变更自动部署） |
 
 ## STM32 / C 迁移
 

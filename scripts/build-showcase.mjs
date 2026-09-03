@@ -80,7 +80,7 @@ const html = `<!doctype html>
 </section>
 
 <footer>
-  源码：<a href="https://github.com/Lucas-Xi/motor-control-learning-client">github.com/Lucas-Xi/motor-control-learning-client</a> · 点击任意图放大原图
+  源码：<a href="https://github.com/Vincent-Xi08/motor-control-learning-client">github.com/Vincent-Xi08/motor-control-learning-client</a> · 点击任意图放大原图
 </footer>
 </body>
 </html>
