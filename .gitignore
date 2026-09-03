@@ -19,6 +19,8 @@ output/*
 !output/screenshots/
 # 英文界面截图基线（README_EN 引用）
 !output/screenshots-en/
+# 界面展示页素材（scripts/build-showcase.mjs → Pages /showcase/）
+!output/showcase/
 # 素材管线的提示词清单要入库：docs/ASSET_PIPELINE.md 引用
 !tmp/imagegen/
 

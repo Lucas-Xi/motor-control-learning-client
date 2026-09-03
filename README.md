@@ -12,6 +12,8 @@
 
 ![电机基础模块](output/screenshots/desktop-01-motor-basics.png)
 
+**界面展示页**：[lucas-xi.github.io/motor-control-learning-client/showcase](https://lucas-xi.github.io/motor-control-learning-client/showcase/) —— 交互实拍（参数坞/命令面板/新手引导/英文移动端）+ 32 张双语模块基线，点击放大。本地生成：`npm run showcase`。
+
 ## 功能总览：16 个教学模块
 
 | # | 模块 | 内容 |

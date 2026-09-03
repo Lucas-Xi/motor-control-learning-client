@@ -14,6 +14,8 @@ Every algorithm is a pure function under `src/simulation/math/` — explicit sta
 
 ![Motor Basics module](output/screenshots-en/desktop-01-motor-basics.png)
 
+**UI showcase**: [lucas-xi.github.io/motor-control-learning-client/showcase](https://lucas-xi.github.io/motor-control-learning-client/showcase/) — interaction captures (parameter dock, command palette, onboarding, EN mobile) plus 32 bilingual module baselines, click to enlarge. Regenerate locally with `npm run showcase`.
+
 ## Feature Overview: 16 Learning Modules
 
 | # | Module | Contents |

@@ -10,6 +10,8 @@ on:
     paths:
       - 'src/content/**'
       - 'scripts/build-docsite.mjs'
+      - 'scripts/build-showcase.mjs'
+      - 'output/showcase/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -45,6 +47,10 @@ jobs:
 
       - name: Verify docsite / 校验站点完整性
         run: node scripts/verify-docsite.mjs
+
+      # 界面展示页（4 张交互实拍 + 32 张双语基线）→ /showcase/
+      - name: Build showcase / 生成界面展示页
+        run: node scripts/build-showcase.mjs docs/site/showcase
 
       - name: Configure Pages / 配置 Pages
         uses: actions/configure-pages@v5

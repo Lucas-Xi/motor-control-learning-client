@@ -17,6 +17,7 @@
     "e2e": "playwright test",
     "qa:screenshots": "node scripts/capture-screenshots.mjs",
     "docsite": "node scripts/build-docsite.mjs",
+    "showcase": "node scripts/build-showcase.mjs",
     "release:audit": "node scripts/release-audit.mjs",
     "desktop:pack": "npm run build && node scripts/package-electron-dir.mjs",
     "desktop:dist": "npm run desktop:pack",
