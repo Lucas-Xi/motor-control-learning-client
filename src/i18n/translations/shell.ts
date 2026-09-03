@@ -309,4 +309,5 @@ export const shell = {
   tourNext: e('下一步', 'Next'),
   tourFinish: e('开始学习', 'Start learning'),
   tourBadge: e('新手指引', 'Quick tour'),
+  sectionNavAria: e('卡片快速导航', 'Card quick navigation'),
 };

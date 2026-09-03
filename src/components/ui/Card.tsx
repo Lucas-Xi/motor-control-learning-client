@@ -34,9 +34,13 @@ export function Card({
   className = '',
   ...props
 }: CardProps) {
+  // 有标题的卡片自动成为锚点目标（ModuleSectionNav 扫描 data-card-anchor
+  // 并分配 id）。scroll-mt 预留粘性模块头高度，滚动定位后标题不被遮挡。
   return (
     <section
-      className={`relative rounded-2xl border bg-bg-surface ${toneRing[tone]} ${densityPad[density]} ${className}`}
+      data-card-anchor={title ? '' : undefined}
+      data-card-title={title}
+      className={`relative scroll-mt-[76px] rounded-2xl border bg-bg-surface ${toneRing[tone]} ${densityPad[density]} ${className}`}
       {...props}
     >
       {(title || eyebrow || action) && (

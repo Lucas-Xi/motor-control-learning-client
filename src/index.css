@@ -388,3 +388,11 @@ button, input, select, textarea { font: inherit; }
     transition: none !important;
   }
 }
+
+/* 芯片条隐藏横向滚动条（ModuleSectionNav） */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

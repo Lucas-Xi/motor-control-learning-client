@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { ModuleRenderer } from '../../modules/ModuleRenderer';
 import { useI18n } from '../../i18n/useI18n';
 import { localizeModuleMeta, moduleMetas } from '../../simulation/engine/presets';
@@ -7,6 +7,7 @@ import type { ModuleMeta } from '../../simulation/engine/types';
 import { useSimulationStore } from '../../store/simulationStore';
 import { useUIStore } from '../../store/uiStore';
 import { GuidedExperimentBar } from './GuidedExperimentBar';
+import { ModuleSectionNav } from './ModuleSectionNav';
 import { moduleSwap } from '../../utils/motion';
 import { CurriculumPanel } from '../curriculum/CurriculumPanel';
 import { InsightsView } from '../insights/InsightsView';
@@ -27,6 +28,7 @@ export function SimulationPanel() {
   const mode = useSimulationStore((state) => state.mode);
   const simPanelView = useUIStore((state) => state.simPanelView);
   const setSimPanelView = useUIStore((state) => state.setSimPanelView);
+  const moduleScrollRef = useRef<HTMLElement>(null);
   // assembly-workshop 不在 moduleMetas 里，回退 meta 的文案走 i18n
   const fallbackMeta = useMemo<ModuleMeta>(
     () => ({
@@ -61,12 +63,19 @@ export function SimulationPanel() {
     );
   }
   return (
-    <section className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4">
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="font-mono text-caption text-ink-muted">{meta.stage}</span>
-        <h1 className="font-display text-display text-ink-primary">{localizeModuleMeta(meta, locale).title}</h1>
-        <p className="text-body text-ink-secondary">{localizeModuleMeta(meta, locale).subtitle}</p>
-      </header>
+    <section ref={moduleScrollRef} className="scrollbar-thin min-h-0 space-y-4 overflow-auto rounded-2xl border border-line-subtle bg-bg-surface p-4">
+      {/* 粘性模块头：标题行 + 卡片锚点芯片条（滚动时常驻，scroll-spy 高亮当前卡片；
+          背景用实色 bg-bg-surface 铺满（负 margin 抵消父级 padding），不使用 blur） */}
+      <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-2 border-b border-line-subtle bg-bg-surface px-4 pb-2 pt-4">
+        <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="font-mono text-caption text-ink-muted">{meta.stage}</span>
+          <h1 className="font-display text-display text-ink-primary">{localizeModuleMeta(meta, locale).title}</h1>
+          <p className="text-body text-ink-secondary">{localizeModuleMeta(meta, locale).subtitle}</p>
+        </header>
+        <div className="mt-2">
+          <ModuleSectionNav scrollContainerRef={moduleScrollRef} moduleId={activeModule} />
+        </div>
+      </div>
       {mode === 'teach' && <GuidedExperimentBar moduleId={activeModule} />}
       {/*
         历史教训：曾经把 ModuleRenderer 包在 <AnimatePresence mode="wait">
